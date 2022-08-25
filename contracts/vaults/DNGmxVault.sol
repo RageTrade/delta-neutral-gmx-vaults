@@ -4,7 +4,7 @@ pragma solidity ^0.8.9;
 
 import { SafeCast } from 'contracts/libraries/SafeCast.sol';
 
-import { BatchedVault } from 'contracts/BaseVault/BatchedVault.sol';
+import { ERC4626Upgradeable } from 'contracts/ERC4626/ERC4626Upgradeable.sol';
 
 import { DNGmxVaultStorage } from 'contracts/vaults/DNGmxVaultStorage.sol';
 
@@ -27,7 +27,10 @@ import { IClearingHouse } from '@ragetrade/core/contracts/interfaces/IClearingHo
 import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
-contract DNGmxVault is BatchedVault, DNGmxVaultStorage {
+import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import { PausableUpgradeable } from '@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol';
+
+contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable, DNGmxVaultStorage {
     using FullMath for uint256;
     using SafeCast for uint256;
 
@@ -143,26 +146,6 @@ contract DNGmxVault is BatchedVault, DNGmxVaultStorage {
 
         stakingManager.harvestFees();
 
-        _settleProfit();
-
-        uint128 prevRoundDepositAssets = pendingDepositAssets;
-        uint128 prevRoundWithdrawShares = pendingWithdrawShares;
-
-        // If there are any deposits/withdraws in previous round only then execute a rollover
-        if (prevRoundDepositAssets != 0 || prevRoundWithdrawShares != 0) {
-            rolloverBatch();
-
-            uint128 prevRoundWithdrawAssets = convertToAssets(prevRoundWithdrawShares).toUint128();
-
-            // deposit diff if prevRoundDepositAssets > prevRoundWithdrawAssets else withdraw diff
-            if (prevRoundDepositAssets > prevRoundWithdrawAssets) {
-                stakingManager.deposit(prevRoundDepositAssets - prevRoundWithdrawAssets, address(this));
-            } else {
-                stakingManager.withdraw(prevRoundWithdrawAssets - prevRoundDepositAssets, address(this), address(this));
-            }
-            if (prevRoundWithdrawShares > 0) _burn(address(this), prevRoundWithdrawShares);
-        }
-
         {
             uint256 collateralDeposited = lens.getAccountCollateralBalance(rageAccountNo, collateralId);
             int256 vaultMarketValue = getVaultMarketValue();
@@ -172,16 +155,6 @@ contract DNGmxVault is BatchedVault, DNGmxVaultStorage {
         _rebalancePosition();
 
         emit Rebalanced();
-    }
-
-    function claimWithdrawalAssetsToken(
-        IERC20 token,
-        uint256 _minOut,
-        address receiver
-    ) external {
-        uint256 assets = claimWithdrawalAssets(receiver);
-
-        rewardRouter.unstakeAndRedeemGlp(address(token), assets, _minOut, receiver);
     }
 
     function totalAssets() public view override returns (uint256) {
@@ -267,24 +240,6 @@ contract DNGmxVault is BatchedVault, DNGmxVaultStorage {
         address receiver
     ) internal override {
         // TODO: add deposit cap in after deposit hook by querying from staking manager
-    }
-
-    /// @notice settles profit and collateral for the vault
-    function _settleProfit() internal {
-        // Settle net profit made from ranges and deposit/withdraw profits in USDC
-        int256 netProfit = rageClearingHouse.getAccountNetProfit(rageAccountNo);
-        if (netProfit > 0) {
-            // If net profit > 0 withdraw USDC and convert USDC into LP tokens
-            rageClearingHouse.updateProfit(rageAccountNo, -1 * netProfit);
-            _convertSettlementTokenToAsset(uint256(netProfit));
-        } else if (netProfit < 0) {
-            // If net profit > 0 convert LP tokens into USDC and deposit USDC to cover loss
-            uint256 settlementTokenOutput = _convertAssetToSettlementToken(uint256(-1 * netProfit));
-
-            if (settlementTokenOutput > 0) {
-                rageClearingHouse.updateProfit(rageAccountNo, settlementTokenOutput.toInt256());
-            }
-        }
     }
 
     /// @notice settles collateral for the vault
