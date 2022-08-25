@@ -1,0 +1,35 @@
+.git
+.github
+.gitignore
+
+# VS Code
+.vscode
+
+# env files
+.env
+.env.example
+
+# npm
+node_modules
+
+# hardhat
+cache
+coverage
+coverage.json
+deploy
+deployments/localhost
+hardhat.config.ts
+scripts
+test
+typechain-types
+
+# misc
+.eslintignore
+.eslintrc.js
+.prettierignore
+.prettierrc
+.solcover.js
+.solhint.json
+.solhintignore
+CONTRIBUTING.md
+tsconfig.json
