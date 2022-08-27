@@ -22,7 +22,10 @@ import { IGlpManager } from 'contracts/interfaces/gmx/IGlpManager.sol';
 import { ISGLPExtended } from 'contracts/interfaces/gmx/ISGLPExtended.sol';
 import { IRewardRouterV2 } from 'contracts/interfaces/gmx/IRewardRouterV2.sol';
 import { IGlpStakingManager } from 'contracts/interfaces/gmx/IGlpStakingManager.sol';
+import { ILPVault } from 'contracts/interfaces/ILPVault.sol';
 import { IClearingHouse } from '@ragetrade/core/contracts/interfaces/IClearingHouse.sol';
+
+import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 
 import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
@@ -49,7 +52,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
 
     event KeeperUpdated(address _newKeeper);
     event DepositCapUpdated(uint256 _newDepositCap);
-    event MarketMakerVaultUpdated(address _mmVault);
+    event LPVaultUpdated(address _lpVault);
     event StakingManagerUpdated(address _stakingManager);
 
     event YieldParamsUpdated(uint16 indexed usdcReedemSlippage, uint240 indexed usdcConversionThreshold);
@@ -63,31 +66,18 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     function initialize(
         string calldata _name,
         string calldata _symbol,
-        RageUIDs calldata _rageUIDs,
-        TokenAddresses calldata _tokenAddrs,
-        ExternalAddresses calldata _extAddrs
+        address _rewardRouter,
+        TokenAddresses calldata _tokenAddrs
     ) external initializer {
         __Ownable_init();
         __Pausable_init();
         __ERC4626Upgradeable_init(IERC20Metadata(address(_tokenAddrs.sGlp)), _name, _symbol);
 
-        ethPoolId = _rageUIDs.ethPoolId;
-        btcPoolId = _rageUIDs.btcPoolId;
-        rageAccountNo = _rageUIDs.rageAccountNo;
-        collateralId = address(_extAddrs.rageCollateralToken).truncate();
-
-        lens = _extAddrs.lens;
-        rageClearingHouse = _extAddrs.rageClearingHouse;
-        rageCollateralToken = _extAddrs.rageCollateralToken;
-        rageSettlementToken = _extAddrs.rageSettlementToken;
-
-        ethVPool = rageClearingHouse.getVPool(ethPoolId);
-        btcVPool = rageClearingHouse.getVPool(btcPoolId);
-
         weth = _tokenAddrs.weth;
         wbtc = _tokenAddrs.wbtc;
+        usdc = _tokenAddrs.usdc;
 
-        rewardRouter = _extAddrs.rewardRouter;
+        rewardRouter = IRewardRouterV2(_rewardRouter);
 
         glp = IERC20(ISGLPExtended(address(asset)).glp());
         fsGlp = IERC20(ISGLPExtended(address(asset)).stakedGlpTracker());
@@ -97,14 +87,9 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     }
 
     function grantAllowances() external onlyOwner {
-        asset.approve(address(glpManager), type(uint256).max);
         asset.approve(address(stakingManager), type(uint256).max);
 
-        rageSettlementToken.approve(address(glpManager), type(uint256).max);
-        rageSettlementToken.approve(address(stakingManager), type(uint256).max);
-
-        rageCollateralToken.approve(address(rageClearingHouse), type(uint256).max);
-        rageSettlementToken.approve(address(rageClearingHouse), type(uint256).max);
+        usdc.approve(address(stakingManager), type(uint256).max);
 
         emit AllowancesGranted();
     }
@@ -119,9 +104,9 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         emit DepositCapUpdated(_newDepositCap);
     }
 
-    function setMarketMakerVault(address _mmVault) external onlyOwner {
-        marketMakerVault = _mmVault;
-        emit MarketMakerVaultUpdated(_mmVault);
+    function setLPVault(address _lpVault) external onlyOwner {
+        lpVault = ILPVault(_lpVault);
+        emit LPVaultUpdated(_lpVault);
     }
 
     function setStakingManager(address _stakingManager) external onlyOwner {
@@ -144,21 +129,23 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     function rebalance() external onlyKeeper {
         if (!isValidRebalance()) revert InvalidRebalance();
 
+        //harvest fees
         stakingManager.harvestFees();
 
+        //calculate current btc and eth positions in GLP
+        //get the position value and calculate the collateral needed to borrow that
+        //transfer collateral from LB vault to DN vault
         {
-            uint256 collateralDeposited = lens.getAccountCollateralBalance(rageAccountNo, collateralId);
-            int256 vaultMarketValue = getVaultMarketValue();
-            _settleCollateral(collateralDeposited, vaultMarketValue);
+            uint256 collateralDeposited; // = get collateral deposited to LB protocol
+            uint256 totalPositionValue; // = total position value of final btc and eth position
+            _rebalanceSupplyAndBorrow(collateralDeposited, totalPositionValue);
         }
-
-        _rebalancePosition();
 
         emit Rebalanced();
     }
 
     function totalAssets() public view override returns (uint256) {
-        return stakingManager.maxRedeem(address(this));
+        return stakingManager.maxWithdraw(address(this));
     }
 
     function getPriceX128() public view returns (uint256 priceX128) {
@@ -173,8 +160,8 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     }
 
     function getVaultMarketValue() public view returns (int256 vaultMarketValue) {
-        vaultMarketValue = rageClearingHouse.getAccountNetProfit(rageAccountNo);
-        vaultMarketValue += (getMarketValue(totalAssets())).toInt256();
+        //TODO: include any other pnls
+        vaultMarketValue = (getMarketValue(totalAssets())).toInt256();
     }
 
     function isValidRebalance() public view returns (bool) {
@@ -186,22 +173,32 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     }
 
     function _isValidRebalanceDeviation() internal view returns (bool) {
-        (, int256 netEthTraderPosition, ) = lens.getAccountTokenPositionInfo(rageAccountNo, ethPoolId);
-        (, int256 netBtcTraderPosition, ) = lens.getAccountTokenPositionInfo(rageAccountNo, btcPoolId);
+        uint256 currentEthBorrow;
+        uint256 currentBtcBorrow;
 
-        (int256 optimalEthPosition, int256 optimalBtcPosition) = _getOptimalPositions();
+        (uint256 optimalEthBorrow, uint256 optimalBtcBorrow) = _getOptimalBorrows();
 
         return
-            !(_isWithinAllowedDelta(optimalEthPosition, netEthTraderPosition) &&
-                _isWithinAllowedDelta(optimalBtcPosition, netBtcTraderPosition));
+            !(_isWithinAllowedDelta(optimalEthBorrow, currentEthBorrow) &&
+                _isWithinAllowedDelta(optimalBtcBorrow, currentBtcBorrow));
     }
 
-    function _rebalancePosition() internal {
-        //check the delta between optimal position and actual position
+    function _rebalanceTokenBorrow(
+        address token,
+        uint256 optimalBorrow,
+        uint256 currentBorrow
+    ) internal {
+        //check the delta between optimal position and actual position in token terms
         //take that position using swap
+        //To Increase
+        // Flash loan ETH/BTC from AAVE
+        // In callback: Sell loan for USDC and repay debt
+        //To Decrease
+        // In callback: Swap to ETH/BTC and deposit to AAVE
+        // Send back some aUSDC to LB vault
     }
 
-    function _getOptimalPositions() internal view returns (int256 optimalEthPosition, int256 optimalBtcPosition) {
+    function _getOptimalBorrows() internal view returns (uint256 optimalEthBorrow, uint256 optimalBtcBorrow) {
         uint256 glpDeposited = totalAssets();
 
         uint256 ethReservesOfGlp = _getTokenReservesInGlp(address(weth));
@@ -209,8 +206,8 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
 
         uint256 glpTotalSupply = asset.totalSupply();
 
-        optimalEthPosition = -ethReservesOfGlp.mulDiv(glpDeposited, glpTotalSupply).toInt256();
-        optimalBtcPosition = -btcReservesOfGlp.mulDiv(glpDeposited, glpTotalSupply).toInt256();
+        optimalEthBorrow = ethReservesOfGlp.mulDiv(glpDeposited, glpTotalSupply);
+        optimalBtcBorrow = btcReservesOfGlp.mulDiv(glpDeposited, glpTotalSupply);
     }
 
     function _getTokenReservesInGlp(address token) internal view returns (uint256) {
@@ -220,66 +217,55 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         return (poolAmount - reservedAmount);
     }
 
-    function _isWithinAllowedDelta(int256 _optimalPosition, int256 _currentPosition) internal view returns (bool) {
-        return
-            (_optimalPosition - _currentPosition).absUint() <
-            uint256(rebalanceDeltaThreshold).mulDiv(_optimalPosition.absUint(), MAX_BPS);
+    function _isWithinAllowedDelta(uint256 optimalBorrow, uint256 currentBorrow) internal view returns (bool) {
+        uint256 diff = optimalBorrow > currentBorrow ? optimalBorrow - currentBorrow : currentBorrow - optimalBorrow;
+        return diff < uint256(rebalanceDeltaThreshold).mulDiv(currentBorrow, MAX_BPS);
     }
 
     function beforeWithdraw(
         uint256 assets,
-        uint256 shares,
-        address receiver
+        uint256,
+        address
     ) internal override {
-        // TODO: is anything required ? if not, delete func.
+        stakingManager.withdraw(assets, address(this), address(this));
     }
 
     function afterDeposit(
         uint256 assets,
-        uint256 shares,
-        address receiver
+        uint256,
+        address
     ) internal override {
         // TODO: add deposit cap in after deposit hook by querying from staking manager
+        stakingManager.deposit(assets, address(this));
     }
 
     /// @notice settles collateral for the vault
     /// @dev to be called after settle profits only (since vaultMarketValue if after settlement of profits)
-    /// @param collateralDeposited The amount of rage collateral token deposited to rage core
-    /// @param vaultMarketValue The market value of the vault in USDC
-    function _settleCollateral(uint256 collateralDeposited, int256 vaultMarketValue) internal {
+    /// @param supplyValue The amount of USDC collateral token deposited to LB Protocol
+    /// @param borrowValue The market value of ETH/BTC part in sGLP
+    function _rebalanceSupplyAndBorrow(uint256 supplyValue, uint256 borrowValue) internal {
         // Settle net change in market value and deposit/withdraw collateral tokens
         // Vault market value is just the collateral value since profit has been settled
-        int256 vaultMarketValueDiff;
-        if (collateralDeposited > 0) {
-            // assert(address(stablecoinDeposit.collateral) == address(rageCollateralToken));
-            vaultMarketValueDiff =
-                vaultMarketValue -
-                collateralDeposited.toInt256().mulDiv(
-                    10**rageSettlementToken.decimals(),
-                    10**rageCollateralToken.decimals()
-                );
+        uint256 borrowValueDiff;
+        if (borrowValue > supplyValue) {
+            //TODO: normalize to get correct value of aUSDC amount to take from LB vault
+            borrowValueDiff = borrowValue - supplyValue;
+
+            // Take from LB Vault
+            lpVault.borrow(borrowValueDiff);
+            // Rebalance Position
+            // _rebalanceTokenBorrow();
         } else {
-            vaultMarketValueDiff = vaultMarketValue;
-        }
-
-        int256 normalizedVaultMarketValueDiff = vaultMarketValueDiff.mulDiv(
-            10**rageCollateralToken.decimals(),
-            10**rageSettlementToken.decimals()
-        );
-        uint256 normalizedVaultMarketValueDiffAbs = normalizedVaultMarketValueDiff.absUint();
-
-        if (normalizedVaultMarketValueDiff > 0) {
-            // Mint collateral coins and deposit into rage trade
-            rageCollateralToken.mint(address(this), normalizedVaultMarketValueDiffAbs);
-            rageClearingHouse.updateMargin(rageAccountNo, collateralId, int256(normalizedVaultMarketValueDiffAbs));
-        } else if (normalizedVaultMarketValueDiff < 0) {
-            // Withdraw rage trade deposits
-            rageClearingHouse.updateMargin(rageAccountNo, collateralId, -int256(normalizedVaultMarketValueDiffAbs));
-            rageCollateralToken.burn(normalizedVaultMarketValueDiffAbs);
+            //TODO: normalize to get correct value of aUSDC amount to take from LB vault
+            borrowValueDiff = supplyValue - borrowValue;
+            // Rebalance Position
+            // _rebalanceTokenBorrow();
+            // Deposit to LB Vault
+            lpVault.repay(borrowValueDiff);
         }
     }
 
-    /// @notice withdraws LP tokens from gauge, sells LP token for rageSettlementToken
+    /// @notice withdraws LP tokens from gauge, sells LP token for usdc
     /// @param usdcAmountDesired amount of USDC desired
     function _convertAssetToSettlementToken(uint256 usdcAmountDesired) internal returns (uint256 usdcAmount) {
         /// @dev if usdcAmountDesired < 10, then there is precision issue in gmx contracts while redeeming for usdg
@@ -288,19 +274,21 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         // USDG has 18 decimals and usdc has 6 decimals => 18-6 = 12
         stakingManager.withdraw(glpAmountDesired, address(this), address(this));
         rewardRouter.unstakeAndRedeemGlp(
-            address(rageSettlementToken),
+            address(usdc),
             glpAmountDesired, // glp amount
             usdcAmountDesired.mulDiv(usdcReedemSlippage, MAX_BPS), // usdc
             address(this)
         );
 
-        usdcAmount = rageSettlementToken.balanceOf(address(this));
+        usdcAmount = usdc.balanceOf(address(this));
     }
 
-    /// @notice sells rageSettlementToken for LP tokens and then stakes LP tokens
-    /// @param amount amount of rageSettlementToken
+    /// @notice sells usdc for LP tokens and then stakes LP tokens
+    /// @param amount amount of usdc
     function _convertSettlementTokenToAsset(uint256 amount) internal {
         //USDG has 18 decimals and usdc has 6 decimals => 18-6 = 12
-        stakingManager.depositToken(address(rageSettlementToken), amount);
+        stakingManager.depositToken(address(usdc), amount);
     }
+
+    //TODO: add withdrawToken and redeemToken functions
 }

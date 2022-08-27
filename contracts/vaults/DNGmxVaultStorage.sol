@@ -9,6 +9,8 @@ import { IVault } from 'contracts/interfaces/gmx/IVault.sol';
 import { IGlpManager } from 'contracts/interfaces/gmx/IGlpManager.sol';
 import { IRewardRouterV2 } from 'contracts/interfaces/gmx/IRewardRouterV2.sol';
 import { IGlpStakingManager } from 'contracts/interfaces/gmx/IGlpStakingManager.sol';
+import { ILPVault } from 'contracts/interfaces/ILPVault.sol';
+import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 
 import { IClearingHouse } from '@ragetrade/core/contracts/interfaces/IClearingHouse.sol';
 import { ClearingHouseLens } from '@ragetrade/core/contracts/lens/ClearingHouseLens.sol';
@@ -30,25 +32,11 @@ contract DNGmxVaultStorage {
     uint256 public depositCap;
 
     address public keeper;
-    address public marketMakerVault;
+    ILPVault public lpVault;
 
-    IClearingHouse public rageClearingHouse;
+    ///@dev storage for hedge strategy
 
-    ClearingHouseLens internal lens;
-    IERC20Metadata internal rageSettlementToken;
-    CollateralToken internal rageCollateralToken;
-
-    ///@dev storage for range strategy
-
-    uint32 public ethPoolId;
-    uint32 public btcPoolId;
-
-    uint256 public rageAccountNo;
-
-    uint32 internal collateralId;
-
-    IUniswapV3Pool public ethVPool;
-    IUniswapV3Pool public btcVPool;
+    ISwapRouter public swapRouter;
 
     ///@dev storage for yield strategy
 
@@ -58,6 +46,7 @@ contract DNGmxVaultStorage {
     IERC20 internal glp;
     IERC20 internal fsGlp;
 
+    IERC20 internal usdc;
     IERC20 internal weth;
     IERC20 internal wbtc;
 
@@ -72,22 +61,8 @@ contract DNGmxVaultStorage {
         IERC20 weth;
         IERC20 wbtc;
         IERC20 sGlp;
+        IERC20 usdc;
     }
-
-    struct RageUIDs {
-        uint32 ethPoolId;
-        uint32 btcPoolId;
-        uint256 rageAccountNo;
-    }
-
-    struct ExternalAddresses {
-        ClearingHouseLens lens;
-        IRewardRouterV2 rewardRouter;
-        IClearingHouse rageClearingHouse;
-        IERC20Metadata rageSettlementToken;
-        CollateralToken rageCollateralToken;
-    }
-
     struct YieldStrategyParams {
         uint16 usdcReedemSlippage;
         uint240 usdcConversionThreshold;
