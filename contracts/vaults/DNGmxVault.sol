@@ -183,6 +183,34 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
                 _isWithinAllowedDelta(optimalBtcBorrow, currentBtcBorrow));
     }
 
+    function _swapTokenToUSDC(address token, uint256 tokenAmount) internal returns (uint256 usdcAmount) {
+        bytes memory path = abi.encodePacked(token, uint24(500), usdc);
+
+        ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
+            path: path,
+            amountIn: tokenAmount,
+            amountOutMinimum: 0,
+            recipient: address(this),
+            deadline: block.timestamp
+        });
+
+        usdcAmount = swapRouter.exactInput(params);
+    }
+
+    function _swapUSDCToToken(address token, uint256 tokenAmount) internal returns (uint256 usdcAmount) {
+        bytes memory path = abi.encodePacked(usdc, uint24(500), token);
+
+        ISwapRouter.ExactOutputParams memory params = ISwapRouter.ExactOutputParams({
+            path: path,
+            amountInMaximum: 0,
+            amountOut: tokenAmount,
+            recipient: address(this),
+            deadline: block.timestamp
+        });
+
+        usdcAmount = swapRouter.exactOutput(params);
+    }
+
     function _rebalanceTokenBorrow(
         address token,
         uint256 optimalBorrow,
@@ -191,11 +219,15 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         //check the delta between optimal position and actual position in token terms
         //take that position using swap
         //To Increase
-        // Flash loan ETH/BTC from AAVE
-        // In callback: Sell loan for USDC and repay debt
+        if (optimalBorrow > currentBorrow) {
+            // Flash loan ETH/BTC from AAVE
+            // In callback: Sell loan for USDC and repay debt
+        }
         //To Decrease
-        // In callback: Swap to ETH/BTC and deposit to AAVE
-        // Send back some aUSDC to LB vault
+        else {
+            // In callback: Swap to ETH/BTC and deposit to AAVE
+            // Send back some aUSDC to LB vault
+        }
     }
 
     function _getOptimalBorrows() internal view returns (uint256 optimalEthBorrow, uint256 optimalBtcBorrow) {
