@@ -30,6 +30,7 @@ contract DNGmxVaultStorage {
     uint16 public rebalanceDeltaThreshold;
 
     uint256 public depositCap;
+    uint256 public dnUsdcDeposited;
 
     address public keeper;
     ILPVault public lpVault;

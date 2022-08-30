@@ -24,9 +24,7 @@ import { IRewardRouterV2 } from 'contracts/interfaces/gmx/IRewardRouterV2.sol';
 import { IGlpStakingManager } from 'contracts/interfaces/gmx/IGlpStakingManager.sol';
 import { ILPVault } from 'contracts/interfaces/ILPVault.sol';
 import { IClearingHouse } from '@ragetrade/core/contracts/interfaces/IClearingHouse.sol';
-
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
-
 import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
@@ -211,23 +209,76 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         usdcAmount = swapRouter.exactOutput(params);
     }
 
-    function _rebalanceTokenBorrow(
+    function _executeFlashloan(address[] memory assets, uint256[] memory amounts) internal {
+        //TODO: implement flash loan call
+    }
+
+    function executeOperation(
+        address[] calldata assets,
+        uint256[] calldata amounts,
+        uint256[] calldata premiums,
+        address initiator,
+        bytes calldata params
+    ) external returns (bool) {}
+
+    function getPriceX128(address token) internal view returns (uint256) {}
+
+    function _getTokenFlashloanAmounts(
         address token,
         uint256 optimalBorrow,
         uint256 currentBorrow
-    ) internal {
+    ) internal returns (address asset, uint256 amount) {
         //check the delta between optimal position and actual position in token terms
         //take that position using swap
         //To Increase
         if (optimalBorrow > currentBorrow) {
+            asset = token;
+            amount = optimalBorrow - currentBorrow;
             // Flash loan ETH/BTC from AAVE
             // In callback: Sell loan for USDC and repay debt
         }
         //To Decrease
         else {
+            asset = address(usdc);
+            amount = (currentBorrow - optimalBorrow).mulDiv(getPriceX128(token), 1 << 128);
             // In callback: Swap to ETH/BTC and deposit to AAVE
             // Send back some aUSDC to LB vault
         }
+    }
+
+    function _rebalanceTokenBorrow(
+        uint256 btcOptimalBorrow,
+        uint256 btcCurrentBorrow,
+        uint256 ethOptimalBorrow,
+        uint256 ethCurrentBorrow
+    ) internal {
+        address[] memory assets;
+        uint256[] memory amounts;
+        {
+            address btcAsset;
+            address ethAsset;
+            uint256 btcAssetAmount;
+            uint256 ethAssetAmount;
+
+            (btcAsset, btcAssetAmount) = _getTokenFlashloanAmounts(address(wbtc), btcOptimalBorrow, btcCurrentBorrow);
+            (ethAsset, ethAssetAmount) = _getTokenFlashloanAmounts(address(weth), ethOptimalBorrow, ethCurrentBorrow);
+
+            if (btcAsset == address(usdc) && ethAsset == address(usdc)) {
+                assets = new address[](1);
+                amounts = new uint256[](1);
+
+                assets[0] = address(usdc);
+                amounts[0] = (btcAssetAmount + ethAssetAmount);
+            } else {
+                assets = new address[](2);
+                amounts = new uint256[](2);
+                assets[0] = btcAsset;
+                assets[1] = ethAsset;
+                amounts[0] = btcAssetAmount;
+                amounts[1] = ethAssetAmount;
+            }
+        }
+        _executeFlashloan(assets, amounts);
     }
 
     function _getOptimalBorrows() internal view returns (uint256 optimalEthBorrow, uint256 optimalBtcBorrow) {
