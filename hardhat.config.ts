@@ -80,6 +80,26 @@ export default {
           },
         },
       },
+      {
+        version: '0.8.10',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 340,
+          },
+          metadata: {
+            // do not include the metadata hash, since this is machine dependent
+            // and we want all generated code to be deterministic
+            // https://docs.soliditylang.org/en/v0.8.10/metadata.html
+            bytecodeHash: 'none',
+          },
+          outputSelection: {
+            '*': {
+              '*': ['storageLayout'],
+            },
+          },
+        },
+      }
     ],
   },
   dependencyCompiler: {

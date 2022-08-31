@@ -9,12 +9,12 @@ import { IVault } from 'contracts/interfaces/gmx/IVault.sol';
 import { IGlpManager } from 'contracts/interfaces/gmx/IGlpManager.sol';
 import { IRewardRouterV2 } from 'contracts/interfaces/gmx/IRewardRouterV2.sol';
 import { IGlpStakingManager } from 'contracts/interfaces/gmx/IGlpStakingManager.sol';
+
 import { ILPVault } from 'contracts/interfaces/ILPVault.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 
-import { IClearingHouse } from '@ragetrade/core/contracts/interfaces/IClearingHouse.sol';
-import { ClearingHouseLens } from '@ragetrade/core/contracts/lens/ClearingHouseLens.sol';
-import { IUniswapV3Pool } from '@ragetrade/core/contracts/libraries/UniswapV3PoolHelper.sol';
+import { IPool } from '@aave/core-v3/contracts/interfaces/IPool.sol';
+import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol';
 
 import { ERC20PresetMinterPauser as CollateralToken } from '@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol';
 
@@ -22,6 +22,7 @@ contract DNGmxVaultStorage {
     ///@dev constants
 
     uint16 public constant MAX_BPS = 10_000;
+    uint256 public constant VARIABLE_INTEREST_MODE = 2;
 
     ///@dev common storage
 
@@ -37,7 +38,10 @@ contract DNGmxVaultStorage {
 
     ///@dev storage for hedge strategy
 
-    ISwapRouter public swapRouter;
+    IPool internal pool;
+    IPoolAddressesProvider internal poolAddressProvider;
+
+    ISwapRouter internal swapRouter;
 
     ///@dev storage for yield strategy
 

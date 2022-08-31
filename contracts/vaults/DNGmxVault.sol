@@ -14,17 +14,15 @@ import { SignedFullMath } from '@ragetrade/core/contracts/libraries/SignedFullMa
 import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
 import { FixedPoint128 } from '@uniswap/v3-core-0.8-support/contracts/libraries/FixedPoint128.sol';
 
-import { AddressHelper } from '@ragetrade/core/contracts/libraries/AddressHelper.sol';
-import { ClearingHouseExtsload } from '@ragetrade/core/contracts/extsloads/ClearingHouseExtsload.sol';
-
 import { IVault } from 'contracts/interfaces/gmx/IVault.sol';
 import { IGlpManager } from 'contracts/interfaces/gmx/IGlpManager.sol';
 import { ISGLPExtended } from 'contracts/interfaces/gmx/ISGLPExtended.sol';
 import { IRewardRouterV2 } from 'contracts/interfaces/gmx/IRewardRouterV2.sol';
 import { IGlpStakingManager } from 'contracts/interfaces/gmx/IGlpStakingManager.sol';
+
 import { ILPVault } from 'contracts/interfaces/ILPVault.sol';
-import { IClearingHouse } from '@ragetrade/core/contracts/interfaces/IClearingHouse.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
+
 import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
@@ -38,12 +36,12 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     using SignedMath for int256;
     using SignedFullMath for int256;
 
-    using AddressHelper for address;
-    using ClearingHouseExtsload for IClearingHouse;
-
     error InvalidRebalance();
     error DepositCap(uint256 depositCap, uint256 depositAmount);
     error OnlyKeeperAllowed(address msgSender, address authorisedKeeperAddress);
+
+    error ArraysLengthMismatch();
+    error FlashloanNotInitiated();
 
     event Rebalanced();
     event AllowancesGranted();
@@ -58,6 +56,14 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
 
     modifier onlyKeeper() {
         if (msg.sender != keeper) revert OnlyKeeperAllowed(msg.sender, keeper);
+        _;
+    }
+
+    modifier onlyAavePool() {
+        _;
+    }
+
+    modifier onlyAaveVault() {
         _;
     }
 
@@ -195,7 +201,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         usdcAmount = swapRouter.exactInput(params);
     }
 
-    function _swapUSDCToToken(address token, uint256 tokenAmount) internal returns (uint256 usdcAmount) {
+    function _swapUSDCToToken(address token, uint256 tokenAmount) internal returns (uint256 outputAmount) {
         bytes memory path = abi.encodePacked(usdc, uint24(500), token);
 
         ISwapRouter.ExactOutputParams memory params = ISwapRouter.ExactOutputParams({
@@ -206,11 +212,30 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
             deadline: block.timestamp
         });
 
-        usdcAmount = swapRouter.exactOutput(params);
+        outputAmount = swapRouter.exactOutput(params);
     }
 
-    function _executeFlashloan(address[] memory assets, uint256[] memory amounts) internal {
-        //TODO: implement flash loan call
+    function _executeFlashloan(
+        address[] memory assets,
+        uint256[] memory amounts,
+        bool repayDebt
+    ) internal {
+        if (assets.length != amounts.length) revert ArraysLengthMismatch();
+
+        uint256[] memory modes;
+        for (uint256 i; i < assets.length; ++i) {
+            modes[i] = VARIABLE_INTEREST_MODE;
+        }
+
+        pool.flashLoan(
+            address(this), // receiverAddress
+            assets, // assets
+            amounts, // amounts
+            modes, // interest modes
+            address(this), // onBehalfOf
+            abi.encodePacked(repayDebt), // params
+            0 // referralCode
+        );
     }
 
     function executeOperation(
@@ -219,34 +244,71 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         uint256[] calldata premiums,
         address initiator,
         bytes calldata params
-    ) external returns (bool) {}
+    ) external onlyAavePool {
+        if (initiator != address(this)) revert FlashloanNotInitiated();
+
+        bool repayDebt = abi.decode(params, (bool));
+
+        if (repayDebt) {
+            uint256 usdcLoaned = amounts[0];
+            // swap some portion to btc
+            uint256 btcAmount = _swapUSDCToToken(address(wbtc), usdcLoaned / 2);
+            // repay outstanding borrwed btc
+            pool.repay(address(wbtc), btcAmount, VARIABLE_INTEREST_MODE, address(this));
+
+            // swap some porition to eth
+            uint256 wethAmount = _swapUSDCToToken(address(weth), usdcLoaned / 2);
+            // repay outstanding borrowed eth
+            pool.repay(address(weth), wethAmount, VARIABLE_INTEREST_MODE, address(this));
+
+            return;
+        }
+
+        // sell btc for usdc
+        uint256 usdcAmountBtc = _swapTokenToUSDC(assets[0], amounts[0]);
+        // sell eth for usdc
+        uint256 usdcAmountEth = _swapTokenToUSDC(assets[1], amounts[1]);
+        // supply converted usdc as collateral
+        pool.supply(address(usdc), usdcAmountBtc + usdcAmountEth, address(this), 0);
+        // TODO: do something with received aUSDC, transfer to AaveVault?
+    }
 
     function getPriceX128(address token) internal view returns (uint256) {}
 
-    function _getTokenFlashloanAmounts(
+    function _flashloanAmounts(
         address token,
         uint256 optimalBorrow,
         uint256 currentBorrow
-    ) internal returns (address asset, uint256 amount) {
-        //check the delta between optimal position and actual position in token terms
-        //take that position using swap
-        //To Increase
+    )
+        internal
+        view
+        returns (
+            address asset,
+            uint256 amount,
+            bool repayDebt
+        )
+    {
+        // check the delta between optimal position and actual position in token terms
+        // take that position using swap
+        // To Increase
         if (optimalBorrow > currentBorrow) {
             asset = token;
             amount = optimalBorrow - currentBorrow;
+            repayDebt = false;
+            return (asset, amount, repayDebt);
             // Flash loan ETH/BTC from AAVE
             // In callback: Sell loan for USDC and repay debt
         }
-        //To Decrease
-        else {
-            asset = address(usdc);
-            amount = (currentBorrow - optimalBorrow).mulDiv(getPriceX128(token), 1 << 128);
-            // In callback: Swap to ETH/BTC and deposit to AAVE
-            // Send back some aUSDC to LB vault
-        }
+
+        // To Decrease
+        asset = address(usdc);
+        amount = (currentBorrow - optimalBorrow).mulDiv(getPriceX128(token), 1 << 128);
+        repayDebt = true;
+        // In callback: Swap to ETH/BTC and deposit to AAVE
+        // Send back some aUSDC to LB vault
     }
 
-    function _rebalanceTokenBorrow(
+    function _rebalanceBorrow(
         uint256 btcOptimalBorrow,
         uint256 btcCurrentBorrow,
         uint256 ethOptimalBorrow,
@@ -254,31 +316,33 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     ) internal {
         address[] memory assets;
         uint256[] memory amounts;
-        {
-            address btcAsset;
-            address ethAsset;
-            uint256 btcAssetAmount;
-            uint256 ethAssetAmount;
 
-            (btcAsset, btcAssetAmount) = _getTokenFlashloanAmounts(address(wbtc), btcOptimalBorrow, btcCurrentBorrow);
-            (ethAsset, ethAssetAmount) = _getTokenFlashloanAmounts(address(weth), ethOptimalBorrow, ethCurrentBorrow);
+        (address btcAsset, uint256 btcAssetAmount, bool repayDebtBtc) = _flashloanAmounts(
+            address(wbtc),
+            btcOptimalBorrow,
+            btcCurrentBorrow
+        );
+        (address ethAsset, uint256 ethAssetAmount, bool repayDebtEth) = _flashloanAmounts(
+            address(weth),
+            ethOptimalBorrow,
+            ethCurrentBorrow
+        );
 
-            if (btcAsset == address(usdc) && ethAsset == address(usdc)) {
-                assets = new address[](1);
-                amounts = new uint256[](1);
+        if (btcAsset == address(usdc) && ethAsset == address(usdc)) {
+            assets = new address[](1);
+            amounts = new uint256[](1);
 
-                assets[0] = address(usdc);
-                amounts[0] = (btcAssetAmount + ethAssetAmount);
-            } else {
-                assets = new address[](2);
-                amounts = new uint256[](2);
-                assets[0] = btcAsset;
-                assets[1] = ethAsset;
-                amounts[0] = btcAssetAmount;
-                amounts[1] = ethAssetAmount;
-            }
+            assets[0] = address(usdc);
+            amounts[0] = (btcAssetAmount + ethAssetAmount);
+        } else {
+            assets[0] = btcAsset;
+            assets[1] = ethAsset;
+
+            amounts[0] = btcAssetAmount;
+            amounts[1] = ethAssetAmount;
         }
-        _executeFlashloan(assets, amounts);
+
+        _executeFlashloan(assets, amounts, repayDebtBtc && repayDebtEth);
     }
 
     function _getOptimalBorrows() internal view returns (uint256 optimalEthBorrow, uint256 optimalBtcBorrow) {
@@ -337,12 +401,12 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
             // Take from LB Vault
             lpVault.borrow(borrowValueDiff);
             // Rebalance Position
-            // _rebalanceTokenBorrow();
+            // _rebalanceBorrow();
         } else {
             //TODO: normalize to get correct value of aUSDC amount to take from LB vault
             borrowValueDiff = supplyValue - borrowValue;
             // Rebalance Position
-            // _rebalanceTokenBorrow();
+            // _rebalanceBorrow();
             // Deposit to LB Vault
             lpVault.repay(borrowValueDiff);
         }
