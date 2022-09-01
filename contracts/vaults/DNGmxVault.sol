@@ -130,22 +130,36 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         emit RebalanceParamsUpdated(_rsParams.rebalanceTimeThreshold, _rsParams.rebalanceDeltaThreshold);
     }
 
-    function rebalance() external onlyKeeper {
-        if (!isValidRebalance()) revert InvalidRebalance();
+    function _getBorrowValue(uint256 btcAmount, uint256 ethAmount) internal view returns (uint256 borrowValue) {
+        borrowValue =
+            btcAmount.mulDiv(getPriceX128(address(wbtc)), 1 << 128) +
+            ethAmount.mulDiv(getPriceX128(address(weth)), 1 << 128);
+    }
 
+    function _rebalance(uint256 glpDeposited) internal {
         //harvest fees
         stakingManager.harvestFees();
+
+        uint256 collateralDeposited; // = get collateral deposited to LB protocol
+        (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
+        uint256 totalCurrentBorrowValue = _getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
+        uint256 totalOptimalBorrowValue; // = total position value of final btc and eth position
+
+        //rebalance profit
+        _rebalanceProfit(totalCurrentBorrowValue);
 
         //calculate current btc and eth positions in GLP
         //get the position value and calculate the collateral needed to borrow that
         //transfer collateral from LB vault to DN vault
-        {
-            uint256 collateralDeposited; // = get collateral deposited to LB protocol
-            uint256 totalPositionValue; // = total position value of final btc and eth position
-            _rebalanceSupplyAndBorrow(collateralDeposited, totalPositionValue);
-        }
+        _rebalanceSupplyAndBorrow(collateralDeposited, totalOptimalBorrowValue);
 
         emit Rebalanced();
+    }
+
+    function rebalance() external onlyKeeper {
+        if (!isValidRebalance()) revert InvalidRebalance();
+
+        _rebalance(totalAssets());
     }
 
     function totalAssets() public view override returns (uint256) {
@@ -177,10 +191,9 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     }
 
     function _isValidRebalanceDeviation() internal view returns (bool) {
-        uint256 currentEthBorrow;
-        uint256 currentBtcBorrow;
+        (uint256 currentBtcBorrow, uint256 currentEthBorrow) = _getCurrentBorrows();
 
-        (uint256 optimalEthBorrow, uint256 optimalBtcBorrow) = _getOptimalBorrows();
+        (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrows(totalAssets());
 
         return
             !(_isWithinAllowedDelta(optimalEthBorrow, currentEthBorrow) &&
@@ -238,6 +251,18 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         );
     }
 
+    function _executeRepay(address token, uint256 amount) internal {
+        pool.repay(token, amount, VARIABLE_INTEREST_MODE, address(this));
+    }
+
+    function _executeSupply(address token, uint256 amount) internal {
+        pool.supply(token, amount, address(this), 0);
+    }
+
+    function _executeWithdraw(address token, uint256 amount) internal {
+        pool.withdraw(token, amount, address(this));
+    }
+
     function executeOperation(
         address[] calldata assets,
         uint256[] calldata amounts,
@@ -273,39 +298,42 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         // TODO: do something with received aUSDC, transfer to AaveVault?
     }
 
-    function getPriceX128(address token) internal view returns (uint256) {}
+    function getPriceX128(address token) internal view returns (uint256) {
+        //TODO: return price of the token (eth or btc)
+    }
 
     function _flashloanAmounts(
         address token,
         uint256 optimalBorrow,
         uint256 currentBorrow
-    )
-        internal
-        view
-        returns (
-            address asset,
-            uint256 amount,
-            bool repayDebt
-        )
-    {
+    ) internal view returns (uint256 amount, bool repayDebt) {
         // check the delta between optimal position and actual position in token terms
         // take that position using swap
         // To Increase
         if (optimalBorrow > currentBorrow) {
-            asset = token;
             amount = optimalBorrow - currentBorrow;
             repayDebt = false;
-            return (asset, amount, repayDebt);
             // Flash loan ETH/BTC from AAVE
             // In callback: Sell loan for USDC and repay debt
+        } else {
+            // To Decrease
+            amount = (currentBorrow - optimalBorrow).mulDiv(getPriceX128(token), 1 << 128);
+            repayDebt = true;
+            // In callback: Swap to ETH/BTC and deposit to AAVE
+            // Send back some aUSDC to LB vault
         }
+    }
 
-        // To Decrease
-        asset = address(usdc);
-        amount = (currentBorrow - optimalBorrow).mulDiv(getPriceX128(token), 1 << 128);
-        repayDebt = true;
-        // In callback: Swap to ETH/BTC and deposit to AAVE
-        // Send back some aUSDC to LB vault
+    function _rebalanceProfit(uint256 borrowValue) internal {
+        if (borrowValue > dnUsdcDeposited) {
+            // If glp goes up - there is profit on GMX and loss on AAVE
+            // So convert some glp to usdc and deposit to AAVE
+            _convertAssetToAUsdc(borrowValue - dnUsdcDeposited);
+        } else {
+            // If glp goes down - there is profit on AAVE and loss on GMX
+            // So withdraw some aave usdc and convert to glp
+            _convertAUsdcToAsset(dnUsdcDeposited - borrowValue);
+        }
     }
 
     function _rebalanceBorrow(
@@ -317,26 +345,26 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         address[] memory assets;
         uint256[] memory amounts;
 
-        (address btcAsset, uint256 btcAssetAmount, bool repayDebtBtc) = _flashloanAmounts(
+        (uint256 btcAssetAmount, bool repayDebtBtc) = _flashloanAmounts(
             address(wbtc),
             btcOptimalBorrow,
             btcCurrentBorrow
         );
-        (address ethAsset, uint256 ethAssetAmount, bool repayDebtEth) = _flashloanAmounts(
+        (uint256 ethAssetAmount, bool repayDebtEth) = _flashloanAmounts(
             address(weth),
             ethOptimalBorrow,
             ethCurrentBorrow
         );
 
-        if (btcAsset == address(usdc) && ethAsset == address(usdc)) {
+        if (repayDebtBtc && repayDebtEth) {
             assets = new address[](1);
             amounts = new uint256[](1);
 
             assets[0] = address(usdc);
             amounts[0] = (btcAssetAmount + ethAssetAmount);
         } else {
-            assets[0] = btcAsset;
-            assets[1] = ethAsset;
+            assets[0] = repayDebtBtc ? address(usdc) : address(wbtc);
+            assets[1] = repayDebtEth ? address(usdc) : address(weth);
 
             amounts[0] = btcAssetAmount;
             amounts[1] = ethAssetAmount;
@@ -345,9 +373,16 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         _executeFlashloan(assets, amounts, repayDebtBtc && repayDebtEth);
     }
 
-    function _getOptimalBorrows() internal view returns (uint256 optimalEthBorrow, uint256 optimalBtcBorrow) {
-        uint256 glpDeposited = totalAssets();
+    function _getCurrentBorrows() internal view returns (uint256 currentBtcBorrow, uint256 currentEthBorrow) {
+        //TODO: protodev - get current eth and btc borrow amounts;
+    }
 
+    //TODO: make this to use glpDeposited as input.
+    function _getOptimalBorrows(uint256 glpDeposited)
+        internal
+        view
+        returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow)
+    {
         uint256 ethReservesOfGlp = _getTokenReservesInGlp(address(weth));
         uint256 btcReservesOfGlp = _getTokenReservesInGlp(address(wbtc));
 
@@ -375,6 +410,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         address
     ) internal override {
         stakingManager.withdraw(assets, address(this), address(this));
+        //TODO: add decrease of short (rebalance basis the final assets)
     }
 
     function afterDeposit(
@@ -384,6 +420,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     ) internal override {
         // TODO: add deposit cap in after deposit hook by querying from staking manager
         stakingManager.deposit(assets, address(this));
+        //TODO: add increase of short (rebalance basis the final assets)
     }
 
     /// @notice settles collateral for the vault
@@ -414,7 +451,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
 
     /// @notice withdraws LP tokens from gauge, sells LP token for usdc
     /// @param usdcAmountDesired amount of USDC desired
-    function _convertAssetToSettlementToken(uint256 usdcAmountDesired) internal returns (uint256 usdcAmount) {
+    function _convertAssetToAUsdc(uint256 usdcAmountDesired) internal returns (uint256 usdcAmount) {
         /// @dev if usdcAmountDesired < 10, then there is precision issue in gmx contracts while redeeming for usdg
         if (usdcAmountDesired < usdcConversionThreshold) return 0;
         uint256 glpAmountDesired = usdcAmountDesired.mulDiv(1 << 128, getPriceX128());
@@ -428,11 +465,14 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         );
 
         usdcAmount = usdc.balanceOf(address(this));
+
+        _executeSupply(address(usdc), usdcAmount);
     }
 
     /// @notice sells usdc for LP tokens and then stakes LP tokens
     /// @param amount amount of usdc
-    function _convertSettlementTokenToAsset(uint256 amount) internal {
+    function _convertAUsdcToAsset(uint256 amount) internal {
+        _executeWithdraw(address(usdc), amount);
         //USDG has 18 decimals and usdc has 6 decimals => 18-6 = 12
         stakingManager.depositToken(address(usdc), amount);
     }
