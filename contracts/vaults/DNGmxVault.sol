@@ -31,6 +31,10 @@ import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/I
 import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import { PausableUpgradeable } from '@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol';
 
+import { IPool } from '@aave/core-v3/contracts/interfaces/IPool.sol';
+import { IPriceOracle } from '@aave/core-v3/contracts/interfaces/IPriceOracle.sol';
+import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol';
+
 contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable, DNGmxVaultStorage {
     using FullMath for uint256;
     using SafeCast for uint256;
@@ -51,9 +55,9 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     event Rebalanced();
     event AllowancesGranted();
 
+    event LPVaultUpdated(address _lpVault);
     event KeeperUpdated(address _newKeeper);
     event DepositCapUpdated(uint256 _newDepositCap);
-    event LPVaultUpdated(address _lpVault);
     event StakingManagerUpdated(address _stakingManager);
 
     event YieldParamsUpdated(uint16 indexed usdcReedemSlippage, uint240 indexed usdcConversionThreshold);
@@ -77,7 +81,9 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     function initialize(
         string calldata _name,
         string calldata _symbol,
+        address _swapRouter,
         address _rewardRouter,
+        address _poolAddressesProvider,
         TokenAddresses calldata _tokenAddrs
     ) external initializer {
         __Ownable_init();
@@ -88,19 +94,31 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         wbtc = _tokenAddrs.wbtc;
         usdc = _tokenAddrs.usdc;
 
+        swapRouter = ISwapRouter(_swapRouter);
         rewardRouter = IRewardRouterV2(_rewardRouter);
 
         glp = IERC20(ISGLPExtended(address(asset)).glp());
-        fsGlp = IERC20(ISGLPExtended(address(asset)).stakedGlpTracker());
         glpManager = IGlpManager(ISGLPExtended(address(asset)).glpManager());
 
         gmxVault = IVault(glpManager.vault());
+
+        poolAddressProvider = IPoolAddressesProvider(_poolAddressesProvider);
+
+        pool = IPool(poolAddressProvider.getPool());
+        oracle = IPriceOracle(poolAddressProvider.getPriceOracle());
     }
 
     function grantAllowances() external onlyOwner {
-        asset.approve(address(stakingManager), type(uint256).max);
+        address aavePool = address(pool);
 
+        wbtc.approve(aavePool, type(uint256).max);
+        weth.approve(aavePool, type(uint256).max);
+
+        usdc.approve(aavePool, type(uint256).max);
         usdc.approve(address(stakingManager), type(uint256).max);
+
+        asset.approve(address(glpManager), type(uint256).max);
+        asset.approve(address(stakingManager), type(uint256).max);
 
         emit AllowancesGranted();
     }
@@ -148,13 +166,13 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     function _getSupplyValue() internal view returns (uint256 supplyValue) {}
 
     function _rebalanceBeforeShareAllocation() internal {
-        //harvest fees
+        // harvest fees
         stakingManager.harvestFees();
 
         (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
         uint256 totalCurrentBorrowValue = _getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
 
-        //rebalance profit
+        // rebalance profit
         _rebalanceProfit(totalCurrentBorrowValue);
     }
 
@@ -189,18 +207,18 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     function rebalance() external onlyKeeper {
         if (!isValidRebalance()) revert InvalidRebalance();
 
-        //harvest fees
+        // harvest fees
         stakingManager.harvestFees();
 
         (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
         uint256 totalCurrentBorrowValue = _getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
 
-        //rebalance profit
+        // rebalance profit
         _rebalanceProfit(totalCurrentBorrowValue);
 
-        //calculate current btc and eth positions in GLP
-        //get the position value and calculate the collateral needed to borrow that
-        //transfer collateral from LB vault to DN vault
+        // calculate current btc and eth positions in GLP
+        // get the position value and calculate the collateral needed to borrow that
+        // transfer collateral from LB vault to DN vault
         _rebalanceHedge(currentBtc, currentEth, totalAssets());
 
         emit Rebalanced();
@@ -222,7 +240,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     }
 
     function getVaultMarketValue() public view returns (int256 vaultMarketValue) {
-        //TODO: include any other pnls
+        // TODO: include any other pnls
         vaultMarketValue = (getMarketValue(totalAssets())).toInt256();
     }
 
@@ -247,10 +265,15 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     function _swapTokenToUSDC(address token, uint256 tokenAmount) internal returns (uint256 usdcAmount) {
         bytes memory path = abi.encodePacked(token, uint24(500), usdc);
 
+        uint256 minAmountOut = getPriceX128(token).mulDiv(
+            tokenAmount * (MAX_BPS + usdcReedemSlippage),
+            MAX_BPS * FixedPoint128.Q128
+        );
+
         ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
             path: path,
             amountIn: tokenAmount,
-            amountOutMinimum: 0,
+            amountOutMinimum: minAmountOut,
             recipient: address(this),
             deadline: block.timestamp
         });
@@ -261,9 +284,14 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     function _swapUSDCToToken(address token, uint256 tokenAmount) internal returns (uint256 outputAmount) {
         bytes memory path = abi.encodePacked(usdc, uint24(500), token);
 
+        uint256 maxAmountIn = getPriceX128(token).mulDiv(
+            tokenAmount * (MAX_BPS - usdcReedemSlippage),
+            MAX_BPS * FixedPoint128.Q128
+        );
+
         ISwapRouter.ExactOutputParams memory params = ISwapRouter.ExactOutputParams({
             path: path,
-            amountInMaximum: 0,
+            amountInMaximum: maxAmountIn,
             amountOut: tokenAmount,
             recipient: address(this),
             deadline: block.timestamp
@@ -358,7 +386,13 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     }
 
     function getPriceX128(address token) internal view returns (uint256) {
-        //TODO: return price of the token (eth or btc)
+        uint256 decimals;
+        token == address(wbtc) ? decimals = 8 : decimals = 18;
+
+        uint256 price = oracle.getAssetPrice(token);
+
+        // @dev aave returns price in wei format
+        return price.mulDiv(FixedPoint128.Q128 * 10**6, 10**18 * 10**decimals);
     }
 
     function _flashloanAmounts(
