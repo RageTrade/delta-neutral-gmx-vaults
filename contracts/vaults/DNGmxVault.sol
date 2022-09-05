@@ -23,6 +23,8 @@ import { IGlpStakingManager } from 'contracts/interfaces/gmx/IGlpStakingManager.
 import { ILPVault } from 'contracts/interfaces/ILPVault.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 
+import { IBalancerVault } from 'contracts/interfaces/IBalancerVault.sol';
+
 import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
@@ -39,6 +41,9 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     error InvalidRebalance();
     error DepositCap(uint256 depositCap, uint256 depositAmount);
     error OnlyKeeperAllowed(address msgSender, address authorisedKeeperAddress);
+
+    error NotLpVault();
+    error NotBalancerVault();
 
     error ArraysLengthMismatch();
     error FlashloanNotInitiated();
@@ -59,11 +64,13 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         _;
     }
 
-    modifier onlyAavePool() {
+    modifier onlyBalancerVault() {
+        if (msg.sender != address(balancerVault)) revert NotBalancerVault();
         _;
     }
 
     modifier onlyAaveVault() {
+        if (msg.sender != address(lpVault)) revert NotLpVault();
         _;
     }
 
@@ -130,7 +137,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         emit RebalanceParamsUpdated(_rsParams.rebalanceTimeThreshold, _rsParams.rebalanceDeltaThreshold);
     }
 
-    ///returns the borrow value in USDC
+    /// @dev returns the borrow value in USDC
     function _getBorrowValue(uint256 btcAmount, uint256 ethAmount) internal view returns (uint256 borrowValue) {
         borrowValue =
             btcAmount.mulDiv(getPriceX128(address(wbtc)), 1 << 128) +
@@ -268,23 +275,18 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     function _executeFlashloan(
         address[] memory assets,
         uint256[] memory amounts,
-        bytes memory params
+        uint256 _btcAssetAmount,
+        uint256 _ethAssetAmount,
+        bool _repayDebtBtc,
+        bool _repayDebtEth
     ) internal {
         if (assets.length != amounts.length) revert ArraysLengthMismatch();
 
-        uint256[] memory modes;
-        for (uint256 i; i < assets.length; ++i) {
-            modes[i] = VARIABLE_INTEREST_MODE;
-        }
-
-        pool.flashLoan(
-            address(this), // receiverAddress
-            assets, // assets
-            amounts, // amounts
-            modes, // interest modes
-            address(this), // onBehalfOf
-            params, // params
-            0 // referralCode
+        balancerVault.flashLoan(
+            address(this),
+            assets,
+            amounts,
+            abi.encode(_btcAssetAmount, _ethAssetAmount, _repayDebtBtc, _repayDebtEth)
         );
     }
 
@@ -302,37 +304,6 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
 
     function _executeWithdraw(address token, uint256 amount) internal {
         pool.withdraw(token, amount, address(this));
-    }
-
-    function executeOperation(
-        address[] calldata,
-        uint256[] calldata amounts,
-        uint256[] calldata premiums,
-        address initiator,
-        bytes calldata params
-    ) external onlyAavePool {
-        if (initiator != address(this)) revert FlashloanNotInitiated();
-
-        (uint256 btcAssetAmount, uint256 ethAssetAmount, bool repayDebtBtc, bool repayDebtEth) = abi.decode(
-            params,
-            (uint256, uint256, bool, bool)
-        );
-
-        uint256 btcAssetPremium;
-        uint256 ethAssetPremium;
-        //adjust asset amounts for premiums (zero for balancer at the time of dev)
-        if (repayDebtBtc && repayDebtEth) {
-            //Here amounts[0] should be equal to btcAssetAmount+ethAssetAmount
-            btcAssetPremium = premiums[0].mulDiv(btcAssetAmount, amounts[0]);
-            ethAssetPremium = (premiums[0] - btcAssetPremium);
-        } else {
-            //Here amounts[0] should be equal to btcAssetAmount and amounts[1] should be equal to ethAssetAmount
-            btcAssetPremium = premiums[0];
-            ethAssetPremium = premiums[1];
-        }
-
-        _executeOperationToken(address(wbtc), btcAssetAmount, btcAssetPremium, repayDebtBtc);
-        _executeOperationToken(address(weth), ethAssetAmount, ethAssetPremium, repayDebtEth);
     }
 
     function _executeOperationToken(
@@ -354,6 +325,36 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
             _executeWithdraw(address(usdc), amount + premium);
             //TODO: check if any approval needs to be given to balancer vault to receive the btc back
         }
+    }
+
+    function receiveFlashLoan(
+        IERC20[] memory tokens,
+        uint256[] memory amounts,
+        uint256[] memory feeAmounts,
+        bytes memory userData
+    ) external onlyBalancerVault {
+        // TODO: add a check that flashloan is initiated by our contract
+
+        (uint256 btcAssetAmount, uint256 ethAssetAmount, bool repayDebtBtc, bool repayDebtEth) = abi.decode(
+            userData,
+            (uint256, uint256, bool, bool)
+        );
+
+        uint256 btcAssetPremium;
+        uint256 ethAssetPremium;
+        // adjust asset amounts for premiums (zero for balancer at the time of dev)
+        if (repayDebtBtc && repayDebtEth) {
+            // Here amounts[0] should be equal to btcAssetAmount+ethAssetAmount
+            btcAssetPremium = feeAmounts[0].mulDiv(btcAssetAmount, amounts[0]);
+            ethAssetPremium = (feeAmounts[0] - btcAssetPremium);
+        } else {
+            // Here amounts[0] should be equal to btcAssetAmount and amounts[1] should be equal to ethAssetAmount
+            btcAssetPremium = feeAmounts[0];
+            ethAssetPremium = feeAmounts[1];
+        }
+
+        _executeOperationToken(address(wbtc), btcAssetAmount, btcAssetPremium, repayDebtBtc);
+        _executeOperationToken(address(weth), ethAssetAmount, ethAssetPremium, repayDebtEth);
     }
 
     function getPriceX128(address token) internal view returns (uint256) {
@@ -425,7 +426,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
             amounts[1] = ethAssetAmount;
         }
 
-        _executeFlashloan(assets, amounts, abi.encode(btcAssetAmount, ethAssetAmount, repayDebtBtc, repayDebtEth));
+        _executeFlashloan(assets, amounts, btcAssetAmount, ethAssetAmount, repayDebtBtc, repayDebtEth);
     }
 
     function _getCurrentBorrows() internal view returns (uint256 currentBtcBorrow, uint256 currentEthBorrow) {

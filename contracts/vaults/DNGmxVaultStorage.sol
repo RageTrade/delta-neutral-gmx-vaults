@@ -14,10 +14,11 @@ import { ILPVault } from 'contracts/interfaces/ILPVault.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 
 import { IPool } from '@aave/core-v3/contracts/interfaces/IPool.sol';
-import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol';
 import { IAToken } from '@aave/core-v3/contracts/interfaces/IAToken.sol';
-
 import { IVariableDebtToken } from '@aave/core-v3/contracts/interfaces/IVariableDebtToken.sol';
+import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol';
+
+import { IBalancerVault } from 'contracts/interfaces/IBalancerVault.sol';
 
 import { ERC20PresetMinterPauser as CollateralToken } from '@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol';
 
@@ -47,6 +48,7 @@ contract DNGmxVaultStorage {
 
     IPool internal pool;
     IPoolAddressesProvider internal poolAddressProvider;
+
     uint256 internal targetHealthFactor;
     uint256 internal liquidationThreshold;
 
@@ -55,6 +57,8 @@ contract DNGmxVaultStorage {
     IDebtToken internal vWeth;
 
     ISwapRouter internal swapRouter;
+
+    IBalancerVault internal balancerVault;
 
     ///@dev storage for yield strategy
 
