@@ -151,24 +151,6 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         _rebalanceProfit(totalCurrentBorrowValue);
     }
 
-    function _rebalance(uint256 glpDeposited) internal {
-        //harvest fees
-        stakingManager.harvestFees();
-
-        (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
-        uint256 totalCurrentBorrowValue = _getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
-
-        //rebalance profit
-        _rebalanceProfit(totalCurrentBorrowValue);
-
-        //calculate current btc and eth positions in GLP
-        //get the position value and calculate the collateral needed to borrow that
-        //transfer collateral from LB vault to DN vault
-        _rebalanceHedge(currentBtc, currentEth, totalAssets());
-
-        emit Rebalanced();
-    }
-
     function deposit(uint256 amount, address to) public virtual override returns (uint256 shares) {
         _rebalanceBeforeShareAllocation();
         shares = super.deposit(amount, to);
@@ -200,7 +182,21 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     function rebalance() external onlyKeeper {
         if (!isValidRebalance()) revert InvalidRebalance();
 
-        _rebalance(totalAssets());
+        //harvest fees
+        stakingManager.harvestFees();
+
+        (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
+        uint256 totalCurrentBorrowValue = _getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
+
+        //rebalance profit
+        _rebalanceProfit(totalCurrentBorrowValue);
+
+        //calculate current btc and eth positions in GLP
+        //get the position value and calculate the collateral needed to borrow that
+        //transfer collateral from LB vault to DN vault
+        _rebalanceHedge(currentBtc, currentEth, totalAssets());
+
+        emit Rebalanced();
     }
 
     function totalAssets() public view override returns (uint256) {
@@ -309,7 +305,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     }
 
     function executeOperation(
-        address[] calldata assets,
+        address[] calldata,
         uint256[] calldata amounts,
         uint256[] calldata premiums,
         address initiator,
@@ -419,9 +415,6 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         );
 
         if (repayDebtBtc && repayDebtEth) {
-            assets = new address[](1);
-            amounts = new uint256[](1);
-
             assets[0] = address(usdc);
             amounts[0] = (btcAssetAmount + ethAssetAmount);
         } else {
