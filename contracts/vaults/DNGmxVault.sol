@@ -130,7 +130,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         emit RebalanceParamsUpdated(_rsParams.rebalanceTimeThreshold, _rsParams.rebalanceDeltaThreshold);
     }
 
-    ///@dev: returns the borrow value in USDC
+    ///returns the borrow value in USDC
     function _getBorrowValue(uint256 btcAmount, uint256 ethAmount) internal view returns (uint256 borrowValue) {
         borrowValue =
             btcAmount.mulDiv(getPriceX128(address(wbtc)), 1 << 128) +
@@ -272,7 +272,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     function _executeFlashloan(
         address[] memory assets,
         uint256[] memory amounts,
-        bool repayDebt
+        bytes memory params
     ) internal {
         if (assets.length != amounts.length) revert ArraysLengthMismatch();
 
@@ -287,9 +287,13 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
             amounts, // amounts
             modes, // interest modes
             address(this), // onBehalfOf
-            abi.encodePacked(repayDebt), // params
+            params, // params
             0 // referralCode
         );
+    }
+
+    function _executeBorrow(address token, uint256 amount) internal {
+        pool.borrow(token, amount, VARIABLE_INTEREST_MODE, 0, address(this));
     }
 
     function _executeRepay(address token, uint256 amount) internal {
@@ -313,30 +317,47 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     ) external onlyAavePool {
         if (initiator != address(this)) revert FlashloanNotInitiated();
 
-        bool repayDebt = abi.decode(params, (bool));
+        (uint256 btcAssetAmount, uint256 ethAssetAmount, bool repayDebtBtc, bool repayDebtEth) = abi.decode(
+            params,
+            (uint256, uint256, bool, bool)
+        );
 
-        if (repayDebt) {
-            uint256 usdcLoaned = amounts[0];
-            // swap some portion to btc
-            uint256 btcAmount = _swapUSDCToToken(address(wbtc), usdcLoaned / 2);
-            // repay outstanding borrwed btc
-            pool.repay(address(wbtc), btcAmount, VARIABLE_INTEREST_MODE, address(this));
-
-            // swap some porition to eth
-            uint256 wethAmount = _swapUSDCToToken(address(weth), usdcLoaned / 2);
-            // repay outstanding borrowed eth
-            pool.repay(address(weth), wethAmount, VARIABLE_INTEREST_MODE, address(this));
-
-            return;
+        uint256 btcAssetPremium;
+        uint256 ethAssetPremium;
+        //adjust asset amounts for premiums (zero for balancer at the time of dev)
+        if (repayDebtBtc && repayDebtEth) {
+            //Here amounts[0] should be equal to btcAssetAmount+ethAssetAmount
+            btcAssetPremium = premiums[0].mulDiv(btcAssetAmount, amounts[0]);
+            ethAssetPremium = (premiums[0] - btcAssetPremium);
+        } else {
+            //Here amounts[0] should be equal to btcAssetAmount and amounts[1] should be equal to ethAssetAmount
+            btcAssetPremium = premiums[0];
+            ethAssetPremium = premiums[1];
         }
 
-        // sell btc for usdc
-        uint256 usdcAmountBtc = _swapTokenToUSDC(assets[0], amounts[0]);
-        // sell eth for usdc
-        uint256 usdcAmountEth = _swapTokenToUSDC(assets[1], amounts[1]);
-        // supply converted usdc as collateral
-        pool.supply(address(usdc), usdcAmountBtc + usdcAmountEth, address(this), 0);
-        // TODO: do something with received aUSDC, transfer to AaveVault?
+        _executeOperationToken(address(wbtc), btcAssetAmount, btcAssetPremium, repayDebtBtc);
+        _executeOperationToken(address(weth), ethAssetAmount, ethAssetPremium, repayDebtEth);
+    }
+
+    function _executeOperationToken(
+        address token,
+        uint256 amount,
+        uint256 premium,
+        bool repayDebt
+    ) internal {
+        if (!repayDebt) {
+            uint256 usdcReceived = _swapTokenToUSDC(token, amount);
+            dnUsdcDeposited += usdcReceived;
+            _executeSupply(address(usdc), usdcReceived);
+            _executeBorrow(token, amount + premium);
+            //TODO: check if any approval needs to be given to balancer vault to receive the btc back
+        } else {
+            uint256 tokenReceived = _swapUSDCToToken(token, amount);
+            _executeRepay(token, tokenReceived);
+            dnUsdcDeposited -= (amount + premium);
+            _executeWithdraw(address(usdc), amount + premium);
+            //TODO: check if any approval needs to be given to balancer vault to receive the btc back
+        }
     }
 
     function getPriceX128(address token) internal view returns (uint256) {
@@ -411,7 +432,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
             amounts[1] = ethAssetAmount;
         }
 
-        _executeFlashloan(assets, amounts, repayDebtBtc && repayDebtEth);
+        _executeFlashloan(assets, amounts, abi.encode(btcAssetAmount, ethAssetAmount, repayDebtBtc, repayDebtEth));
     }
 
     function _getCurrentBorrows() internal view returns (uint256 currentBtcBorrow, uint256 currentEthBorrow) {
