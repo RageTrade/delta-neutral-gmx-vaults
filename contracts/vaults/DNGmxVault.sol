@@ -130,20 +130,33 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         emit RebalanceParamsUpdated(_rsParams.rebalanceTimeThreshold, _rsParams.rebalanceDeltaThreshold);
     }
 
+    ///@dev: returns the borrow value in USDC
     function _getBorrowValue(uint256 btcAmount, uint256 ethAmount) internal view returns (uint256 borrowValue) {
         borrowValue =
             btcAmount.mulDiv(getPriceX128(address(wbtc)), 1 << 128) +
             ethAmount.mulDiv(getPriceX128(address(weth)), 1 << 128);
+        borrowValue = borrowValue.mulDiv(1 << 128, getPriceX128(address(usdc)));
+    }
+
+    function _getSupplyValue() internal view returns (uint256 supplyValue) {}
+
+    function _rebalanceBeforeShareAllocation() internal {
+        //harvest fees
+        stakingManager.harvestFees();
+
+        (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
+        uint256 totalCurrentBorrowValue = _getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
+
+        //rebalance profit
+        _rebalanceProfit(totalCurrentBorrowValue);
     }
 
     function _rebalance(uint256 glpDeposited) internal {
         //harvest fees
         stakingManager.harvestFees();
 
-        uint256 collateralDeposited; // = get collateral deposited to LB protocol
         (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
         uint256 totalCurrentBorrowValue = _getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
-        uint256 totalOptimalBorrowValue; // = total position value of final btc and eth position
 
         //rebalance profit
         _rebalanceProfit(totalCurrentBorrowValue);
@@ -151,9 +164,37 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         //calculate current btc and eth positions in GLP
         //get the position value and calculate the collateral needed to borrow that
         //transfer collateral from LB vault to DN vault
-        _rebalanceSupplyAndBorrow(collateralDeposited, totalOptimalBorrowValue);
+        _rebalanceHedge(currentBtc, currentEth);
 
         emit Rebalanced();
+    }
+
+    function deposit(uint256 amount, address to) public virtual override returns (uint256 shares) {
+        _rebalanceBeforeShareAllocation();
+        shares = super.deposit(amount, to);
+    }
+
+    function mint(uint256 shares, address to) public virtual override returns (uint256 amount) {
+        _rebalanceBeforeShareAllocation();
+        amount = super.mint(shares, to);
+    }
+
+    function withdraw(
+        uint256 amount,
+        address to,
+        address from
+    ) public override returns (uint256 shares) {
+        _rebalanceBeforeShareAllocation();
+        shares = super.withdraw(amount, to, from);
+    }
+
+    function redeem(
+        uint256 shares,
+        address to,
+        address from
+    ) public override returns (uint256 amount) {
+        _rebalanceBeforeShareAllocation();
+        amount = super.redeem(shares, to, from);
     }
 
     function rebalance() external onlyKeeper {
@@ -337,23 +378,23 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     }
 
     function _rebalanceBorrow(
-        uint256 btcOptimalBorrow,
-        uint256 btcCurrentBorrow,
-        uint256 ethOptimalBorrow,
-        uint256 ethCurrentBorrow
+        uint256 optimalBtcBorrow,
+        uint256 currentBtcBorrow,
+        uint256 optimalEthBorrow,
+        uint256 currentEthBorrow
     ) internal {
         address[] memory assets;
         uint256[] memory amounts;
 
         (uint256 btcAssetAmount, bool repayDebtBtc) = _flashloanAmounts(
             address(wbtc),
-            btcOptimalBorrow,
-            btcCurrentBorrow
+            optimalBtcBorrow,
+            currentBtcBorrow
         );
         (uint256 ethAssetAmount, bool repayDebtEth) = _flashloanAmounts(
             address(weth),
-            ethOptimalBorrow,
-            ethCurrentBorrow
+            optimalEthBorrow,
+            currentEthBorrow
         );
 
         if (repayDebtBtc && repayDebtEth) {
@@ -374,7 +415,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     }
 
     function _getCurrentBorrows() internal view returns (uint256 currentBtcBorrow, uint256 currentEthBorrow) {
-        //TODO: protodev - get current eth and btc borrow amounts;
+        return (vWbtc.balanceOf(address(this)), vWeth.balanceOf(address(this)));
     }
 
     //TODO: make this to use glpDeposited as input.
@@ -425,27 +466,29 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
 
     /// @notice settles collateral for the vault
     /// @dev to be called after settle profits only (since vaultMarketValue if after settlement of profits)
-    /// @param supplyValue The amount of USDC collateral token deposited to LB Protocol
-    /// @param borrowValue The market value of ETH/BTC part in sGLP
-    function _rebalanceSupplyAndBorrow(uint256 supplyValue, uint256 borrowValue) internal {
+    /// @param currentBtcBorrow The amount of USDC collateral token deposited to LB Protocol
+    /// @param currentEthBorrow The market value of ETH/BTC part in sGLP
+    function _rebalanceHedge(uint256 currentBtcBorrow, uint256 currentEthBorrow) internal {
+        (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrows(totalAssets());
+        uint256 optimalBorrowValue = _getBorrowValue(optimalBtcBorrow, optimalEthBorrow);
         // Settle net change in market value and deposit/withdraw collateral tokens
         // Vault market value is just the collateral value since profit has been settled
-        uint256 borrowValueDiff;
-        if (borrowValue > supplyValue) {
-            //TODO: normalize to get correct value of aUSDC amount to take from LB vault
-            borrowValueDiff = borrowValue - supplyValue;
+        uint256 targetLpVaultAmount = (targetHealthFactor - liquidationThreshold).mulDiv(
+            optimalBorrowValue,
+            liquidationThreshold
+        );
+        uint256 currentLpVaultAmount = aUsdc.balanceOf(address(this)) - dnUsdcDeposited;
 
+        if (targetLpVaultAmount > currentLpVaultAmount) {
             // Take from LB Vault
-            lpVault.borrow(borrowValueDiff);
+            lpVault.borrow(targetLpVaultAmount - currentLpVaultAmount);
             // Rebalance Position
-            // _rebalanceBorrow();
+            _rebalanceBorrow(optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
         } else {
-            //TODO: normalize to get correct value of aUSDC amount to take from LB vault
-            borrowValueDiff = supplyValue - borrowValue;
             // Rebalance Position
-            // _rebalanceBorrow();
+            _rebalanceBorrow(optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
             // Deposit to LB Vault
-            lpVault.repay(borrowValueDiff);
+            lpVault.repay(currentLpVaultAmount - targetLpVaultAmount);
         }
     }
 
