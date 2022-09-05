@@ -164,7 +164,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         //calculate current btc and eth positions in GLP
         //get the position value and calculate the collateral needed to borrow that
         //transfer collateral from LB vault to DN vault
-        _rebalanceHedge(currentBtc, currentEth);
+        _rebalanceHedge(currentBtc, currentEth, totalAssets());
 
         emit Rebalanced();
     }
@@ -451,7 +451,10 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         address
     ) internal override {
         stakingManager.withdraw(assets, address(this), address(this));
-        //TODO: add decrease of short (rebalance basis the final assets)
+        (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
+
+        //rebalance of hedge based on assets after withdraw (before withdraw assets - withdrawn assets)
+        _rebalanceHedge(currentBtc, currentEth, totalAssets() - assets);
     }
 
     function afterDeposit(
@@ -461,15 +464,22 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     ) internal override {
         // TODO: add deposit cap in after deposit hook by querying from staking manager
         stakingManager.deposit(assets, address(this));
-        //TODO: add increase of short (rebalance basis the final assets)
+        (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
+
+        //rebalance of hedge based on assets after deposit (after deposit assets)
+        _rebalanceHedge(currentBtc, currentEth, totalAssets());
     }
 
     /// @notice settles collateral for the vault
     /// @dev to be called after settle profits only (since vaultMarketValue if after settlement of profits)
     /// @param currentBtcBorrow The amount of USDC collateral token deposited to LB Protocol
     /// @param currentEthBorrow The market value of ETH/BTC part in sGLP
-    function _rebalanceHedge(uint256 currentBtcBorrow, uint256 currentEthBorrow) internal {
-        (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrows(totalAssets());
+    function _rebalanceHedge(
+        uint256 currentBtcBorrow,
+        uint256 currentEthBorrow,
+        uint256 glpDeposited
+    ) internal {
+        (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrows(glpDeposited);
         uint256 optimalBorrowValue = _getBorrowValue(optimalBtcBorrow, optimalEthBorrow);
         // Settle net change in market value and deposit/withdraw collateral tokens
         // Vault market value is just the collateral value since profit has been settled
