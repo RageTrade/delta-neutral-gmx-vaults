@@ -33,15 +33,17 @@ contract DNGmxVaultStorage {
 
     ///@dev common storage
 
-    uint64 public lastRebalanceTS;
-    uint32 public rebalanceTimeThreshold;
-    uint16 public rebalanceDeltaThreshold;
+    address public keeper;
+    ILPVault public lpVault;
+
+    bool internal _hasFlashloaned;
 
     uint256 public depositCap;
     uint256 public dnUsdcDeposited;
 
-    address public keeper;
-    ILPVault public lpVault;
+    uint64 public lastRebalanceTS;
+    uint32 public rebalanceTimeThreshold;
+    uint16 public rebalanceDeltaThreshold;
 
     ///@dev storage for hedge strategy
 
