@@ -73,4 +73,8 @@ interface IGMXBatchingManager {
         address receiver,
         uint256 amount
     ) external;
+
+    function currentRound(IERC4626 gmxVault) external view returns (uint256);
+
+    function roundDeposits(IERC4626 vault, uint256 round) external view returns (RoundDeposit memory);
 }
