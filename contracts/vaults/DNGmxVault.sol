@@ -160,6 +160,10 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         emit RebalanceParamsUpdated(_rsParams.rebalanceTimeThreshold, _rsParams.rebalanceDeltaThreshold);
     }
 
+    function getUsdcBorrowed() public view returns (uint256 usdcAmount) {
+        return aUsdc.balanceOf(address(this)) - dnUsdcDeposited;
+    }
+
     /// @dev returns the borrow value in USDC
     function _getBorrowValue(uint256 btcAmount, uint256 ethAmount) internal view returns (uint256 borrowValue) {
         borrowValue = (btcAmount * getPrice(address(wbtc))) + (ethAmount * getPrice(address(weth)));
