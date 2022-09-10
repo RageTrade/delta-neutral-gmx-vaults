@@ -3,16 +3,10 @@
 pragma solidity ^0.8.9;
 
 import { SafeCast } from 'contracts/libraries/SafeCast.sol';
-
-import { ERC4626Upgradeable } from 'contracts/ERC4626/ERC4626Upgradeable.sol';
+import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
 
 import { DNGmxVaultStorage } from 'contracts/vaults/DNGmxVaultStorage.sol';
-
-import { SignedMath } from '@ragetrade/core/contracts/libraries/SignedMath.sol';
-import { SignedFullMath } from '@ragetrade/core/contracts/libraries/SignedFullMath.sol';
-
-import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
-import { FixedPoint128 } from '@uniswap/v3-core-0.8-support/contracts/libraries/FixedPoint128.sol';
+import { ERC4626Upgradeable } from 'contracts/ERC4626/ERC4626Upgradeable.sol';
 
 import { IVault } from 'contracts/interfaces/gmx/IVault.sol';
 import { IGlpManager } from 'contracts/interfaces/gmx/IGlpManager.sol';
@@ -38,9 +32,6 @@ import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPool
 contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable, DNGmxVaultStorage {
     using FullMath for uint256;
     using SafeCast for uint256;
-
-    using SignedMath for int256;
-    using SignedFullMath for int256;
 
     error InvalidRebalance();
     error DepositCap(uint256 depositCap, uint256 depositAmount);

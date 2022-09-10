@@ -91,6 +91,13 @@ contract DNGmxVaultStorage {
         uint240 usdcConversionThreshold;
     }
 
+    struct HedgeStrategyParams {
+        IBalancerVault vault;
+        ISwapRouter swapRouter;
+        uint256 targetHealthFactor;
+        uint256 liquidationThreshold;
+    }
+
     struct RebalanceStrategyParams {
         uint32 rebalanceTimeThreshold;
         uint16 rebalanceDeltaThreshold;
