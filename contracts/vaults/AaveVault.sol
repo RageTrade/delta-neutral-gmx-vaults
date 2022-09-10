@@ -8,14 +8,8 @@ import { ERC4626Upgradeable } from 'contracts/ERC4626/ERC4626Upgradeable.sol';
 
 import { DNGmxVaultStorage } from 'contracts/vaults/DNGmxVaultStorage.sol';
 
-import { SignedMath } from '@ragetrade/core/contracts/libraries/SignedMath.sol';
-import { SignedFullMath } from '@ragetrade/core/contracts/libraries/SignedFullMath.sol';
-
 import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
 import { FixedPoint128 } from '@uniswap/v3-core-0.8-support/contracts/libraries/FixedPoint128.sol';
-
-import { AddressHelper } from '@ragetrade/core/contracts/libraries/AddressHelper.sol';
-import { ClearingHouseExtsload } from '@ragetrade/core/contracts/extsloads/ClearingHouseExtsload.sol';
 
 import { ILPVault } from 'contracts/interfaces/ILPVault.sol';
 

@@ -8,14 +8,8 @@ import { ERC4626Upgradeable } from 'contracts/ERC4626/ERC4626Upgradeable.sol';
 
 import { DNGmxVaultStorage } from 'contracts/vaults/DNGmxVaultStorage.sol';
 
-import { SignedMath } from '@ragetrade/core/contracts/libraries/SignedMath.sol';
-import { SignedFullMath } from '@ragetrade/core/contracts/libraries/SignedFullMath.sol';
-
 import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
 import { FixedPoint128 } from '@uniswap/v3-core-0.8-support/contracts/libraries/FixedPoint128.sol';
-
-import { AddressHelper } from '@ragetrade/core/contracts/libraries/AddressHelper.sol';
-import { ClearingHouseExtsload } from '@ragetrade/core/contracts/extsloads/ClearingHouseExtsload.sol';
 
 import { IVault } from 'contracts/interfaces/gmx/IVault.sol';
 import { IGlpManager } from 'contracts/interfaces/gmx/IGlpManager.sol';
@@ -25,7 +19,6 @@ import { ISGLPExtended } from 'contracts/interfaces/gmx/ISGLPExtended.sol';
 import { IRewardRouterV2 } from 'contracts/interfaces/gmx/IRewardRouterV2.sol';
 import { IGlpStakingManager } from 'contracts/interfaces/gmx/IGlpStakingManager.sol';
 import { ILPVault } from 'contracts/interfaces/ILPVault.sol';
-import { IClearingHouse } from '@ragetrade/core/contracts/interfaces/IClearingHouse.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 import { IAToken } from '@aave/core-v3/contracts/interfaces/IAToken.sol';
 import { IDNGmxVault } from 'contracts/interfaces/IDNGmxVault.sol';
