@@ -4,6 +4,8 @@ pragma solidity ^0.8.9;
 
 import { AaveVault } from 'contracts/vaults/AaveVault.sol';
 
+import { IBorrowerVault } from 'contracts/interfaces/IBorrowerVault.sol';
+
 contract AaveVaultMock is AaveVault {
     function addVaultToWhitelist(IBorrowerVault vault) external {
         return _addVaultToWhitelist(vault);
@@ -13,7 +15,7 @@ contract AaveVaultMock is AaveVault {
         return _removeVaultFromWhitelist(vault);
     }
 
-    function beforeWithdraw(
+    function _beforeWithdraw(
         uint256 assets,
         uint256 shares,
         address receiver
@@ -21,7 +23,7 @@ contract AaveVaultMock is AaveVault {
         return beforeWithdraw(assets, shares, receiver);
     }
 
-    function afterDeposit(
+    function _afterDeposit(
         uint256 assets,
         uint256 shares,
         address receiver
