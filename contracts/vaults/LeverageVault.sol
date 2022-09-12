@@ -38,6 +38,7 @@ contract LeverageVault is OwnableUpgradeable, PausableUpgradeable {
     error NotEnoughMargin();
     error UsageCapExceeded();
     error InvalidCollateralFactor();
+    error InvalidLiquidation(address user);
 
     struct UserDeposit {
         uint256 round;
@@ -84,58 +85,109 @@ contract LeverageVault is OwnableUpgradeable, PausableUpgradeable {
         }
     }
 
-    function _checkMargin() internal view {
-        UserDeposit storage userDeposit = userDeposits[msg.sender];
+    function _isEnoughMargin(address user) internal view returns(bool){
+        UserDeposit storage userDeposit = userDeposits[user];
 
         uint256 collateralValue = dnGmxVault.getMarketValue(
             dnGmxVault.convertToAssets(userDeposit.depositedShares) + userDeposit.glpBalance
         );
+        return collateralValue.mulDiv(maintainanceCfBps, MAX_BPS) < rUsdc.balanceOf(user);
+    }
 
-        if (collateralValue.mulDiv(maintainanceCfBps, MAX_BPS) < rUsdc.balanceOf(msg.sender)) revert NotEnoughMargin();
+    function _convertGlpStakedToShares(UserDeposit memory userDeposit, uint256 currentRound)
+        internal
+        view
+        returns (UserDeposit memory updatedUserDeposit)
+    {
+        updatedUserDeposit = userDeposit;
+        if (userDeposit.round < currentRound && userDeposit.glpBalance > 0) {
+            IGMXBatchingManager.RoundDeposit memory roundDeposit = batchingManager.roundDeposits(
+                dnGmxVault,
+                userDeposit.round
+            );
+            updatedUserDeposit.depositedShares += userDeposit
+                .glpBalance
+                .mulDiv(roundDeposit.totalShares, roundDeposit.totalGlp)
+                .toUint128();
+            updatedUserDeposit.glpBalance = 0;
+        }
     }
 
     function getUsdcBorrowed() external view returns (uint256) {
         return rUsdc.totalSupply();
     }
 
-    function depositShare() external {}
-
-    function depositShareAndBorrow(uint128 shareAmount, uint256 usdcAmount) external {
-        UserDeposit storage userDeposit = userDeposits[msg.sender];
-
-        uint256 userDepositRound = userDeposit.round;
-        uint256 userGlpBalance = userDeposit.glpBalance;
+    function depositShare(uint128 shareAmount) external {
+        UserDeposit memory userDeposit = userDeposits[msg.sender];
         uint256 currentRound = batchingManager.currentRound(dnGmxVault);
 
-        if (userDepositRound < currentRound && userGlpBalance > 0) {
-            IGMXBatchingManager.RoundDeposit memory roundDeposit = batchingManager.roundDeposits(
-                dnGmxVault,
-                userDepositRound
-            );
-            userDeposit.depositedShares += userDeposit
-                .glpBalance
-                .mulDiv(roundDeposit.totalShares, roundDeposit.totalGlp)
-                .toUint128();
-            userGlpBalance = 0;
-        }
+        userDeposit = _convertGlpStakedToShares(userDeposit, currentRound);
 
         dnGmxVault.transferFrom(msg.sender, address(this), shareAmount);
 
+        userDeposits[msg.sender] = UserDeposit(
+            currentRound,
+            userDeposit.glpBalance,
+            userDeposit.depositedShares + shareAmount
+        );
+    }
+
+    function withdrawShare(uint128 shareAmount) external {
+        UserDeposit memory userDeposit = userDeposits[msg.sender];
+        uint256 currentRound = batchingManager.currentRound(dnGmxVault);
+
+        userDeposit = _convertGlpStakedToShares(userDeposit, currentRound);
+
+        userDeposits[msg.sender] = UserDeposit(
+            currentRound,
+            userDeposit.glpBalance,
+            userDeposit.depositedShares - shareAmount
+        );
+
+        if(!_isEnoughMargin(msg.sender)) revert NotEnoughMargin();
+
+        batchingManager.claim(
+            dnGmxVault,
+            address(this),
+            batchingManager.unclaimedShares(dnGmxVault, address(this))
+        );
+        dnGmxVault.transfer(msg.sender, shareAmount);
+    }
+
+    function depositShareAndBorrow(uint128 shareAmount, uint128 usdcAmount) external {
+        UserDeposit memory userDeposit = userDeposits[msg.sender];
+        uint256 currentRound = batchingManager.currentRound(dnGmxVault);
+
+        // Convert staked glp in previous rounds to shares
+        userDeposit = _convertGlpStakedToShares(userDeposit, currentRound);
+
+        // Transfer the shares to be deposited to vault
+        dnGmxVault.transferFrom(msg.sender, address(this), shareAmount);
+
+        // Update indexes and mint the borrow amount of usdc
         _updateIndex();
         rUsdc.mint(msg.sender, msg.sender, usdcAmount, borrowIndex);
 
         lpVault.borrow(usdcAmount);
 
-        uint256 glpStaked = batchingManager.depositToken(dnGmxVault, usdc, usdcAmount, 0, address(this));
+        // stake borrowed usdc through batching manager
+        uint128 glpStaked = batchingManager.depositToken(dnGmxVault, usdc, usdcAmount, 0, address(this)).toUint128();
 
-        userDeposit.glpBalance = (userGlpBalance + glpStaked).toUint128();
-        userDeposit.depositedShares += shareAmount;
-        userDeposit.round = currentRound;
+        userDeposits[msg.sender] = UserDeposit(
+            currentRound,
+            userDeposit.glpBalance + glpStaked,
+            userDeposit.depositedShares + shareAmount
+        );
 
-        _checkMargin();
+        if(!_isEnoughMargin(msg.sender)) revert NotEnoughMargin();
     }
 
-    function repay(uint256 amount) external {}
+    function repay(uint256 amount) external {
+        //TODO: see if repay needs to done by selling of shares or transfer of usdc
+    }
 
-    function liquidate() external onlyOwner {}
+    function liquidate(address user) external onlyOwner {
+        if (_isEnoughMargin(user)) revert InvalidLiquidation(user);
+        //TODO: add liquidation code
+    }
 }
