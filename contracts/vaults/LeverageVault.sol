@@ -85,7 +85,7 @@ contract LeverageVault is OwnableUpgradeable, PausableUpgradeable {
         }
     }
 
-    function _isEnoughMargin(address user) internal view returns(bool){
+    function _isEnoughMargin(address user) internal view returns (bool) {
         UserDeposit storage userDeposit = userDeposits[user];
 
         uint256 collateralValue = dnGmxVault.getMarketValue(
@@ -144,13 +144,9 @@ contract LeverageVault is OwnableUpgradeable, PausableUpgradeable {
             userDeposit.depositedShares - shareAmount
         );
 
-        if(!_isEnoughMargin(msg.sender)) revert NotEnoughMargin();
+        if (!_isEnoughMargin(msg.sender)) revert NotEnoughMargin();
 
-        batchingManager.claim(
-            dnGmxVault,
-            address(this),
-            batchingManager.unclaimedShares(dnGmxVault, address(this))
-        );
+        batchingManager.claim(dnGmxVault, address(this), batchingManager.unclaimedShares(dnGmxVault, address(this)));
         dnGmxVault.transfer(msg.sender, shareAmount);
     }
 
@@ -179,7 +175,7 @@ contract LeverageVault is OwnableUpgradeable, PausableUpgradeable {
             userDeposit.depositedShares + shareAmount
         );
 
-        if(!_isEnoughMargin(msg.sender)) revert NotEnoughMargin();
+        if (!_isEnoughMargin(msg.sender)) revert NotEnoughMargin();
     }
 
     function repay(uint256 amount) external {
