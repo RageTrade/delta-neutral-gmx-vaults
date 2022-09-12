@@ -6,7 +6,6 @@ import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'solidity-coverage';
 import '@nomiclabs/hardhat-etherscan';
-import '@protodev-rage/hardhat-tenderly';
 import 'hardhat-dependency-compiler';
 
 import { config } from 'dotenv';
@@ -102,33 +101,14 @@ export default {
       }
     ],
   },
-  dependencyCompiler: {
-    paths: [
-      '@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol',
-      '@ragetrade/core/contracts/protocol/clearinghouse/ClearingHouse.sol',
-      '@ragetrade/core/contracts/protocol/RageTradeFactory.sol',
-      '@ragetrade/core/contracts/protocol/wrapper/VPoolWrapper.sol',
-      '@ragetrade/core/contracts/protocol/insurancefund/InsuranceFund.sol',
-      '@ragetrade/core/contracts/lens/SwapSimulator.sol',
-      '@ragetrade/core/contracts/oracles/ChainlinkOracle.sol',
-      '@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol',
-      '@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol',
-      '@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol',
-    ],
-  },
+  // dependencyCompiler: {
+  //   paths: [
+  //     '@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol',
+  //   ],
+  // },
   typechain: {
     target: 'ethers-v5',
-    alwaysGenerateOverloads: false,
-    externalArtifacts: [
-      'node_modules/@uniswap/v3-periphery/artifacts/contracts/interfaces/IQuoter.sol/IQuoter.json',
-      'node_modules/@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json',
-      'node_modules/@uniswap/v3-core/artifacts/contracts/UniswapV3Pool.sol/UniswapV3Pool.json',
-      'node_modules/@uniswap/v3-core/artifacts/contracts/UniswapV3Factory.sol/UniswapV3Factory.json',
-      'node_modules/@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3PoolDeployer.sol/IUniswapV3PoolDeployer.json',
-      'node_modules/@uniswap/v2-core/build/IUniswapV2Factory.json',
-      'node_modules/@uniswap/v2-core/build/IUniswapV2Pair.json',
-      'node_modules/@uniswap/v2-periphery/build/IUniswapV2Router02.json',
-    ],
+    alwaysGenerateOverloads: false
   },
   etherscan: {
     apiKey: {
@@ -153,9 +133,5 @@ export default {
       : {
           default: 0,
         },
-  },
-  tenderly: {
-    project: process.env.TENDERLY_PROJECT,
-    username: process.env.TENDERLY_USERNAME,
-  },
+  }
 };
