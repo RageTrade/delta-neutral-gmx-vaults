@@ -113,6 +113,8 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         usdc.approve(aavePool, type(uint256).max);
         usdc.approve(address(stakingManager), type(uint256).max);
 
+        aUsdc.approve(address(lpVault), type(uint256).max);
+
         asset.approve(address(glpManager), type(uint256).max);
         asset.approve(address(stakingManager), type(uint256).max);
 
@@ -160,8 +162,6 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         borrowValue = (btcAmount * getPrice(address(wbtc))) + (ethAmount * getPrice(address(weth)));
         borrowValue = borrowValue / getPrice(address(usdc));
     }
-
-    function _getSupplyValue() internal view returns (uint256 supplyValue) {}
 
     function _rebalanceBeforeShareAllocation() internal {
         // harvest fees
@@ -246,6 +246,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         return _isValidRebalanceTime() || _isValidRebalanceDeviation();
     }
 
+    /* solhint-disable not-rely-on-time */
     function _isValidRebalanceTime() internal view returns (bool) {
         return (block.timestamp - lastRebalanceTS) > rebalanceTimeThreshold;
     }
@@ -276,6 +277,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         usdcAmount = swapRouter.exactInput(params);
     }
 
+    /* solhint-disable not-rely-on-time */
     function _swapUSDCToToken(address token, uint256 tokenAmount) internal returns (uint256 outputAmount) {
         bytes memory path = abi.encodePacked(usdc, uint24(500), token);
 

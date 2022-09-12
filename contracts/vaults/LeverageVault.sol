@@ -4,15 +4,8 @@ pragma solidity ^0.8.9;
 
 import { SafeCast } from 'contracts/libraries/SafeCast.sol';
 
-import { ERC4626Upgradeable } from 'contracts/ERC4626/ERC4626Upgradeable.sol';
-
-import { DNGmxVaultStorage } from 'contracts/vaults/DNGmxVaultStorage.sol';
-
 import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
-import { FixedPoint128 } from '@uniswap/v3-core-0.8-support/contracts/libraries/FixedPoint128.sol';
 
-import { IVault } from 'contracts/interfaces/gmx/IVault.sol';
-import { IGlpManager } from 'contracts/interfaces/gmx/IGlpManager.sol';
 import { IGMXBatchingManager } from 'contracts/interfaces/gmx/IGMXBatchingManager.sol';
 
 import { ISGLPExtended } from 'contracts/interfaces/gmx/ISGLPExtended.sol';
@@ -41,10 +34,10 @@ contract LeverageVault is OwnableUpgradeable, PausableUpgradeable {
     using FullMath for uint128;
     using SafeCast for uint256;
 
-    error UsageCapExceeded();
     error CallerNotVault();
-    error InvalidCollateralFactor();
     error NotEnoughMargin();
+    error UsageCapExceeded();
+    error InvalidCollateralFactor();
 
     struct UserDeposit {
         uint256 round;
@@ -52,35 +45,36 @@ contract LeverageVault is OwnableUpgradeable, PausableUpgradeable {
         uint128 depositedShares;
     }
 
+    address public usdc;
+
+    uint16 public constant MAX_BPS = 10000;
+
+    ILPVault internal lpVault;
     IDebtToken internal rUsdc;
     IDNGmxVault internal dnGmxVault;
     IGMXBatchingManager internal batchingManager;
-    ILPVault internal lpVault;
-    address usdc;
 
-    uint128 borrowIndex;
-    uint32 borrowRateBps;
-    uint96 lastUpdateTs;
+    uint96 public lastUpdateTs;
+    uint128 public borrowIndex;
 
-    uint16 initialCfBps;
-    uint16 maintainanceCfBps;
-    uint16 constant MAX_BPS = 10000;
+    uint32 public borrowRateBps;
 
-    mapping(address => UserDeposit) userDeposits;
+    uint16 public initialCfBps;
+    uint16 public maintainanceCfBps;
+
+    mapping(address => UserDeposit) public userDeposits;
 
     function initialize() external initializer {
         __Ownable_init();
         __Pausable_init();
-        __LeverageVault_init();
-    }
 
-    function __LeverageVault_init() internal onlyInitializing {
         borrowIndex = 1;
         borrowRateBps = 0;
     }
 
     function updateBorrowRate() internal {}
 
+    /* solhint-disable not-rely-on-time */
     function _updateIndex() internal {
         uint256 diff = block.timestamp - lastUpdateTs;
         if (rUsdc.scaledTotalSupply() != 0) {
@@ -92,9 +86,11 @@ contract LeverageVault is OwnableUpgradeable, PausableUpgradeable {
 
     function _checkMargin() internal view {
         UserDeposit storage userDeposit = userDeposits[msg.sender];
+
         uint256 collateralValue = dnGmxVault.getMarketValue(
             dnGmxVault.convertToAssets(userDeposit.depositedShares) + userDeposit.glpBalance
         );
+
         if (collateralValue.mulDiv(maintainanceCfBps, MAX_BPS) < rUsdc.balanceOf(msg.sender)) revert NotEnoughMargin();
     }
 
@@ -106,6 +102,7 @@ contract LeverageVault is OwnableUpgradeable, PausableUpgradeable {
 
     function depositShareAndBorrow(uint128 shareAmount, uint256 usdcAmount) external {
         UserDeposit storage userDeposit = userDeposits[msg.sender];
+
         uint256 userDepositRound = userDeposit.round;
         uint256 userGlpBalance = userDeposit.glpBalance;
         uint256 currentRound = batchingManager.currentRound(dnGmxVault);
