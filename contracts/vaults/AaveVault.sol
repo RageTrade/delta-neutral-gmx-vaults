@@ -71,10 +71,15 @@ contract AaveVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeabl
 
     function _removeVaultFromWhitelist(IBorrowerVault vault) internal {
         uint8 i = 0;
+
         for (i; i < vaultCount; i++) {
             if (vaults[i] == vault) {
                 vaultCount--;
                 vaults[i] = vaults[vaultCount];
+
+                aUsdc.approve(address(vault), 0);
+                asset.approve(address(vault), 0);
+
                 delete vaults[vaultCount];
                 break;
             }
@@ -86,6 +91,10 @@ contract AaveVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeabl
 
         if (vault.getUsdcBorrowed() < cap) {
             vaultCaps[address(vault)] = cap;
+
+            aUsdc.approve(address(vault), cap);
+            asset.approve(address(vault), cap);
+
             emit VaultCapUpdated(address(vault), cap);
         }
         if (cap == 0) _removeVaultFromWhitelist(vault);
