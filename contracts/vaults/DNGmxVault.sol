@@ -219,6 +219,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         // transfer collateral from LB vault to DN vault
         _rebalanceHedge(currentBtc, currentEth, totalAssets());
 
+        lastRebalanceTS = uint64(block.timestamp);
         emit Rebalanced();
     }
 
@@ -378,8 +379,10 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
             ethAssetPremium = (feeAmounts[0] - btcAssetPremium);
         } else {
             // Here amounts[0] should be equal to btcAssetAmount and amounts[1] should be equal to ethAssetAmount
-            btcAssetPremium = feeAmounts[0];
-            ethAssetPremium = feeAmounts[1];
+            bool btcFirst = false;
+            if (repayDebtBtc ? tokens[0] == usdc : tokens[0] == wbtc) btcFirst = true;
+            btcAssetPremium = feeAmounts[btcFirst ? 0 : 1];
+            ethAssetPremium = feeAmounts[btcFirst ? 1 : 0];
         }
 
         _executeOperationToken(address(wbtc), btcAssetAmount, btcAssetPremium, repayDebtBtc);
@@ -455,8 +458,18 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
             assets[0] = repayDebtBtc ? address(usdc) : address(wbtc);
             assets[1] = repayDebtEth ? address(usdc) : address(weth);
 
-            amounts[0] = btcAssetAmount;
-            amounts[1] = ethAssetAmount;
+            // ensure that assets and amount tuples are in sorted order of addresses
+            if (assets[0] > assets[1]) {
+                address tempAsset = assets[0];
+                assets[0] = assets[1];
+                assets[1] = tempAsset;
+
+                amounts[0] = ethAssetAmount;
+                amounts[1] = btcAssetAmount;
+            } else {
+                amounts[0] = btcAssetAmount;
+                amounts[1] = ethAssetAmount;
+            }
         }
 
         _executeFlashloan(assets, amounts, btcAssetAmount, ethAssetAmount, repayDebtBtc, repayDebtEth);
