@@ -328,8 +328,12 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         pool.supply(token, amount, address(this), 0);
     }
 
-    function _executeWithdraw(address token, uint256 amount) internal {
-        pool.withdraw(token, amount, address(this));
+    function _executeWithdraw(
+        address token,
+        uint256 amount,
+        address receiver
+    ) internal {
+        pool.withdraw(token, amount, receiver);
     }
 
     function _executeOperationToken(
@@ -338,18 +342,19 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         uint256 premium,
         bool repayDebt
     ) internal {
+        uint256 amountWithPremium = amount + premium;
         if (!repayDebt) {
             uint256 usdcReceived = _swapTokenToUSDC(token, amount);
             dnUsdcDeposited += usdcReceived;
             _executeSupply(address(usdc), usdcReceived);
-            _executeBorrow(token, amount + premium);
-            //TODO: check if any approval needs to be given to balancer vault to receive the btc back
+            _executeBorrow(token, amountWithPremium);
+            IERC20(token).transfer(address(balancerVault), amountWithPremium);
         } else {
             uint256 tokenReceived = _swapUSDCToToken(token, amount);
             _executeRepay(token, tokenReceived);
-            dnUsdcDeposited -= (amount + premium);
-            _executeWithdraw(address(usdc), amount + premium);
-            //TODO: check if any approval needs to be given to balancer vault to receive the btc back
+            dnUsdcDeposited -= amountWithPremium;
+            //withdraws to balancerVault
+            _executeWithdraw(address(usdc), amountWithPremium, address(balancerVault));
         }
     }
 
@@ -497,7 +502,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
 
         //rebalance of hedge based on assets after withdraw (before withdraw assets - withdrawn assets)
-        _rebalanceHedge(currentBtc, currentEth, totalAssets() - assets);
+        _rebalanceHedge(currentBtc, currentEth, totalAssets());
     }
 
     function afterDeposit(
@@ -568,7 +573,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     /// @notice sells usdc for LP tokens and then stakes LP tokens
     /// @param amount amount of usdc
     function _convertAUsdcToAsset(uint256 amount) internal {
-        _executeWithdraw(address(usdc), amount);
+        _executeWithdraw(address(usdc), amount, address(this));
         //USDG has 18 decimals and usdc has 6 decimals => 18-6 = 12
         stakingManager.depositToken(address(usdc), amount);
     }
