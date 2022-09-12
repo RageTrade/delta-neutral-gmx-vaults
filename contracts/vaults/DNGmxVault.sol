@@ -34,7 +34,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     using SafeCast for uint256;
 
     error InvalidRebalance();
-    error DepositCap(uint256 depositCap, uint256 depositAmount);
+    error DepositCapExceeded();
     error OnlyKeeperAllowed(address msgSender, address authorisedKeeperAddress);
 
     error NotLpVault();
@@ -523,8 +523,8 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         uint256,
         address
     ) internal override {
-        // TODO: add deposit cap in after deposit hook by querying from staking manager
         stakingManager.deposit(assets, address(this));
+        if (totalAssets() > depositCap) revert DepositCapExceeded();
         (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
 
         //rebalance of hedge based on assets after deposit (after deposit assets)
