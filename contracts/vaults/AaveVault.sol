@@ -4,8 +4,12 @@ pragma solidity ^0.8.9;
 
 import { IPool } from '@aave/core-v3/contracts/interfaces/IPool.sol';
 import { IAToken } from '@aave/core-v3/contracts/interfaces/IAToken.sol';
+import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol';
 
 import { IBorrowerVault } from 'contracts/interfaces/IBorrowerVault.sol';
+
+import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
 import { ERC4626Upgradeable } from 'contracts/ERC4626/ERC4626Upgradeable.sol';
 import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
@@ -15,10 +19,12 @@ contract AaveVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeabl
     error CallerNotVault();
     error UsageCapExceeded();
 
+    event AllowancesGranted();
     event VaultCapUpdated(address vault, uint256 newCap);
 
     IPool internal pool;
     IAToken internal aUsdc;
+    IPoolAddressesProvider internal poolAddressProvider;
 
     uint8 public vaultCount;
     IBorrowerVault[10] public vaults;
@@ -30,12 +36,32 @@ contract AaveVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeabl
         _;
     }
 
-    function initialize() external initializer {
+    function initialize(
+        address _usdc,
+        string calldata _name,
+        string calldata _symbol,
+        address _poolAddressesProvider
+    ) external initializer {
         __Ownable_init();
         __Pausable_init();
-        __ERC4626Upgradeable_init(IERC20Metadata(address(_tokenAddrs.sGlp)), _name, _symbol);
+        __ERC4626Upgradeable_init(IERC20Metadata(_usdc), _name, _symbol);
 
-        /** init code goes here */
+        poolAddressProvider = IPoolAddressesProvider(_poolAddressesProvider);
+
+        pool = IPool(poolAddressProvider.getPool());
+        aUsdc = IAToken(pool.getReserveData(_usdc).aTokenAddress);
+
+        aUsdc.approve(address(pool), type(uint256).max);
+        asset.approve(address(pool), type(uint256).max);
+    }
+
+    function grantAllowances() external onlyOwner {
+        address aavePool = address(pool);
+
+        aUsdc.approve(aavePool, type(uint256).max);
+        asset.approve(aavePool, type(uint256).max);
+
+        emit AllowancesGranted();
     }
 
     function _addVaultToWhitelist(IBorrowerVault vault) internal {
