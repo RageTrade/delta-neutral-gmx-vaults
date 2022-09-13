@@ -77,6 +77,10 @@ contract DNGmxVaultMock is DNGmxVault {
         return _rebalanceProfit(borrowValue);
     }
 
+    function getLiquidationThreshold(address asset) internal view returns (uint256) {
+        return _getLiquidationThreshold(asset);
+    }
+
     function rebalanceBorrow(
         uint256 optimalBtcBorrow,
         uint256 currentBtcBorrow,
