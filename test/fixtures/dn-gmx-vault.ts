@@ -76,6 +76,11 @@ export const dnGmxVaultFixture = deployments.createFixture(async hre => {
 
   await sGlp.connect(users[0]).approve(dnGmxVault.address, ethers.constants.MaxUint256);
 
+  // deposit 1.5 mil in aave-vault with 1mil borrowcap
+  await generateErc20Balance(usdc, parseUnits('1500000', 6), users[1].address);
+  await usdc.connect(users[1]).approve(aaveVault.address, ethers.constants.MaxUint256);
+  await aaveVault.connect(users[1]).deposit(parseUnits('1500000', 6), users[1].address);
+
   return {
     weth,
     wbtc,
