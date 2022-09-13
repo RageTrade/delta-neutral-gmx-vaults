@@ -120,11 +120,16 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
 
     function grantAllowances() external onlyOwner {
         address aavePool = address(pool);
+        address swapRouter = address(swapRouter);
 
         wbtc.approve(aavePool, type(uint256).max);
+        wbtc.approve(swapRouter, type(uint256).max);
+
         weth.approve(aavePool, type(uint256).max);
+        weth.approve(swapRouter, type(uint256).max);
 
         usdc.approve(aavePool, type(uint256).max);
+        usdc.approve(address(swapRouter), type(uint256).max);
         usdc.approve(address(stakingManager), type(uint256).max);
 
         aUsdc.approve(address(lpVault), type(uint256).max);
@@ -364,13 +369,12 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         (
             ,
             /** uint256 ltv **/
-            uint256 liquidationThreshold,
+            uint256 liquidationThreshold, /** uint256 liquidationBonus */
             ,
             ,
             ,
 
-        ) = /** uint256 liquidationBonus */
-            /** uint256 decimals */
+        ) = /** uint256 decimals */
             /** uint256 reserveFactor */
             config.getParams();
 
