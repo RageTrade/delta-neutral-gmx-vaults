@@ -171,10 +171,6 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         liquidationThreshold = _hedgeParams.liquidationThreshold;
     }
 
-    function getUsdcBorrowed() public view returns (uint256 usdcAmount) {
-        return aUsdc.balanceOf(address(this)) - dnUsdcDeposited;
-    }
-
     /* ##################################################################
                                 KEEPER FUNCTIONS
     ################################################################## */
