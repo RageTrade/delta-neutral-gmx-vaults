@@ -36,10 +36,10 @@ contract DNGmxVaultStorage {
     address public keeper;
     ILPVault public lpVault;
 
-    bool internal _hasFlashloaned;
-
     uint256 public depositCap;
     uint256 public dnUsdcDeposited;
+
+    bool internal _hasFlashloaned;
 
     uint64 public lastRebalanceTS;
     uint32 public rebalanceTimeThreshold;
@@ -51,16 +51,14 @@ contract DNGmxVaultStorage {
     IPriceOracle internal oracle;
     IPoolAddressesProvider internal poolAddressProvider;
 
-    uint256 internal targetHealthFactor;
-    uint256 internal liquidationThreshold;
-
     IAToken internal aUsdc;
     IDebtToken internal vWbtc;
     IDebtToken internal vWeth;
 
     ISwapRouter internal swapRouter;
-
     IBalancerVault internal balancerVault;
+
+    uint256 internal targetHealthFactor;
 
     ///@dev storage for yield strategy
 
@@ -95,7 +93,6 @@ contract DNGmxVaultStorage {
         IBalancerVault vault;
         ISwapRouter swapRouter;
         uint256 targetHealthFactor;
-        uint256 liquidationThreshold;
     }
 
     struct RebalanceStrategyParams {

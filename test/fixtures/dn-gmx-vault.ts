@@ -60,7 +60,6 @@ export const dnGmxVaultFixture = deployments.createFixture(async hre => {
 
   await dnGmxVault.setHedgeParams({
     targetHealthFactor: 15_000, // 150%
-    liquidationThreshold: ethers.constants.Zero, // query
     vault: addresses.BALANCER_VAULT,
     swapRouter: addresses.UNI_V3_SWAP_ROUTER,
   });

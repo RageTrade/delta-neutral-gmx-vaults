@@ -28,11 +28,14 @@ import { PausableUpgradeable } from '@openzeppelin/contracts-upgradeable/securit
 import { IPool } from '@aave/core-v3/contracts/interfaces/IPool.sol';
 import { IAToken } from '@aave/core-v3/contracts/interfaces/IAToken.sol';
 import { IPriceOracle } from '@aave/core-v3/contracts/interfaces/IPriceOracle.sol';
+import { DataTypes } from '@aave/core-v3/contracts/protocol/libraries/types/DataTypes.sol';
 import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol';
+import { ReserveConfiguration } from '@aave/core-v3/contracts/protocol/libraries/configuration/ReserveConfiguration.sol';
 
 contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable, DNGmxVaultStorage {
     using FullMath for uint256;
     using SafeCast for uint256;
+    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     error InvalidRebalance();
     error DepositCapExceeded();
@@ -168,7 +171,6 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         balancerVault = _hedgeParams.vault;
         swapRouter = _hedgeParams.swapRouter;
         targetHealthFactor = _hedgeParams.targetHealthFactor;
-        liquidationThreshold = _hedgeParams.liquidationThreshold;
     }
 
     /* ##################################################################
@@ -179,6 +181,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         return _isValidRebalanceTime() || _isValidRebalanceDeviation();
     }
 
+    /* solhint-disable not-rely-on-time */
     function rebalance() external onlyKeeper {
         if (!isValidRebalance()) revert InvalidRebalance();
 
@@ -356,6 +359,24 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         }
     }
 
+    function _getLiquidationThreshold(address asset) internal view returns (uint256) {
+        DataTypes.ReserveConfigurationMap memory config = pool.getConfiguration(asset);
+        (
+            ,
+            /** uint256 ltv **/
+            uint256 liquidationThreshold,
+            ,
+            ,
+            ,
+
+        ) = /** uint256 liquidationBonus */
+            /** uint256 decimals */
+            /** uint256 reserveFactor */
+            config.getParams();
+
+        return liquidationThreshold;
+    }
+
     function _rebalanceBorrow(
         uint256 optimalBtcBorrow,
         uint256 currentBtcBorrow,
@@ -407,12 +428,16 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     function _rebalanceHedge(uint256 currentBtcBorrow, uint256 currentEthBorrow) internal {
         (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrows(totalAssets());
         uint256 optimalBorrowValue = _getBorrowValue(optimalBtcBorrow, optimalEthBorrow);
+
+        uint256 usdcLiquidationThreshold = _getLiquidationThreshold(address(usdc));
+
         // Settle net change in market value and deposit/withdraw collateral tokens
         // Vault market value is just the collateral value since profit has been settled
-        uint256 targetLpVaultAmount = (targetHealthFactor - liquidationThreshold).mulDiv(
+        uint256 targetLpVaultAmount = (targetHealthFactor - usdcLiquidationThreshold).mulDiv(
             optimalBorrowValue,
-            liquidationThreshold
+            usdcLiquidationThreshold
         );
+
         uint256 currentLpVaultAmount = aUsdc.balanceOf(address(this)) - dnUsdcDeposited;
 
         if (targetLpVaultAmount > currentLpVaultAmount) {
