@@ -17,6 +17,7 @@ jobs:
         with:
           node-version: 16
       - run: yarn install --frozen-lockfile
+      - run: yarn patch-package
       - run: yarn compile
       - run: yarn test
         env:
