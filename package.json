@@ -1,7 +1,7 @@
 {
-  "name": "@ragetrade/vaults",
+  "name": "@ragetrade/dn-lb-vault",
   "version": "1.0.1",
-  "repository": "https://github.com/ragetrade/vaults.git",
+  "repository": "https://github.com/ragetrade/dn-lb-vault.git",
   "license": "MIT",
   "scripts": {
     "clean": "hardhat clean",
@@ -28,6 +28,7 @@
     "@openzeppelin/contracts": "^4.7.3",
     "@openzeppelin/contracts-upgradeable": "^4.7.3",
     "@rari-capital/solmate": "https://github.com/Rari-Capital/solmate.git#25015a1d18e75921f8cb1bacd4beb9f364e788a9",
+    "@ragetrade/vaults": "https://github.com/RageTrade/vaults.git#6824add3e611e68e035b40015b5ef1eb4286b99f",
     "@solidity-parser/parser": "^0.14.3",
     "@uniswap/v3-core-0.8-support": "https://github.com/uniswap/v3-core.git#d55e297b938e5b56fd1cf9fe668f5bd385be85b5",
     "@uniswap/v3-periphery": "^1.4.0",
