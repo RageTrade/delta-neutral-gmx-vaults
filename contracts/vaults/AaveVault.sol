@@ -58,8 +58,8 @@ contract AaveVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeabl
     function grantAllowances() external onlyOwner {
         address aavePool = address(pool);
 
-        aUsdc.approve(aavePool, type(uint256).max);
         asset.approve(aavePool, type(uint256).max);
+        aUsdc.approve(aavePool, type(uint256).max);
 
         emit AllowancesGranted();
     }

@@ -26,6 +26,7 @@ import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/O
 import { PausableUpgradeable } from '@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol';
 
 import { IPool } from '@aave/core-v3/contracts/interfaces/IPool.sol';
+import { IAToken } from '@aave/core-v3/contracts/interfaces/IAToken.sol';
 import { IPriceOracle } from '@aave/core-v3/contracts/interfaces/IPriceOracle.sol';
 import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol';
 
@@ -106,6 +107,8 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
 
         pool = IPool(poolAddressProvider.getPool());
         oracle = IPriceOracle(poolAddressProvider.getPriceOracle());
+
+        aUsdc = IAToken(pool.getReserveData(address(usdc)).aTokenAddress);
     }
 
     /* ##################################################################
@@ -134,14 +137,14 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         emit KeeperUpdated(_newKeeper);
     }
 
-    function setDepositCap(uint256 _newDepositCap) external onlyOwner {
-        depositCap = _newDepositCap;
-        emit DepositCapUpdated(_newDepositCap);
-    }
-
     function setLPVault(address _lpVault) external onlyOwner {
         lpVault = ILPVault(_lpVault);
         emit LPVaultUpdated(_lpVault);
+    }
+
+    function setDepositCap(uint256 _newDepositCap) external onlyOwner {
+        depositCap = _newDepositCap;
+        emit DepositCapUpdated(_newDepositCap);
     }
 
     function setStakingManager(address _stakingManager) external onlyOwner {
@@ -149,7 +152,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         emit StakingManagerUpdated(_stakingManager);
     }
 
-    function setYieldParams(YieldStrategyParams calldata _ysParams) external onlyOwner {
+    function setThresholds(YieldStrategyParams calldata _ysParams) external onlyOwner {
         usdcReedemSlippage = _ysParams.usdcReedemSlippage;
         usdcConversionThreshold = _ysParams.usdcConversionThreshold;
         emit YieldParamsUpdated(_ysParams.usdcReedemSlippage, _ysParams.usdcConversionThreshold);
@@ -161,6 +164,16 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         emit RebalanceParamsUpdated(_rsParams.rebalanceTimeThreshold, _rsParams.rebalanceDeltaThreshold);
     }
 
+    function setHedgeParams(HedgeStrategyParams calldata _hedgeParams) external onlyOwner {
+        balancerVault = _hedgeParams.vault;
+        swapRouter = _hedgeParams.swapRouter;
+        targetHealthFactor = _hedgeParams.targetHealthFactor;
+        liquidationThreshold = _hedgeParams.liquidationThreshold;
+    }
+
+    function getUsdcBorrowed() public view returns (uint256 usdcAmount) {
+        return aUsdc.balanceOf(address(this)) - dnUsdcDeposited;
+    }
     /* ##################################################################
                                 KEEPER FUNCTIONS
     ################################################################## */
