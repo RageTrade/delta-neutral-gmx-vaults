@@ -67,7 +67,7 @@ export const dnGmxVaultFixture = deployments.createFixture(async hre => {
 
   // await generateErc20Balance(weth, parseUnits('20', 18), users[0].address);
   // await generateErc20Balance(wbtc, parseUnits('5', 8), users[0].address);
-  
+
   await generateErc20Balance(usdc, parseUnits('10000', 6), users[0].address);
   await generateErc20Balance(usdt, parseUnits('10000', 6), users[0].address);
 
