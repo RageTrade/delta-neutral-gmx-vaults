@@ -1,6 +1,6 @@
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import hre from 'hardhat';
-import { ERC20 } from '../../typechain-types';
+import { IERC20 as ERC20 } from '../../typechain-types/@openzeppelin/contracts/token/ERC20';
 
 export const getErc20 = async (address: string) =>
   (await hre.ethers.getContractAt('@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20', address)) as ERC20;
