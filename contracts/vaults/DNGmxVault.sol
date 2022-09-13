@@ -74,6 +74,10 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         _;
     }
 
+    /* ##################################################################
+                                SYSTEM FUNCTIONS
+    ################################################################## */
+
     function initialize(
         string calldata _name,
         string calldata _symbol,
@@ -103,6 +107,10 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         pool = IPool(poolAddressProvider.getPool());
         oracle = IPriceOracle(poolAddressProvider.getPriceOracle());
     }
+
+    /* ##################################################################
+                                ADMIN FUNCTIONS
+    ################################################################## */
 
     function grantAllowances() external onlyOwner {
         address aavePool = address(pool);
@@ -153,17 +161,17 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         emit RebalanceParamsUpdated(_rsParams.rebalanceTimeThreshold, _rsParams.rebalanceDeltaThreshold);
     }
 
-    function getUsdcBorrowed() public view returns (uint256 usdcAmount) {
-        return aUsdc.balanceOf(address(this)) - dnUsdcDeposited;
+    /* ##################################################################
+                                KEEPER FUNCTIONS
+    ################################################################## */
+
+    function isValidRebalance() public view returns (bool) {
+        return _isValidRebalanceTime() || _isValidRebalanceDeviation();
     }
 
-    /// @dev returns the borrow value in USDC
-    function _getBorrowValue(uint256 btcAmount, uint256 ethAmount) internal view returns (uint256 borrowValue) {
-        borrowValue = (btcAmount * getPrice(address(wbtc))) + (ethAmount * getPrice(address(weth)));
-        borrowValue = borrowValue / getPrice(address(usdc));
-    }
+    function rebalance() external onlyKeeper {
+        if (!isValidRebalance()) revert InvalidRebalance();
 
-    function _rebalanceBeforeShareAllocation() internal {
         // harvest fees
         stakingManager.harvestFees();
 
@@ -172,7 +180,19 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
 
         // rebalance profit
         _rebalanceProfit(totalCurrentBorrowValue);
+
+        // calculate current btc and eth positions in GLP
+        // get the position value and calculate the collateral needed to borrow that
+        // transfer collateral from LB vault to DN vault
+        _rebalanceHedge(currentBtc, currentEth);
+
+        lastRebalanceTS = uint64(block.timestamp);
+        emit Rebalanced();
     }
+
+    /* ##################################################################
+                                USER FUNCTIONS
+    ################################################################## */
 
     function deposit(uint256 amount, address to) public virtual override returns (uint256 shares) {
         _rebalanceBeforeShareAllocation();
@@ -202,164 +222,11 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         amount = super.redeem(shares, to, from);
     }
 
-    function rebalance() external onlyKeeper {
-        if (!isValidRebalance()) revert InvalidRebalance();
+    //TODO: add withdrawToken and redeemToken functions
 
-        // harvest fees
-        stakingManager.harvestFees();
-
-        (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
-        uint256 totalCurrentBorrowValue = _getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
-
-        // rebalance profit
-        _rebalanceProfit(totalCurrentBorrowValue);
-
-        // calculate current btc and eth positions in GLP
-        // get the position value and calculate the collateral needed to borrow that
-        // transfer collateral from LB vault to DN vault
-        _rebalanceHedge(currentBtc, currentEth, totalAssets());
-
-        lastRebalanceTS = uint64(block.timestamp);
-        emit Rebalanced();
-    }
-
-    function totalAssets() public view override returns (uint256) {
-        return stakingManager.maxWithdraw(address(this));
-    }
-
-    function getPrice() public view returns (uint256) {
-        uint256 aum = glpManager.getAum(false);
-        uint256 totalSupply = glp.totalSupply();
-
-        return aum / (totalSupply * 1e24);
-    }
-
-    function getMarketValue(uint256 assetAmount) public view returns (uint256 marketValue) {
-        marketValue = assetAmount * getPrice();
-    }
-
-    function getVaultMarketValue() public view returns (int256 vaultMarketValue) {
-        (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
-        uint256 totalCurrentBorrowValue = _getBorrowValue(currentBtc, currentEth);
-        vaultMarketValue = ((getMarketValue(totalAssets()) + dnUsdcDeposited) - totalCurrentBorrowValue).toInt256();
-    }
-
-    function isValidRebalance() public view returns (bool) {
-        return _isValidRebalanceTime() || _isValidRebalanceDeviation();
-    }
-
-    /* solhint-disable not-rely-on-time */
-    function _isValidRebalanceTime() internal view returns (bool) {
-        return (block.timestamp - lastRebalanceTS) > rebalanceTimeThreshold;
-    }
-
-    function _isValidRebalanceDeviation() internal view returns (bool) {
-        (uint256 currentBtcBorrow, uint256 currentEthBorrow) = _getCurrentBorrows();
-
-        (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrows(totalAssets());
-
-        return
-            !(_isWithinAllowedDelta(optimalEthBorrow, currentEthBorrow) &&
-                _isWithinAllowedDelta(optimalBtcBorrow, currentBtcBorrow));
-    }
-
-    function _swapTokenToUSDC(address token, uint256 tokenAmount) internal returns (uint256 usdcAmount) {
-        bytes memory path = abi.encodePacked(token, uint24(500), usdc);
-
-        uint256 minAmountOut = getPrice(token).mulDiv(tokenAmount * (MAX_BPS - usdcReedemSlippage), MAX_BPS);
-
-        ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
-            path: path,
-            amountIn: tokenAmount,
-            amountOutMinimum: minAmountOut,
-            recipient: address(this),
-            deadline: block.timestamp
-        });
-
-        usdcAmount = swapRouter.exactInput(params);
-    }
-
-    /* solhint-disable not-rely-on-time */
-    function _swapUSDCToToken(address token, uint256 tokenAmount) internal returns (uint256 outputAmount) {
-        bytes memory path = abi.encodePacked(usdc, uint24(500), token);
-
-        uint256 maxAmountIn = getPrice(token).mulDiv(tokenAmount * (MAX_BPS + usdcReedemSlippage), MAX_BPS);
-
-        ISwapRouter.ExactOutputParams memory params = ISwapRouter.ExactOutputParams({
-            path: path,
-            amountInMaximum: maxAmountIn,
-            amountOut: tokenAmount,
-            recipient: address(this),
-            deadline: block.timestamp
-        });
-
-        outputAmount = swapRouter.exactOutput(params);
-    }
-
-    function _executeFlashloan(
-        address[] memory assets,
-        uint256[] memory amounts,
-        uint256 _btcAssetAmount,
-        uint256 _ethAssetAmount,
-        bool _repayDebtBtc,
-        bool _repayDebtEth
-    ) internal {
-        if (assets.length != amounts.length) revert ArraysLengthMismatch();
-
-        _hasFlashloaned = true;
-
-        balancerVault.flashLoan(
-            address(this),
-            assets,
-            amounts,
-            abi.encode(_btcAssetAmount, _ethAssetAmount, _repayDebtBtc, _repayDebtEth)
-        );
-
-        _hasFlashloaned = false;
-    }
-
-    function _executeBorrow(address token, uint256 amount) internal {
-        pool.borrow(token, amount, VARIABLE_INTEREST_MODE, 0, address(this));
-    }
-
-    function _executeRepay(address token, uint256 amount) internal {
-        pool.repay(token, amount, VARIABLE_INTEREST_MODE, address(this));
-    }
-
-    function _executeSupply(address token, uint256 amount) internal {
-        pool.supply(token, amount, address(this), 0);
-    }
-
-    function _executeWithdraw(
-        address token,
-        uint256 amount,
-        address receiver
-    ) internal {
-        pool.withdraw(token, amount, receiver);
-    }
-
-    function _executeOperationToken(
-        address token,
-        uint256 amount,
-        uint256 premium,
-        bool repayDebt
-    ) internal {
-        uint256 amountWithPremium = amount + premium;
-        if (!repayDebt) {
-            uint256 usdcReceived = _swapTokenToUSDC(token, amount);
-            dnUsdcDeposited += usdcReceived;
-            _executeSupply(address(usdc), usdcReceived);
-            _executeBorrow(token, amountWithPremium);
-            IERC20(token).transfer(address(balancerVault), amountWithPremium);
-        } else {
-            uint256 tokenReceived = _swapUSDCToToken(token, amount);
-            _executeRepay(token, tokenReceived);
-            dnUsdcDeposited -= amountWithPremium;
-            //withdraws to balancerVault
-            _executeWithdraw(address(usdc), amountWithPremium, address(balancerVault));
-        }
-    }
-
+    /* ##################################################################
+                            FLASHLOAN RECEIVER
+    ################################################################## */
     function receiveFlashLoan(
         IERC20[] memory tokens,
         uint256[] memory amounts,
@@ -390,35 +257,82 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         _executeOperationToken(address(weth), ethAssetAmount, ethAssetPremium, repayDebtEth);
     }
 
-    // @dev returns price in terms of usdc
-    function getPrice(address token) internal view returns (uint256) {
-        uint256 price = oracle.getAssetPrice(token);
+    /* ##################################################################
+                                VIEW FUNCTIONS
+    ################################################################## */
 
-        // @dev aave returns from same source as chainlink (which is 8 decimals)
-        return price / 10**2;
+    function totalAssets() public view override returns (uint256) {
+        return stakingManager.maxWithdraw(address(this));
     }
 
-    function _flashloanAmounts(
-        address token,
-        uint256 optimalBorrow,
-        uint256 currentBorrow
-    ) internal view returns (uint256 amount, bool repayDebt) {
-        // check the delta between optimal position and actual position in token terms
-        // take that position using swap
-        // To Increase
-        if (optimalBorrow > currentBorrow) {
-            amount = optimalBorrow - currentBorrow;
-            repayDebt = false;
-            // Flash loan ETH/BTC from AAVE
-            // In callback: Sell loan for USDC and repay debt
-        } else {
-            // To Decrease
-            amount = (currentBorrow - optimalBorrow) * getPrice(token);
-            repayDebt = true;
-            // In callback: Swap to ETH/BTC and deposit to AAVE
-            // Send back some aUSDC to LB vault
-        }
+    function getPrice() public view returns (uint256) {
+        uint256 aum = glpManager.getAum(false);
+        uint256 totalSupply = glp.totalSupply();
+
+        return aum / (totalSupply * 1e24);
     }
+
+    function getMarketValue(uint256 assetAmount) public view returns (uint256 marketValue) {
+        marketValue = assetAmount * getPrice();
+    }
+
+    function getVaultMarketValue() public view returns (int256 vaultMarketValue) {
+        (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
+        uint256 totalCurrentBorrowValue = _getBorrowValue(currentBtc, currentEth);
+        vaultMarketValue = ((getMarketValue(totalAssets()) + dnUsdcDeposited) - totalCurrentBorrowValue).toInt256();
+    }
+
+    function getUsdcBorrowed() public view returns (uint256 usdcAmount) {
+        return aUsdc.balanceOf(address(this)) - dnUsdcDeposited;
+    }
+
+    /* ##################################################################
+                            INTERNAL FUNCTIONS
+    ################################################################## */
+
+    /*
+        DEPOSIT/WITHDRAW HELPERS
+    */
+
+    function _rebalanceBeforeShareAllocation() internal {
+        // harvest fees
+        stakingManager.harvestFees();
+
+        (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
+        uint256 totalCurrentBorrowValue = _getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
+
+        // rebalance profit
+        _rebalanceProfit(totalCurrentBorrowValue);
+    }
+
+    function beforeWithdraw(
+        uint256 assets,
+        uint256,
+        address
+    ) internal override {
+        stakingManager.withdraw(assets, address(this), address(this));
+        (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
+
+        //rebalance of hedge based on assets after withdraw (before withdraw assets - withdrawn assets)
+        _rebalanceHedge(currentBtc, currentEth);
+    }
+
+    function afterDeposit(
+        uint256 assets,
+        uint256,
+        address
+    ) internal override {
+        stakingManager.deposit(assets, address(this));
+        if (totalAssets() > depositCap) revert DepositCapExceeded();
+        (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
+
+        //rebalance of hedge based on assets after deposit (after deposit assets)
+        _rebalanceHedge(currentBtc, currentEth);
+    }
+
+    /*
+        REBALANCE HELPERS
+    */
 
     function _rebalanceProfit(uint256 borrowValue) internal {
         if (borrowValue > dnUsdcDeposited) {
@@ -476,72 +390,12 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         _executeFlashloan(assets, amounts, btcAssetAmount, ethAssetAmount, repayDebtBtc, repayDebtEth);
     }
 
-    function _getCurrentBorrows() internal view returns (uint256 currentBtcBorrow, uint256 currentEthBorrow) {
-        return (vWbtc.balanceOf(address(this)), vWeth.balanceOf(address(this)));
-    }
-
-    //TODO: make this to use glpDeposited as input.
-    function _getOptimalBorrows(uint256 glpDeposited)
-        internal
-        view
-        returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow)
-    {
-        uint256 ethReservesOfGlp = _getTokenReservesInGlp(address(weth));
-        uint256 btcReservesOfGlp = _getTokenReservesInGlp(address(wbtc));
-
-        uint256 glpTotalSupply = asset.totalSupply();
-
-        optimalEthBorrow = ethReservesOfGlp.mulDiv(glpDeposited, glpTotalSupply);
-        optimalBtcBorrow = btcReservesOfGlp.mulDiv(glpDeposited, glpTotalSupply);
-    }
-
-    function _getTokenReservesInGlp(address token) internal view returns (uint256) {
-        uint256 poolAmount = gmxVault.poolAmounts(token);
-        uint256 reservedAmount = gmxVault.reservedAmounts(token);
-
-        return (poolAmount - reservedAmount);
-    }
-
-    function _isWithinAllowedDelta(uint256 optimalBorrow, uint256 currentBorrow) internal view returns (bool) {
-        uint256 diff = optimalBorrow > currentBorrow ? optimalBorrow - currentBorrow : currentBorrow - optimalBorrow;
-        return diff < uint256(rebalanceDeltaThreshold).mulDiv(currentBorrow, MAX_BPS);
-    }
-
-    function beforeWithdraw(
-        uint256 assets,
-        uint256,
-        address
-    ) internal override {
-        stakingManager.withdraw(assets, address(this), address(this));
-        (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
-
-        //rebalance of hedge based on assets after withdraw (before withdraw assets - withdrawn assets)
-        _rebalanceHedge(currentBtc, currentEth, totalAssets());
-    }
-
-    function afterDeposit(
-        uint256 assets,
-        uint256,
-        address
-    ) internal override {
-        stakingManager.deposit(assets, address(this));
-        if (totalAssets() > depositCap) revert DepositCapExceeded();
-        (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
-
-        //rebalance of hedge based on assets after deposit (after deposit assets)
-        _rebalanceHedge(currentBtc, currentEth, totalAssets());
-    }
-
     /// @notice settles collateral for the vault
     /// @dev to be called after settle profits only (since vaultMarketValue if after settlement of profits)
     /// @param currentBtcBorrow The amount of USDC collateral token deposited to LB Protocol
     /// @param currentEthBorrow The market value of ETH/BTC part in sGLP
-    function _rebalanceHedge(
-        uint256 currentBtcBorrow,
-        uint256 currentEthBorrow,
-        uint256 glpDeposited
-    ) internal {
-        (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrows(glpDeposited);
+    function _rebalanceHedge(uint256 currentBtcBorrow, uint256 currentEthBorrow) internal {
+        (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrows(totalAssets());
         uint256 optimalBorrowValue = _getBorrowValue(optimalBtcBorrow, optimalEthBorrow);
         // Settle net change in market value and deposit/withdraw collateral tokens
         // Vault market value is just the collateral value since profit has been settled
@@ -562,6 +416,43 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
             // Deposit to LB Vault
             lpVault.repay(currentLpVaultAmount - targetLpVaultAmount);
         }
+    }
+
+    /*
+        SWAP HELPERS
+    */
+
+    function _swapTokenToUSDC(address token, uint256 tokenAmount) internal returns (uint256 usdcAmount) {
+        bytes memory path = abi.encodePacked(token, uint24(500), usdc);
+
+        uint256 minAmountOut = getPrice(token).mulDiv(tokenAmount * (MAX_BPS - usdcReedemSlippage), MAX_BPS);
+
+        ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
+            path: path,
+            amountIn: tokenAmount,
+            amountOutMinimum: minAmountOut,
+            recipient: address(this),
+            deadline: block.timestamp
+        });
+
+        usdcAmount = swapRouter.exactInput(params);
+    }
+
+    /* solhint-disable not-rely-on-time */
+    function _swapUSDCToToken(address token, uint256 tokenAmount) internal returns (uint256 outputAmount) {
+        bytes memory path = abi.encodePacked(usdc, uint24(500), token);
+
+        uint256 maxAmountIn = getPrice(token).mulDiv(tokenAmount * (MAX_BPS + usdcReedemSlippage), MAX_BPS);
+
+        ISwapRouter.ExactOutputParams memory params = ISwapRouter.ExactOutputParams({
+            path: path,
+            amountInMaximum: maxAmountIn,
+            amountOut: tokenAmount,
+            recipient: address(this),
+            deadline: block.timestamp
+        });
+
+        outputAmount = swapRouter.exactOutput(params);
     }
 
     /// @notice withdraws LP tokens from gauge, sells LP token for usdc
@@ -592,5 +483,159 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         stakingManager.depositToken(address(usdc), amount);
     }
 
-    //TODO: add withdrawToken and redeemToken functions
+    /*
+        AAVE HELPERS
+    */
+
+    function _executeBorrow(address token, uint256 amount) internal {
+        pool.borrow(token, amount, VARIABLE_INTEREST_MODE, 0, address(this));
+    }
+
+    function _executeRepay(address token, uint256 amount) internal {
+        pool.repay(token, amount, VARIABLE_INTEREST_MODE, address(this));
+    }
+
+    function _executeSupply(address token, uint256 amount) internal {
+        pool.supply(token, amount, address(this), 0);
+    }
+
+    function _executeWithdraw(
+        address token,
+        uint256 amount,
+        address receiver
+    ) internal {
+        pool.withdraw(token, amount, receiver);
+    }
+
+    /*
+        BALANCER HELPERS
+    */
+
+    function _executeOperationToken(
+        address token,
+        uint256 amount,
+        uint256 premium,
+        bool repayDebt
+    ) internal {
+        uint256 amountWithPremium = amount + premium;
+        if (!repayDebt) {
+            uint256 usdcReceived = _swapTokenToUSDC(token, amount);
+            dnUsdcDeposited += usdcReceived;
+            _executeSupply(address(usdc), usdcReceived);
+            _executeBorrow(token, amountWithPremium);
+            IERC20(token).transfer(address(balancerVault), amountWithPremium);
+        } else {
+            uint256 tokenReceived = _swapUSDCToToken(token, amount);
+            _executeRepay(token, tokenReceived);
+            dnUsdcDeposited -= amountWithPremium;
+            //withdraws to balancerVault
+            _executeWithdraw(address(usdc), amountWithPremium, address(balancerVault));
+        }
+    }
+
+    function _executeFlashloan(
+        address[] memory assets,
+        uint256[] memory amounts,
+        uint256 _btcAssetAmount,
+        uint256 _ethAssetAmount,
+        bool _repayDebtBtc,
+        bool _repayDebtEth
+    ) internal {
+        if (assets.length != amounts.length) revert ArraysLengthMismatch();
+
+        _hasFlashloaned = true;
+
+        balancerVault.flashLoan(
+            address(this),
+            assets,
+            amounts,
+            abi.encode(_btcAssetAmount, _ethAssetAmount, _repayDebtBtc, _repayDebtEth)
+        );
+
+        _hasFlashloaned = false;
+    }
+
+    /* ##################################################################
+                            INTERNAL VIEW FUNCTIONS
+    ################################################################## */
+    /* solhint-disable not-rely-on-time */
+    function _isValidRebalanceTime() internal view returns (bool) {
+        return (block.timestamp - lastRebalanceTS) > rebalanceTimeThreshold;
+    }
+
+    function _isValidRebalanceDeviation() internal view returns (bool) {
+        (uint256 currentBtcBorrow, uint256 currentEthBorrow) = _getCurrentBorrows();
+
+        (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrows(totalAssets());
+
+        return
+            !(_isWithinAllowedDelta(optimalEthBorrow, currentEthBorrow) &&
+                _isWithinAllowedDelta(optimalBtcBorrow, currentBtcBorrow));
+    }
+
+    // @dev returns price in terms of usdc
+    function getPrice(address token) internal view returns (uint256) {
+        uint256 price = oracle.getAssetPrice(token);
+
+        // @dev aave returns from same source as chainlink (which is 8 decimals)
+        return price / 10**2;
+    }
+
+    /// @dev returns the borrow value in USDC
+    function _getBorrowValue(uint256 btcAmount, uint256 ethAmount) internal view returns (uint256 borrowValue) {
+        borrowValue = (btcAmount * getPrice(address(wbtc))) + (ethAmount * getPrice(address(weth)));
+        borrowValue = borrowValue / getPrice(address(usdc));
+    }
+
+    function _flashloanAmounts(
+        address token,
+        uint256 optimalBorrow,
+        uint256 currentBorrow
+    ) internal view returns (uint256 amount, bool repayDebt) {
+        // check the delta between optimal position and actual position in token terms
+        // take that position using swap
+        // To Increase
+        if (optimalBorrow > currentBorrow) {
+            amount = optimalBorrow - currentBorrow;
+            repayDebt = false;
+            // Flash loan ETH/BTC from AAVE
+            // In callback: Sell loan for USDC and repay debt
+        } else {
+            // To Decrease
+            amount = (currentBorrow - optimalBorrow) * getPrice(token);
+            repayDebt = true;
+            // In callback: Swap to ETH/BTC and deposit to AAVE
+            // Send back some aUSDC to LB vault
+        }
+    }
+
+    function _getCurrentBorrows() internal view returns (uint256 currentBtcBorrow, uint256 currentEthBorrow) {
+        return (vWbtc.balanceOf(address(this)), vWeth.balanceOf(address(this)));
+    }
+
+    function _getOptimalBorrows(uint256 glpDeposited)
+        internal
+        view
+        returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow)
+    {
+        uint256 ethReservesOfGlp = _getTokenReservesInGlp(address(weth));
+        uint256 btcReservesOfGlp = _getTokenReservesInGlp(address(wbtc));
+
+        uint256 glpTotalSupply = asset.totalSupply();
+
+        optimalEthBorrow = ethReservesOfGlp.mulDiv(glpDeposited, glpTotalSupply);
+        optimalBtcBorrow = btcReservesOfGlp.mulDiv(glpDeposited, glpTotalSupply);
+    }
+
+    function _getTokenReservesInGlp(address token) internal view returns (uint256) {
+        uint256 poolAmount = gmxVault.poolAmounts(token);
+        uint256 reservedAmount = gmxVault.reservedAmounts(token);
+
+        return (poolAmount - reservedAmount);
+    }
+
+    function _isWithinAllowedDelta(uint256 optimalBorrow, uint256 currentBorrow) internal view returns (bool) {
+        uint256 diff = optimalBorrow > currentBorrow ? optimalBorrow - currentBorrow : currentBorrow - optimalBorrow;
+        return diff < uint256(rebalanceDeltaThreshold).mulDiv(currentBorrow, MAX_BPS);
+    }
 }
