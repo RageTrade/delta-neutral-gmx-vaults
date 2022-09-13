@@ -239,8 +239,9 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     }
 
     function getVaultMarketValue() public view returns (int256 vaultMarketValue) {
-        // TODO: include any other pnls
-        vaultMarketValue = (getMarketValue(totalAssets())).toInt256();
+        (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
+        uint256 totalCurrentBorrowValue = _getBorrowValue(currentBtc, currentEth);
+        vaultMarketValue = ((getMarketValue(totalAssets()) + dnUsdcDeposited) - totalCurrentBorrowValue).toInt256();
     }
 
     function isValidRebalance() public view returns (bool) {
