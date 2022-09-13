@@ -534,13 +534,12 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         (
             ,
             /** uint256 ltv **/
-            uint256 liquidationThreshold, /** uint256 liquidationBonus */ /** uint256 decimals */
+            uint256 liquidationThreshold, /** uint256 liquidationBonus */ /** uint256 decimals */ /** uint256 reserveFactor */
             ,
             ,
             ,
 
-        ) = /** uint256 reserveFactor */
-            config.getParams();
+        ) = config.getParams();
 
         return liquidationThreshold;
     }
