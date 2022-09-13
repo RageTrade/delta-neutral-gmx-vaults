@@ -1,7 +1,7 @@
-import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { deployments, ethers } from 'hardhat';
 import { aaveVaultFixture } from './aave-vault';
 import { generateErc20Balance } from '../utils/erc20';
+import { parseEther, parseUnits } from 'ethers/lib/utils';
 import addresses, { GMX_ECOSYSTEM_ADDRESSES } from './addresses';
 import { glpBatchingStakingManagerFixture } from './glp-batching-staking-manager';
 
@@ -54,13 +54,13 @@ export const dnGmxVaultFixture = deployments.createFixture(async hre => {
   });
 
   await dnGmxVault.setRebalanceParams({
-    rebalanceTimeThreshold: ethers.constants.Zero,
-    rebalanceDeltaThreshold: ethers.constants.Zero,
+    rebalanceTimeThreshold: ethers.constants.Zero, // or 86400
+    rebalanceDeltaThreshold: 500, // 5% in bps
   });
 
   await dnGmxVault.setHedgeParams({
-    targetHealthFactor: ethers.constants.Zero,
-    liquidationThreshold: ethers.constants.Zero,
+    targetHealthFactor: 15_000, // 150%
+    liquidationThreshold: ethers.constants.Zero, // query
     vault: addresses.BALANCER_VAULT,
     swapRouter: addresses.UNI_V3_SWAP_ROUTER,
   });
