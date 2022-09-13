@@ -364,23 +364,6 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         }
     }
 
-    function _getLiquidationThreshold(address asset) internal view returns (uint256) {
-        DataTypes.ReserveConfigurationMap memory config = pool.getConfiguration(asset);
-        (
-            ,
-            /** uint256 ltv **/
-            uint256 liquidationThreshold, /** uint256 liquidationBonus */
-            ,
-            ,
-            ,
-
-        ) = /** uint256 decimals */
-            /** uint256 reserveFactor */
-            config.getParams();
-
-        return liquidationThreshold;
-    }
-
     function _rebalanceBorrow(
         uint256 optimalBtcBorrow,
         uint256 currentBtcBorrow,
@@ -544,6 +527,22 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         address receiver
     ) internal {
         pool.withdraw(token, amount, receiver);
+    }
+
+    function _getLiquidationThreshold(address asset) internal view returns (uint256) {
+        DataTypes.ReserveConfigurationMap memory config = pool.getConfiguration(asset);
+        (
+            ,
+            /** uint256 ltv **/
+            uint256 liquidationThreshold, /** uint256 liquidationBonus */ /** uint256 decimals */
+            ,
+            ,
+            ,
+
+        ) = /** uint256 reserveFactor */
+            config.getParams();
+
+        return liquidationThreshold;
     }
 
     /*
