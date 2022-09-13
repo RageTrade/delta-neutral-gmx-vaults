@@ -31,7 +31,7 @@ export default {
     hardhat: {
       forking: {
         url: `https://arb-mainnet.alchemyapi.io/v2/${ALCHEMY_KEY}`,
-        blockNumber: 18099162,
+        blockNumber: 22049346,
       },
       blockGasLimit: 0x1fffffffffff,
       gasPrice: 0,
@@ -101,14 +101,18 @@ export default {
       }
     ],
   },
-  // dependencyCompiler: {
-  //   paths: [
-  //     '@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol',
-  //   ],
-  // },
+  dependencyCompiler: {
+    paths: [
+      '@ragetrade/vaults/contracts/yieldStrategy/gmx/GlpStakingManager.sol',
+      '@ragetrade/vaults/contracts/yieldStrategy/gmx/GMXBatchingManager.sol',
+    ],
+  },
   typechain: {
     target: 'ethers-v5',
-    alwaysGenerateOverloads: false
+    alwaysGenerateOverloads: false,
+    externalArtifacts: [
+      'node_modules/@ragetrade/vaults/contracts/gmx'
+    ],
   },
   etherscan: {
     apiKey: {
