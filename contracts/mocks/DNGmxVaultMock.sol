@@ -3,6 +3,7 @@
 pragma solidity ^0.8.9;
 
 import { DNGmxVault } from 'contracts/vaults/DNGmxVault.sol';
+import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
 contract DNGmxVaultMock is DNGmxVault {
     function getBorrowValue(uint256 btcAmount, uint256 ethAmount) external view returns (uint256 borrowValue) {
@@ -56,6 +57,10 @@ contract DNGmxVaultMock is DNGmxVault {
         pool.withdraw(token, amount, address(this));
     }
 
+    function executeBorrowFromLpVault(uint256 amount) external {
+        lpVault.borrow(amount);
+    }
+
     function executeOperationToken(
         address token,
         uint256 amount,
@@ -88,6 +93,10 @@ contract DNGmxVaultMock is DNGmxVault {
         uint256 currentEthBorrow
     ) external {
         return _rebalanceBorrow(optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
+    }
+
+    function getPrice(IERC20Metadata token) external view returns (uint256) {
+        return _getPrice(token);
     }
 
     function getCurrentBorrows() external view returns (uint256 currentBtcBorrow, uint256 currentEthBorrow) {
