@@ -603,6 +603,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     /* ##################################################################
                             INTERNAL VIEW FUNCTIONS
     ################################################################## */
+
     /* solhint-disable not-rely-on-time */
     function _isValidRebalanceTime() internal view returns (bool) {
         return (block.timestamp - lastRebalanceTS) > rebalanceTimeThreshold;
@@ -666,7 +667,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         uint256 ethReservesOfGlp = _getTokenReservesInGlp(address(weth));
         uint256 btcReservesOfGlp = _getTokenReservesInGlp(address(wbtc));
 
-        uint256 glpTotalSupply = asset.totalSupply();
+        uint256 glpTotalSupply = glp.totalSupply();
 
         optimalEthBorrow = ethReservesOfGlp.mulDiv(glpDeposited, glpTotalSupply);
         optimalBtcBorrow = btcReservesOfGlp.mulDiv(glpDeposited, glpTotalSupply);
