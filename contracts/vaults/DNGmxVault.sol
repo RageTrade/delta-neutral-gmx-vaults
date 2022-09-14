@@ -178,6 +178,14 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         targetHealthFactor = _hedgeParams.targetHealthFactor;
     }
 
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
     /* ##################################################################
                                 KEEPER FUNCTIONS
     ################################################################## */
@@ -212,12 +220,12 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
                                 USER FUNCTIONS
     ################################################################## */
 
-    function deposit(uint256 amount, address to) public virtual override returns (uint256 shares) {
+    function deposit(uint256 amount, address to) public virtual override whenNotPaused returns (uint256 shares) {
         _rebalanceBeforeShareAllocation();
         shares = super.deposit(amount, to);
     }
 
-    function mint(uint256 shares, address to) public virtual override returns (uint256 amount) {
+    function mint(uint256 shares, address to) public virtual override whenNotPaused returns (uint256 amount) {
         _rebalanceBeforeShareAllocation();
         amount = super.mint(shares, to);
     }
@@ -226,7 +234,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         uint256 amount,
         address to,
         address from
-    ) public override returns (uint256 shares) {
+    ) public override whenNotPaused returns (uint256 shares) {
         _rebalanceBeforeShareAllocation();
         shares = super.withdraw(amount, to, from);
     }
@@ -235,7 +243,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         uint256 shares,
         address to,
         address from
-    ) public override returns (uint256 amount) {
+    ) public override whenNotPaused returns (uint256 amount) {
         _rebalanceBeforeShareAllocation();
         amount = super.redeem(shares, to, from);
     }
