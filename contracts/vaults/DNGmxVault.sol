@@ -12,7 +12,7 @@ import { IVault } from 'contracts/interfaces/gmx/IVault.sol';
 import { IGlpManager } from 'contracts/interfaces/gmx/IGlpManager.sol';
 import { ISGLPExtended } from 'contracts/interfaces/gmx/ISGLPExtended.sol';
 import { IRewardRouterV2 } from 'contracts/interfaces/gmx/IRewardRouterV2.sol';
-import { IGlpStakingManager } from 'contracts/interfaces/gmx/IGlpStakingManager.sol';
+import { IGMXBatchingManager } from 'contracts/interfaces/gmx/IGMXBatchingManager.sol';
 
 import { ILPVault } from 'contracts/interfaces/ILPVault.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
@@ -49,13 +49,17 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     error ArraysLengthMismatch();
     error FlashloanNotInitiated();
 
+    error InvalidFeeRecipient();
+
     event Rebalanced();
     event AllowancesGranted();
 
     event LPVaultUpdated(address _lpVault);
     event KeeperUpdated(address _newKeeper);
+    event FeeRecipientUpdated(address _newFeeRecipient);
+    event FeesWithdrawn(uint256 feeAmount);
     event DepositCapUpdated(uint256 _newDepositCap);
-    event StakingManagerUpdated(address _stakingManager);
+    event BatchingManagerUpdated(address _batchingManager);
 
     event YieldParamsUpdated(uint16 indexed usdcReedemSlippage, uint240 indexed usdcConversionThreshold);
     event RebalanceParamsUpdated(uint32 indexed rebalanceTimeThreshold, uint16 indexed rebalanceDeltaThreshold);
@@ -132,15 +136,15 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
 
         weth.approve(aavePool, type(uint256).max);
         weth.approve(swapRouter, type(uint256).max);
+        weth.approve(address(batchingManager), type(uint256).max);
 
         usdc.approve(aavePool, type(uint256).max);
         usdc.approve(address(swapRouter), type(uint256).max);
-        usdc.approve(address(stakingManager), type(uint256).max);
+        usdc.approve(address(batchingManager), type(uint256).max);
 
         aUsdc.approve(address(lpVault), type(uint256).max);
 
         asset.approve(address(glpManager), type(uint256).max);
-        asset.approve(address(stakingManager), type(uint256).max);
 
         emit AllowancesGranted();
     }
@@ -160,9 +164,9 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         emit DepositCapUpdated(_newDepositCap);
     }
 
-    function setStakingManager(address _stakingManager) external onlyOwner {
-        stakingManager = IGlpStakingManager(_stakingManager);
-        emit StakingManagerUpdated(_stakingManager);
+    function setBatchingManager(address _batchingManager) external onlyOwner {
+        batchingManager = IGMXBatchingManager(_batchingManager);
+        emit BatchingManagerUpdated(_batchingManager);
     }
 
     function setThresholds(YieldStrategyParams calldata _ysParams) external onlyOwner {
@@ -191,6 +195,53 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         _unpause();
     }
 
+    function setFeeRecipient(address _feeRecipient) external onlyOwner {
+        if (feeRecipient != _feeRecipient) {
+            feeRecipient = _feeRecipient;
+        } else revert InvalidFeeRecipient();
+
+        emit FeeRecipientUpdated(_feeRecipient);
+    }
+
+    /// @notice withdraw accumulated WETH fees
+    function withdrawFees() external {
+        uint256 amount = protocolFee;
+        protocolFee = 0;
+        weth.transfer(feeRecipient, amount);
+        emit FeesWithdrawn(amount);
+    }
+
+    /// @notice stakes the rewards from the staked Glp and claims WETH to buy glp
+    function harvestFees() public {
+        rewardRouter.handleRewards(
+            false, // _shouldClaimGmx
+            false, // _shouldStakeGmx
+            true, // _shouldClaimEsGmx
+            true, // _shouldStakeEsGmx
+            true, // _shouldStakeMultiplierPoints
+            true, // _shouldClaimWeth
+            false // _shouldConvertWethToEth
+        );
+
+        uint256 wethHarvested = weth.balanceOf(address(this)) - protocolFee;
+        if (wethHarvested > wethThreshold) {
+            uint256 protocolFeeHarvested = (wethHarvested * FEE) / MAX_BPS;
+            protocolFee += protocolFeeHarvested;
+
+            uint256 wethToCompound = wethHarvested - protocolFeeHarvested;
+
+            uint256 price = gmxVault.getMinPrice(address(weth));
+            uint256 usdgAmount = wethToCompound.mulDiv(
+                price * (MAX_BPS - slippageThreshold),
+                PRICE_PRECISION * MAX_BPS
+            );
+
+            usdgAmount = usdgAmount.mulDiv(10**USDG_DECIMALS, 10**WETH_DECIMALS);
+
+            batchingManager.depositToken(address(weth), wethToCompound, usdgAmount);
+        }
+    }
+
     /* ##################################################################
                                 KEEPER FUNCTIONS
     ################################################################## */
@@ -204,7 +255,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         if (!isValidRebalance()) revert InvalidRebalance();
 
         // harvest fees
-        stakingManager.harvestFees();
+        harvestFees();
 
         (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
         uint256 totalCurrentBorrowValue = _getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
@@ -300,7 +351,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     ################################################################## */
 
     function totalAssets() public view override returns (uint256) {
-        return stakingManager.maxWithdraw(address(this));
+        return fsGlp.balanceOf(address(this)) + batchingManager.stakingManagerGlpBalance();
     }
 
     function getPrice() public view returns (uint256) {
@@ -335,7 +386,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
 
     function _rebalanceBeforeShareAllocation() internal {
         // harvest fees
-        stakingManager.harvestFees();
+        harvestFees();
 
         (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
         uint256 totalCurrentBorrowValue = _getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
@@ -345,11 +396,10 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     }
 
     function beforeWithdraw(
-        uint256 assets,
+        uint256,
         uint256,
         address
     ) internal override {
-        stakingManager.withdraw(assets, address(this), address(this));
         (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
 
         //rebalance of hedge based on assets after withdraw (before withdraw assets - withdrawn assets)
@@ -357,11 +407,10 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     }
 
     function afterDeposit(
-        uint256 assets,
+        uint256,
         uint256,
         address
     ) internal override {
-        stakingManager.deposit(assets, address(this));
         if (totalAssets() > depositCap) revert DepositCapExceeded();
         (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
 
@@ -557,7 +606,6 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         console.log('GLP PRICE: ', getPrice());
         console.log('glpAmountDesired', glpAmountDesired);
         console.log('TA', totalAssets());
-        stakingManager.withdraw(glpAmountDesired, address(this), address(this));
         rewardRouter.unstakeAndRedeemGlp(
             address(usdc),
             glpAmountDesired, // glp amount
@@ -575,7 +623,12 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     function _convertAUsdcToAsset(uint256 amount) internal {
         _executeWithdraw(address(usdc), amount, address(this));
         // USDG has 18 decimals and usdc has 6 decimals => 18-6 = 12
-        stakingManager.depositToken(address(usdc), amount);
+        uint256 price = gmxVault.getMinPrice(address(usdc));
+        uint256 usdgAmount = amount.mulDiv(price * (MAX_BPS - slippageThreshold), PRICE_PRECISION * MAX_BPS);
+
+        usdgAmount = usdgAmount.mulDiv(10**USDG_DECIMALS, 10**IERC20Metadata(address(usdc)).decimals());
+
+        batchingManager.depositToken(address(usdc), amount, usdgAmount);
     }
 
     /*
