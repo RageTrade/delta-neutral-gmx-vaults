@@ -64,6 +64,8 @@ export const dnGmxVaultFixture = deployments.createFixture(async hre => {
     swapRouter: addresses.UNI_V3_SWAP_ROUTER,
   });
 
+  await dnGmxVault.grantAllowances();
+
   // await generateErc20Balance(weth, parseUnits('20', 18), users[0].address);
   // await generateErc20Balance(wbtc, parseUnits('5', 8), users[0].address);
 
