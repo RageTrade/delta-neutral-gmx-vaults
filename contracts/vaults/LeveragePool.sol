@@ -29,7 +29,7 @@ interface IDebtToken is IVariableDebtToken {
     function totalSupply() external view returns (uint256);
 }
 
-contract LeverageVault is OwnableUpgradeable, PausableUpgradeable {
+contract LeveragePool is OwnableUpgradeable, PausableUpgradeable {
     using FullMath for uint256;
     using FullMath for uint128;
     using SafeCast for uint256;
