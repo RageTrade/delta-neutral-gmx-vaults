@@ -8,7 +8,7 @@ import { IERC20Metadata } from '@openzeppelin/contracts/interfaces/IERC20Metadat
 import { IVault } from 'contracts/interfaces/gmx/IVault.sol';
 import { IGlpManager } from 'contracts/interfaces/gmx/IGlpManager.sol';
 import { IRewardRouterV2 } from 'contracts/interfaces/gmx/IRewardRouterV2.sol';
-import { IGlpStakingManager } from 'contracts/interfaces/gmx/IGlpStakingManager.sol';
+import { IGMXBatchingManager } from 'contracts/interfaces/gmx/IGMXBatchingManager.sol';
 
 import { ILPVault } from 'contracts/interfaces/ILPVault.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
@@ -32,10 +32,22 @@ contract DNGmxVaultStorage {
     uint256 public constant PRICE_PRECISION = 10e30;
     uint256 public constant VARIABLE_INTEREST_MODE = 2;
 
+    /* solhint-disable var-name-mixedcase */
+    uint256 public FEE = 1000;
+
+    uint256 public constant USDG_DECIMALS = 18;
+    uint256 public constant WETH_DECIMALS = 18;
+
+    uint256 public constant PRICE_PRECISION = 10**30;
+
     ///@dev common storage
 
     address public keeper;
     ILPVault public lpVault;
+    address public feeRecipient;
+    uint256 public protocolFee;
+    uint256 public wethThreshold;
+    uint256 public slippageThreshold;
 
     uint256 public depositCap;
     int256 internal dnUsdcDeposited;
@@ -70,11 +82,12 @@ contract DNGmxVaultStorage {
     IERC20Metadata internal usdc;
     IERC20Metadata internal weth;
     IERC20Metadata internal wbtc;
+    IERC20 internal fsGlp;
 
     IVault internal gmxVault;
     IGlpManager internal glpManager;
     IRewardRouterV2 internal rewardRouter;
-    IGlpStakingManager internal stakingManager;
+    IGMXBatchingManager internal batchingManager;
 
     /// @dev structs used to initialize
 
