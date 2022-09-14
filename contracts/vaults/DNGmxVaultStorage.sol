@@ -29,6 +29,7 @@ contract DNGmxVaultStorage {
     ///@dev constants
 
     uint16 public constant MAX_BPS = 10_000;
+    uint256 public constant PRICE_PRECISION = 10e30;
     uint256 public constant VARIABLE_INTEREST_MODE = 2;
 
     ///@dev common storage
@@ -65,10 +66,10 @@ contract DNGmxVaultStorage {
     uint16 public usdcReedemSlippage;
     uint240 public usdcConversionThreshold;
 
-    IERC20 internal glp;
-    IERC20 internal usdc;
-    IERC20 internal weth;
-    IERC20 internal wbtc;
+    IERC20Metadata internal glp;
+    IERC20Metadata internal usdc;
+    IERC20Metadata internal weth;
+    IERC20Metadata internal wbtc;
 
     IVault internal gmxVault;
     IGlpManager internal glpManager;
@@ -77,11 +78,11 @@ contract DNGmxVaultStorage {
 
     /// @dev structs used to initialize
 
-    struct TokenAddresses {
-        IERC20 weth;
-        IERC20 wbtc;
-        IERC20 sGlp;
-        IERC20 usdc;
+    struct Tokens {
+        IERC20Metadata weth;
+        IERC20Metadata wbtc;
+        IERC20Metadata sGlp;
+        IERC20Metadata usdc;
     }
 
     struct YieldStrategyParams {

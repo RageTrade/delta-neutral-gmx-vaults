@@ -2,6 +2,7 @@ import { deployments, ethers } from 'hardhat';
 import { aaveVaultFixture } from './aave-vault';
 import { generateErc20Balance } from '../utils/erc20';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
+import { increaseBlockTimestamp } from '../utils/vault-helpers';
 import addresses, { GMX_ECOSYSTEM_ADDRESSES } from './addresses';
 import { glpBatchingStakingManagerFixture } from './glp-batching-staking-manager';
 
@@ -25,13 +26,13 @@ export const dnGmxVaultFixture = deployments.createFixture(async hre => {
     'DN_GMX', // _symbol
     addresses.UNI_V3_SWAP_ROUTER, // _swapRouter
     GMX_ECOSYSTEM_ADDRESSES.RewardRouter, // _rewardRouter
-    addresses.AAVE_POOL_ADDRESS_PROVIDER, // _poolAddressesProvider
     {
       weth: addresses.WETH,
       wbtc: addresses.WBTC,
       usdc: addresses.USDC,
       sGlp: GMX_ECOSYSTEM_ADDRESSES.StakedGlp,
     },
+    addresses.AAVE_POOL_ADDRESS_PROVIDER, // _poolAddressesProvider
   );
 
   const aaveVault = await aaveVaultFixture();
@@ -42,7 +43,7 @@ export const dnGmxVaultFixture = deployments.createFixture(async hre => {
 
   await dnGmxVault.setKeeper(admin.address);
 
-  await dnGmxVault.setLPVault(ethers.constants.AddressZero);
+  await dnGmxVault.setLPVault(aaveVault.address);
 
   await dnGmxVault.setDepositCap(ethers.constants.MaxUint256);
 
@@ -75,13 +76,20 @@ export const dnGmxVaultFixture = deployments.createFixture(async hre => {
   await rewardRouter.connect(users[0]).mintAndStakeGlpETH(0, 0, {
     value: parseEther('10'),
   });
-
+  await increaseBlockTimestamp(15 * 60); // GLP cooldown
   await sGlp.connect(users[0]).approve(dnGmxVault.address, ethers.constants.MaxUint256);
 
   // deposit 1.5 mil in aave-vault with 1mil borrowcap
   await generateErc20Balance(usdc, parseUnits('1500000', 6), users[1].address);
   await usdc.connect(users[1]).approve(aaveVault.address, ethers.constants.MaxUint256);
-  await aaveVault.connect(users[1]).deposit(parseUnits('1500000', 6), users[1].address);
+  await aaveVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
+
+  hre.network.provider.request({
+    method: 'hardhat_impersonateAccount',
+    params: [dnGmxVault.address],
+  });
+
+  const dnGmxVaultSigner = await hre.ethers.getSigner(dnGmxVault.address);
 
   return {
     weth,
@@ -94,6 +102,7 @@ export const dnGmxVaultFixture = deployments.createFixture(async hre => {
     users,
     aaveVault,
     dnGmxVault,
+    dnGmxVaultSigner,
     glpStakingManager: glpBatchingStakingManagerFixtures.glpStakingManager,
     glpBatchingManager: glpBatchingStakingManagerFixtures.gmxBatchingManager,
   };
