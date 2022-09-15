@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import hre, { ethers } from 'hardhat';
+import { changePrice } from './utils/price-helpers';
 import { generateErc20Balance } from './utils/erc20';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { dnGmxVaultFixture } from './fixtures/dn-gmx-vault';
@@ -45,7 +46,7 @@ describe('Rebalance & its utils', () => {
 
     await dnGmxVault.rebalanceHedge(currentBtc, currentEth);
 
-    console.log('dnUsdcDeposited', await dnGmxVault.dnUsdcDeposited());
+    console.log('dnUsdcDeposited', await dnGmxVault.dnUsdcDepositedExternal());
     console.log('usdc borrowed', await dnGmxVault.getUsdcBorrowed());
   });
 
@@ -57,12 +58,72 @@ describe('Rebalance & its utils', () => {
     await dnGmxVault.connect(users[0]).deposit(amount, users[0].address);
   });
 
-  it.only('Withdraw', async () => {
+  it('Full Withdraw', async () => {
     const { dnGmxVault, dnGmxVaultSigner, admin, users, sGlp, fsGlp, glpStakingManager } = await dnGmxVaultFixture();
 
     const amount = parseEther('100');
 
     await dnGmxVault.connect(users[0]).deposit(amount, users[0].address);
+
+    console.log('MAX REDEEM', await dnGmxVault.maxRedeem(users[0].address));
+    console.log('MAX WITHDRAW', await dnGmxVault.maxWithdraw(users[0].address));
+    console.log('BALANCE OF', await dnGmxVault.balanceOf(users[0].address));
+
     await dnGmxVault.connect(users[0]).withdraw(amount, users[0].address, users[0].address);
+  });
+
+  it('Partial Withdraw', async () => {
+    const { dnGmxVault, dnGmxVaultSigner, admin, users, sGlp, fsGlp, glpStakingManager } = await dnGmxVaultFixture();
+
+    const amount = parseEther('100');
+
+    await dnGmxVault.connect(users[0]).deposit(amount, users[0].address);
+
+    console.log('MAX REDEEM', await dnGmxVault.maxRedeem(users[0].address));
+    console.log('MAX WITHDRAW', await dnGmxVault.maxWithdraw(users[0].address));
+    console.log('BALANCE OF', await dnGmxVault.balanceOf(users[0].address));
+
+    await dnGmxVault.connect(users[0]).withdraw(amount.div(2), users[0].address, users[0].address);
+  });
+
+  it.only('Change Price', async () => {
+    const { dnGmxVault, dnGmxVaultSigner, admin, users, wbtc, weth, sGlp, fsGlp, glpStakingManager } = await dnGmxVaultFixture();
+
+    // const amount = parseEther('100');
+
+    // await dnGmxVault.connect(users[0]).deposit(amount, users[0].address);
+
+    // console.log('MAX REDEEM', await dnGmxVault.maxRedeem(users[0].address));
+    // console.log('MAX WITHDRAW', await dnGmxVault.maxWithdraw(users[0].address));
+    // console.log('BALANCE OF', await dnGmxVault.balanceOf(users[0].address));
+
+    // await dnGmxVault.connect(users[0]).withdraw(amount.div(2), users[0].address, users[0].address);
+
+    console.log('BEFORE')
+
+    console.log('BTC price', await dnGmxVault['getPrice(address)'](wbtc.address))
+    console.log('ETH price', await dnGmxVault['getPrice(address)'](weth.address))
+
+    await changePrice('WBTC', 1000);
+    await changePrice('WETH', 1000);
+
+    console.log('AFTER')
+
+    console.log('BTC price', await dnGmxVault['getPrice(address)'](wbtc.address))
+    console.log('ETH price', await dnGmxVault['getPrice(address)'](weth.address))
+  });
+
+  it('Rebalance Profit', async () => {
+    const { dnGmxVault, dnGmxVaultSigner, admin, users, sGlp, fsGlp, glpStakingManager } = await dnGmxVaultFixture();
+
+    const amount = parseEther('100');
+
+    await dnGmxVault.connect(users[0]).deposit(amount, users[0].address);
+
+    console.log('MAX REDEEM', await dnGmxVault.maxRedeem(users[0].address));
+    console.log('MAX WITHDRAW', await dnGmxVault.maxWithdraw(users[0].address));
+    console.log('BALANCE OF', await dnGmxVault.balanceOf(users[0].address));
+
+    await dnGmxVault.connect(users[0]).withdraw(amount.div(2), users[0].address, users[0].address);
   });
 });
