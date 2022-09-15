@@ -38,7 +38,7 @@ contract DNGmxVaultStorage {
     ILPVault public lpVault;
 
     uint256 public depositCap;
-    uint256 internal dnUsdcDeposited;
+    int256 internal dnUsdcDeposited;
 
     bool internal _hasFlashloaned;
 
