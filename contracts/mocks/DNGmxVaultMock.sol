@@ -6,6 +6,10 @@ import { DNGmxVault } from 'contracts/vaults/DNGmxVault.sol';
 import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
 contract DNGmxVaultMock is DNGmxVault {
+    function dnUsdcDepositedExternal() external view returns (int256) {
+        return dnUsdcDeposited;
+    }
+
     function getBorrowValue(uint256 btcAmount, uint256 ethAmount) external view returns (uint256 borrowValue) {
         return _getBorrowValue(btcAmount, ethAmount);
     }
