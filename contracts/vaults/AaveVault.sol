@@ -22,12 +22,15 @@ contract AaveVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeabl
     event AllowancesGranted();
     event VaultCapUpdated(address vault, uint256 newCap);
 
+    uint16 internal constant MAX_BPS = 10_000;
+
     IPool internal pool;
     IAToken internal aUsdc;
     IPoolAddressesProvider internal poolAddressProvider;
 
     uint8 public vaultCount;
     IBorrowerVault[10] public vaults;
+    uint16 maxUtilizationBps;
 
     mapping(address => uint256) internal vaultCaps;
 
@@ -114,11 +117,14 @@ contract AaveVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeabl
         aUsdc.transferFrom(msg.sender, address(this), amount);
     }
 
+    /// @dev withdrawal will fail if the utilization goes above maxUtilization value due to a withdrawal
     function beforeWithdraw(
         uint256 assets,
         uint256,
         address
     ) internal override {
+        // check if the utilization goes above limit due to this withdrawal
+        if(totalUsdcBorrowed()>((totalAssets()-assets)*maxUtilizationBps)/MAX_BPS)
         pool.withdraw(address(asset), assets, address(this));
     }
 
@@ -133,6 +139,10 @@ contract AaveVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeabl
     function totalAssets() public view override returns (uint256 amount) {
         amount = aUsdc.balanceOf(address(this));
 
+        amount += totalUsdcBorrowed();
+    }
+
+    function totalUsdcBorrowed() public view returns(uint256 amount) {
         for (uint8 i = 0; i < vaultCount; i++) {
             amount += vaults[i].getUsdcBorrowed();
         }
