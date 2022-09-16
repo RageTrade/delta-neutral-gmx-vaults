@@ -5,6 +5,7 @@ import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { increaseBlockTimestamp } from '../utils/vault-helpers';
 import addresses, { GMX_ECOSYSTEM_ADDRESSES } from './addresses';
 import { glpBatchingStakingManagerFixture } from './glp-batching-staking-manager';
+import { IVault__factory } from '../../typechain-types';
 
 export const dnGmxVaultFixture = deployments.createFixture(async hre => {
   const [admin, ...users] = await hre.ethers.getSigners();
@@ -20,6 +21,8 @@ export const dnGmxVaultFixture = deployments.createFixture(async hre => {
   const rewardRouter = await hre.ethers.getContractAt('IRewardRouterV2', GMX_ECOSYSTEM_ADDRESSES.RewardRouter);
 
   const dnGmxVault = await (await hre.ethers.getContractFactory('DNGmxVaultMock')).deploy();
+
+  const gmxVault = IVault__factory.connect(GMX_ECOSYSTEM_ADDRESSES.Vault, admin);
 
   await dnGmxVault.initialize(
     'Delta Netural GMX Vault', // _name
@@ -100,6 +103,7 @@ export const dnGmxVaultFixture = deployments.createFixture(async hre => {
     fsGlp,
     admin,
     users,
+    gmxVault,
     aaveVault,
     dnGmxVault,
     dnGmxVaultSigner,

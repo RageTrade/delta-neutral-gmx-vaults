@@ -5,8 +5,8 @@ pragma solidity ^0.8.9;
 import { SafeCast } from 'contracts/libraries/SafeCast.sol';
 import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
 
-import { DNGmxVaultStorage, IDebtToken } from 'contracts/vaults/DNGmxVaultStorage.sol';
 import { ERC4626Upgradeable } from 'contracts/ERC4626/ERC4626Upgradeable.sol';
+import { DNGmxVaultStorage, IDebtToken } from 'contracts/vaults/DNGmxVaultStorage.sol';
 
 import { IVault } from 'contracts/interfaces/gmx/IVault.sol';
 import { IGlpManager } from 'contracts/interfaces/gmx/IGlpManager.sol';
@@ -375,6 +375,12 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
 
     function _rebalanceProfit(uint256 borrowValue) internal {
         int256 borrowVal = borrowValue.toInt256();
+
+        console.log('borrowVal');
+        console.logInt(borrowVal);
+        console.log('dnUsdcDeposited');
+        console.logInt(dnUsdcDeposited);
+
         if (borrowVal > dnUsdcDeposited) {
             // If glp goes up - there is profit on GMX and loss on AAVE
             // So convert some glp to usdc and deposit to AAVE
@@ -392,9 +398,6 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         uint256 optimalEthBorrow,
         uint256 currentEthBorrow
     ) internal {
-        // address[] memory assets;
-        // uint256[] memory amounts;
-
         address[] memory assets;
         uint256[] memory amounts;
 
@@ -551,6 +554,9 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         if (usdcAmountDesired < usdcConversionThreshold) return 0;
         uint256 glpAmountDesired = usdcAmountDesired.mulDiv(PRICE_PRECISION, getPrice());
         // USDG has 18 decimals and usdc has 6 decimals => 18-6 = 12
+        console.log('GLP PRICE: ', getPrice());
+        console.log('glpAmountDesired', glpAmountDesired);
+        console.log('TA', totalAssets());
         stakingManager.withdraw(glpAmountDesired, address(this), address(this));
         rewardRouter.unstakeAndRedeemGlp(
             address(usdc),
