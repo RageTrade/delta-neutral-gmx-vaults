@@ -23,7 +23,7 @@ describe('Aave interactions & functions', () => {
     await dnGmxVault.executeWithdraw(usdc.address, amount);
   });
 
-  it.only('executeBorrow & executeRepay', async () => {
+  it('executeBorrow & executeRepay', async () => {
     const amount = parseUnits('100', 6);
     const { dnGmxVault, usdc, wbtc, weth } = await dnGmxVaultFixture();
     await generateErc20Balance(usdc, amount, dnGmxVault.address);
