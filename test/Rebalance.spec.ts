@@ -97,7 +97,7 @@ describe('Rebalance & its utils', () => {
     console.log('ETH price (gmx)', await gmxVault.getMinPrice(weth.address));
   });
 
-  it.only('Rebalance Profit', async () => {
+  it('Rebalance Profit', async () => {
     const { dnGmxVault, glpBatchingManager, dnGmxVaultSigner, admin, users, sGlp, fsGlp, glpStakingManager } =
       await dnGmxVaultFixture();
 
