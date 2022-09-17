@@ -42,6 +42,13 @@ export const dnGmxVaultFixture = deployments.createFixture(async hre => {
   await aaveVault.updateVaultCap(dnGmxVault.address, parseUnits('1000000', 6));
 
   const glpBatchingStakingManagerFixtures = await glpBatchingStakingManagerFixture();
+  await glpBatchingStakingManagerFixtures.gmxBatchingManager.initialize(
+    GMX_ECOSYSTEM_ADDRESSES.StakedGlp,
+    GMX_ECOSYSTEM_ADDRESSES.RewardRouter,
+    GMX_ECOSYSTEM_ADDRESSES.GlpManager,
+    dnGmxVault.address,
+    admin.address,
+  );
   await glpBatchingStakingManagerFixtures.setVault(dnGmxVault.address);
 
   await dnGmxVault.setKeeper(admin.address);
@@ -50,7 +57,7 @@ export const dnGmxVaultFixture = deployments.createFixture(async hre => {
 
   await dnGmxVault.setDepositCap(ethers.constants.MaxUint256);
 
-  await dnGmxVault.setStakingManager(glpBatchingStakingManagerFixtures.glpStakingManager.address);
+  await dnGmxVault.setBatchingManager(glpBatchingStakingManagerFixtures.gmxBatchingManager.address);
 
   await dnGmxVault.setThresholds({
     usdcReedemSlippage: 100,
