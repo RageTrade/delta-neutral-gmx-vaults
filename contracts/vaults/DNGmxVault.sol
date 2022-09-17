@@ -267,7 +267,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         // calculate current btc and eth positions in GLP
         // get the position value and calculate the collateral needed to borrow that
         // transfer collateral from LB vault to DN vault
-        _rebalanceHedge(currentBtc, currentEth);
+        _rebalanceHedge(currentBtc, currentEth, totalAssets());
 
         lastRebalanceTS = uint64(block.timestamp);
         emit Rebalanced();
@@ -397,14 +397,14 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     }
 
     function beforeWithdraw(
-        uint256,
+        uint256 assets,
         uint256,
         address
     ) internal override {
         (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
 
         //rebalance of hedge based on assets after withdraw (before withdraw assets - withdrawn assets)
-        _rebalanceHedge(currentBtc, currentEth);
+        _rebalanceHedge(currentBtc, currentEth, totalAssets() - assets);
     }
 
     function afterDeposit(
@@ -416,7 +416,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
 
         //rebalance of hedge based on assets after deposit (after deposit assets)
-        _rebalanceHedge(currentBtc, currentEth);
+        _rebalanceHedge(currentBtc, currentEth, totalAssets());
     }
 
     /*
@@ -508,9 +508,13 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     /// @dev to be called after settle profits only (since vaultMarketValue if after settlement of profits)
     /// @param currentBtcBorrow The amount of USDC collateral token deposited to LB Protocol
     /// @param currentEthBorrow The market value of ETH/BTC part in sGLP
-    function _rebalanceHedge(uint256 currentBtcBorrow, uint256 currentEthBorrow) internal {
+    function _rebalanceHedge(
+        uint256 currentBtcBorrow,
+        uint256 currentEthBorrow,
+        uint256 glpDeposited
+    ) internal {
         console.log('totalAssets()', totalAssets());
-        (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrows(totalAssets());
+        (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrows(glpDeposited);
         console.log('optimalBtcBorrow', optimalBtcBorrow);
         console.log('optimalEthBorrow', optimalEthBorrow);
 
