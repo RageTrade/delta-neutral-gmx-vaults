@@ -124,7 +124,7 @@ contract DNGmxVaultMock is DNGmxVault {
     }
 
     function rebalanceHedge(uint256 currentBtcBorrow, uint256 currentEthBorrow) external {
-        return _rebalanceHedge(currentBtcBorrow, currentEthBorrow);
+        return _rebalanceHedge(currentBtcBorrow, currentEthBorrow, totalAssets());
     }
 
     function convertAssetToAUsdc(uint256 usdcAmountDesired) external returns (uint256 usdcAmount) {
