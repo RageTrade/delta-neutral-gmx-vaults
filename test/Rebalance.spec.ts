@@ -38,7 +38,7 @@ describe('Rebalance & its utils', () => {
     const amount = parseEther('100');
 
     await sGlp.connect(users[0]).transfer(dnGmxVault.address, amount);
-    await glpStakingManager.connect(dnGmxVaultSigner).deposit(amount, dnGmxVault.address);
+    // await glpStakingManager.connect(dnGmxVaultSigner).deposit(amount, dnGmxVault.address);
 
     const [currentBtc, currentEth] = [BigNumber.from(0), BigNumber.from(0)];
 
