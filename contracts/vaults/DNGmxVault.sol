@@ -111,6 +111,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
 
         glp = IERC20Metadata(ISGLPExtended(address(asset)).glp());
         glpManager = IGlpManager(ISGLPExtended(address(asset)).glpManager());
+        fsGlp = IERC20(ISGLPExtended(address(asset)).stakedGlpTracker());
 
         gmxVault = IVault(glpManager.vault());
 

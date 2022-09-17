@@ -38,8 +38,6 @@ contract DNGmxVaultStorage {
     uint256 public constant USDG_DECIMALS = 18;
     uint256 public constant WETH_DECIMALS = 18;
 
-    uint256 public constant PRICE_PRECISION = 10**30;
-
     ///@dev common storage
 
     address public keeper;
