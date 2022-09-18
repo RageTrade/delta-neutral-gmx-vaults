@@ -151,4 +151,59 @@ describe('Rebalance & its utils', () => {
 
     await dnGmxVault.connect(users[0]).withdraw(amount.div(2), users[0].address, users[0].address);
   });
+
+  it.only('Rebalance (External)', async () => {
+    const { dnGmxVault, glpBatchingManager, users } = await dnGmxVaultFixture();
+
+    // becauses price are not changed on uniswap
+    await dnGmxVault.setThresholds({
+      usdcReedemSlippage: 10_000,
+      usdcConversionThreshold: parseUnits('20', 6),
+    });
+
+    const amount = parseEther('100');
+
+    // ETH: 1,547$ BTC: 19,929$
+    await dnGmxVault.connect(users[0]).deposit(amount, users[0].address);
+
+    let [currentBtc_, currentEth_] = await dnGmxVault.getCurrentBorrows();
+    console.log('borrow value after deposit', await dnGmxVault.getBorrowValue(currentBtc_, currentEth_));
+
+    await increaseBlockTimestamp(15 * 60);
+    await glpBatchingManager.executeBatchDeposit();
+    await increaseBlockTimestamp(15 * 60);
+
+    await increaseBlockTimestamp(24 * 60 * 60);
+
+    // ETH: 2,000$ BTC: 25,000$
+    // await changePrice('WBTC', 25000);
+    // await changePrice('WETH', 2000);
+
+    // let [currentBtc, currentEth] = await dnGmxVault.getCurrentBorrows();
+    // let borrowValue = dnGmxVault.getBorrowValue(currentBtc, currentEth);
+
+    // await dnGmxVault.rebalanceProfit(borrowValue);
+    await dnGmxVault.rebalance();
+
+    console.log('PASSED');
+
+    // ETH: 1,350$ BTC: 18,000$
+    // await changePrice('WBTC', 18000);
+    // await changePrice('WETH', 1350);
+
+    // [currentBtc, currentEth] = await dnGmxVault.getCurrentBorrows();
+    // borrowValue = dnGmxVault.getBorrowValue(currentBtc, currentEth);
+
+    await increaseBlockTimestamp(15 * 60);
+    await glpBatchingManager.executeBatchDeposit();
+    await increaseBlockTimestamp(15 * 60);
+
+    await increaseBlockTimestamp(24 * 60 * 60);
+
+    await dnGmxVault.rebalance();
+
+    console.log('PASSED x2');
+
+    await dnGmxVault.connect(users[0]).withdraw(amount.div(2), users[0].address, users[0].address);
+  });
 });

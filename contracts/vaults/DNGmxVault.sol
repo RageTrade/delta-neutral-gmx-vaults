@@ -252,6 +252,8 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     ################################################################## */
 
     function isValidRebalance() public view returns (bool) {
+        console.log('_isValidRebalanceTime', _isValidRebalanceTime());
+        console.log('_isValidRebalanceDeviation', _isValidRebalanceDeviation());
         return _isValidRebalanceTime() || _isValidRebalanceDeviation();
     }
 
@@ -897,7 +899,12 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     }
 
     function _isWithinAllowedDelta(uint256 optimalBorrow, uint256 currentBorrow) internal view returns (bool) {
+        console.log('optimalBorrow', optimalBorrow);
+        console.log('currentBorrow', currentBorrow);
+
         uint256 diff = optimalBorrow > currentBorrow ? optimalBorrow - currentBorrow : currentBorrow - optimalBorrow;
+        console.log('diff', diff);
+        console.log('RHS', uint256(rebalanceDeltaThreshold).mulDiv(currentBorrow, MAX_BPS));
         return diff < uint256(rebalanceDeltaThreshold).mulDiv(currentBorrow, MAX_BPS);
     }
 }
