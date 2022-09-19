@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import hre, { ethers } from 'hardhat';
 import { changePrice } from './utils/price-helpers';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { dnGmxVaultFixture } from './fixtures/dn-gmx-vault';
@@ -176,8 +175,8 @@ describe('Rebalance & its utils', () => {
     await increaseBlockTimestamp(24 * 60 * 60);
 
     // ETH: 2,000$ BTC: 25,000$
-    // await changePrice('WBTC', 25000);
-    // await changePrice('WETH', 2000);
+    await changePrice('WBTC', 25000);
+    await changePrice('WETH', 2000);
 
     // let [currentBtc, currentEth] = await dnGmxVault.getCurrentBorrows();
     // let borrowValue = dnGmxVault.getBorrowValue(currentBtc, currentEth);
@@ -188,8 +187,8 @@ describe('Rebalance & its utils', () => {
     console.log('PASSED');
 
     // ETH: 1,350$ BTC: 18,000$
-    // await changePrice('WBTC', 18000);
-    // await changePrice('WETH', 1350);
+    await changePrice('WBTC', 18000);
+    await changePrice('WETH', 1350);
 
     // [currentBtc, currentEth] = await dnGmxVault.getCurrentBorrows();
     // borrowValue = dnGmxVault.getBorrowValue(currentBtc, currentEth);

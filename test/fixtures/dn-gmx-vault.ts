@@ -15,6 +15,8 @@ export const dnGmxVaultFixture = deployments.createFixture(async hre => {
   const usdc = await hre.ethers.getContractAt('ERC20Upgradeable', addresses.USDC);
   const usdt = await hre.ethers.getContractAt('ERC20Upgradeable', addresses.USDT);
 
+  const aUSDC = await hre.ethers.getContractAt('ERC20Upgradeable', addresses.A_USDC);
+
   const fsGlp = await hre.ethers.getContractAt('ERC20Upgradeable', GMX_ECOSYSTEM_ADDRESSES.fsGLP);
   const sGlp = await hre.ethers.getContractAt('ERC20Upgradeable', GMX_ECOSYSTEM_ADDRESSES.StakedGlp);
 
@@ -108,6 +110,7 @@ export const dnGmxVaultFixture = deployments.createFixture(async hre => {
     usdt,
     sGlp,
     fsGlp,
+    aUSDC,
     admin,
     users,
     gmxVault,
