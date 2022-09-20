@@ -43,6 +43,7 @@ contract DNGmxVaultStorage {
     address public keeper;
     ILPVault public lpVault;
     address public feeRecipient;
+    uint256 public withdrawFeeBps;
     uint256 public protocolFee;
     uint256 public wethThreshold;
     uint256 public slippageThreshold;

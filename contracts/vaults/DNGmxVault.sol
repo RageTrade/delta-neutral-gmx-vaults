@@ -31,6 +31,7 @@ import { IPriceOracle } from '@aave/core-v3/contracts/interfaces/IPriceOracle.so
 import { DataTypes } from '@aave/core-v3/contracts/protocol/libraries/types/DataTypes.sol';
 import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol';
 import { ReserveConfiguration } from '@aave/core-v3/contracts/protocol/libraries/configuration/ReserveConfiguration.sol';
+import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import 'hardhat/console.sol';
 
@@ -38,6 +39,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     using FullMath for uint256;
     using SafeCast for uint256;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+    using SafeERC20 for IERC20Metadata;
 
     error InvalidRebalance();
     error DepositCapExceeded();
@@ -122,6 +124,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
 
         vWbtc = IDebtToken(pool.getReserveData(address(wbtc)).variableDebtTokenAddress);
         vWeth = IDebtToken(pool.getReserveData(address(weth)).variableDebtTokenAddress);
+        withdrawFeeBps = 50;
     }
 
     /* ##################################################################
@@ -288,21 +291,54 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     }
 
     function withdraw(
-        uint256 amount,
-        address to,
-        address from
+        uint256 assets,
+        address receiver,
+        address owner
     ) public override whenNotPaused returns (uint256 shares) {
         _rebalanceBeforeShareAllocation();
-        shares = super.withdraw(amount, to, from);
+        shares = previewWithdraw(assets); // No need to check for rounding error, previewWithdraw rounds up.
+
+        if (msg.sender != owner) {
+            uint256 allowed = allowance(owner, msg.sender); // Saves gas for limited approvals.
+
+            if (allowed != type(uint256).max) _approve(owner, msg.sender, allowed - shares);
+        }
+        uint256 assetsAfterFees = assets.mulDiv(MAX_BPS - withdrawFeeBps, MAX_BPS);
+
+        beforeWithdraw(assetsAfterFees, shares, receiver);
+
+        _burn(owner, shares);
+
+        emit Withdraw(msg.sender, receiver, owner, assetsAfterFees, shares);
+
+        asset.safeTransfer(receiver, assetsAfterFees);
     }
 
     function redeem(
         uint256 shares,
-        address to,
-        address from
-    ) public override whenNotPaused returns (uint256 amount) {
+        address receiver,
+        address owner
+    ) public override whenNotPaused returns (uint256 assets) {
         _rebalanceBeforeShareAllocation();
-        amount = super.redeem(shares, to, from);
+
+        if (msg.sender != owner) {
+            uint256 allowed = allowance(owner, msg.sender); // Saves gas for limited approvals.
+
+            if (allowed != type(uint256).max) _approve(owner, msg.sender, allowed - shares);
+        }
+
+        // Check for rounding error since we round down in previewRedeem.
+        require((assets = previewRedeem(shares)) != 0, 'ZERO_ASSETS');
+
+        uint256 assetsAfterFees = assets.mulDiv(MAX_BPS - withdrawFeeBps, MAX_BPS);
+
+        beforeWithdraw(assetsAfterFees, shares, receiver);
+
+        _burn(owner, shares);
+
+        emit Withdraw(msg.sender, receiver, owner, assetsAfterFees, shares);
+
+        asset.safeTransfer(receiver, assetsAfterFees);
     }
 
     //TODO: add withdrawToken and redeemToken functions
