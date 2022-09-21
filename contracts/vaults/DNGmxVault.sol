@@ -124,6 +124,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
 
         vWbtc = IDebtToken(pool.getReserveData(address(wbtc)).variableDebtTokenAddress);
         vWeth = IDebtToken(pool.getReserveData(address(weth)).variableDebtTokenAddress);
+        //TODO: change this value to least possible amount
         withdrawFeeBps = 50;
     }
 
@@ -352,13 +353,19 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         uint256[] memory feeAmounts,
         bytes memory userData
     ) external onlyBalancerVault whenFlashloaned {
-        (uint256 btcAssetAmount, uint256 ethAssetAmount, bool repayDebtBtc, bool repayDebtEth) = abi.decode(
-            userData,
-            (uint256, uint256, bool, bool)
-        );
+        (
+            uint256 btcTokenAmount,
+            uint256 btcUsdcAmount,
+            uint256 ethTokenAmount,
+            uint256 ethUsdcAmount,
+            bool repayDebtBtc,
+            bool repayDebtEth
+        ) = abi.decode(userData, (uint256, uint256, uint256, uint256, bool, bool));
 
-        console.log('btcAssetAmount', btcAssetAmount);
-        console.log('ethAssetAmount', ethAssetAmount);
+        console.log('btcTokenAmount', btcTokenAmount);
+        console.log('ethTokenAmount', ethTokenAmount);
+        console.log('btcUsdcAmount', btcUsdcAmount);
+        console.log('ethUsdcAmount', ethUsdcAmount);
         console.log('repayDebtBtc', repayDebtBtc);
         console.log('repayDebtEth', repayDebtEth);
 
@@ -366,21 +373,21 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         uint256 ethAssetPremium;
         // adjust asset amounts for premiums (zero for balancer at the time of dev)
         if (repayDebtBtc && repayDebtEth) {
-            // Here amounts[0] should be equal to btcAssetAmount+ethAssetAmount
-            btcAssetPremium = feeAmounts[0].mulDiv(btcAssetAmount, amounts[0]);
+            // Here amounts[0] should be equal to btcTokenAmount+ethTokenAmount
+            btcAssetPremium = feeAmounts[0].mulDiv(btcTokenAmount, amounts[0]);
             console.log('btcAssetPremium', btcAssetPremium);
             ethAssetPremium = (feeAmounts[0] - btcAssetPremium);
             console.log('ethAssetPremium', ethAssetPremium);
         } else {
-            // Here amounts[0] should be equal to btcAssetAmount and amounts[1] should be equal to ethAssetAmount
+            // Here amounts[0] should be equal to btcTokenAmount and amounts[1] should be equal to ethTokenAmount
             bool btcFirst = false;
             if (repayDebtBtc ? tokens[0] == usdc : tokens[0] == wbtc) btcFirst = true;
             btcAssetPremium = feeAmounts[btcFirst ? 0 : 1];
             ethAssetPremium = feeAmounts[btcFirst ? 1 : 0];
         }
 
-        _executeOperationToken(address(wbtc), btcAssetAmount, btcAssetPremium, repayDebtBtc);
-        _executeOperationToken(address(weth), ethAssetAmount, ethAssetPremium, repayDebtEth);
+        _executeOperationToken(address(wbtc), btcTokenAmount, btcUsdcAmount, btcAssetPremium, repayDebtBtc);
+        _executeOperationToken(address(weth), ethTokenAmount, ethUsdcAmount, ethAssetPremium, repayDebtEth);
     }
 
     /* ##################################################################
@@ -470,11 +477,12 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         if (borrowVal > dnUsdcDeposited) {
             // If glp goes up - there is profit on GMX and loss on AAVE
             // So convert some glp to usdc and deposit to AAVE
-            _convertAssetToAUsdc(uint256(borrowVal - dnUsdcDeposited));
+            dnUsdcDeposited += _convertAssetToAUsdc(uint256(borrowVal - dnUsdcDeposited)).toInt256();
         } else if (borrowVal < dnUsdcDeposited) {
             // If glp goes down - there is profit on AAVE and loss on GMX
             // So withdraw some aave usdc and convert to glp
             _convertAUsdcToAsset(uint256(dnUsdcDeposited - borrowVal));
+            dnUsdcDeposited = borrowVal;
         }
     }
 
@@ -487,21 +495,24 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         address[] memory assets;
         uint256[] memory amounts;
 
-        (uint256 btcAssetAmount, bool repayDebtBtc) = _flashloanAmounts(
+        (uint256 btcTokenAmount, uint256 btcUsdcAmount, bool repayDebtBtc) = _flashloanAmounts(
             address(wbtc),
             optimalBtcBorrow,
             currentBtcBorrow
         );
-        (uint256 ethAssetAmount, bool repayDebtEth) = _flashloanAmounts(
+        (uint256 ethTokenAmount, uint256 ethUsdcAmount, bool repayDebtEth) = _flashloanAmounts(
             address(weth),
             optimalEthBorrow,
             currentEthBorrow
         );
 
-        console.log('btcAssetAmount', btcAssetAmount);
-        console.log('ethAssetAmount', ethAssetAmount);
+        console.log('btcTokenAmount', btcTokenAmount);
+        console.log('ethTokenAmount', ethTokenAmount);
 
-        if (btcAssetAmount == 0 && ethAssetAmount == 0) return;
+        if (btcTokenAmount == 0 && ethTokenAmount == 0) return;
+
+        uint256 btcAssetAmount = repayDebtBtc ? btcUsdcAmount : btcTokenAmount;
+        uint256 ethAssetAmount = repayDebtEth ? ethUsdcAmount : ethTokenAmount;
 
         if (repayDebtBtc && repayDebtEth) {
             assets = new address[](1);
@@ -537,7 +548,16 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
                 console.log('amounts[1]*', amounts[1]);
             }
         }
-        _executeFlashloan(assets, amounts, btcAssetAmount, ethAssetAmount, repayDebtBtc, repayDebtEth);
+        _executeFlashloan(
+            assets,
+            amounts,
+            btcTokenAmount,
+            btcUsdcAmount,
+            ethTokenAmount,
+            ethUsdcAmount,
+            repayDebtBtc,
+            repayDebtEth
+        );
     }
 
     /// @notice settles collateral for the vault
@@ -579,7 +599,10 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         } else {
             // Rebalance Position
             _rebalanceBorrow(optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
+            _rebalanceProfit(optimalBorrowValue);
             // Deposit to LB Vault
+            console.log('dnUsdcDeposited');
+            console.logInt(dnUsdcDeposited);
             console.log('ausdc bal', aUsdc.balanceOf(address(this)));
             lpVault.repay(currentLpVaultAmount - targetLpVaultAmount);
         }
@@ -589,23 +612,24 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         SWAP HELPERS
     */
 
-    function _swapTokenToUSDC(address token, uint256 tokenAmount) internal returns (uint256 usdcAmount) {
-        bytes memory path = abi.encodePacked(token, uint24(3000), usdc);
+    function _swapTokenToUSDC(
+        address token,
+        uint256 tokenAmount,
+        uint256 minUsdcAmount
+    ) internal returns (uint256 usdcAmount) {
+        //TODO: change to exactInputSingle if only single hop is finalized
 
-        uint256 minAmountOut = _getPrice(IERC20Metadata(token)).mulDiv(
-            tokenAmount * (MAX_BPS - usdcReedemSlippage),
-            MAX_BPS * PRICE_PRECISION
-        );
+        bytes memory path = abi.encodePacked(token, uint24(3000), usdc);
 
         console.log('swapRouter', address(swapRouter));
         console.log('token', tokenAmount);
         console.log('tokenAmount', tokenAmount);
-        console.log('minAmountOut', minAmountOut);
+        console.log('minAmountOut', minUsdcAmount);
 
         ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
             path: path,
             amountIn: tokenAmount,
-            amountOutMinimum: minAmountOut,
+            amountOutMinimum: minUsdcAmount,
             recipient: address(this),
             deadline: block.timestamp
         });
@@ -614,27 +638,29 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     }
 
     /* solhint-disable not-rely-on-time */
-    function _swapUSDCToToken(address token, uint256 usdcAmount) internal returns (uint256 outputAmount) {
-        bytes memory path = abi.encodePacked(usdc, uint24(3000), token);
-
-        uint256 minAmountOut = usdcAmount.mulDiv(
-            PRICE_PRECISION * (MAX_BPS - usdcReedemSlippage),
-            _getPrice(IERC20Metadata(token)) * MAX_BPS
-        );
+    function _swapUSDCToToken(
+        address token,
+        uint256 tokenAmount,
+        uint256 maxUsdcAmount
+    ) internal returns (uint256 usdcAmount) {
+        //TODO: change to exactOutputSingle if only single hop is finalized
+        bytes memory path = abi.encodePacked(token, uint24(3000), usdc);
 
         console.log('swapRouter', address(swapRouter));
-        console.log('tokenAmount', usdcAmount);
-        console.log('minAmountOut', minAmountOut);
+        console.log('tokenAmount', tokenAmount);
+        console.log('usdc balance', usdc.balanceOf(address(this)));
+        console.log('usdc allowance', usdc.allowance(address(this), address(swapRouter)));
+        console.log('maxUsdcAmount', maxUsdcAmount);
 
-        ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
+        ISwapRouter.ExactOutputParams memory params = ISwapRouter.ExactOutputParams({
             path: path,
-            amountIn: usdcAmount,
-            amountOutMinimum: minAmountOut,
+            amountOut: tokenAmount,
+            amountInMaximum: maxUsdcAmount,
             recipient: address(this),
             deadline: block.timestamp
         });
 
-        outputAmount = swapRouter.exactInput(params);
+        usdcAmount = swapRouter.exactOutput(params);
     }
 
     /// @notice withdraws LP tokens from gauge, sells LP token for usdc
@@ -717,34 +743,40 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
 
     function _executeOperationToken(
         address token,
-        uint256 amount,
+        uint256 tokenAmount,
+        uint256 usdcAmount,
         uint256 premium,
         bool repayDebt
     ) internal {
-        uint256 amountWithPremium = amount + premium;
-        console.log('amountWithPremium', amountWithPremium, token);
         if (!repayDebt) {
             console.log('swapTokenToUSD');
-            uint256 usdcReceived = _swapTokenToUSDC(token, amount);
-            dnUsdcDeposited += usdcReceived.toInt256();
+            uint256 amountWithPremium = tokenAmount + premium;
+            console.log('amountWithPremium', amountWithPremium, token);
+            uint256 usdcReceived = _swapTokenToUSDC(token, tokenAmount, usdcAmount);
             _executeSupply(address(usdc), usdcReceived);
             _executeBorrow(token, amountWithPremium);
             IERC20(token).transfer(address(balancerVault), amountWithPremium);
+            dnUsdcDeposited += usdcReceived.toInt256();
         } else {
             console.log('swapUSDCToToken');
-            uint256 tokenReceived = _swapUSDCToToken(token, amount);
-            _executeRepay(token, tokenReceived);
+            uint256 usdcPaid = _swapUSDCToToken(token, tokenAmount, usdcAmount);
+            uint256 amountWithPremium = usdcPaid + premium;
+            console.log('amountWithPremium', amountWithPremium, token);
             dnUsdcDeposited -= amountWithPremium.toInt256();
+            _executeRepay(token, tokenAmount);
             //withdraws to balancerVault
-            _executeWithdraw(address(usdc), amountWithPremium, address(balancerVault));
+            _executeWithdraw(address(usdc), amountWithPremium, address(this));
+            usdc.transfer(address(balancerVault), usdcAmount + premium);
         }
     }
 
     function _executeFlashloan(
         address[] memory assets,
         uint256[] memory amounts,
-        uint256 _btcAssetAmount,
-        uint256 _ethAssetAmount,
+        uint256 _btcTokenAmount,
+        uint256 _btcUsdcAmount,
+        uint256 _ethTokenAmount,
+        uint256 _ethUsdcAmount,
         bool _repayDebtBtc,
         bool _repayDebtEth
     ) internal {
@@ -756,7 +788,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
             address(this),
             assets,
             amounts,
-            abi.encode(_btcAssetAmount, _ethAssetAmount, _repayDebtBtc, _repayDebtEth)
+            abi.encode(_btcTokenAmount, _btcUsdcAmount, _ethTokenAmount, _ethUsdcAmount, _repayDebtBtc, _repayDebtEth)
         );
 
         _hasFlashloaned = false;
@@ -802,18 +834,37 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         address token,
         uint256 optimalBorrow,
         uint256 currentBorrow
-    ) internal view returns (uint256 amount, bool repayDebt) {
+    )
+        internal
+        view
+        returns (
+            uint256 tokenAmount,
+            uint256 usdcAmount,
+            bool repayDebt
+        )
+    {
         // check the delta between optimal position and actual position in token terms
         // take that position using swap
         // To Increase
         if (optimalBorrow > currentBorrow) {
-            amount = optimalBorrow - currentBorrow;
+            tokenAmount = optimalBorrow - currentBorrow;
+            // To swap with the amount in specified hence usdcAmount should be the min amount out
+            usdcAmount = _getPrice(IERC20Metadata(token)).mulDiv(
+                tokenAmount * (MAX_BPS - usdcReedemSlippage),
+                MAX_BPS * PRICE_PRECISION
+            );
+
             repayDebt = false;
             // Flash loan ETH/BTC from AAVE
             // In callback: Sell loan for USDC and repay debt
         } else {
             // To Decrease
-            amount = (currentBorrow - optimalBorrow).mulDiv(_getPrice(IERC20Metadata(token)), PRICE_PRECISION);
+            tokenAmount = (currentBorrow - optimalBorrow);
+            // To swap with amount out specified hence usdcAmount should be the max amount in
+            usdcAmount = _getPrice(IERC20Metadata(token)).mulDiv(
+                tokenAmount * (MAX_BPS + usdcReedemSlippage),
+                MAX_BPS * PRICE_PRECISION
+            );
             repayDebt = true;
             // In callback: Swap to ETH/BTC and deposit to AAVE
             // Send back some aUSDC to LB vault
