@@ -151,7 +151,7 @@ describe('Rebalance & its utils', () => {
     await dnGmxVault.connect(users[0]).withdraw(amount.div(2), users[0].address, users[0].address);
   });
 
-  it.only('Rebalance (External)', async () => {
+  it('Rebalance (External)', async () => {
     const { dnGmxVault, glpBatchingManager, users } = await dnGmxVaultFixture();
 
     // becauses price are not changed on uniswap
