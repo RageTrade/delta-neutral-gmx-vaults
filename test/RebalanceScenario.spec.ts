@@ -6,7 +6,7 @@ import { dnGmxVaultFixture } from './fixtures/dn-gmx-vault';
 import { increaseBlockTimestamp } from './utils/vault-helpers';
 
 describe('Rebalance Scenarios', () => {
-  it.only('Rebalance (External)', async () => {
+  it('Rebalance (External)', async () => {
     const { dnGmxVault, glpBatchingManager, users, aUSDC } = await dnGmxVaultFixture();
 
     // becauses price are not changed on uniswap
