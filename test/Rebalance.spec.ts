@@ -62,8 +62,12 @@ describe('Rebalance & its utils', () => {
     const amount = parseEther('100');
 
     await dnGmxVault.connect(users[0]).deposit(amount, users[0].address);
+    //Otherwise assets are not converted to aUsdc
+    await dnGmxVault.setThresholds({ usdcReedemSlippage: 100, usdcConversionThreshold: 0 });
 
-    await dnGmxVault.connect(users[0]).withdraw(amount, users[0].address, users[0].address);
+    await dnGmxVault
+      .connect(users[0])
+      .redeem(dnGmxVault.balanceOf(users[0].address), users[0].address, users[0].address, { gasLimit: 30000000 });
   });
 
   it('Partial Withdraw', async () => {
