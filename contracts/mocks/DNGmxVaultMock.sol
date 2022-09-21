@@ -26,23 +26,43 @@ contract DNGmxVaultMock is DNGmxVault {
         return _isValidRebalanceDeviation();
     }
 
-    function swapTokenToUSDC(address token, uint256 tokenAmount) external returns (uint256 usdcAmount) {
-        return _swapTokenToUSDC(token, tokenAmount);
+    function swapTokenToUSDC(
+        address token,
+        uint256 tokenAmount,
+        uint256 minUsdcAmount
+    ) external returns (uint256 usdcAmount) {
+        return _swapTokenToUSDC(token, tokenAmount, minUsdcAmount);
     }
 
-    function swapUSDCToToken(address token, uint256 tokenAmount) external returns (uint256 outputAmount) {
-        return _swapUSDCToToken(token, tokenAmount);
+    function swapUSDCToToken(
+        address token,
+        uint256 tokenAmount,
+        uint256 maxUsdcAmount
+    ) external returns (uint256 usdcAmount) {
+        return _swapUSDCToToken(token, tokenAmount, maxUsdcAmount);
     }
 
     function executeFlashloan(
         address[] memory assets,
         uint256[] memory amounts,
-        uint256 _btcAssetAmount,
-        uint256 _ethAssetAmount,
+        uint256 _btcTokenAmount,
+        uint256 _btcUsdcAmount,
+        uint256 _ethTokenAmount,
+        uint256 _ethUsdcAmount,
         bool _repayDebtBtc,
         bool _repayDebtEth
     ) external {
-        return _executeFlashloan(assets, amounts, _btcAssetAmount, _ethAssetAmount, _repayDebtBtc, _repayDebtEth);
+        return
+            _executeFlashloan(
+                assets,
+                amounts,
+                _btcTokenAmount,
+                _btcUsdcAmount,
+                _ethTokenAmount,
+                _ethUsdcAmount,
+                _repayDebtBtc,
+                _repayDebtEth
+            );
     }
 
     function executeBorrow(address token, uint256 amount) external {
@@ -67,18 +87,27 @@ contract DNGmxVaultMock is DNGmxVault {
 
     function executeOperationToken(
         address token,
-        uint256 amount,
+        uint256 tokenAmount,
+        uint256 usdcAmount,
         uint256 premium,
         bool repayDebt
     ) external {
-        return _executeOperationToken(token, amount, premium, repayDebt);
+        return _executeOperationToken(token, tokenAmount, usdcAmount, premium, repayDebt);
     }
 
     function flashloanAmounts(
         address token,
         uint256 optimalBorrow,
         uint256 currentBorrow
-    ) external view returns (uint256 amount, bool repayDebt) {
+    )
+        external
+        view
+        returns (
+            uint256 tokenAmount,
+            uint256 usdcAmount,
+            bool repayDebt
+        )
+    {
         return _flashloanAmounts(token, optimalBorrow, currentBorrow);
     }
 
