@@ -15,7 +15,12 @@ import { ERC4626Upgradeable } from 'contracts/ERC4626/ERC4626Upgradeable.sol';
 import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import { PausableUpgradeable } from '@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol';
 
+import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
+
+import { IDNGmxVault } from '../interfaces/IDNGmxVault.sol';
+
 contract AaveVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable {
+    using FeeSplitStrategy for FeeSplitStrategy.Info;
     error CallerNotVault();
     error UsageCapExceeded();
 
@@ -27,6 +32,8 @@ contract AaveVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeabl
     IPool internal pool;
     IAToken internal aUsdc;
     IPoolAddressesProvider internal poolAddressProvider;
+    FeeSplitStrategy.Info internal feeStrategy;
+    IDNGmxVault internal dnGmxVault;
 
     uint8 public vaultCount;
     IBorrowerVault[10] public vaults;
@@ -56,6 +63,10 @@ contract AaveVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeabl
 
         aUsdc.approve(address(pool), type(uint256).max);
         asset.approve(address(pool), type(uint256).max);
+    }
+
+    function setDnGmxVault(address _dnGmxVault) external onlyOwner {
+        dnGmxVault = IDNGmxVault(_dnGmxVault);
     }
 
     function grantAllowances() external onlyOwner {
@@ -103,7 +114,16 @@ contract AaveVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeabl
         if (cap == 0) _removeVaultFromWhitelist(vault);
     }
 
+    function updateFeeStrategyParams(FeeSplitStrategy.Info calldata _feeStrategy) external onlyOwner {
+        feeStrategy = _feeStrategy;
+    }
+
+    function getEthRewardsSplitRate() public view returns (uint256 feeSplitRate) {
+        feeSplitRate = feeStrategy.calculateFeeSplit(aUsdc.balanceOf(address(this)), totalUsdcBorrowed());
+    }
+
     function borrow(uint256 amount) external onlyVault {
+        dnGmxVault.harvestFees();
         uint256 currentVaultUsage = IBorrowerVault(msg.sender).getUsdcBorrowed();
 
         if (currentVaultUsage + amount < vaultCaps[msg.sender]) {
@@ -114,7 +134,36 @@ contract AaveVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeabl
     }
 
     function repay(uint256 amount) external onlyVault {
+        dnGmxVault.harvestFees();
         aUsdc.transferFrom(msg.sender, address(this), amount);
+    }
+
+    function deposit(uint256 amount, address to) public virtual override whenNotPaused returns (uint256 shares) {
+        dnGmxVault.harvestFees();
+        shares = super.deposit(amount, to);
+    }
+
+    function mint(uint256 shares, address to) public virtual override whenNotPaused returns (uint256 amount) {
+        dnGmxVault.harvestFees();
+        amount = super.mint(shares, to);
+    }
+
+    function withdraw(
+        uint256 assets,
+        address receiver,
+        address owner
+    ) public override whenNotPaused returns (uint256 shares) {
+        dnGmxVault.harvestFees();
+        shares = super.withdraw(assets, receiver, owner);
+    }
+
+    function redeem(
+        uint256 shares,
+        address receiver,
+        address owner
+    ) public override whenNotPaused returns (uint256 assets) {
+        dnGmxVault.harvestFees();
+        assets = super.redeem(shares, receiver, owner);
     }
 
     /// @dev withdrawal will fail if the utilization goes above maxUtilization value due to a withdrawal
@@ -124,8 +173,8 @@ contract AaveVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeabl
         address
     ) internal override {
         // check if the utilization goes above limit due to this withdrawal
-        if(totalUsdcBorrowed()>((totalAssets()-assets)*maxUtilizationBps)/MAX_BPS)
-        pool.withdraw(address(asset), assets, address(this));
+        if (totalUsdcBorrowed() > ((totalAssets() - assets) * maxUtilizationBps) / MAX_BPS)
+            pool.withdraw(address(asset), assets, address(this));
     }
 
     function afterDeposit(
@@ -142,7 +191,7 @@ contract AaveVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeabl
         amount += totalUsdcBorrowed();
     }
 
-    function totalUsdcBorrowed() public view returns(uint256 amount) {
+    function totalUsdcBorrowed() public view returns (uint256 amount) {
         for (uint8 i = 0; i < vaultCount; i++) {
             amount += vaults[i].getUsdcBorrowed();
         }

@@ -8,4 +8,6 @@ interface ILPVault is IERC4626 {
     function borrow(uint256 amount) external;
 
     function repay(uint256 amount) external;
+
+    function getEthRewardsSplitRate() external returns (uint256);
 }
