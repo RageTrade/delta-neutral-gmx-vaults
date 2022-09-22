@@ -45,6 +45,8 @@ contract DNGmxVaultStorage {
     address public feeRecipient;
     uint256 public withdrawFeeBps;
     uint256 public protocolFee;
+    uint256 public seniorTrancheWethRewards;
+    uint256 public seniorTrancheWethConversionThreshold;
     uint256 public wethThreshold;
     uint256 public slippageThreshold;
 
