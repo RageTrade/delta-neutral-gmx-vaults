@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.9;
 
-import { DNGmxVault } from 'contracts/vaults/DNGmxVault.sol';
+import { DnGmxJuniorVault } from 'contracts/vaults/DnGmxJuniorVault.sol';
 import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
-contract DNGmxVaultMock is DNGmxVault {
+contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
     function dnUsdcDepositedExternal() external view returns (int256) {
         return dnUsdcDeposited;
     }

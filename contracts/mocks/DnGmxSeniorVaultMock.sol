@@ -2,19 +2,9 @@
 
 pragma solidity ^0.8.9;
 
-import { AaveVault } from 'contracts/vaults/AaveVault.sol';
+import { DnGmxSeniorVault } from 'contracts/vaults/DnGmxSeniorVault.sol';
 
-import { IBorrowerVault } from 'contracts/interfaces/IBorrowerVault.sol';
-
-contract AaveVaultMock is AaveVault {
-    function addVaultToWhitelist(IBorrowerVault vault) external {
-        return _addVaultToWhitelist(vault);
-    }
-
-    function removeVaultFromWhitelist(IBorrowerVault vault) external {
-        return _removeVaultFromWhitelist(vault);
-    }
-
+contract DnGmxSeniorVaultMock is DnGmxSeniorVault {
     function _beforeWithdraw(
         uint256 assets,
         uint256 shares,

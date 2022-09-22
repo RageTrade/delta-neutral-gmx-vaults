@@ -1,5 +1,5 @@
 import { deployments, ethers } from 'hardhat';
-import { aaveVaultFixture } from './aave-vault';
+import { dnGmxSeniorVaultFixture } from './aave-vault';
 import { generateErc20Balance } from '../utils/erc20';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { increaseBlockTimestamp } from '../utils/vault-helpers';
@@ -7,7 +7,7 @@ import addresses, { GMX_ECOSYSTEM_ADDRESSES } from './addresses';
 import { glpBatchingStakingManagerFixture } from './glp-batching-staking-manager';
 import { IVault__factory } from '../../typechain-types';
 
-export const dnGmxVaultFixture = deployments.createFixture(async hre => {
+export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   const [admin, ...users] = await hre.ethers.getSigners();
 
   const weth = await hre.ethers.getContractAt('ERC20Upgradeable', addresses.WETH);
@@ -22,11 +22,11 @@ export const dnGmxVaultFixture = deployments.createFixture(async hre => {
 
   const rewardRouter = await hre.ethers.getContractAt('IRewardRouterV2', GMX_ECOSYSTEM_ADDRESSES.RewardRouter);
 
-  const dnGmxVault = await (await hre.ethers.getContractFactory('DNGmxVaultMock')).deploy();
+  const dnGmxJuniorVault = await (await hre.ethers.getContractFactory('DnGmxJuniorVaultMock')).deploy();
 
   const gmxVault = IVault__factory.connect(GMX_ECOSYSTEM_ADDRESSES.Vault, admin);
 
-  await dnGmxVault.initialize(
+  await dnGmxJuniorVault.initialize(
     'Delta Netural GMX Vault', // _name
     'DN_GMX', // _symbol
     addresses.UNI_V3_SWAP_ROUTER, // _swapRouter
@@ -40,10 +40,10 @@ export const dnGmxVaultFixture = deployments.createFixture(async hre => {
     addresses.AAVE_POOL_ADDRESS_PROVIDER, // _poolAddressesProvider
   );
 
-  const aaveVault = await aaveVaultFixture();
-  await aaveVault.updateVaultCap(dnGmxVault.address, parseUnits('1000000', 6));
-  await aaveVault.setDnGmxVault(dnGmxVault.address);
-  await aaveVault.updateFeeStrategyParams({
+  const dnGmxSeniorVault = await dnGmxSeniorVaultFixture();
+  await dnGmxSeniorVault.setDnGmxJuniorVault(dnGmxJuniorVault.address);
+  await dnGmxSeniorVault.updateBorrowCap(dnGmxJuniorVault.address, parseUnits('1000000', 6));
+  await dnGmxSeniorVault.updateFeeStrategyParams({
     optimalUtilizationRate: 8n * 10n ** 29n,
     baseVariableBorrowRate: 10n ** 29n,
     variableRateSlope1: 10n ** 29n,
@@ -55,36 +55,36 @@ export const dnGmxVaultFixture = deployments.createFixture(async hre => {
     GMX_ECOSYSTEM_ADDRESSES.StakedGlp,
     GMX_ECOSYSTEM_ADDRESSES.RewardRouter,
     GMX_ECOSYSTEM_ADDRESSES.GlpManager,
-    dnGmxVault.address,
+    dnGmxJuniorVault.address,
     admin.address,
   );
-  await glpBatchingStakingManagerFixtures.setVault(dnGmxVault.address);
+  await glpBatchingStakingManagerFixtures.setVault(dnGmxJuniorVault.address);
 
-  await dnGmxVault.setKeeper(admin.address);
+  await dnGmxJuniorVault.setKeeper(admin.address);
 
-  await dnGmxVault.setLPVault(aaveVault.address);
+  await dnGmxJuniorVault.setLPVault(dnGmxSeniorVault.address);
 
-  await dnGmxVault.setDepositCap(ethers.constants.MaxUint256);
+  await dnGmxJuniorVault.setDepositCap(ethers.constants.MaxUint256);
 
-  await dnGmxVault.setBatchingManager(glpBatchingStakingManagerFixtures.gmxBatchingManager.address);
+  await dnGmxJuniorVault.setBatchingManager(glpBatchingStakingManagerFixtures.gmxBatchingManager.address);
 
-  await dnGmxVault.setThresholds({
+  await dnGmxJuniorVault.setThresholds({
     usdcReedemSlippage: 100,
     usdcConversionThreshold: parseUnits('20', 6),
   });
 
-  await dnGmxVault.setRebalanceParams({
+  await dnGmxJuniorVault.setRebalanceParams({
     rebalanceTimeThreshold: ethers.constants.Zero, // or 86400
     rebalanceDeltaThreshold: 500, // 5% in bps
   });
 
-  await dnGmxVault.setHedgeParams({
+  await dnGmxJuniorVault.setHedgeParams({
     targetHealthFactor: 15_000, // 150%
     vault: addresses.BALANCER_VAULT,
     swapRouter: addresses.UNI_V3_SWAP_ROUTER,
   });
 
-  await dnGmxVault.grantAllowances();
+  await dnGmxJuniorVault.grantAllowances();
 
   // await generateErc20Balance(weth, parseUnits('20', 18), users[0].address);
   // await generateErc20Balance(wbtc, parseUnits('5', 8), users[0].address);
@@ -96,19 +96,19 @@ export const dnGmxVaultFixture = deployments.createFixture(async hre => {
     value: parseEther('10'),
   });
   await increaseBlockTimestamp(15 * 60); // GLP cooldown
-  await sGlp.connect(users[0]).approve(dnGmxVault.address, ethers.constants.MaxUint256);
+  await sGlp.connect(users[0]).approve(dnGmxJuniorVault.address, ethers.constants.MaxUint256);
 
   // deposit 1.5 mil in aave-vault with 1mil borrowcap
   await generateErc20Balance(usdc, parseUnits('1500000', 6), users[1].address);
-  await usdc.connect(users[1]).approve(aaveVault.address, ethers.constants.MaxUint256);
-  await aaveVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
+  await usdc.connect(users[1]).approve(dnGmxSeniorVault.address, ethers.constants.MaxUint256);
+  await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
   hre.network.provider.request({
     method: 'hardhat_impersonateAccount',
-    params: [dnGmxVault.address],
+    params: [dnGmxJuniorVault.address],
   });
 
-  const dnGmxVaultSigner = await hre.ethers.getSigner(dnGmxVault.address);
+  const dnGmxJuniorVaultSigner = await hre.ethers.getSigner(dnGmxJuniorVault.address);
 
   return {
     weth,
@@ -121,10 +121,9 @@ export const dnGmxVaultFixture = deployments.createFixture(async hre => {
     admin,
     users,
     gmxVault,
-    aaveVault,
-    dnGmxVault,
-    dnGmxVaultSigner,
-    glpStakingManager: glpBatchingStakingManagerFixtures.glpStakingManager,
+    dnGmxSeniorVault,
+    dnGmxJuniorVault,
+    dnGmxJuniorVaultSigner,
     glpBatchingManager: glpBatchingStakingManagerFixtures.gmxBatchingManager,
   };
 });

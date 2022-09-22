@@ -3,10 +3,9 @@
 pragma solidity ^0.8.9;
 
 import { IERC4626 } from './IERC4626.sol';
+import { IBorrower } from './IBorrower.sol';
 
-interface IDNGmxVault is IERC4626 {
-    function getUsdcBorrowed() external returns (uint256);
-
+interface IDnGmxJuniorVault is IERC4626, IBorrower {
     function getMarketValue(uint256 assetAmount) external view returns (uint256 marketValue);
 
     function harvestFees() external;

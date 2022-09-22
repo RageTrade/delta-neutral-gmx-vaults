@@ -10,7 +10,7 @@ import { IGlpManager } from 'contracts/interfaces/gmx/IGlpManager.sol';
 import { IRewardRouterV2 } from 'contracts/interfaces/gmx/IRewardRouterV2.sol';
 import { IGMXBatchingManager } from 'contracts/interfaces/gmx/IGMXBatchingManager.sol';
 
-import { ILPVault } from 'contracts/interfaces/ILPVault.sol';
+import { IDnGmxSeniorVault } from 'contracts/interfaces/IDnGmxSeniorVault.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 
 import { IPool } from '@aave/core-v3/contracts/interfaces/IPool.sol';
@@ -25,7 +25,7 @@ interface IDebtToken is IVariableDebtToken {
     function balanceOf(address user) external view returns (uint256);
 }
 
-contract DNGmxVaultStorage {
+contract DnGmxJuniorVaultStorage {
     ///@dev constants
 
     uint16 public constant MAX_BPS = 10_000;
@@ -41,12 +41,12 @@ contract DNGmxVaultStorage {
     ///@dev common storage
 
     address public keeper;
-    ILPVault public lpVault;
+    IDnGmxSeniorVault public lpVault;
     address public feeRecipient;
     uint256 public withdrawFeeBps;
     uint256 public protocolFee;
-    uint256 public seniorTrancheWethRewards;
-    uint256 public seniorTrancheWethConversionThreshold;
+    uint256 public seniorVaultWethRewards;
+    uint256 public seniorVaultWethConversionThreshold;
     uint256 public wethThreshold;
     uint256 public slippageThreshold;
 

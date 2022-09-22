@@ -1,29 +1,29 @@
 import { expect } from 'chai';
 import hre, { ethers } from 'hardhat';
 import { parseEther } from 'ethers/lib/utils';
-import { dnGmxVaultFixture } from './fixtures/dn-gmx-vault';
+import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-vault';
 
 describe('Reserves & Optimal Amounts', () => {
   it('getTokenReservesInGlp', async () => {
-    const { dnGmxVault, wbtc, weth } = await dnGmxVaultFixture();
+    const { dnGmxJuniorVault, wbtc, weth } = await dnGmxJuniorVaultFixture();
 
-    console.log(await dnGmxVault.getTokenReservesInGlp(wbtc.address));
-    console.log(await dnGmxVault.getTokenReservesInGlp(weth.address));
+    console.log(await dnGmxJuniorVault.getTokenReservesInGlp(wbtc.address));
+    console.log(await dnGmxJuniorVault.getTokenReservesInGlp(weth.address));
   });
 
   it('Optimal Amounts', async () => {
-    const { dnGmxVault } = await dnGmxVaultFixture();
+    const { dnGmxJuniorVault } = await dnGmxJuniorVaultFixture();
 
-    console.log(await dnGmxVault.getOptimalBorrows(0));
-    console.log(await dnGmxVault.getOptimalBorrows(parseEther('100')));
+    console.log(await dnGmxJuniorVault.getOptimalBorrows(0));
+    console.log(await dnGmxJuniorVault.getOptimalBorrows(parseEther('100')));
   });
 
   it('Flashloan Amounts', async () => {
-    const { dnGmxVault, wbtc, weth } = await dnGmxVaultFixture();
+    const { dnGmxJuniorVault, wbtc, weth } = await dnGmxJuniorVaultFixture();
 
-    const [optimalBtc, optimalEth] = await dnGmxVault.getOptimalBorrows(parseEther('100'));
+    const [optimalBtc, optimalEth] = await dnGmxJuniorVault.getOptimalBorrows(parseEther('100'));
 
-    console.log(await dnGmxVault.flashloanAmounts(wbtc.address, optimalBtc, 0));
-    console.log(await dnGmxVault.flashloanAmounts(weth.address, optimalEth, 0));
+    console.log(await dnGmxJuniorVault.flashloanAmounts(wbtc.address, optimalBtc, 0));
+    console.log(await dnGmxJuniorVault.flashloanAmounts(weth.address, optimalEth, 0));
   });
 });
