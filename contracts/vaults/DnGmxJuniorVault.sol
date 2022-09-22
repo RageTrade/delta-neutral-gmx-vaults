@@ -715,7 +715,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         rewardRouter.unstakeAndRedeemGlp(
             address(usdc),
             glpAmountDesired, // glp amount
-            usdcAmountDesired.mulDiv(usdcRedeemSlippage, MAX_BPS), // usdc
+            usdcAmountDesired.mulDiv(MAX_BPS - usdcReedemSlippage, MAX_BPS), // usdc
             address(this)
         );
 
