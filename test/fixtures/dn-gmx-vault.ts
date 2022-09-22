@@ -42,6 +42,13 @@ export const dnGmxVaultFixture = deployments.createFixture(async hre => {
 
   const aaveVault = await aaveVaultFixture();
   await aaveVault.updateVaultCap(dnGmxVault.address, parseUnits('1000000', 6));
+  await aaveVault.setDnGmxVault(dnGmxVault.address);
+  await aaveVault.updateFeeStrategyParams({
+    optimalUtilizationRate: 8n * 10n ** 29n,
+    baseVariableBorrowRate: 10n ** 29n,
+    variableRateSlope1: 10n ** 29n,
+    variableRateSlope2: 5n * 10n ** 29n,
+  });
 
   const glpBatchingStakingManagerFixtures = await glpBatchingStakingManagerFixture();
   await glpBatchingStakingManagerFixtures.gmxBatchingManager.initialize(
