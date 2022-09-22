@@ -126,7 +126,9 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         vWbtc = IDebtToken(pool.getReserveData(address(wbtc)).variableDebtTokenAddress);
         vWeth = IDebtToken(pool.getReserveData(address(weth)).variableDebtTokenAddress);
         //TODO: change this value to least possible amount
+        //TODO: add setters for these values
         withdrawFeeBps = 50;
+        seniorTrancheWethConversionThreshold = 1e15;
     }
 
     /* ##################################################################
@@ -243,6 +245,13 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
             );
             uint256 dnGmxWethShare = wethToCompound - aaveVaultWethShare;
 
+            uint256 _seniorTrancheWethRewards = seniorTrancheWethRewards + aaveVaultWethShare;
+
+            console.log('ethRewardsSplitRate', lpVault.getEthRewardsSplitRate());
+            console.log('wethToCompound', wethToCompound);
+            console.log('dnGmxWethShare', dnGmxWethShare);
+            console.log('aaveVaultWethShare', aaveVaultWethShare);
+
             uint256 price = gmxVault.getMinPrice(address(weth));
             uint256 usdgAmount = dnGmxWethShare.mulDiv(
                 price * (MAX_BPS - slippageThreshold),
@@ -253,7 +262,19 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
 
             batchingManager.depositToken(address(weth), dnGmxWethShare, usdgAmount);
 
-            //TODO: swap "aaveVaultWethShare" weth to usdc and deposit to aave
+            console.log('_seniorTrancheWethRewards', _seniorTrancheWethRewards);
+            if (_seniorTrancheWethRewards > seniorTrancheWethConversionThreshold) {
+                // Deposit aave vault share to AAVE in usdc
+                uint256 minUsdcAmount = _getPrice(weth).mulDiv(
+                    _seniorTrancheWethRewards * (MAX_BPS - usdcReedemSlippage),
+                    MAX_BPS * PRICE_PRECISION
+                );
+                uint256 aaveUsdcAmount = _swapTokenToUSDC(address(weth), _seniorTrancheWethRewards, minUsdcAmount);
+                _executeSupply(address(usdc), aaveUsdcAmount);
+                seniorTrancheWethRewards = 0;
+            } else {
+                seniorTrancheWethRewards = _seniorTrancheWethRewards;
+            }
         }
     }
 
