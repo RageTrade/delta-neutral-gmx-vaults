@@ -8,4 +8,6 @@ interface IDNGmxVault is IERC4626 {
     function getUsdcBorrowed() external returns (uint256);
 
     function getMarketValue(uint256 assetAmount) external view returns (uint256 marketValue);
+
+    function harvestFees() external;
 }
