@@ -32,6 +32,7 @@ import { DataTypes } from '@aave/core-v3/contracts/protocol/libraries/types/Data
 import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol';
 import { ReserveConfiguration } from '@aave/core-v3/contracts/protocol/libraries/configuration/ReserveConfiguration.sol';
 import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
 
 import 'hardhat/console.sol';
 
@@ -229,21 +230,30 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         );
 
         uint256 wethHarvested = weth.balanceOf(address(this)) - protocolFee;
+        // TODO: add split handling for giving to aave vault
         if (wethHarvested > wethThreshold) {
             uint256 protocolFeeHarvested = (wethHarvested * FEE) / MAX_BPS;
             protocolFee += protocolFeeHarvested;
 
             uint256 wethToCompound = wethHarvested - protocolFeeHarvested;
 
+            uint256 aaveVaultWethShare = lpVault.getEthRewardsSplitRate().mulDiv(
+                wethToCompound,
+                FeeSplitStrategy.RATE_PRECISION
+            );
+            uint256 dnGmxWethShare = wethToCompound - aaveVaultWethShare;
+
             uint256 price = gmxVault.getMinPrice(address(weth));
-            uint256 usdgAmount = wethToCompound.mulDiv(
+            uint256 usdgAmount = dnGmxWethShare.mulDiv(
                 price * (MAX_BPS - slippageThreshold),
                 PRICE_PRECISION * MAX_BPS
             );
 
             usdgAmount = usdgAmount.mulDiv(10**USDG_DECIMALS, 10**WETH_DECIMALS);
 
-            batchingManager.depositToken(address(weth), wethToCompound, usdgAmount);
+            batchingManager.depositToken(address(weth), dnGmxWethShare, usdgAmount);
+
+            //TODO: swap "aaveVaultWethShare" weth to usdc and deposit to aave
         }
     }
 
