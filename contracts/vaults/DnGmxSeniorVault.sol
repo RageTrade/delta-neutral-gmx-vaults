@@ -6,8 +6,6 @@ import { IPool } from '@aave/core-v3/contracts/interfaces/IPool.sol';
 import { IAToken } from '@aave/core-v3/contracts/interfaces/IAToken.sol';
 import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol';
 
-import { IBorrowerVault } from 'contracts/interfaces/IBorrowerVault.sol';
-
 import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
@@ -17,12 +15,16 @@ import { PausableUpgradeable } from '@openzeppelin/contracts-upgradeable/securit
 
 import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
 
-import { IDNGmxVault } from '../interfaces/IDNGmxVault.sol';
+import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
+import { ILeveragePool } from '../interfaces/ILeveragePool.sol';
+import { IBorrower } from '../interfaces/IBorrower.sol';
 
-contract AaveVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable {
+contract DnGmxSeniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable {
     using FeeSplitStrategy for FeeSplitStrategy.Info;
-    error CallerNotVault();
+    error CallerNotBorrower();
     error UsageCapExceeded();
+    error InvalidBorrowerAddress();
+    error InvalidCapUpdate();
 
     event AllowancesGranted();
     event VaultCapUpdated(address vault, uint256 newCap);
@@ -33,16 +35,15 @@ contract AaveVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeabl
     IAToken internal aUsdc;
     IPoolAddressesProvider internal poolAddressProvider;
     FeeSplitStrategy.Info internal feeStrategy;
-    IDNGmxVault internal dnGmxVault;
+    IDnGmxJuniorVault internal dnGmxJuniorVault;
+    ILeveragePool internal leveragePool;
 
-    uint8 public vaultCount;
-    IBorrowerVault[10] public vaults;
     uint16 maxUtilizationBps;
 
     mapping(address => uint256) internal vaultCaps;
 
-    modifier onlyVault() {
-        if (vaultCaps[msg.sender] <= 0) revert CallerNotVault();
+    modifier onlyBorrower() {
+        if (msg.sender != address(dnGmxJuniorVault) && msg.sender != address(leveragePool)) revert CallerNotBorrower();
         _;
     }
 
@@ -65,8 +66,8 @@ contract AaveVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeabl
         asset.approve(address(pool), type(uint256).max);
     }
 
-    function setDnGmxVault(address _dnGmxVault) external onlyOwner {
-        dnGmxVault = IDNGmxVault(_dnGmxVault);
+    function setDnGmxJuniorVault(address _dnGmxJuniorVault) external onlyOwner {
+        dnGmxJuniorVault = IDnGmxJuniorVault(_dnGmxJuniorVault);
     }
 
     function grantAllowances() external onlyOwner {
@@ -78,40 +79,19 @@ contract AaveVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeabl
         emit AllowancesGranted();
     }
 
-    function _addVaultToWhitelist(IBorrowerVault vault) internal {
-        vaults[vaultCount] = vault;
-        vaultCount++;
-    }
+    function updateBorrowCap(address borrowerAddress, uint256 cap) external onlyOwner {
+        if (borrowerAddress != address(dnGmxJuniorVault) && borrowerAddress != address(leveragePool))
+            revert InvalidBorrowerAddress();
 
-    function _removeVaultFromWhitelist(IBorrowerVault vault) internal {
-        uint8 i = 0;
+        if (IBorrower(borrowerAddress).getUsdcBorrowed() < cap) {
+            vaultCaps[borrowerAddress] = cap;
 
-        for (i; i < vaultCount; i++) {
-            if (vaults[i] == vault) {
-                vaultCount--;
-                vaults[i] = vaults[vaultCount];
+            aUsdc.approve(borrowerAddress, cap);
 
-                aUsdc.approve(address(vault), 0);
-                asset.approve(address(vault), 0);
-
-                delete vaults[vaultCount];
-                break;
-            }
+            emit VaultCapUpdated(borrowerAddress, cap);
+        } else {
+            revert InvalidCapUpdate();
         }
-    }
-
-    function updateVaultCap(IBorrowerVault vault, uint256 cap) external onlyOwner {
-        if (vaultCaps[address(vault)] == 0) _addVaultToWhitelist(vault);
-
-        if (vault.getUsdcBorrowed() < cap) {
-            vaultCaps[address(vault)] = cap;
-
-            aUsdc.approve(address(vault), cap);
-            asset.approve(address(vault), cap);
-
-            emit VaultCapUpdated(address(vault), cap);
-        }
-        if (cap == 0) _removeVaultFromWhitelist(vault);
     }
 
     function updateFeeStrategyParams(FeeSplitStrategy.Info calldata _feeStrategy) external onlyOwner {
@@ -122,9 +102,9 @@ contract AaveVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeabl
         feeSplitRate = feeStrategy.calculateFeeSplit(aUsdc.balanceOf(address(this)), totalUsdcBorrowed());
     }
 
-    function borrow(uint256 amount) external onlyVault {
-        dnGmxVault.harvestFees();
-        uint256 currentVaultUsage = IBorrowerVault(msg.sender).getUsdcBorrowed();
+    function borrow(uint256 amount) external onlyBorrower {
+        dnGmxJuniorVault.harvestFees();
+        uint256 currentVaultUsage = IBorrower(msg.sender).getUsdcBorrowed();
 
         if (currentVaultUsage + amount < vaultCaps[msg.sender]) {
             aUsdc.transfer(msg.sender, amount);
@@ -133,18 +113,18 @@ contract AaveVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeabl
         }
     }
 
-    function repay(uint256 amount) external onlyVault {
-        dnGmxVault.harvestFees();
+    function repay(uint256 amount) external onlyBorrower {
+        dnGmxJuniorVault.harvestFees();
         aUsdc.transferFrom(msg.sender, address(this), amount);
     }
 
     function deposit(uint256 amount, address to) public virtual override whenNotPaused returns (uint256 shares) {
-        dnGmxVault.harvestFees();
+        dnGmxJuniorVault.harvestFees();
         shares = super.deposit(amount, to);
     }
 
     function mint(uint256 shares, address to) public virtual override whenNotPaused returns (uint256 amount) {
-        dnGmxVault.harvestFees();
+        dnGmxJuniorVault.harvestFees();
         amount = super.mint(shares, to);
     }
 
@@ -153,7 +133,7 @@ contract AaveVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeabl
         address receiver,
         address owner
     ) public override whenNotPaused returns (uint256 shares) {
-        dnGmxVault.harvestFees();
+        dnGmxJuniorVault.harvestFees();
         shares = super.withdraw(assets, receiver, owner);
     }
 
@@ -162,7 +142,7 @@ contract AaveVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeabl
         address receiver,
         address owner
     ) public override whenNotPaused returns (uint256 assets) {
-        dnGmxVault.harvestFees();
+        dnGmxJuniorVault.harvestFees();
         assets = super.redeem(shares, receiver, owner);
     }
 
@@ -191,9 +171,8 @@ contract AaveVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeabl
         amount += totalUsdcBorrowed();
     }
 
-    function totalUsdcBorrowed() public view returns (uint256 amount) {
-        for (uint8 i = 0; i < vaultCount; i++) {
-            amount += vaults[i].getUsdcBorrowed();
-        }
+    function totalUsdcBorrowed() public view returns (uint256 usdcBorrowed) {
+        if (address(dnGmxJuniorVault) != address(0)) usdcBorrowed += dnGmxJuniorVault.getUsdcBorrowed();
+        if (address(leveragePool) != address(0)) usdcBorrowed += leveragePool.getUsdcBorrowed();
     }
 }

@@ -6,7 +6,7 @@ import { SafeCast } from 'contracts/libraries/SafeCast.sol';
 import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
 
 import { ERC4626Upgradeable } from 'contracts/ERC4626/ERC4626Upgradeable.sol';
-import { DNGmxVaultStorage, IDebtToken } from 'contracts/vaults/DNGmxVaultStorage.sol';
+import { DnGmxJuniorVaultStorage, IDebtToken } from 'contracts/vaults/DnGmxJuniorVaultStorage.sol';
 
 import { IVault } from 'contracts/interfaces/gmx/IVault.sol';
 import { IGlpManager } from 'contracts/interfaces/gmx/IGlpManager.sol';
@@ -14,7 +14,7 @@ import { ISGLPExtended } from 'contracts/interfaces/gmx/ISGLPExtended.sol';
 import { IRewardRouterV2 } from 'contracts/interfaces/gmx/IRewardRouterV2.sol';
 import { IGMXBatchingManager } from 'contracts/interfaces/gmx/IGMXBatchingManager.sol';
 
-import { ILPVault } from 'contracts/interfaces/ILPVault.sol';
+import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 
 import { IBalancerVault } from 'contracts/interfaces/IBalancerVault.sol';
@@ -36,7 +36,7 @@ import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
 
 import 'hardhat/console.sol';
 
-contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable, DNGmxVaultStorage {
+contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable, DnGmxJuniorVaultStorage {
     using FullMath for uint256;
     using SafeCast for uint256;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
@@ -72,7 +72,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         _;
     }
 
-    modifier onlyAaveVault() {
+    modifier onlydnGmxSeniorVault() {
         if (msg.sender != address(lpVault)) revert NotLpVault();
         _;
     }
@@ -128,7 +128,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
         //TODO: change this value to least possible amount
         //TODO: add setters for these values
         withdrawFeeBps = 50;
-        seniorTrancheWethConversionThreshold = 1e15;
+        seniorVaultWethConversionThreshold = 1e15;
     }
 
     /* ##################################################################
@@ -163,7 +163,7 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
     }
 
     function setLPVault(address _lpVault) external onlyOwner {
-        lpVault = ILPVault(_lpVault);
+        lpVault = IDnGmxSeniorVault(_lpVault);
         emit LPVaultUpdated(_lpVault);
     }
 
@@ -239,18 +239,18 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
 
             uint256 wethToCompound = wethHarvested - protocolFeeHarvested;
 
-            uint256 aaveVaultWethShare = lpVault.getEthRewardsSplitRate().mulDiv(
+            uint256 dnGmxSeniorVaultWethShare = lpVault.getEthRewardsSplitRate().mulDiv(
                 wethToCompound,
                 FeeSplitStrategy.RATE_PRECISION
             );
-            uint256 dnGmxWethShare = wethToCompound - aaveVaultWethShare;
+            uint256 dnGmxWethShare = wethToCompound - dnGmxSeniorVaultWethShare;
 
-            uint256 _seniorTrancheWethRewards = seniorTrancheWethRewards + aaveVaultWethShare;
+            uint256 _seniorVaultWethRewards = seniorVaultWethRewards + dnGmxSeniorVaultWethShare;
 
             console.log('ethRewardsSplitRate', lpVault.getEthRewardsSplitRate());
             console.log('wethToCompound', wethToCompound);
             console.log('dnGmxWethShare', dnGmxWethShare);
-            console.log('aaveVaultWethShare', aaveVaultWethShare);
+            console.log('dnGmxSeniorVaultWethShare', dnGmxSeniorVaultWethShare);
 
             uint256 price = gmxVault.getMinPrice(address(weth));
             uint256 usdgAmount = dnGmxWethShare.mulDiv(
@@ -262,18 +262,18 @@ contract DNGmxVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeab
 
             batchingManager.depositToken(address(weth), dnGmxWethShare, usdgAmount);
 
-            console.log('_seniorTrancheWethRewards', _seniorTrancheWethRewards);
-            if (_seniorTrancheWethRewards > seniorTrancheWethConversionThreshold) {
+            console.log('_seniorVaultWethRewards', _seniorVaultWethRewards);
+            if (_seniorVaultWethRewards > seniorVaultWethConversionThreshold) {
                 // Deposit aave vault share to AAVE in usdc
                 uint256 minUsdcAmount = _getPrice(weth).mulDiv(
-                    _seniorTrancheWethRewards * (MAX_BPS - usdcReedemSlippage),
+                    _seniorVaultWethRewards * (MAX_BPS - usdcReedemSlippage),
                     MAX_BPS * PRICE_PRECISION
                 );
-                uint256 aaveUsdcAmount = _swapTokenToUSDC(address(weth), _seniorTrancheWethRewards, minUsdcAmount);
+                uint256 aaveUsdcAmount = _swapTokenToUSDC(address(weth), _seniorVaultWethRewards, minUsdcAmount);
                 _executeSupply(address(usdc), aaveUsdcAmount);
-                seniorTrancheWethRewards = 0;
+                seniorVaultWethRewards = 0;
             } else {
-                seniorTrancheWethRewards = _seniorTrancheWethRewards;
+                seniorVaultWethRewards = _seniorVaultWethRewards;
             }
         }
     }

@@ -11,10 +11,10 @@ import { IGMXBatchingManager } from 'contracts/interfaces/gmx/IGMXBatchingManage
 import { ISGLPExtended } from 'contracts/interfaces/gmx/ISGLPExtended.sol';
 import { IRewardRouterV2 } from 'contracts/interfaces/gmx/IRewardRouterV2.sol';
 import { IGlpStakingManager } from 'contracts/interfaces/gmx/IGlpStakingManager.sol';
-import { ILPVault } from 'contracts/interfaces/ILPVault.sol';
+import { IDnGmxSeniorVault } from 'contracts/interfaces/IDnGmxSeniorVault.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 import { IAToken } from '@aave/core-v3/contracts/interfaces/IAToken.sol';
-import { IDNGmxVault } from 'contracts/interfaces/IDNGmxVault.sol';
+import { IDnGmxJuniorVault } from 'contracts/interfaces/IDnGmxJuniorVault.sol';
 import { IVariableDebtToken } from '@aave/core-v3/contracts/interfaces/IVariableDebtToken.sol';
 
 import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
@@ -50,9 +50,9 @@ contract LeveragePool is OwnableUpgradeable, PausableUpgradeable {
 
     uint16 public constant MAX_BPS = 10000;
 
-    ILPVault internal lpVault;
+    IDnGmxSeniorVault internal lpVault;
     IDebtToken internal rUsdc;
-    IDNGmxVault internal dnGmxVault;
+    IDnGmxJuniorVault internal dnGmxJuniorVault;
     IGMXBatchingManager internal batchingManager;
 
     uint96 public lastUpdateTs;
@@ -88,8 +88,8 @@ contract LeveragePool is OwnableUpgradeable, PausableUpgradeable {
     function _isEnoughMargin(address user) internal view returns (bool) {
         UserDeposit storage userDeposit = userDeposits[user];
 
-        uint256 collateralValue = dnGmxVault.getMarketValue(
-            dnGmxVault.convertToAssets(userDeposit.depositedShares) + userDeposit.glpBalance
+        uint256 collateralValue = dnGmxJuniorVault.getMarketValue(
+            dnGmxJuniorVault.convertToAssets(userDeposit.depositedShares) + userDeposit.glpBalance
         );
         return collateralValue.mulDiv(maintainanceCfBps, MAX_BPS) < rUsdc.balanceOf(user);
     }
@@ -102,7 +102,7 @@ contract LeveragePool is OwnableUpgradeable, PausableUpgradeable {
         updatedUserDeposit = userDeposit;
         if (userDeposit.round < currentRound && userDeposit.glpBalance > 0) {
             IGMXBatchingManager.RoundDeposit memory roundDeposit = batchingManager.roundDeposits(
-                dnGmxVault,
+                dnGmxJuniorVault,
                 userDeposit.round
             );
             updatedUserDeposit.depositedShares += userDeposit
@@ -119,11 +119,11 @@ contract LeveragePool is OwnableUpgradeable, PausableUpgradeable {
 
     function depositShare(uint128 shareAmount) external {
         UserDeposit memory userDeposit = userDeposits[msg.sender];
-        uint256 currentRound = batchingManager.currentRound(dnGmxVault);
+        uint256 currentRound = batchingManager.currentRound(dnGmxJuniorVault);
 
         userDeposit = _convertGlpStakedToShares(userDeposit, currentRound);
 
-        dnGmxVault.transferFrom(msg.sender, address(this), shareAmount);
+        dnGmxJuniorVault.transferFrom(msg.sender, address(this), shareAmount);
 
         userDeposits[msg.sender] = UserDeposit(
             currentRound,
@@ -134,7 +134,7 @@ contract LeveragePool is OwnableUpgradeable, PausableUpgradeable {
 
     function withdrawShare(uint128 shareAmount) external {
         UserDeposit memory userDeposit = userDeposits[msg.sender];
-        uint256 currentRound = batchingManager.currentRound(dnGmxVault);
+        uint256 currentRound = batchingManager.currentRound(dnGmxJuniorVault);
 
         userDeposit = _convertGlpStakedToShares(userDeposit, currentRound);
 
@@ -146,19 +146,23 @@ contract LeveragePool is OwnableUpgradeable, PausableUpgradeable {
 
         if (!_isEnoughMargin(msg.sender)) revert NotEnoughMargin();
 
-        batchingManager.claim(dnGmxVault, address(this), batchingManager.unclaimedShares(dnGmxVault, address(this)));
-        dnGmxVault.transfer(msg.sender, shareAmount);
+        batchingManager.claim(
+            dnGmxJuniorVault,
+            address(this),
+            batchingManager.unclaimedShares(dnGmxJuniorVault, address(this))
+        );
+        dnGmxJuniorVault.transfer(msg.sender, shareAmount);
     }
 
     function depositShareAndBorrow(uint128 shareAmount, uint128 usdcAmount) external {
         UserDeposit memory userDeposit = userDeposits[msg.sender];
-        uint256 currentRound = batchingManager.currentRound(dnGmxVault);
+        uint256 currentRound = batchingManager.currentRound(dnGmxJuniorVault);
 
         // Convert staked glp in previous rounds to shares
         userDeposit = _convertGlpStakedToShares(userDeposit, currentRound);
 
         // Transfer the shares to be deposited to vault
-        dnGmxVault.transferFrom(msg.sender, address(this), shareAmount);
+        dnGmxJuniorVault.transferFrom(msg.sender, address(this), shareAmount);
 
         // Update indexes and mint the borrow amount of usdc
         _updateIndex();
@@ -167,7 +171,9 @@ contract LeveragePool is OwnableUpgradeable, PausableUpgradeable {
         lpVault.borrow(usdcAmount);
 
         // stake borrowed usdc through batching manager
-        uint128 glpStaked = batchingManager.depositToken(dnGmxVault, usdc, usdcAmount, 0, address(this)).toUint128();
+        uint128 glpStaked = batchingManager
+            .depositToken(dnGmxJuniorVault, usdc, usdcAmount, 0, address(this))
+            .toUint128();
 
         userDeposits[msg.sender] = UserDeposit(
             currentRound,

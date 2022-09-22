@@ -2,17 +2,17 @@ import addresses from './addresses';
 import { deployments } from 'hardhat';
 import { parseUnits } from 'ethers/lib/utils';
 
-export const aaveVaultFixture = deployments.createFixture(async hre => {
-  const aaveVault = await (await hre.ethers.getContractFactory('AaveVaultMock')).deploy();
+export const dnGmxSeniorVaultFixture = deployments.createFixture(async hre => {
+  const dnGmxSeniorVault = await (await hre.ethers.getContractFactory('DnGmxSeniorVaultMock')).deploy();
 
-  await aaveVault.initialize(
+  await dnGmxSeniorVault.initialize(
     addresses.USDC, // _usdc
     'Aave LP Vault', // _name
     'Aave_LP', // _symbol
     addresses.AAVE_POOL_ADDRESS_PROVIDER,
   );
 
-  await aaveVault.grantAllowances();
+  await dnGmxSeniorVault.grantAllowances();
 
-  return aaveVault;
+  return dnGmxSeniorVault;
 });

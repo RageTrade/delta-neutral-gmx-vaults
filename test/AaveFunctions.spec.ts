@@ -2,38 +2,38 @@ import { expect } from 'chai';
 import hre, { ethers } from 'hardhat';
 import { generateErc20Balance } from './utils/erc20';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
-import { dnGmxVaultFixture } from './fixtures/dn-gmx-vault';
+import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-vault';
 
 describe('Aave interactions & functions', () => {
   it('executeSupply', async () => {
     const amount = parseUnits('100', 6);
-    const { dnGmxVault, usdc } = await dnGmxVaultFixture();
+    const { dnGmxJuniorVault, usdc } = await dnGmxJuniorVaultFixture();
 
-    await generateErc20Balance(usdc, amount, dnGmxVault.address);
+    await generateErc20Balance(usdc, amount, dnGmxJuniorVault.address);
 
-    await dnGmxVault.executeSupply(usdc.address, amount);
+    await dnGmxJuniorVault.executeSupply(usdc.address, amount);
   });
 
   it('executeWithdraw', async () => {
     const amount = parseUnits('100', 6);
-    const { dnGmxVault, usdc } = await dnGmxVaultFixture();
-    await generateErc20Balance(usdc, amount, dnGmxVault.address);
+    const { dnGmxJuniorVault, usdc } = await dnGmxJuniorVaultFixture();
+    await generateErc20Balance(usdc, amount, dnGmxJuniorVault.address);
 
-    await dnGmxVault.executeSupply(usdc.address, amount);
-    await dnGmxVault.executeWithdraw(usdc.address, amount);
+    await dnGmxJuniorVault.executeSupply(usdc.address, amount);
+    await dnGmxJuniorVault.executeWithdraw(usdc.address, amount);
   });
 
   it('executeBorrow & executeRepay', async () => {
     const amount = parseUnits('100', 6);
-    const { dnGmxVault, usdc, wbtc, weth } = await dnGmxVaultFixture();
-    await generateErc20Balance(usdc, amount, dnGmxVault.address);
+    const { dnGmxJuniorVault, usdc, wbtc, weth } = await dnGmxJuniorVaultFixture();
+    await generateErc20Balance(usdc, amount, dnGmxJuniorVault.address);
 
-    await dnGmxVault.executeSupply(usdc.address, amount);
+    await dnGmxJuniorVault.executeSupply(usdc.address, amount);
 
-    await dnGmxVault.executeBorrow(wbtc.address, parseUnits('0.002', 8));
-    await dnGmxVault.executeBorrow(weth.address, parseEther('0.02'));
+    await dnGmxJuniorVault.executeBorrow(wbtc.address, parseUnits('0.002', 8));
+    await dnGmxJuniorVault.executeBorrow(weth.address, parseEther('0.02'));
 
-    await dnGmxVault.executeRepay(wbtc.address, parseUnits('0.002', 8));
-    await dnGmxVault.executeRepay(weth.address, parseEther('0.02'));
+    await dnGmxJuniorVault.executeRepay(wbtc.address, parseUnits('0.002', 8));
+    await dnGmxJuniorVault.executeRepay(weth.address, parseEther('0.02'));
   });
 });
