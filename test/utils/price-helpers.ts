@@ -1,8 +1,13 @@
 import hre, { ethers } from 'hardhat';
 import { parseUnits } from 'ethers/lib/utils';
-import addresses from '../fixtures/addresses';
+import addresses, { GMX_ECOSYSTEM_ADDRESSES } from '../fixtures/addresses';
 import { increaseBlockTimestamp } from './vault-helpers';
-import { AggregatorV3Interface__factory } from '../../typechain-types';
+import {
+  AggregatorV3Interface__factory,
+  IERC20__factory,
+  IGlpManager__factory,
+  IVault__factory,
+} from '../../typechain-types';
 
 export const changePrice = async (asset: 'WETH' | 'WBTC', price: number) => {
   const signer = (await hre.ethers.getSigners())[0];
@@ -22,4 +27,30 @@ export const changePrice = async (asset: 'WETH' | 'WBTC', price: number) => {
   ]);
 
   await increaseBlockTimestamp(310);
+};
+
+export const logGlpPrice = async () => {
+  const signer = await ethers.getSigners();
+  const glp = IERC20__factory.connect(GMX_ECOSYSTEM_ADDRESSES.GLP, signer[0]);
+  const glpManager = IGlpManager__factory.connect(GMX_ECOSYSTEM_ADDRESSES.GlpManager, signer[0]);
+
+  const aum = await glpManager.getAum(false);
+  const totalSupply = await glp.totalSupply();
+
+  const price = aum.div(totalSupply).div(10 ** 6);
+  console.log('glpPrice', price);
+};
+
+export const logTargetWeights = async () => {
+  const signer = await ethers.getSigners();
+
+  const vault = IVault__factory.connect(GMX_ECOSYSTEM_ADDRESSES.Vault, signer[0]);
+  const btcWeights = await vault.tokenWeights(addresses.WBTC);
+  const ethWeights = await vault.tokenWeights(addresses.WETH);
+
+  const totalWeights = await vault.totalTokenWeights();
+
+  console.log('btcWeights', btcWeights);
+  console.log('ethWeights', ethWeights);
+  console.log('totalWeights', totalWeights);
 };
