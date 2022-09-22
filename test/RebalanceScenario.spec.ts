@@ -80,4 +80,59 @@ describe('Rebalance Scenarios', () => {
     console.log(`current borrows after rebalance: btc: ${currentBtc_}, eth: ${currentEth_}`);
     console.log('borrow value after rebalance', await dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_));
   });
+
+  it('Rebalance (Excel)', async () => {
+    const { dnGmxVault, glpBatchingManager, users, aUSDC } = await dnGmxVaultFixture();
+
+    // becauses price are not changed on uniswap
+    await dnGmxVault.setThresholds({
+      usdcReedemSlippage: 10_000,
+      usdcConversionThreshold: parseUnits('20', 6),
+    });
+
+    const amount = parseEther('100');
+
+    let usdcBorrowed = await dnGmxVault.getUsdcBorrowed();
+    let aUSDCBal = await aUSDC.balanceOf(dnGmxVault.address);
+    let [currentBtc_, currentEth_] = await dnGmxVault.getCurrentBorrows();
+
+    console.log('aUSDC balance before deposit: ', aUSDCBal);
+    console.log('usdc borrowed from aave vault: ', usdcBorrowed);
+    console.log(`current borrows before deposit: btc: ${currentBtc_}, eth: ${currentEth_}`);
+    console.log('borrow value before deposit', await dnGmxVault.getBorrowValue(currentBtc_, currentEth_));
+
+    // ETH: $2787.23 BTC: $38694.59
+    await changePrice('WBTC', 38694.59);
+    await changePrice('WETH', 2787.23);
+    await dnGmxVault.connect(users[0]).deposit(amount, users[0].address);
+
+    usdcBorrowed = await dnGmxVault.getUsdcBorrowed();
+    aUSDCBal = await aUSDC.balanceOf(dnGmxVault.address);
+    [currentBtc_, currentEth_] = await dnGmxVault.getCurrentBorrows();
+
+    console.log('aUSDC balance after deposit: ', aUSDCBal);
+    console.log('usdc borrowed from aave vault: ', usdcBorrowed);
+    console.log(`current borrows after deposit: btc: ${currentBtc_}, eth: ${currentEth_}`);
+    console.log('borrow value after deposit', await dnGmxVault.getBorrowValue(currentBtc_, currentEth_));
+
+    // await increaseBlockTimestamp(15 * 60);
+    // await glpBatchingManager.executeBatchDeposit();
+
+    await increaseBlockTimestamp(4 * 24 * 60 * 60);
+
+    // ETH: $3012.65 BTC: $41382.59
+    await changePrice('WBTC', 41382.59);
+    await changePrice('WETH', 3012.65);
+
+    await dnGmxVault.rebalance();
+
+    usdcBorrowed = await dnGmxVault.getUsdcBorrowed();
+    aUSDCBal = await aUSDC.balanceOf(dnGmxVault.address);
+    [currentBtc_, currentEth_] = await dnGmxVault.getCurrentBorrows();
+
+    console.log('aUSDC balance after rebalance: ', aUSDCBal);
+    console.log('usdc borrowed from aave vault: ', usdcBorrowed);
+    console.log(`current borrows after rebalance: btc: ${currentBtc_}, eth: ${currentEth_}`);
+    console.log('borrow value after rebalance', await dnGmxVault.getBorrowValue(currentBtc_, currentEth_));
+  });
 });
