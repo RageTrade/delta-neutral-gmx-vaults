@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { changePrice } from './utils/price-helpers';
+import { changePrice, logGlpPrice, logTargetWeights } from './utils/price-helpers';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-vault';
 import { increaseBlockTimestamp } from './utils/vault-helpers';
