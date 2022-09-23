@@ -69,7 +69,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   await dnGmxJuniorVault.setBatchingManager(glpBatchingStakingManagerFixtures.gmxBatchingManager.address);
 
   await dnGmxJuniorVault.setThresholds({
-    usdcReedemSlippage: 100,
+    usdcRedeemSlippage: 100,
     usdcConversionThreshold: parseUnits('20', 6),
   });
 

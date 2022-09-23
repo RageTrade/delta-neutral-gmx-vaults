@@ -64,7 +64,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     event DepositCapUpdated(uint256 _newDepositCap);
     event BatchingManagerUpdated(address _batchingManager);
 
-    event YieldParamsUpdated(uint16 indexed usdcReedemSlippage, uint240 indexed usdcConversionThreshold);
+    event YieldParamsUpdated(uint16 indexed usdcRedeemSlippage, uint240 indexed usdcConversionThreshold);
     event RebalanceParamsUpdated(uint32 indexed rebalanceTimeThreshold, uint16 indexed rebalanceDeltaThreshold);
 
     modifier onlyKeeper() {
@@ -178,9 +178,9 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     }
 
     function setThresholds(YieldStrategyParams calldata _ysParams) external onlyOwner {
-        usdcReedemSlippage = _ysParams.usdcReedemSlippage;
+        usdcRedeemSlippage = _ysParams.usdcRedeemSlippage;
         usdcConversionThreshold = _ysParams.usdcConversionThreshold;
-        emit YieldParamsUpdated(_ysParams.usdcReedemSlippage, _ysParams.usdcConversionThreshold);
+        emit YieldParamsUpdated(_ysParams.usdcRedeemSlippage, _ysParams.usdcConversionThreshold);
     }
 
     function setRebalanceParams(RebalanceStrategyParams calldata _rsParams) external onlyOwner {
@@ -266,7 +266,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             if (_seniorVaultWethRewards > seniorVaultWethConversionThreshold) {
                 // Deposit aave vault share to AAVE in usdc
                 uint256 minUsdcAmount = _getPrice(weth).mulDiv(
-                    _seniorVaultWethRewards * (MAX_BPS - usdcReedemSlippage),
+                    _seniorVaultWethRewards * (MAX_BPS - usdcRedeemSlippage),
                     MAX_BPS * PRICE_PRECISION
                 );
                 uint256 aaveUsdcAmount = _swapTokenToUSDC(address(weth), _seniorVaultWethRewards, minUsdcAmount);
@@ -709,7 +709,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         rewardRouter.unstakeAndRedeemGlp(
             address(usdc),
             glpAmountDesired, // glp amount
-            usdcAmountDesired.mulDiv(usdcReedemSlippage, MAX_BPS), // usdc
+            usdcAmountDesired.mulDiv(usdcRedeemSlippage, MAX_BPS), // usdc
             address(this)
         );
 
@@ -883,7 +883,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             tokenAmount = optimalBorrow - currentBorrow;
             // To swap with the amount in specified hence usdcAmount should be the min amount out
             usdcAmount = _getPrice(IERC20Metadata(token)).mulDiv(
-                tokenAmount * (MAX_BPS - usdcReedemSlippage),
+                tokenAmount * (MAX_BPS - usdcRedeemSlippage),
                 MAX_BPS * PRICE_PRECISION
             );
 
@@ -895,7 +895,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             tokenAmount = (currentBorrow - optimalBorrow);
             // To swap with amount out specified hence usdcAmount should be the max amount in
             usdcAmount = _getPrice(IERC20Metadata(token)).mulDiv(
-                tokenAmount * (MAX_BPS + usdcReedemSlippage),
+                tokenAmount * (MAX_BPS + usdcRedeemSlippage),
                 MAX_BPS * PRICE_PRECISION
             );
             repayDebt = true;

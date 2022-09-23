@@ -76,7 +76,7 @@ contract DnGmxJuniorVaultStorage {
 
     ///@dev storage for yield strategy
 
-    uint16 public usdcReedemSlippage;
+    uint16 public usdcRedeemSlippage;
     uint240 public usdcConversionThreshold;
 
     IERC20Metadata internal glp;
@@ -100,7 +100,7 @@ contract DnGmxJuniorVaultStorage {
     }
 
     struct YieldStrategyParams {
-        uint16 usdcReedemSlippage;
+        uint16 usdcRedeemSlippage;
         uint240 usdcConversionThreshold;
     }
 
