@@ -63,7 +63,7 @@ describe('Rebalance & its utils', () => {
 
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
     //Otherwise assets are not converted to aUsdc
-    await dnGmxJuniorVault.setThresholds({ usdcReedemSlippage: 100, usdcConversionThreshold: 0 });
+    await dnGmxJuniorVault.setThresholds({ usdcRedeemSlippage: 100, usdcConversionThreshold: 0 });
 
     await dnGmxJuniorVault
       .connect(users[0])
@@ -116,7 +116,7 @@ describe('Rebalance & its utils', () => {
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds({
-      usdcReedemSlippage: 10_000,
+      usdcRedeemSlippage: 10_000,
       usdcConversionThreshold: parseUnits('20', 6),
     });
 
@@ -166,7 +166,7 @@ describe('Rebalance & its utils', () => {
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds({
-      usdcReedemSlippage: 10_000,
+      usdcRedeemSlippage: 10_000,
       usdcConversionThreshold: parseUnits('20', 6),
     });
 

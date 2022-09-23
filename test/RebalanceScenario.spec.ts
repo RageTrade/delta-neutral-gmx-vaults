@@ -11,7 +11,7 @@ describe('Rebalance Scenarios', () => {
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds({
-      usdcReedemSlippage: 10_000,
+      usdcRedeemSlippage: 10_000,
       usdcConversionThreshold: parseUnits('20', 6),
     });
 
