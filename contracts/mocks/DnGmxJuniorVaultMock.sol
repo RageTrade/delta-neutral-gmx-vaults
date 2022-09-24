@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.9;
 
-import { DnGmxJuniorVault } from 'contracts/vaults/DnGmxJuniorVault.sol';
+import { DnGmxJuniorVault } from '../vaults/DnGmxJuniorVault.sol';
 import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
 contract DnGmxJuniorVaultMock is DnGmxJuniorVault {

@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.9;
 
-import { DnGmxSeniorVault } from 'contracts/vaults/DnGmxSeniorVault.sol';
+import { DnGmxSeniorVault } from '../vaults/DnGmxSeniorVault.sol';
 
 contract DnGmxSeniorVaultMock is DnGmxSeniorVault {
     function _beforeWithdraw(

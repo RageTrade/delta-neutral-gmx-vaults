@@ -5,16 +5,12 @@ pragma solidity ^0.8.9;
 import { IPool } from '@aave/core-v3/contracts/interfaces/IPool.sol';
 import { IAToken } from '@aave/core-v3/contracts/interfaces/IAToken.sol';
 import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol';
-
 import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
-
-import { ERC4626Upgradeable } from 'contracts/ERC4626/ERC4626Upgradeable.sol';
 import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import { PausableUpgradeable } from '@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol';
-
+import { ERC4626Upgradeable } from '../ERC4626/ERC4626Upgradeable.sol';
 import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
-
 import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
 import { ILeveragePool } from '../interfaces/ILeveragePool.sol';
 import { IBorrower } from '../interfaces/IBorrower.sol';
