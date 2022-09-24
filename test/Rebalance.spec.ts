@@ -32,8 +32,7 @@ describe('Rebalance & its utils', () => {
   });
 
   it('Rebalance Hedge', async () => {
-    const { dnGmxJuniorVault, dnGmxJuniorVaultSigner, users, sGlp, glpStakingManager } =
-      await dnGmxJuniorVaultFixture();
+    const { dnGmxJuniorVault, dnGmxJuniorVaultSigner, users, sGlp } = await dnGmxJuniorVaultFixture();
 
     const amount = parseEther('100');
 
@@ -63,7 +62,11 @@ describe('Rebalance & its utils', () => {
 
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
     //Otherwise assets are not converted to aUsdc
-    await dnGmxJuniorVault.setThresholds({ usdcRedeemSlippage: 100, usdcConversionThreshold: 0 });
+    await dnGmxJuniorVault.setThresholds({
+      usdcRedeemSlippage: 100,
+      usdcConversionThreshold: 0,
+      seniorVaultWethConversionThreshold: 10n ** 15n,
+    });
 
     await dnGmxJuniorVault
       .connect(users[0])
@@ -71,8 +74,7 @@ describe('Rebalance & its utils', () => {
   });
 
   it('Partial Withdraw', async () => {
-    const { dnGmxJuniorVault, dnGmxJuniorVaultSigner, admin, users, sGlp, fsGlp, glpStakingManager } =
-      await dnGmxJuniorVaultFixture();
+    const { dnGmxJuniorVault, dnGmxJuniorVaultSigner, admin, users, sGlp, fsGlp } = await dnGmxJuniorVaultFixture();
 
     const amount = parseEther('100');
 
@@ -103,21 +105,14 @@ describe('Rebalance & its utils', () => {
   });
 
   it('Rebalance Profit', async () => {
-    const {
-      dnGmxJuniorVault,
-      glpBatchingManager,
-      dnGmxJuniorVaultSigner,
-      admin,
-      users,
-      sGlp,
-      fsGlp,
-      glpStakingManager,
-    } = await dnGmxJuniorVaultFixture();
+    const { dnGmxJuniorVault, glpBatchingManager, dnGmxJuniorVaultSigner, admin, users, sGlp, fsGlp } =
+      await dnGmxJuniorVaultFixture();
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds({
       usdcRedeemSlippage: 10_000,
       usdcConversionThreshold: parseUnits('20', 6),
+      seniorVaultWethConversionThreshold: 10n ** 15n,
     });
 
     const amount = parseEther('100');
@@ -168,6 +163,7 @@ describe('Rebalance & its utils', () => {
     await dnGmxJuniorVault.setThresholds({
       usdcRedeemSlippage: 10_000,
       usdcConversionThreshold: parseUnits('20', 6),
+      seniorVaultWethConversionThreshold: 10n ** 15n,
     });
 
     const amount = parseEther('100');
