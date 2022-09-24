@@ -26,7 +26,7 @@ describe('Rebalance & its utils', () => {
     const [currentBtc, currentEth] = [BigNumber.from(0), BigNumber.from(0)];
     const [optimalBtc, optimalEth] = await dnGmxJuniorVault.getOptimalBorrows(amount);
 
-    await dnGmxJuniorVault.executeBorrowFromLpVault(parseUnits('50', 6));
+    await dnGmxJuniorVault.executeBorrowFromDnGmxSeniorVault(parseUnits('50', 6));
 
     await dnGmxJuniorVault.rebalanceBorrow(optimalBtc, currentBtc, optimalEth, currentEth);
   });

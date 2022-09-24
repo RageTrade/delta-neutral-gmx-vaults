@@ -50,7 +50,7 @@ contract LeveragePool is OwnableUpgradeable, PausableUpgradeable {
 
     uint16 public constant MAX_BPS = 10000;
 
-    IDnGmxSeniorVault internal lpVault;
+    IDnGmxSeniorVault internal dnGmxSeniorVault;
     IDebtToken internal rUsdc;
     IDnGmxJuniorVault internal dnGmxJuniorVault;
     IGMXBatchingManager internal batchingManager;
@@ -168,7 +168,7 @@ contract LeveragePool is OwnableUpgradeable, PausableUpgradeable {
         _updateIndex();
         rUsdc.mint(msg.sender, msg.sender, usdcAmount, borrowIndex);
 
-        lpVault.borrow(usdcAmount);
+        dnGmxSeniorVault.borrow(usdcAmount);
 
         // stake borrowed usdc through batching manager
         uint128 glpStaked = batchingManager
