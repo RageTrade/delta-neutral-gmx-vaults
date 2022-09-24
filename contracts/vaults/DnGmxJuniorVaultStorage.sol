@@ -4,22 +4,18 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { IERC20Metadata } from '@openzeppelin/contracts/interfaces/IERC20Metadata.sol';
-
-import { IVault } from 'contracts/interfaces/gmx/IVault.sol';
-import { IGlpManager } from 'contracts/interfaces/gmx/IGlpManager.sol';
-import { IRewardRouterV2 } from 'contracts/interfaces/gmx/IRewardRouterV2.sol';
-import { IGMXBatchingManager } from 'contracts/interfaces/gmx/IGMXBatchingManager.sol';
-
-import { IDnGmxSeniorVault } from 'contracts/interfaces/IDnGmxSeniorVault.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
-
 import { IPool } from '@aave/core-v3/contracts/interfaces/IPool.sol';
 import { IAToken } from '@aave/core-v3/contracts/interfaces/IAToken.sol';
 import { IPriceOracle } from '@aave/core-v3/contracts/interfaces/IPriceOracle.sol';
 import { IVariableDebtToken } from '@aave/core-v3/contracts/interfaces/IVariableDebtToken.sol';
 import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol';
-
-import { IBalancerVault } from 'contracts/interfaces/IBalancerVault.sol';
+import { IVault } from '../interfaces/gmx/IVault.sol';
+import { IGlpManager } from '../interfaces/gmx/IGlpManager.sol';
+import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
+import { IGMXBatchingManager } from '../interfaces/gmx/IGMXBatchingManager.sol';
+import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
+import { IBalancerVault } from '../interfaces/IBalancerVault.sol';
 
 interface IDebtToken is IVariableDebtToken {
     function balanceOf(address user) external view returns (uint256);

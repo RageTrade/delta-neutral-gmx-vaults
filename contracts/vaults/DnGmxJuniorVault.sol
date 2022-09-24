@@ -2,23 +2,8 @@
 
 pragma solidity ^0.8.9;
 
-import { SafeCast } from 'contracts/libraries/SafeCast.sol';
 import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
-
-import { ERC4626Upgradeable } from 'contracts/ERC4626/ERC4626Upgradeable.sol';
-import { DnGmxJuniorVaultStorage, IDebtToken } from 'contracts/vaults/DnGmxJuniorVaultStorage.sol';
-
-import { IVault } from 'contracts/interfaces/gmx/IVault.sol';
-import { IGlpManager } from 'contracts/interfaces/gmx/IGlpManager.sol';
-import { ISGLPExtended } from 'contracts/interfaces/gmx/ISGLPExtended.sol';
-import { IRewardRouterV2 } from 'contracts/interfaces/gmx/IRewardRouterV2.sol';
-import { IGMXBatchingManager } from 'contracts/interfaces/gmx/IGMXBatchingManager.sol';
-
-import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
-
-import { IBalancerVault } from 'contracts/interfaces/IBalancerVault.sol';
-
 import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
@@ -33,6 +18,16 @@ import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPool
 import { ReserveConfiguration } from '@aave/core-v3/contracts/protocol/libraries/configuration/ReserveConfiguration.sol';
 import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
+import { IVault } from '../interfaces/gmx/IVault.sol';
+import { IGlpManager } from '../interfaces/gmx/IGlpManager.sol';
+import { ISGLPExtended } from '../interfaces/gmx/ISGLPExtended.sol';
+import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
+import { IGMXBatchingManager } from '../interfaces/gmx/IGMXBatchingManager.sol';
+import { IBalancerVault } from '../interfaces/IBalancerVault.sol';
+import { ERC4626Upgradeable } from '../ERC4626/ERC4626Upgradeable.sol';
+import { DnGmxJuniorVaultStorage, IDebtToken } from '../vaults/DnGmxJuniorVaultStorage.sol';
+import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
+import { SafeCast } from '../libraries/SafeCast.sol';
 
 import 'hardhat/console.sol';
 
