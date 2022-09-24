@@ -41,7 +41,7 @@ contract DnGmxJuniorVaultStorage {
     ///@dev common storage
 
     address public keeper;
-    IDnGmxSeniorVault public lpVault;
+    IDnGmxSeniorVault public dnGmxSeniorVault;
     address public feeRecipient;
     uint256 public withdrawFeeBps;
     uint256 public protocolFee;

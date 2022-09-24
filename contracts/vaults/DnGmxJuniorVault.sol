@@ -46,7 +46,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     error DepositCapExceeded();
     error OnlyKeeperAllowed(address msgSender, address authorisedKeeperAddress);
 
-    error NotLpVault();
+    error NotDnGmxSeniorVault();
     error NotBalancerVault();
 
     error ArraysLengthMismatch();
@@ -57,7 +57,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     event Rebalanced();
     event AllowancesGranted();
 
-    event LPVaultUpdated(address _lpVault);
+    event DnGmxSeniorVaultUpdated(address _dnGmxSeniorVault);
     event KeeperUpdated(address _newKeeper);
     event FeeRecipientUpdated(address _newFeeRecipient);
     event FeesWithdrawn(uint256 feeAmount);
@@ -72,8 +72,8 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         _;
     }
 
-    modifier onlydnGmxSeniorVault() {
-        if (msg.sender != address(lpVault)) revert NotLpVault();
+    modifier onlyDnGmxSeniorVault() {
+        if (msg.sender != address(dnGmxSeniorVault)) revert NotDnGmxSeniorVault();
         _;
     }
 
@@ -150,7 +150,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         usdc.approve(address(swapRouter), type(uint256).max);
         usdc.approve(address(batchingManager), type(uint256).max);
 
-        aUsdc.approve(address(lpVault), type(uint256).max);
+        aUsdc.approve(address(dnGmxSeniorVault), type(uint256).max);
 
         asset.approve(address(glpManager), type(uint256).max);
 
@@ -162,9 +162,9 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         emit KeeperUpdated(_newKeeper);
     }
 
-    function setLPVault(address _lpVault) external onlyOwner {
-        lpVault = IDnGmxSeniorVault(_lpVault);
-        emit LPVaultUpdated(_lpVault);
+    function setDnGmxSeniorVault(address _dnGmxSeniorVault) external onlyOwner {
+        dnGmxSeniorVault = IDnGmxSeniorVault(_dnGmxSeniorVault);
+        emit DnGmxSeniorVaultUpdated(_dnGmxSeniorVault);
     }
 
     function setDepositCap(uint256 _newDepositCap) external onlyOwner {
@@ -239,7 +239,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
             uint256 wethToCompound = wethHarvested - protocolFeeHarvested;
 
-            uint256 dnGmxSeniorVaultWethShare = lpVault.getEthRewardsSplitRate().mulDiv(
+            uint256 dnGmxSeniorVaultWethShare = dnGmxSeniorVault.getEthRewardsSplitRate().mulDiv(
                 wethToCompound,
                 FeeSplitStrategy.RATE_PRECISION
             );
@@ -247,7 +247,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
             uint256 _seniorVaultWethRewards = seniorVaultWethRewards + dnGmxSeniorVaultWethShare;
 
-            console.log('ethRewardsSplitRate', lpVault.getEthRewardsSplitRate());
+            console.log('ethRewardsSplitRate', dnGmxSeniorVault.getEthRewardsSplitRate());
             console.log('wethToCompound', wethToCompound);
             console.log('dnGmxWethShare', dnGmxWethShare);
             console.log('dnGmxSeniorVaultWethShare', dnGmxSeniorVaultWethShare);
@@ -614,19 +614,19 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
         // Settle net change in market value and deposit/withdraw collateral tokens
         // Vault market value is just the collateral value since profit has been settled
-        uint256 targetLpVaultAmount = (targetHealthFactor - usdcLiquidationThreshold).mulDiv(
+        uint256 targetDnGmxSeniorVaultAmount = (targetHealthFactor - usdcLiquidationThreshold).mulDiv(
             optimalBorrowValue,
             usdcLiquidationThreshold
         );
 
-        uint256 currentLpVaultAmount = uint256(aUsdc.balanceOf(address(this)).toInt256() - dnUsdcDeposited);
+        uint256 currentDnGmxSeniorVaultAmount = uint256(aUsdc.balanceOf(address(this)).toInt256() - dnUsdcDeposited);
 
-        console.log('targetLpVaultAmount', targetLpVaultAmount);
-        console.log('currentLpVaultAmount', currentLpVaultAmount);
+        console.log('targetDnGmxSeniorVaultAmount', targetDnGmxSeniorVaultAmount);
+        console.log('currentDnGmxSeniorVaultAmount', currentDnGmxSeniorVaultAmount);
 
-        if (targetLpVaultAmount > currentLpVaultAmount) {
+        if (targetDnGmxSeniorVaultAmount > currentDnGmxSeniorVaultAmount) {
             // Take from LB Vault
-            lpVault.borrow(targetLpVaultAmount - currentLpVaultAmount);
+            dnGmxSeniorVault.borrow(targetDnGmxSeniorVaultAmount - currentDnGmxSeniorVaultAmount);
             // Rebalance Position
             _rebalanceBorrow(optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
         } else {
@@ -637,7 +637,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             console.log('dnUsdcDeposited');
             console.logInt(dnUsdcDeposited);
             console.log('ausdc bal', aUsdc.balanceOf(address(this)));
-            lpVault.repay(currentLpVaultAmount - targetLpVaultAmount);
+            dnGmxSeniorVault.repay(currentDnGmxSeniorVaultAmount - targetDnGmxSeniorVaultAmount);
         }
     }
 

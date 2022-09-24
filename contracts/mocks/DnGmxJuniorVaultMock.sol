@@ -81,8 +81,8 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         pool.withdraw(token, amount, address(this));
     }
 
-    function executeBorrowFromLpVault(uint256 amount) external {
-        lpVault.borrow(amount);
+    function executeBorrowFromDnGmxSeniorVault(uint256 amount) external {
+        dnGmxSeniorVault.borrow(amount);
     }
 
     function executeOperationToken(

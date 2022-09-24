@@ -62,7 +62,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
 
   await dnGmxJuniorVault.setKeeper(admin.address);
 
-  await dnGmxJuniorVault.setLPVault(dnGmxSeniorVault.address);
+  await dnGmxJuniorVault.setDnGmxSeniorVault(dnGmxSeniorVault.address);
 
   await dnGmxJuniorVault.setDepositCap(ethers.constants.MaxUint256);
 
