@@ -13,6 +13,7 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.setThresholds({
       usdcRedeemSlippage: 10_000,
       usdcConversionThreshold: parseUnits('20', 6),
+      seniorVaultWethConversionThreshold: 10n ** 15n,
     });
 
     const amount = parseEther('100');

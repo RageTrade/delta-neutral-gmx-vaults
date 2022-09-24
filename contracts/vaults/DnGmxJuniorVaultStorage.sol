@@ -100,6 +100,7 @@ contract DnGmxJuniorVaultStorage {
     struct YieldStrategyParams {
         uint16 usdcRedeemSlippage;
         uint240 usdcConversionThreshold;
+        uint256 seniorVaultWethConversionThreshold;
     }
 
     struct HedgeStrategyParams {

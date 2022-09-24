@@ -55,11 +55,16 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     event DnGmxSeniorVaultUpdated(address _dnGmxSeniorVault);
     event KeeperUpdated(address _newKeeper);
     event FeeRecipientUpdated(address _newFeeRecipient);
+    event WithdrawFeeUpdated(uint256 _withdrawFeeBps);
     event FeesWithdrawn(uint256 feeAmount);
     event DepositCapUpdated(uint256 _newDepositCap);
     event BatchingManagerUpdated(address _batchingManager);
 
-    event YieldParamsUpdated(uint16 indexed usdcRedeemSlippage, uint240 indexed usdcConversionThreshold);
+    event YieldParamsUpdated(
+        uint16 indexed usdcRedeemSlippage,
+        uint240 indexed usdcConversionThreshold,
+        uint256 indexed seniorVaultWethConversionThreshold
+    );
     event RebalanceParamsUpdated(uint32 indexed rebalanceTimeThreshold, uint16 indexed rebalanceDeltaThreshold);
 
     modifier onlyKeeper() {
@@ -120,10 +125,6 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
         vWbtc = IDebtToken(pool.getReserveData(address(wbtc)).variableDebtTokenAddress);
         vWeth = IDebtToken(pool.getReserveData(address(weth)).variableDebtTokenAddress);
-        //TODO: change this value to least possible amount
-        //TODO: add setters for these values
-        withdrawFeeBps = 50;
-        seniorVaultWethConversionThreshold = 1e15;
     }
 
     /* ##################################################################
@@ -172,10 +173,20 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         emit BatchingManagerUpdated(_batchingManager);
     }
 
+    function setWithdrawFee(uint256 _withdrawFeeBps) external onlyOwner {
+        withdrawFeeBps = _withdrawFeeBps;
+        emit WithdrawFeeUpdated(_withdrawFeeBps);
+    }
+
     function setThresholds(YieldStrategyParams calldata _ysParams) external onlyOwner {
         usdcRedeemSlippage = _ysParams.usdcRedeemSlippage;
         usdcConversionThreshold = _ysParams.usdcConversionThreshold;
-        emit YieldParamsUpdated(_ysParams.usdcRedeemSlippage, _ysParams.usdcConversionThreshold);
+        seniorVaultWethConversionThreshold = _ysParams.seniorVaultWethConversionThreshold;
+        emit YieldParamsUpdated(
+            _ysParams.usdcRedeemSlippage,
+            _ysParams.usdcConversionThreshold,
+            _ysParams.seniorVaultWethConversionThreshold
+        );
     }
 
     function setRebalanceParams(RebalanceStrategyParams calldata _rsParams) external onlyOwner {

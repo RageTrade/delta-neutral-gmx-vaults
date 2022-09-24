@@ -71,7 +71,10 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   await dnGmxJuniorVault.setThresholds({
     usdcRedeemSlippage: 100,
     usdcConversionThreshold: parseUnits('20', 6),
+    seniorVaultWethConversionThreshold: 10n ** 15n,
   });
+
+  await dnGmxJuniorVault.setWithdrawFee(50); //50BPS = .5%
 
   await dnGmxJuniorVault.setRebalanceParams({
     rebalanceTimeThreshold: ethers.constants.Zero, // or 86400
@@ -82,7 +85,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     targetHealthFactor: 15_000, // 150%
     vault: addresses.BALANCER_VAULT,
     swapRouter: addresses.UNI_V3_SWAP_ROUTER,
-    aaveRewardsController: ethers.constants.AddressZero
+    aaveRewardsController: ethers.constants.AddressZero,
   });
 
   await dnGmxJuniorVault.grantAllowances();
