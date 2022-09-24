@@ -10,6 +10,7 @@ import { IAToken } from '@aave/core-v3/contracts/interfaces/IAToken.sol';
 import { IPriceOracle } from '@aave/core-v3/contracts/interfaces/IPriceOracle.sol';
 import { IVariableDebtToken } from '@aave/core-v3/contracts/interfaces/IVariableDebtToken.sol';
 import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol';
+import { IRewardsController } from '@aave/periphery-v3/contracts/rewards/interfaces/IRewardsController.sol';
 import { IVault } from '../interfaces/gmx/IVault.sol';
 import { IGlpManager } from '../interfaces/gmx/IGlpManager.sol';
 import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
@@ -69,6 +70,7 @@ contract DnGmxJuniorVaultStorage {
     IBalancerVault internal balancerVault;
 
     uint256 internal targetHealthFactor;
+    IRewardsController internal aaveRewardsController;
 
     ///@dev storage for yield strategy
 
@@ -104,6 +106,7 @@ contract DnGmxJuniorVaultStorage {
         IBalancerVault vault;
         ISwapRouter swapRouter;
         uint256 targetHealthFactor;
+        IRewardsController aaveRewardsController;
     }
 
     struct RebalanceStrategyParams {

@@ -188,6 +188,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         balancerVault = _hedgeParams.vault;
         swapRouter = _hedgeParams.swapRouter;
         targetHealthFactor = _hedgeParams.targetHealthFactor;
+        aaveRewardsController = _hedgeParams.aaveRewardsController;
     }
 
     function pause() external onlyOwner {
