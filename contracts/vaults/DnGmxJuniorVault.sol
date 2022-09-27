@@ -919,20 +919,18 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         view
         returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow)
     {
-        uint256 ethReservesOfGlp = _getTokenReservesInGlp(address(weth));
-        uint256 btcReservesOfGlp = _getTokenReservesInGlp(address(wbtc));
-
-        uint256 glpTotalSupply = glp.totalSupply();
-
-        optimalEthBorrow = ethReservesOfGlp.mulDiv(glpDeposited, glpTotalSupply);
-        optimalBtcBorrow = btcReservesOfGlp.mulDiv(glpDeposited, glpTotalSupply);
+        optimalBtcBorrow = _getTokenReservesInGlp(address(weth), glpDeposited);
+        optimalEthBorrow = _getTokenReservesInGlp(address(wbtc), glpDeposited);
     }
 
-    function _getTokenReservesInGlp(address token) internal view returns (uint256) {
-        uint256 poolAmount = gmxVault.poolAmounts(token);
-        uint256 reservedAmount = gmxVault.reservedAmounts(token);
+    function _getTokenReservesInGlp(address token, uint256 glpDeposited) internal view returns (uint256) {
+        uint256 targetWeight = gmxVault.tokenWeights(token);
+        uint256 totalTokenWeights = gmxVault.totalTokenWeights();
 
-        return (poolAmount - reservedAmount);
+        uint256 glpPrice = getPrice();
+        uint256 tokenPrice = _getPrice(IERC20Metadata(token));
+
+        return targetWeight.mulDiv(glpDeposited * glpPrice, totalTokenWeights * tokenPrice);
     }
 
     function _isWithinAllowedDelta(uint256 optimalBorrow, uint256 currentBorrow) internal view returns (bool) {
