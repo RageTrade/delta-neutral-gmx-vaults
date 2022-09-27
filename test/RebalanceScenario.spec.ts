@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { changePrice, logGlpPrice, logTargetWeights } from './utils/price-helpers';
-import { parseEther, parseUnits } from 'ethers/lib/utils';
-import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-vault';
-import { increaseBlockTimestamp } from './utils/vault-helpers';
 import addresses from './fixtures/addresses';
+import { parseEther, parseUnits } from 'ethers/lib/utils';
+import { increaseBlockTimestamp } from './utils/vault-helpers';
+import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-vault';
+import { changePrice, logGlpPrice, logTargetWeights } from './utils/price-helpers';
 
 describe('Rebalance Scenarios', () => {
   it('Rebalance (External)', async () => {
@@ -82,41 +82,42 @@ describe('Rebalance Scenarios', () => {
     console.log('borrow value after rebalance', await dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_));
   });
 
-  it.only('Rebalance (Excel)', async () => {
-    const { dnGmxVault, glpBatchingManager, users, aUSDC } = await dnGmxVaultFixture();
+  it('Rebalance (Excel)', async () => {
+    const { dnGmxJuniorVault, glpBatchingManager, users, aUSDC } = await dnGmxJuniorVaultFixture();
 
     // becauses price are not changed on uniswap
-    await dnGmxVault.setThresholds({
-      usdcReedemSlippage: 10_000,
+    await dnGmxJuniorVault.setThresholds({
+      usdcRedeemSlippage: 10_000,
       usdcConversionThreshold: parseUnits('20', 6),
+      seniorVaultWethConversionThreshold: 10n ** 15n,
     });
 
     const amount = parseEther('100');
 
-    let usdcBorrowed = await dnGmxVault.getUsdcBorrowed();
-    let aUSDCBal = await aUSDC.balanceOf(dnGmxVault.address);
-    let [currentBtc_, currentEth_] = await dnGmxVault.getCurrentBorrows();
+    let usdcBorrowed = await dnGmxJuniorVault.getUsdcBorrowed();
+    let aUSDCBal = await aUSDC.balanceOf(dnGmxJuniorVault.address);
+    let [currentBtc_, currentEth_] = await dnGmxJuniorVault.getCurrentBorrows();
 
     console.log('aUSDC balance before deposit: ', aUSDCBal);
     console.log('usdc borrowed from aave vault: ', usdcBorrowed);
     console.log(`current borrows before deposit: btc: ${currentBtc_}, eth: ${currentEth_}`);
-    console.log('borrow value before deposit', await dnGmxVault.getBorrowValue(currentBtc_, currentEth_));
+    console.log('borrow value before deposit', await dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_));
 
     // ETH: $2787.23 BTC: $38694.59
     await changePrice('WBTC', 38694.59);
     await changePrice('WETH', 2787.23);
     await logGlpPrice();
     await logTargetWeights();
-    await dnGmxVault.connect(users[0]).deposit(amount, users[0].address);
+    await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
 
-    usdcBorrowed = await dnGmxVault.getUsdcBorrowed();
-    aUSDCBal = await aUSDC.balanceOf(dnGmxVault.address);
-    [currentBtc_, currentEth_] = await dnGmxVault.getCurrentBorrows();
+    usdcBorrowed = await dnGmxJuniorVault.getUsdcBorrowed();
+    aUSDCBal = await aUSDC.balanceOf(dnGmxJuniorVault.address);
+    [currentBtc_, currentEth_] = await dnGmxJuniorVault.getCurrentBorrows();
 
     console.log('aUSDC balance after deposit: ', aUSDCBal);
     console.log('usdc borrowed from aave vault: ', usdcBorrowed);
     console.log(`current borrows after deposit: btc: ${currentBtc_}, eth: ${currentEth_}`);
-    console.log('borrow value after deposit', await dnGmxVault.getBorrowValue(currentBtc_, currentEth_));
+    console.log('borrow value after deposit', await dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_));
 
     // await increaseBlockTimestamp(15 * 60);
     // await glpBatchingManager.executeBatchDeposit();
@@ -129,23 +130,23 @@ describe('Rebalance Scenarios', () => {
     await logGlpPrice();
     await logTargetWeights();
 
-    await dnGmxVault.rebalance();
+    await dnGmxJuniorVault.rebalance();
 
-    usdcBorrowed = await dnGmxVault.getUsdcBorrowed();
-    aUSDCBal = await aUSDC.balanceOf(dnGmxVault.address);
-    [currentBtc_, currentEth_] = await dnGmxVault.getCurrentBorrows();
+    usdcBorrowed = await dnGmxJuniorVault.getUsdcBorrowed();
+    aUSDCBal = await aUSDC.balanceOf(dnGmxJuniorVault.address);
+    [currentBtc_, currentEth_] = await dnGmxJuniorVault.getCurrentBorrows();
 
     console.log('aUSDC balance after rebalance: ', aUSDCBal);
     console.log('usdc borrowed from aave vault: ', usdcBorrowed);
     console.log(`current borrows after rebalance: btc: ${currentBtc_}, eth: ${currentEth_}`);
-    console.log('borrow value after rebalance', await dnGmxVault.getBorrowValue(currentBtc_, currentEth_));
+    console.log('borrow value after rebalance', await dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_));
   });
 
   it('Rebalance (Excel)', async () => {
-    const { dnGmxVault, glpBatchingManager, users, aUSDC } = await dnGmxVaultFixture();
-    console.log(await dnGmxVault.getTokenReservesInGlp(addresses.WBTC, parseEther('100')));
-    console.log(await dnGmxVault.getTokenReservesInGlp(addresses.WETH, parseEther('100')));
+    const { dnGmxJuniorVault, glpBatchingManager, users, aUSDC } = await dnGmxJuniorVaultFixture();
+    console.log(await dnGmxJuniorVault.getTokenReservesInGlp(addresses.WBTC, parseEther('100')));
+    console.log(await dnGmxJuniorVault.getTokenReservesInGlp(addresses.WETH, parseEther('100')));
 
-    console.log(await dnGmxVault.getOptimalBorrows(parseEther('100')));
+    console.log(await dnGmxJuniorVault.getOptimalBorrows(parseEther('100')));
   });
 });

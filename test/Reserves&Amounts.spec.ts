@@ -7,8 +7,8 @@ describe('Reserves & Optimal Amounts', () => {
   it('getTokenReservesInGlp', async () => {
     const { dnGmxJuniorVault, wbtc, weth } = await dnGmxJuniorVaultFixture();
 
-    console.log(await dnGmxJuniorVault.getTokenReservesInGlp(wbtc.address));
-    console.log(await dnGmxJuniorVault.getTokenReservesInGlp(weth.address));
+    console.log(await dnGmxJuniorVault.getTokenReservesInGlp(wbtc.address, parseEther('100')));
+    console.log(await dnGmxJuniorVault.getTokenReservesInGlp(weth.address, parseEther('100')));
   });
 
   it('Optimal Amounts', async () => {
