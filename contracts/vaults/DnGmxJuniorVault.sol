@@ -259,6 +259,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             console.log('dnGmxSeniorVaultWethShare', dnGmxSeniorVaultWethShare);
 
             uint256 price = gmxVault.getMinPrice(address(weth));
+
             uint256 usdgAmount = dnGmxWethShare.mulDiv(
                 price * (MAX_BPS - slippageThreshold),
                 PRICE_PRECISION * MAX_BPS
@@ -715,7 +716,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         rewardRouter.unstakeAndRedeemGlp(
             address(usdc),
             glpAmountDesired, // glp amount
-            usdcAmountDesired.mulDiv(MAX_BPS - usdcReedemSlippage, MAX_BPS), // usdc
+            usdcAmountDesired.mulDiv(MAX_BPS - usdcRedeemSlippage, MAX_BPS), // usdc
             address(this)
         );
 
@@ -848,8 +849,8 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrows(totalAssets());
 
         return
-            !(_isWithinAllowedDelta(optimalEthBorrow, currentEthBorrow) &&
-                _isWithinAllowedDelta(optimalBtcBorrow, currentBtcBorrow));
+            !(_isWithinAllowedDelta(optimalBtcBorrow, currentBtcBorrow) &&
+                _isWithinAllowedDelta(optimalEthBorrow, currentEthBorrow));
     }
 
     // @dev returns price in terms of usdc
@@ -919,8 +920,8 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         view
         returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow)
     {
-        optimalBtcBorrow = _getTokenReservesInGlp(address(weth), glpDeposited);
-        optimalEthBorrow = _getTokenReservesInGlp(address(wbtc), glpDeposited);
+        optimalBtcBorrow = _getTokenReservesInGlp(address(wbtc), glpDeposited);
+        optimalEthBorrow = _getTokenReservesInGlp(address(weth), glpDeposited);
     }
 
     function _getTokenReservesInGlp(address token, uint256 glpDeposited) internal view returns (uint256) {
