@@ -1,11 +1,10 @@
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import hre, { ethers } from 'hardhat';
-import { changePrice } from './utils/price-helpers';
-import { parseEther, parseUnits } from 'ethers/lib/utils';
-import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-vault';
-import { increaseBlockTimestamp } from './utils/vault-helpers';
 import { generateErc20Balance } from './utils/erc20';
+import { parseEther, parseUnits } from 'ethers/lib/utils';
+import { increaseBlockTimestamp } from './utils/vault-helpers'; 
+import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-vault';
 
 describe('Rebalance & its utils', () => {
   it('Swap Token To USDC', async () => {

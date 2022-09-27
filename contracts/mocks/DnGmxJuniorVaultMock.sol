@@ -148,8 +148,8 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         return _getOptimalBorrows(glpDeposited);
     }
 
-    function getTokenReservesInGlp(address token) external view returns (uint256) {
-        return _getTokenReservesInGlp(token);
+    function getTokenReservesInGlp(address token, uint256 glpDeposited) external view returns (uint256) {
+        return _getTokenReservesInGlp(token, glpDeposited);
     }
 
     function isWithinAllowedDelta(uint256 optimalBorrow, uint256 currentBorrow) external view returns (bool) {

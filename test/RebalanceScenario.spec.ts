@@ -1,9 +1,10 @@
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { changePrice } from './utils/price-helpers';
+import { changePrice, logGlpPrice, logTargetWeights } from './utils/price-helpers';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-vault';
 import { increaseBlockTimestamp } from './utils/vault-helpers';
+import addresses from './fixtures/addresses';
 
 describe('Rebalance Scenarios', () => {
   it('Rebalance (External)', async () => {
@@ -17,7 +18,7 @@ describe('Rebalance Scenarios', () => {
       seniorVaultWethConversionThreshold: 10n ** 15n,
     });
 
-    const amount = parseEther('100');
+    const amount = parseEther('77.59866282');
 
     let usdcBorrowed = await dnGmxJuniorVault.getUsdcBorrowed();
     let aUSDCBal = await aUSDC.balanceOf(dnGmxJuniorVault.address);
@@ -81,7 +82,7 @@ describe('Rebalance Scenarios', () => {
     console.log('borrow value after rebalance', await dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_));
   });
 
-  it('Rebalance (Excel)', async () => {
+  it.only('Rebalance (Excel)', async () => {
     const { dnGmxVault, glpBatchingManager, users, aUSDC } = await dnGmxVaultFixture();
 
     // becauses price are not changed on uniswap
@@ -104,6 +105,8 @@ describe('Rebalance Scenarios', () => {
     // ETH: $2787.23 BTC: $38694.59
     await changePrice('WBTC', 38694.59);
     await changePrice('WETH', 2787.23);
+    await logGlpPrice();
+    await logTargetWeights();
     await dnGmxVault.connect(users[0]).deposit(amount, users[0].address);
 
     usdcBorrowed = await dnGmxVault.getUsdcBorrowed();
@@ -123,6 +126,8 @@ describe('Rebalance Scenarios', () => {
     // ETH: $3012.65 BTC: $41382.59
     await changePrice('WBTC', 41382.59);
     await changePrice('WETH', 3012.65);
+    await logGlpPrice();
+    await logTargetWeights();
 
     await dnGmxVault.rebalance();
 
@@ -134,5 +139,13 @@ describe('Rebalance Scenarios', () => {
     console.log('usdc borrowed from aave vault: ', usdcBorrowed);
     console.log(`current borrows after rebalance: btc: ${currentBtc_}, eth: ${currentEth_}`);
     console.log('borrow value after rebalance', await dnGmxVault.getBorrowValue(currentBtc_, currentEth_));
+  });
+
+  it('Rebalance (Excel)', async () => {
+    const { dnGmxVault, glpBatchingManager, users, aUSDC } = await dnGmxVaultFixture();
+    console.log(await dnGmxVault.getTokenReservesInGlp(addresses.WBTC, parseEther('100')));
+    console.log(await dnGmxVault.getTokenReservesInGlp(addresses.WETH, parseEther('100')));
+
+    console.log(await dnGmxVault.getOptimalBorrows(parseEther('100')));
   });
 });
