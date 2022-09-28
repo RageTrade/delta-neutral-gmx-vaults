@@ -33,7 +33,7 @@ describe('Rebalance & its utils', () => {
   });
 
   it('Rebalance Hedge', async () => {
-    const { dnGmxJuniorVault, dnGmxJuniorVaultSigner,dnGmxSeniorVault, users, sGlp } = await dnGmxJuniorVaultFixture();
+    const { dnGmxJuniorVault, dnGmxJuniorVaultSigner, dnGmxSeniorVault, users, sGlp } = await dnGmxJuniorVaultFixture();
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     const amount = parseEther('100');
@@ -50,7 +50,7 @@ describe('Rebalance & its utils', () => {
   });
 
   it('Deposit', async () => {
-    const { dnGmxJuniorVault,dnGmxSeniorVault, users } = await dnGmxJuniorVaultFixture();
+    const { dnGmxJuniorVault, dnGmxSeniorVault, users } = await dnGmxJuniorVaultFixture();
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     const amount = parseEther('100');
@@ -59,7 +59,7 @@ describe('Rebalance & its utils', () => {
   });
 
   it('Full Withdraw', async () => {
-    const { dnGmxJuniorVault,dnGmxSeniorVault, users } = await dnGmxJuniorVaultFixture();
+    const { dnGmxJuniorVault, dnGmxSeniorVault, users } = await dnGmxJuniorVaultFixture();
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     const amount = parseEther('100');
@@ -78,7 +78,8 @@ describe('Rebalance & its utils', () => {
   });
 
   it('Partial Withdraw', async () => {
-    const { dnGmxJuniorVault, dnGmxSeniorVault,dnGmxJuniorVaultSigner, admin, users, sGlp, fsGlp } = await dnGmxJuniorVaultFixture();
+    const { dnGmxJuniorVault, dnGmxSeniorVault, dnGmxJuniorVaultSigner, admin, users, sGlp, fsGlp } =
+      await dnGmxJuniorVaultFixture();
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     const amount = parseEther('100');
@@ -110,9 +111,17 @@ describe('Rebalance & its utils', () => {
   });
 
   it('Rebalance Profit', async () => {
-    const { dnGmxJuniorVault, glpBatchingManager, dnGmxSeniorVault,dnGmxJuniorVaultSigner, admin, users, sGlp, fsGlp } =
-      await dnGmxJuniorVaultFixture();
-      await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
+    const {
+      dnGmxJuniorVault,
+      glpBatchingManager,
+      dnGmxSeniorVault,
+      dnGmxJuniorVaultSigner,
+      admin,
+      users,
+      sGlp,
+      fsGlp,
+    } = await dnGmxJuniorVaultFixture();
+    await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds({
@@ -163,7 +172,7 @@ describe('Rebalance & its utils', () => {
   });
 
   it('Rebalance (External)', async () => {
-    const { dnGmxJuniorVault,dnGmxSeniorVault, glpBatchingManager, users } = await dnGmxJuniorVaultFixture();
+    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users } = await dnGmxJuniorVaultFixture();
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     // becauses price are not changed on uniswap
