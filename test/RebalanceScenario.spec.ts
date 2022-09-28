@@ -83,8 +83,8 @@ describe('Rebalance Scenarios', () => {
   });
 
   it('Rebalance (Excel)', async () => {
-    const { dnGmxJuniorVault, glpBatchingManager, users, aUSDC } = await dnGmxJuniorVaultFixture();
-
+    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC } = await dnGmxJuniorVaultFixture();
+    await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds({
       usdcRedeemSlippage: 10_000,
@@ -144,6 +144,7 @@ describe('Rebalance Scenarios', () => {
 
   it('Rebalance (Excel)', async () => {
     const { dnGmxJuniorVault, glpBatchingManager, users, aUSDC } = await dnGmxJuniorVaultFixture();
+
     console.log(await dnGmxJuniorVault.getTokenReservesInGlp(addresses.WBTC, parseEther('100')));
     console.log(await dnGmxJuniorVault.getTokenReservesInGlp(addresses.WETH, parseEther('100')));
 
