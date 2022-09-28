@@ -7,7 +7,8 @@ import { increaseBlockTimestamp } from './utils/vault-helpers';
 
 describe('Rebalance Scenarios', () => {
   it('Rebalance (External)', async () => {
-    const { dnGmxJuniorVault, glpBatchingManager, users, aUSDC } = await dnGmxJuniorVaultFixture();
+    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC } = await dnGmxJuniorVaultFixture();
+    await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds({
