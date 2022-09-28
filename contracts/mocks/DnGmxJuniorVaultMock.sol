@@ -85,6 +85,10 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         dnGmxSeniorVault.borrow(amount);
     }
 
+    function executeRepayFromDnGmxSeniorVault(uint256 amount) external {
+        dnGmxSeniorVault.repay(amount);
+    }
+
     function executeOperationToken(
         address token,
         uint256 tokenAmount,
