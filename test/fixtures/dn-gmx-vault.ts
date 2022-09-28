@@ -31,10 +31,12 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     'DN_GMX', // _symbol
     addresses.UNI_V3_SWAP_ROUTER, // _swapRouter
     GMX_ECOSYSTEM_ADDRESSES.RewardRouter, // _rewardRouter
+    addresses.TRICRYPTO, // tricrypto pool
     {
       weth: addresses.WETH,
       wbtc: addresses.WBTC,
       usdc: addresses.USDC,
+      usdt: addresses.USDT,
       sGlp: GMX_ECOSYSTEM_ADDRESSES.StakedGlp,
     },
     addresses.AAVE_POOL_ADDRESS_PROVIDER, // _poolAddressesProvider
@@ -107,7 +109,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   await usdc.connect(users[1]).approve(dnGmxSeniorVault.address, ethers.constants.MaxUint256);
   // await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
-  hre.network.provider.request({
+  await hre.network.provider.request({
     method: 'hardhat_impersonateAccount',
     params: [dnGmxJuniorVault.address],
   });

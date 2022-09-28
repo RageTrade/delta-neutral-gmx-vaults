@@ -11,6 +11,10 @@ describe('Rebalance & its utils', () => {
     console.log(await dnGmxJuniorVault['getPrice(address)'](usdc.address));
     console.log(await dnGmxJuniorVault['getPrice(address)'](wbtc.address));
     console.log(await dnGmxJuniorVault['getPrice(address)'](weth.address));
+
+    console.log(await dnGmxJuniorVault['getPrice(address,bool)'](usdc.address, true));
+    console.log(await dnGmxJuniorVault['getPrice(address,bool)'](wbtc.address, true));
+    console.log(await dnGmxJuniorVault['getPrice(address,bool)'](weth.address, true));
   });
 
   it('getPrice of glp', async () => {
