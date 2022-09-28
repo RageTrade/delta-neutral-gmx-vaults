@@ -21,6 +21,7 @@ contract DnGmxSeniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     error UsageCapExceeded();
     error InvalidBorrowerAddress();
     error InvalidCapUpdate();
+    error MaxUtilizationBreached();
 
     event AllowancesGranted();
     event VaultCapUpdated(address vault, uint256 newCap);
@@ -30,13 +31,13 @@ contract DnGmxSeniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     IPool internal pool;
     IAToken internal aUsdc;
     IPoolAddressesProvider internal poolAddressProvider;
-    FeeSplitStrategy.Info internal feeStrategy;
-    IDnGmxJuniorVault internal dnGmxJuniorVault;
-    ILeveragePool internal leveragePool;
+    FeeSplitStrategy.Info public feeStrategy;
+    IDnGmxJuniorVault public dnGmxJuniorVault;
+    ILeveragePool public leveragePool;
 
-    uint16 maxUtilizationBps;
+    uint16 public maxUtilizationBps;
 
-    mapping(address => uint256) internal vaultCaps;
+    mapping(address => uint256) public vaultCaps;
 
     modifier onlyBorrower() {
         if (msg.sender != address(dnGmxJuniorVault) && msg.sender != address(leveragePool)) revert CallerNotBorrower();
@@ -64,6 +65,10 @@ contract DnGmxSeniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
     function setDnGmxJuniorVault(address _dnGmxJuniorVault) external onlyOwner {
         dnGmxJuniorVault = IDnGmxJuniorVault(_dnGmxJuniorVault);
+    }
+
+    function setMaxUtilizationBps(uint16 _maxUtilizationBps) external onlyOwner {
+        maxUtilizationBps = _maxUtilizationBps;
     }
 
     function grantAllowances() external onlyOwner {
@@ -149,8 +154,10 @@ contract DnGmxSeniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         address
     ) internal override {
         // check if the utilization goes above limit due to this withdrawal
-        if (totalUsdcBorrowed() > ((totalAssets() - assets) * maxUtilizationBps) / MAX_BPS)
-            pool.withdraw(address(asset), assets, address(this));
+        if (totalUsdcBorrowed() > ((totalAssets() - assets) * maxUtilizationBps) / MAX_BPS) {
+            revert MaxUtilizationBreached();
+        }
+        pool.withdraw(address(asset), assets, address(this));
     }
 
     function afterDeposit(
