@@ -20,6 +20,7 @@ import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
 import { IVault } from '../interfaces/gmx/IVault.sol';
 import { IGlpManager } from '../interfaces/gmx/IGlpManager.sol';
+import { IStableSwap } from '../interfaces/curve/IStableSwap.sol';
 import { ISGLPExtended } from '../interfaces/gmx/ISGLPExtended.sol';
 import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
 import { IGMXBatchingManager } from '../interfaces/gmx/IGMXBatchingManager.sol';
@@ -29,7 +30,7 @@ import { DnGmxJuniorVaultStorage, IDebtToken } from '../vaults/DnGmxJuniorVaultS
 import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
 import { SafeCast } from '../libraries/SafeCast.sol';
 
-import 'hardhat/console.sol';
+// import 'hardhat/console.sol';
 
 contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable, DnGmxJuniorVaultStorage {
     using FullMath for uint256;
@@ -96,6 +97,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         string calldata _symbol,
         address _swapRouter,
         address _rewardRouter,
+        address _tricryptoPool,
         Tokens calldata _tokens,
         IPoolAddressesProvider _poolAddressesProvider
     ) external initializer {
@@ -106,6 +108,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         weth = _tokens.weth;
         wbtc = _tokens.wbtc;
         usdc = _tokens.usdc;
+        usdt = _tokens.usdt;
 
         swapRouter = ISwapRouter(_swapRouter);
         rewardRouter = IRewardRouterV2(_rewardRouter);
@@ -117,6 +120,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         fsGlp = IERC20(ISGLPExtended(address(asset)).stakedGlpTracker());
 
         gmxVault = IVault(glpManager.vault());
+        tricryptoPool = IStableSwap(_tricryptoPool);
 
         pool = IPool(poolAddressProvider.getPool());
         oracle = IPriceOracle(poolAddressProvider.getPriceOracle());
@@ -134,9 +138,10 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     function grantAllowances() external onlyOwner {
         address aavePool = address(pool);
         address swapRouter = address(swapRouter);
+        address tricrypto = address(tricryptoPool);
 
         wbtc.approve(aavePool, type(uint256).max);
-        wbtc.approve(swapRouter, type(uint256).max);
+        wbtc.approve(tricrypto, type(uint256).max);
 
         weth.approve(aavePool, type(uint256).max);
         weth.approve(swapRouter, type(uint256).max);
@@ -145,6 +150,11 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         usdc.approve(aavePool, type(uint256).max);
         usdc.approve(address(swapRouter), type(uint256).max);
         usdc.approve(address(batchingManager), type(uint256).max);
+
+        usdt.approve(tricrypto, 0);
+        usdt.approve(swapRouter, 0);
+        usdt.approve(tricrypto, type(uint256).max);
+        usdt.approve(swapRouter, type(uint256).max);
 
         aUsdc.approve(address(dnGmxSeniorVault), type(uint256).max);
 
@@ -253,10 +263,10 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
             uint256 _seniorVaultWethRewards = seniorVaultWethRewards + dnGmxSeniorVaultWethShare;
 
-            console.log('ethRewardsSplitRate', dnGmxSeniorVault.getEthRewardsSplitRate());
-            console.log('wethToCompound', wethToCompound);
-            console.log('dnGmxWethShare', dnGmxWethShare);
-            console.log('dnGmxSeniorVaultWethShare', dnGmxSeniorVaultWethShare);
+            // console.log('ethRewardsSplitRate', dnGmxSeniorVault.getEthRewardsSplitRate());
+            // console.log('wethToCompound', wethToCompound);
+            // console.log('dnGmxWethShare', dnGmxWethShare);
+            // console.log('dnGmxSeniorVaultWethShare', dnGmxSeniorVaultWethShare);
 
             uint256 price = gmxVault.getMinPrice(address(weth));
 
@@ -269,14 +279,14 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
             batchingManager.depositToken(address(weth), dnGmxWethShare, usdgAmount);
 
-            console.log('_seniorVaultWethRewards', _seniorVaultWethRewards);
+            // console.log('_seniorVaultWethRewards', _seniorVaultWethRewards);
             if (_seniorVaultWethRewards > seniorVaultWethConversionThreshold) {
                 // Deposit aave vault share to AAVE in usdc
-                uint256 minUsdcAmount = _getPrice(weth).mulDiv(
+                uint256 minUsdcAmount = _getPrice(weth, true).mulDiv(
                     _seniorVaultWethRewards * (MAX_BPS - usdcRedeemSlippage),
                     MAX_BPS * PRICE_PRECISION
                 );
-                uint256 aaveUsdcAmount = _swapTokenToUSDC(address(weth), _seniorVaultWethRewards, minUsdcAmount);
+                uint256 aaveUsdcAmount = _swapToken(address(weth), _seniorVaultWethRewards, minUsdcAmount);
                 _executeSupply(address(usdc), aaveUsdcAmount);
                 seniorVaultWethRewards = 0;
             } else {
@@ -290,8 +300,8 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     ################################################################## */
 
     function isValidRebalance() public view returns (bool) {
-        console.log('_isValidRebalanceTime', _isValidRebalanceTime());
-        console.log('_isValidRebalanceDeviation', _isValidRebalanceDeviation());
+        // console.log('_isValidRebalanceTime', _isValidRebalanceTime());
+        // console.log('_isValidRebalanceDeviation', _isValidRebalanceDeviation());
         return _isValidRebalanceTime() || _isValidRebalanceDeviation();
     }
 
@@ -402,12 +412,12 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             bool repayDebtEth
         ) = abi.decode(userData, (uint256, uint256, uint256, uint256, bool, bool));
 
-        console.log('btcTokenAmount', btcTokenAmount);
-        console.log('ethTokenAmount', ethTokenAmount);
-        console.log('btcUsdcAmount', btcUsdcAmount);
-        console.log('ethUsdcAmount', ethUsdcAmount);
-        console.log('repayDebtBtc', repayDebtBtc);
-        console.log('repayDebtEth', repayDebtEth);
+        // console.log('btcTokenAmount', btcTokenAmount);
+        // console.log('ethTokenAmount', ethTokenAmount);
+        // console.log('btcUsdcAmount', btcUsdcAmount);
+        // console.log('ethUsdcAmount', ethUsdcAmount);
+        // console.log('repayDebtBtc', repayDebtBtc);
+        // console.log('repayDebtEth', repayDebtEth);
 
         uint256 btcAssetPremium;
         uint256 ethAssetPremium;
@@ -415,9 +425,9 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         if (repayDebtBtc && repayDebtEth) {
             // Here amounts[0] should be equal to btcTokenAmount+ethTokenAmount
             btcAssetPremium = feeAmounts[0].mulDiv(btcTokenAmount, amounts[0]);
-            console.log('btcAssetPremium', btcAssetPremium);
+            // console.log('btcAssetPremium', btcAssetPremium);
             ethAssetPremium = (feeAmounts[0] - btcAssetPremium);
-            console.log('ethAssetPremium', ethAssetPremium);
+            // console.log('ethAssetPremium', ethAssetPremium);
         } else {
             // Here amounts[0] should be equal to btcTokenAmount and amounts[1] should be equal to ethTokenAmount
             bool btcFirst = false;
@@ -509,10 +519,10 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     function _rebalanceProfit(uint256 borrowValue) internal {
         int256 borrowVal = borrowValue.toInt256();
 
-        console.log('borrowVal');
-        console.logInt(borrowVal);
-        console.log('dnUsdcDeposited');
-        console.logInt(dnUsdcDeposited);
+        // console.log('borrowVal');
+        // console.logInt(borrowVal);
+        // console.log('dnUsdcDeposited');
+        // console.logInt(dnUsdcDeposited);
 
         if (borrowVal > dnUsdcDeposited) {
             // If glp goes up - there is profit on GMX and loss on AAVE
@@ -546,8 +556,8 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             currentEthBorrow
         );
 
-        console.log('btcTokenAmount', btcTokenAmount);
-        console.log('ethTokenAmount', ethTokenAmount);
+        // console.log('btcTokenAmount', btcTokenAmount);
+        // console.log('ethTokenAmount', ethTokenAmount);
 
         if (btcTokenAmount == 0 && ethTokenAmount == 0) return;
 
@@ -560,16 +570,16 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
             assets[0] = address(usdc);
             amounts[0] = (btcAssetAmount + ethAssetAmount);
-            console.log('asset[0] from if', assets[0]);
-            console.log('amounts[0] from if', amounts[0]);
+            // console.log('asset[0] from if', assets[0]);
+            // console.log('amounts[0] from if', amounts[0]);
         } else {
             assets = new address[](2);
             amounts = new uint256[](2);
 
             assets[0] = repayDebtBtc ? address(usdc) : address(wbtc);
-            console.log('assets[0]', assets[0]);
+            // console.log('assets[0]', assets[0]);
             assets[1] = repayDebtEth ? address(usdc) : address(weth);
-            console.log('assets[1]', assets[1]);
+            // console.log('assets[1]', assets[1]);
 
             // ensure that assets and amount tuples are in sorted order of addresses
             if (assets[0] > assets[1]) {
@@ -578,14 +588,14 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
                 assets[1] = tempAsset;
 
                 amounts[0] = ethAssetAmount;
-                console.log('amounts[0]', amounts[0]);
+                // console.log('amounts[0]', amounts[0]);
                 amounts[1] = btcAssetAmount;
-                console.log('amounts[1]', amounts[1]);
+                // console.log('amounts[1]', amounts[1]);
             } else {
                 amounts[0] = btcAssetAmount;
-                console.log('amounts[0]*', amounts[0]);
+                // console.log('amounts[0]*', amounts[0]);
                 amounts[1] = ethAssetAmount;
-                console.log('amounts[1]*', amounts[1]);
+                // console.log('amounts[1]*', amounts[1]);
             }
         }
         _executeFlashloan(
@@ -609,13 +619,13 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         uint256 currentEthBorrow,
         uint256 glpDeposited
     ) internal {
-        console.log('totalAssets()', totalAssets());
+        // console.log('totalAssets()', totalAssets());
         (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrows(glpDeposited);
-        console.log('optimalBtcBorrow', optimalBtcBorrow);
-        console.log('optimalEthBorrow', optimalEthBorrow);
+        // console.log('optimalBtcBorrow', optimalBtcBorrow);
+        // console.log('optimalEthBorrow', optimalEthBorrow);
 
         uint256 optimalBorrowValue = _getBorrowValue(optimalBtcBorrow, optimalEthBorrow);
-        console.log('optimalBorrowValue', optimalBorrowValue);
+        // console.log('optimalBorrowValue', optimalBorrowValue);
 
         uint256 usdcLiquidationThreshold = _getLiquidationThreshold(address(usdc));
 
@@ -628,8 +638,8 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
         uint256 currentDnGmxSeniorVaultAmount = uint256(aUsdc.balanceOf(address(this)).toInt256() - dnUsdcDeposited);
 
-        console.log('targetDnGmxSeniorVaultAmount', targetDnGmxSeniorVaultAmount);
-        console.log('currentDnGmxSeniorVaultAmount', currentDnGmxSeniorVaultAmount);
+        // console.log('targetDnGmxSeniorVaultAmount', targetDnGmxSeniorVaultAmount);
+        // console.log('currentDnGmxSeniorVaultAmount', currentDnGmxSeniorVaultAmount);
 
         if (targetDnGmxSeniorVaultAmount > currentDnGmxSeniorVaultAmount) {
             // Take from LB Vault
@@ -641,9 +651,9 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             _rebalanceBorrow(optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
             _rebalanceProfit(optimalBorrowValue);
             // Deposit to LB Vault
-            console.log('dnUsdcDeposited');
-            console.logInt(dnUsdcDeposited);
-            console.log('ausdc bal', aUsdc.balanceOf(address(this)));
+            // console.log('dnUsdcDeposited');
+            // console.logInt(dnUsdcDeposited);
+            // console.log('ausdc bal', aUsdc.balanceOf(address(this)));
             dnGmxSeniorVault.repay(currentDnGmxSeniorVaultAmount - targetDnGmxSeniorVaultAmount);
         }
     }
@@ -652,55 +662,83 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         SWAP HELPERS
     */
 
-    function _swapTokenToUSDC(
+    function _swapToken(
         address token,
         uint256 tokenAmount,
         uint256 minUsdcAmount
     ) internal returns (uint256 usdcAmount) {
-        //TODO: change to exactInputSingle if only single hop is finalized
+        if (token == address(wbtc)) {
+            usdcAmount = _swapWBTC(tokenAmount, minUsdcAmount);
+            return usdcAmount;
+        }
 
-        bytes memory path = abi.encodePacked(token, uint24(3000), usdc);
-
-        console.log('swapRouter', address(swapRouter));
-        console.log('token', tokenAmount);
-        console.log('tokenAmount', tokenAmount);
-        console.log('minAmountOut', minUsdcAmount);
-
-        ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
-            path: path,
+        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
+            tokenIn: token,
+            tokenOut: address(usdc),
+            fee: uint24(500),
+            recipient: address(this),
+            deadline: block.timestamp,
             amountIn: tokenAmount,
             amountOutMinimum: minUsdcAmount,
-            recipient: address(this),
-            deadline: block.timestamp
+            sqrtPriceLimitX96: 0
         });
 
-        usdcAmount = swapRouter.exactInput(params);
+        usdcAmount = swapRouter.exactInputSingle(params);
     }
 
-    /* solhint-disable not-rely-on-time */
-    function _swapUSDCToToken(
+    function _swapWBTC(uint256 tokenAmount, uint256 minUsdcAmount) internal returns (uint256 usdcAmount) {
+        // USDT = 0, WBTC = 1, WETH = 2
+        tricryptoPool.exchange(1, 0, tokenAmount, 0, false);
+
+        usdcAmount = _swapToken(address(usdt), usdt.balanceOf(address(this)), minUsdcAmount);
+    }
+
+    function _swapUSDC(
         address token,
         uint256 tokenAmount,
         uint256 maxUsdcAmount
-    ) internal returns (uint256 usdcAmount) {
-        //TODO: change to exactOutputSingle if only single hop is finalized
-        bytes memory path = abi.encodePacked(token, uint24(3000), usdc);
+    ) internal returns (uint256 usdcUsed, uint256 tokensReceived) {
+        if (token == address(wbtc)) {
+            uint256 usdtAmount = _getPrice(IERC20Metadata(token), false).mulDiv(
+                tokenAmount * (MAX_BPS + usdcRedeemSlippage / 2),
+                MAX_BPS * PRICE_PRECISION
+            );
 
-        console.log('swapRouter', address(swapRouter));
-        console.log('tokenAmount', tokenAmount);
-        console.log('usdc balance', usdc.balanceOf(address(this)));
-        console.log('usdc allowance', usdc.allowance(address(this), address(swapRouter)));
-        console.log('maxUsdcAmount', maxUsdcAmount);
+            ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter.ExactOutputSingleParams({
+                tokenIn: address(usdc),
+                tokenOut: address(usdt),
+                fee: 500,
+                recipient: address(this),
+                deadline: block.timestamp,
+                amountOut: usdtAmount,
+                amountInMaximum: maxUsdcAmount,
+                sqrtPriceLimitX96: 0
+            });
 
-        ISwapRouter.ExactOutputParams memory params = ISwapRouter.ExactOutputParams({
-            path: path,
+            usdcUsed = swapRouter.exactOutputSingle(params);
+
+            // USDT = 0, WBTC = 1, WETH = 2
+            uint256 balanceBefore = wbtc.balanceOf(address(this));
+            tricryptoPool.exchange(0, 1, usdt.balanceOf(address(this)), 0, false);
+
+            uint256 tokensReceived = wbtc.balanceOf(address(this)) - balanceBefore;
+
+            return (usdcUsed, tokensReceived);
+        }
+
+        ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter.ExactOutputSingleParams({
+            tokenIn: address(usdc),
+            tokenOut: address(weth),
+            fee: 500,
+            recipient: address(this),
+            deadline: block.timestamp,
             amountOut: tokenAmount,
             amountInMaximum: maxUsdcAmount,
-            recipient: address(this),
-            deadline: block.timestamp
+            sqrtPriceLimitX96: 0
         });
 
-        usdcAmount = swapRouter.exactOutput(params);
+        usdcUsed = swapRouter.exactOutputSingle(params);
+        tokensReceived = tokenAmount;
     }
 
     /// @notice withdraws LP tokens from gauge, sells LP token for usdc
@@ -710,9 +748,9 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         if (usdcAmountDesired < usdcConversionThreshold) return 0;
         uint256 glpAmountDesired = usdcAmountDesired.mulDiv(PRICE_PRECISION, getPrice());
         // USDG has 18 decimals and usdc has 6 decimals => 18-6 = 12
-        console.log('GLP PRICE: ', getPrice());
-        console.log('glpAmountDesired', glpAmountDesired);
-        console.log('TA', totalAssets());
+        // console.log('GLP PRICE: ', getPrice());
+        // console.log('glpAmountDesired', glpAmountDesired);
+        // console.log('TA', totalAssets());
         rewardRouter.unstakeAndRedeemGlp(
             address(usdc),
             glpAmountDesired, // glp amount
@@ -789,21 +827,21 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         bool repayDebt
     ) internal {
         if (!repayDebt) {
-            console.log('swapTokenToUSD');
+            // console.log('swapTokenToUSD');
             uint256 amountWithPremium = tokenAmount + premium;
-            console.log('amountWithPremium', amountWithPremium, token);
-            uint256 usdcReceived = _swapTokenToUSDC(token, tokenAmount, usdcAmount);
+            // console.log('amountWithPremium', amountWithPremium, token);
+            uint256 usdcReceived = _swapToken(token, tokenAmount, usdcAmount);
             _executeSupply(address(usdc), usdcReceived);
             _executeBorrow(token, amountWithPremium);
             IERC20(token).transfer(address(balancerVault), amountWithPremium);
             dnUsdcDeposited += usdcReceived.toInt256();
         } else {
-            console.log('swapUSDCToToken');
-            uint256 usdcPaid = _swapUSDCToToken(token, tokenAmount, usdcAmount);
+            // console.log('swapUSDCToToken');
+            (uint256 usdcPaid, uint256 tokensReceived) = _swapUSDC(token, tokenAmount, usdcAmount);
             uint256 amountWithPremium = usdcPaid + premium;
-            console.log('amountWithPremium', amountWithPremium, token);
+            // console.log('amountWithPremium', amountWithPremium, token);
             dnUsdcDeposited -= amountWithPremium.toInt256();
-            _executeRepay(token, tokenAmount);
+            _executeRepay(token, tokensReceived);
             //withdraws to balancerVault
             _executeWithdraw(address(usdc), amountWithPremium, address(this));
             usdc.transfer(address(balancerVault), usdcAmount + premium);
@@ -853,13 +891,25 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
                 _isWithinAllowedDelta(optimalEthBorrow, currentEthBorrow));
     }
 
-    // @dev returns price in terms of usdc
     function _getPrice(IERC20Metadata token) internal view returns (uint256) {
         uint256 decimals = token.decimals();
         uint256 price = oracle.getAssetPrice(address(token));
 
         // @dev aave returns from same source as chainlink (which is 8 decimals)
         return price.mulDiv(PRICE_PRECISION, 10**(decimals + 2));
+    }
+
+    // @dev returns price in terms of usdc
+    function _getPrice(IERC20Metadata token, bool isUsdc) internal view returns (uint256 scaledPrice) {
+        uint256 decimals = token.decimals();
+        uint256 price = oracle.getAssetPrice(address(token));
+
+        // @dev aave returns from same source as chainlink (which is 8 decimals)
+        uint256 quotePrice;
+
+        isUsdc ? quotePrice = oracle.getAssetPrice(address(usdc)) : quotePrice = oracle.getAssetPrice(address(usdt));
+
+        scaledPrice = price.mulDiv(PRICE_PRECISION, quotePrice * 10**(decimals - 6));
     }
 
     /// @dev returns the borrow value in USDC
@@ -889,7 +939,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         if (optimalBorrow > currentBorrow) {
             tokenAmount = optimalBorrow - currentBorrow;
             // To swap with the amount in specified hence usdcAmount should be the min amount out
-            usdcAmount = _getPrice(IERC20Metadata(token)).mulDiv(
+            usdcAmount = _getPrice(IERC20Metadata(token), true).mulDiv(
                 tokenAmount * (MAX_BPS - usdcRedeemSlippage),
                 MAX_BPS * PRICE_PRECISION
             );
@@ -901,7 +951,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             // To Decrease
             tokenAmount = (currentBorrow - optimalBorrow);
             // To swap with amount out specified hence usdcAmount should be the max amount in
-            usdcAmount = _getPrice(IERC20Metadata(token)).mulDiv(
+            usdcAmount = _getPrice(IERC20Metadata(token), true).mulDiv(
                 tokenAmount * (MAX_BPS + usdcRedeemSlippage),
                 MAX_BPS * PRICE_PRECISION
             );
@@ -935,12 +985,12 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     }
 
     function _isWithinAllowedDelta(uint256 optimalBorrow, uint256 currentBorrow) internal view returns (bool) {
-        console.log('optimalBorrow', optimalBorrow);
-        console.log('currentBorrow', currentBorrow);
+        // console.log('optimalBorrow', optimalBorrow);
+        // console.log('currentBorrow', currentBorrow);
 
         uint256 diff = optimalBorrow > currentBorrow ? optimalBorrow - currentBorrow : currentBorrow - optimalBorrow;
-        console.log('diff', diff);
-        console.log('RHS', uint256(rebalanceDeltaThreshold).mulDiv(currentBorrow, MAX_BPS));
+        // console.log('diff', diff);
+        // console.log('RHS', uint256(rebalanceDeltaThreshold).mulDiv(currentBorrow, MAX_BPS));
         return diff < uint256(rebalanceDeltaThreshold).mulDiv(currentBorrow, MAX_BPS);
     }
 }

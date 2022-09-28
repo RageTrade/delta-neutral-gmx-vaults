@@ -26,20 +26,20 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         return _isValidRebalanceDeviation();
     }
 
-    function swapTokenToUSDC(
+    function swapToken(
         address token,
         uint256 tokenAmount,
         uint256 minUsdcAmount
     ) external returns (uint256 usdcAmount) {
-        return _swapTokenToUSDC(token, tokenAmount, minUsdcAmount);
+        return _swapToken(token, tokenAmount, minUsdcAmount);
     }
 
-    function swapUSDCToToken(
+    function swapUSDC(
         address token,
         uint256 tokenAmount,
         uint256 maxUsdcAmount
-    ) external returns (uint256 usdcAmount) {
-        return _swapUSDCToToken(token, tokenAmount, maxUsdcAmount);
+    ) external returns (uint256 usdcAmount, uint256 tokensReceived) {
+        return _swapUSDC(token, tokenAmount, maxUsdcAmount);
     }
 
     function executeFlashloan(
@@ -134,6 +134,10 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
 
     function getPrice(IERC20Metadata token) external view returns (uint256) {
         return _getPrice(token);
+    }
+
+    function getPrice(IERC20Metadata token, bool isUsdc) external view returns (uint256) {
+        return _getPrice(token, isUsdc);
     }
 
     function getCurrentBorrows() external view returns (uint256 currentBtcBorrow, uint256 currentEthBorrow) {

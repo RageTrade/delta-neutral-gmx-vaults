@@ -13,6 +13,8 @@ import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPool
 import { IRewardsController } from '@aave/periphery-v3/contracts/rewards/interfaces/IRewardsController.sol';
 import { IVault } from '../interfaces/gmx/IVault.sol';
 import { IGlpManager } from '../interfaces/gmx/IGlpManager.sol';
+import { IExchange } from '../interfaces/curve/IExchange.sol';
+import { IStableSwap } from '../interfaces/curve/IStableSwap.sol';
 import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
 import { IGMXBatchingManager } from '../interfaces/gmx/IGMXBatchingManager.sol';
 import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
@@ -26,16 +28,17 @@ contract DnGmxJuniorVaultStorage {
     ///@dev constants
 
     uint16 public constant MAX_BPS = 10_000;
-    uint256 public constant PRICE_PRECISION = 10e30;
-    uint256 public constant VARIABLE_INTEREST_MODE = 2;
-
-    /* solhint-disable var-name-mixedcase */
-    uint256 public FEE = 1000;
 
     uint256 public constant USDG_DECIMALS = 18;
     uint256 public constant WETH_DECIMALS = 18;
 
+    uint256 public constant PRICE_PRECISION = 10e30;
+    uint256 public constant VARIABLE_INTEREST_MODE = 2;
+
     ///@dev common storage
+
+    /* solhint-disable var-name-mixedcase */
+    uint256 public FEE = 1000;
 
     address public keeper;
     IDnGmxSeniorVault public dnGmxSeniorVault;
@@ -77,16 +80,20 @@ contract DnGmxJuniorVaultStorage {
     uint16 public usdcRedeemSlippage;
     uint240 public usdcConversionThreshold;
 
+    IERC20 internal fsGlp;
+
     IERC20Metadata internal glp;
     IERC20Metadata internal usdc;
+    IERC20Metadata internal usdt;
     IERC20Metadata internal weth;
     IERC20Metadata internal wbtc;
-    IERC20 internal fsGlp;
 
     IVault internal gmxVault;
     IGlpManager internal glpManager;
     IRewardRouterV2 internal rewardRouter;
     IGMXBatchingManager internal batchingManager;
+
+    IStableSwap internal tricryptoPool;
 
     /// @dev structs used to initialize
 
@@ -95,6 +102,7 @@ contract DnGmxJuniorVaultStorage {
         IERC20Metadata wbtc;
         IERC20Metadata sGlp;
         IERC20Metadata usdc;
+        IERC20Metadata usdt;
     }
 
     struct YieldStrategyParams {
