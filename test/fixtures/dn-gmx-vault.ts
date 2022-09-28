@@ -105,7 +105,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   // deposit 1.5 mil in aave-vault with 1mil borrowcap
   await generateErc20Balance(usdc, parseUnits('1500000', 6), users[1].address);
   await usdc.connect(users[1]).approve(dnGmxSeniorVault.address, ethers.constants.MaxUint256);
-  await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
+  // await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
   hre.network.provider.request({
     method: 'hardhat_impersonateAccount',
