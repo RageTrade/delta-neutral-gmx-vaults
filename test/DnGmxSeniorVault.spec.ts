@@ -145,7 +145,10 @@ describe('DnGmx Senior Vault', () => {
       await dnGmxSeniorVault.connect(users[1]).deposit(depositAmount, users[1].address);
       // await dnGmxJuniorVault.executeBorrowFromDnGmxSeniorVault(borrowAmount);
 
-      expect(await dnGmxSeniorVault.getEthRewardsSplitRate()).to.eq(10n * 10n ** 28n); // 10%
+      expect(await dnGmxSeniorVault.getEthRewardsSplitRate()).to.closeTo(
+        BigNumber.from(10n * 10n ** 28n),
+        BigNumber.from(10n ** 25n),
+      ); // 10%
     });
 
     it('40% Utilization', async () => {
@@ -155,7 +158,10 @@ describe('DnGmx Senior Vault', () => {
       await dnGmxSeniorVault.connect(users[1]).deposit(depositAmount, users[1].address);
       await dnGmxJuniorVault.executeBorrowFromDnGmxSeniorVault(borrowAmount);
 
-      expect(await dnGmxSeniorVault.getEthRewardsSplitRate()).to.eq(15n * 10n ** 28n); // 15%
+      expect(await dnGmxSeniorVault.getEthRewardsSplitRate()).to.closeTo(
+        BigNumber.from(15n * 10n ** 28n),
+        BigNumber.from(10n ** 25n),
+      ); // 15%
     });
 
     it('80% Utilization', async () => {
@@ -165,7 +171,10 @@ describe('DnGmx Senior Vault', () => {
       await dnGmxSeniorVault.connect(users[1]).deposit(depositAmount, users[1].address);
       await dnGmxJuniorVault.executeBorrowFromDnGmxSeniorVault(borrowAmount);
 
-      expect(await dnGmxSeniorVault.getEthRewardsSplitRate()).to.eq(20n * 10n ** 28n); // 20%
+      expect(await dnGmxSeniorVault.getEthRewardsSplitRate()).to.closeTo(
+        BigNumber.from(20n * 10n ** 28n),
+        BigNumber.from(10n ** 25n),
+      ); // 20%
     });
 
     it('90% Utilization', async () => {
@@ -175,7 +184,10 @@ describe('DnGmx Senior Vault', () => {
       await dnGmxSeniorVault.connect(users[1]).deposit(depositAmount, users[1].address);
       await dnGmxJuniorVault.executeBorrowFromDnGmxSeniorVault(borrowAmount);
 
-      expect(await dnGmxSeniorVault.getEthRewardsSplitRate()).to.eq(45n * 10n ** 28n); // 45%
+      expect(await dnGmxSeniorVault.getEthRewardsSplitRate()).to.closeTo(
+        BigNumber.from(45n * 10n ** 28n),
+        BigNumber.from(10n ** 25n),
+      ); // 45%
     });
   });
 });
