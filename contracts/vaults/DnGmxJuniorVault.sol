@@ -238,8 +238,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             false // _shouldConvertWethToEth
         );
 
-        uint256 wethHarvested = weth.balanceOf(address(this)) - protocolFee;
-        // TODO: add split handling for giving to aave vault
+        uint256 wethHarvested = weth.balanceOf(address(this)) - protocolFee - seniorVaultWethRewards;
         if (wethHarvested > wethThreshold) {
             uint256 protocolFeeHarvested = (wethHarvested * FEE) / MAX_BPS;
             protocolFee += protocolFeeHarvested;
