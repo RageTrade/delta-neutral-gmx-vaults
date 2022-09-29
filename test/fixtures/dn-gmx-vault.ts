@@ -60,7 +60,8 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     dnGmxJuniorVault.address,
     admin.address,
   );
-  await glpBatchingStakingManagerFixtures.setVault(dnGmxJuniorVault.address);
+  // await glpBatchingStakingManagerFixtures.setVault(dnGmxJuniorVault.address);
+  await glpBatchingStakingManagerFixtures.gmxBatchingManager.grantAllowances();
 
   await dnGmxJuniorVault.setKeeper(admin.address);
 
