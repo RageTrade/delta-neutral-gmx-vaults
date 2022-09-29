@@ -16,9 +16,9 @@ import { IGlpManager } from '../interfaces/gmx/IGlpManager.sol';
 import { IExchange } from '../interfaces/curve/IExchange.sol';
 import { IStableSwap } from '../interfaces/curve/IStableSwap.sol';
 import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
-import { IGMXBatchingManager } from '../interfaces/gmx/IGMXBatchingManager.sol';
 import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
 import { IBalancerVault } from '../interfaces/IBalancerVault.sol';
+import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
 
 interface IDebtToken is IVariableDebtToken {
     function balanceOf(address user) external view returns (uint256);
@@ -91,7 +91,7 @@ contract DnGmxJuniorVaultStorage {
     IVault internal gmxVault;
     IGlpManager internal glpManager;
     IRewardRouterV2 internal rewardRouter;
-    IGMXBatchingManager internal batchingManager;
+    IDnGmxBatchingManager internal batchingManager;
 
     IStableSwap internal tricryptoPool;
 

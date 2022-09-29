@@ -23,12 +23,12 @@ import { IGlpManager } from '../interfaces/gmx/IGlpManager.sol';
 import { IStableSwap } from '../interfaces/curve/IStableSwap.sol';
 import { ISGLPExtended } from '../interfaces/gmx/ISGLPExtended.sol';
 import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
-import { IGMXBatchingManager } from '../interfaces/gmx/IGMXBatchingManager.sol';
 import { IBalancerVault } from '../interfaces/IBalancerVault.sol';
 import { ERC4626Upgradeable } from '../ERC4626/ERC4626Upgradeable.sol';
 import { DnGmxJuniorVaultStorage, IDebtToken } from '../vaults/DnGmxJuniorVaultStorage.sol';
 import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
 import { SafeCast } from '../libraries/SafeCast.sol';
+import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
 
 // import 'hardhat/console.sol';
 
@@ -179,7 +179,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     }
 
     function setBatchingManager(address _batchingManager) external onlyOwner {
-        batchingManager = IGMXBatchingManager(_batchingManager);
+        batchingManager = IDnGmxBatchingManager(_batchingManager);
         emit BatchingManagerUpdated(_batchingManager);
     }
 
@@ -445,7 +445,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     ################################################################## */
 
     function totalAssets() public view override returns (uint256) {
-        return fsGlp.balanceOf(address(this)) + batchingManager.stakingManagerGlpBalance();
+        return fsGlp.balanceOf(address(this)) + batchingManager.dnGmxJuniorVaultGlpBalance();
     }
 
     function getPrice() public view returns (uint256) {

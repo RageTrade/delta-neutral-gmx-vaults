@@ -20,7 +20,7 @@ export const glpBatchingStakingManagerFixture = deployments.createFixture(async 
   //   feeRecipient: admin.address,
   // });
 
-  const gmxBatchingManagerFactory = await hre.ethers.getContractFactory('GMXBatchingManager');
+  const gmxBatchingManagerFactory = await hre.ethers.getContractFactory('DnGmxBatchingManager');
 
   const gmxBatchingManager = await gmxBatchingManagerFactory.deploy();
 
@@ -35,15 +35,15 @@ export const glpBatchingStakingManagerFixture = deployments.createFixture(async 
   // await glpStakingManager.updateGMXParams(100, 0, 500, gmxBatchingManager.address);
   // await glpStakingManager.grantAllowances();
 
-  const setVault = async (vaultAddress: string) => {
-    // await glpStakingManager.setVault(vaultAddress, true);
+  // const setVault = async (vaultAddress: string) => {
+  //   // await glpStakingManager.setVault(vaultAddress, true);
 
-    await gmxBatchingManager.addVault(vaultAddress);
-    await gmxBatchingManager.grantAllowances(vaultAddress);
-  };
+  //   await gmxBatchingManager.addVault(vaultAddress);
+  //   await gmxBatchingManager.grantAllowances(vaultAddress);
+  // };
 
   return {
-    setVault: setVault,
+    // setVault: setVault,
     // glpStakingManager: glpStakingManager,
     gmxBatchingManager: gmxBatchingManager,
   };
