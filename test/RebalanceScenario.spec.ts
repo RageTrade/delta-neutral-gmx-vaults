@@ -4,7 +4,7 @@ import addresses from './fixtures/addresses';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { increaseBlockTimestamp } from './utils/vault-helpers';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-vault';
-import { changePrice, logGlpPrice, logTargetWeights } from './utils/price-helpers';
+import { changePrice, changeTargetWeights, logGlpPrice, logGlpRewards, logTargetWeights } from './utils/price-helpers';
 
 describe('Rebalance Scenarios', () => {
   it('Rebalance (External)', async () => {
@@ -82,9 +82,12 @@ describe('Rebalance Scenarios', () => {
     console.log('borrow value after rebalance', await dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_));
   });
 
-  it('Rebalance (Excel)', async () => {
-    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC } = await dnGmxJuniorVaultFixture();
+  it.only('Rebalance (Excel)', async () => {
+    let tx;
+    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC, gmxVault } =
+      await dnGmxJuniorVaultFixture();
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
+
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds({
       usdcRedeemSlippage: 10_000,
@@ -107,7 +110,12 @@ describe('Rebalance Scenarios', () => {
     await changePrice('WBTC', 38694.59);
     await changePrice('WETH', 2787.23);
     await logGlpPrice();
+
+    await changeTargetWeights('WBTC', 20_000, gmxVault);
+    await changeTargetWeights('WETH', 20_000, gmxVault);
+
     await logTargetWeights();
+
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
 
     usdcBorrowed = await dnGmxJuniorVault.getUsdcBorrowed();
@@ -130,7 +138,8 @@ describe('Rebalance Scenarios', () => {
     await logGlpPrice();
     await logTargetWeights();
 
-    await dnGmxJuniorVault.rebalance();
+    tx = await dnGmxJuniorVault.rebalance();
+    await logGlpRewards(tx, dnGmxJuniorVault);
 
     usdcBorrowed = await dnGmxJuniorVault.getUsdcBorrowed();
     aUSDCBal = await aUSDC.balanceOf(dnGmxJuniorVault.address);

@@ -3,18 +3,29 @@ import { parseUnits } from 'ethers/lib/utils';
 import addresses, { GMX_ECOSYSTEM_ADDRESSES } from '../fixtures/addresses';
 import { increaseBlockTimestamp } from './vault-helpers';
 import {
-  AggregatorV3Interface__factory,
+  DnGmxJuniorVault,
+  DnGmxJuniorVaultMock,
+  DnGmxSeniorVault,
+  DnGmxSeniorVaultMock,
   IERC20__factory,
   IGlpManager__factory,
+  IPool,
+  IVault,
   IVault__factory,
 } from '../../typechain-types';
+import { ContractTransaction } from 'ethers';
+
+import { RewardsHarvestedEvent } from '../../typechain-types/contracts/mocks/DnGmxJuniorVaultMock';
+import { getErc20 } from './erc20';
 
 export const changePrice = async (asset: 'WETH' | 'WBTC', price: number) => {
   const signer = (await hre.ethers.getSigners())[0];
 
   const oracleAddr = asset == 'WBTC' ? addresses.WBTC_ORACLE : addresses.WETH_ORACLE;
+
   const contractAddr =
     asset == 'WBTC' ? '0x942d00008D658dbB40745BBEc89A93c253f9B882' : '0x3607e46698d218B3a5Cae44bF381475C0a5e2ca7';
+
   const slot =
     asset == 'WBTC'
       ? '0xefc52eb5bcce9ceaaebf0054002d7e364b5b15977eb33576623ae2e3d120addb'
@@ -34,11 +45,16 @@ export const logGlpPrice = async () => {
   const glp = IERC20__factory.connect(GMX_ECOSYSTEM_ADDRESSES.GLP, signer[0]);
   const glpManager = IGlpManager__factory.connect(GMX_ECOSYSTEM_ADDRESSES.GlpManager, signer[0]);
 
-  const aum = await glpManager.getAum(false);
+  const minAum = await glpManager.getAum(false);
+  const maxAum = await glpManager.getAum(true);
+
   const totalSupply = await glp.totalSupply();
 
-  const price = aum.div(totalSupply).div(10 ** 6);
-  console.log('glpPrice', price);
+  const minPrice = minAum.div(totalSupply).div(10 ** 6);
+  const maxPrice = maxAum.div(totalSupply).div(10 ** 6);
+
+  console.log('glpPrice(min)', minPrice);
+  console.log('glpPrice(max)', maxPrice);
 };
 
 export const logTargetWeights = async () => {
@@ -53,4 +69,46 @@ export const logTargetWeights = async () => {
   console.log('btcWeights', btcWeights);
   console.log('ethWeights', ethWeights);
   console.log('totalWeights', totalWeights);
+};
+
+export const logAavePositions = async (
+  juniorVault: DnGmxJuniorVault | DnGmxJuniorVaultMock,
+  seniorVault: DnGmxSeniorVault | DnGmxSeniorVaultMock,
+  pool: IPool,
+) => {
+  const aUSDC = await getErc20((await pool.getReserveData(addresses.USDC)).aTokenAddress);
+  const vWBTC = await getErc20((await pool.getReserveData(addresses.WBTC)).variableDebtTokenAddress);
+  const vWETH = await getErc20((await pool.getReserveData(addresses.WETH)).variableDebtTokenAddress);
+
+  console.log('SENIOR TRANCHE');
+  console.log('aave aUSDC postion', aUSDC.balanceOf(seniorVault.address));
+
+  console.log('JUNIOR TRANCHE');
+  console.log('aave aUSDC postion', aUSDC.balanceOf(juniorVault.address));
+};
+
+export const logGlpRewards = async (tx: ContractTransaction, juniorVault: DnGmxJuniorVault | DnGmxJuniorVaultMock) => {
+  const confirmed = await tx.wait();
+  for (const log of confirmed.logs) {
+    if (log.topics[0] === juniorVault.interface.getEventTopic('RewardsHarvested')) {
+      const args = juniorVault.interface.parseLog(log).args;
+      console.log('total eth harvested (rewards): ', args.totalEthAmount);
+      console.log('junior vault eth share (rewards): ', args.juniorVaultShare);
+    }
+  }
+};
+
+export const changeTargetWeights = async (asset: 'WETH' | 'WBTC', newWeight: number, gmxUnderlingVault: IVault) => {
+  const [tokenAddr, tokenDecimals] = asset === 'WETH' ? [addresses.WETH, 18] : [addresses.WBTC, 8];
+
+  const [minProfitBasisPoints, maxUsdgAmounts] = await Promise.resolve([
+    gmxUnderlingVault.minProfitBasisPoints(tokenAddr),
+    gmxUnderlingVault.maxUsdgAmounts(tokenAddr),
+  ]);
+
+  const gov = await hre.ethers.getSigner(GMX_ECOSYSTEM_ADDRESSES.GOV);
+
+  await gmxUnderlingVault
+    .connect(gov)
+    .setTokenConfig(tokenAddr, tokenDecimals, newWeight, minProfitBasisPoints, maxUsdgAmounts, false, true);
 };
