@@ -5,7 +5,7 @@ import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { increaseBlockTimestamp } from '../utils/vault-helpers';
 import addresses, { GMX_ECOSYSTEM_ADDRESSES } from './addresses';
 import { glpBatchingStakingManagerFixture } from './glp-batching-staking-manager';
-import { IVault__factory } from '../../typechain-types';
+import { IPool, IPoolAddressesProvider__factory, IPool__factory, IVault__factory } from '../../typechain-types';
 
 export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   const [admin, ...users] = await hre.ethers.getSigners();
@@ -111,9 +111,17 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   await usdc.connect(users[1]).approve(dnGmxSeniorVault.address, ethers.constants.MaxUint256);
   // await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
+  const poolAddressProvider = IPoolAddressesProvider__factory.connect(addresses.AAVE_POOL_ADDRESS_PROVIDER, admin);
+  const lendingPool = IPool__factory.connect(await poolAddressProvider.getPool(), admin);
+
   await hre.network.provider.request({
     method: 'hardhat_impersonateAccount',
     params: [dnGmxJuniorVault.address],
+  });
+
+  await hre.network.provider.request({
+    method: 'hardhat_impersonateAccount',
+    params: [GMX_ECOSYSTEM_ADDRESSES.GOV],
   });
 
   const dnGmxJuniorVaultSigner = await hre.ethers.getSigner(dnGmxJuniorVault.address);
@@ -129,6 +137,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     admin,
     users,
     gmxVault,
+    lendingPool,
     dnGmxSeniorVault,
     dnGmxJuniorVault,
     dnGmxJuniorVaultSigner,
