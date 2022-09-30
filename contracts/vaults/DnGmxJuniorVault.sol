@@ -58,6 +58,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     event FeeRecipientUpdated(address _newFeeRecipient);
     event WithdrawFeeUpdated(uint256 _withdrawFeeBps);
     event FeesWithdrawn(uint256 feeAmount);
+    event RewardsHarvested(uint256 totalEthAmount, uint256 juniorVaultShare);
     event DepositCapUpdated(uint256 _newDepositCap);
     event BatchingManagerUpdated(address _batchingManager);
 
@@ -292,6 +293,8 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             } else {
                 seniorVaultWethRewards = _seniorVaultWethRewards;
             }
+
+            emit RewardsHarvested(wethToCompound, dnGmxWethShare);
         }
     }
 
