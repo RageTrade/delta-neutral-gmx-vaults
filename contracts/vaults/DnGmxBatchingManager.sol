@@ -29,6 +29,8 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         mapping(address => UserDeposit) userDeposits;
         mapping(uint256 => RoundDeposit) roundDeposits;
     }
+    uint256 private constant USDC_REDEEM_SLIPPAGE_BPS = 100;
+    uint256 private constant MAX_BPS = 10_000;
 
     uint256[100] private _gaps;
 
@@ -249,14 +251,12 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     }
 
     function _executeVaultUserBatchStake() internal {
-        if (vaultBatchingState.roundUsdcBalance > 0) {
-            uint256 minUsdg = 0; // TODO: add handling for minUsdg calculation
-            vaultBatchingState.roundGlpStaked = _stakeGlp(address(usdc), vaultBatchingState.roundUsdcBalance, minUsdg);
-            emit BatchStake(
-                vaultBatchingState.currentRound,
-                vaultBatchingState.roundUsdcBalance,
-                vaultBatchingState.roundGlpStaked
-            );
+        uint256 _roundUsdcBalance = vaultBatchingState.roundUsdcBalance;
+        if (_roundUsdcBalance > 0) {
+            uint256 minUsdg = _roundUsdcBalance.mulDiv((MAX_BPS - USDC_REDEEM_SLIPPAGE_BPS) * 1e12, MAX_BPS); // calculates minUsdg in 10**18 (usdg 10**18 and usdc 10**6)
+
+            vaultBatchingState.roundGlpStaked = _stakeGlp(address(usdc), _roundUsdcBalance, minUsdg);
+            emit BatchStake(vaultBatchingState.currentRound, _roundUsdcBalance, vaultBatchingState.roundGlpStaked);
         } else {
             revert NoUsdcBalance();
         }
