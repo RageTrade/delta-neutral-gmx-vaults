@@ -55,6 +55,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   const glpBatchingStakingManagerFixtures = await glpBatchingStakingManagerFixture();
   await glpBatchingStakingManagerFixtures.gmxBatchingManager.initialize(
     GMX_ECOSYSTEM_ADDRESSES.StakedGlp,
+    usdc.address,
     GMX_ECOSYSTEM_ADDRESSES.RewardRouter,
     GMX_ECOSYSTEM_ADDRESSES.GlpManager,
     dnGmxJuniorVault.address,
