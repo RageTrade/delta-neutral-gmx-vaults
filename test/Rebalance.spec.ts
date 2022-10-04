@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { changePrice, logGlpPrice, logTargetWeights } from './utils/price-helpers';
+import { Changer } from './utils/changer';
+import { increaseBlockTimestamp } from './utils/shared';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
-import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-vault';
-import { increaseBlockTimestamp } from './utils/vault-helpers';
+import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 
 describe('Rebalance & its utils', () => {
   it('getPrice of assets', async () => {
@@ -94,7 +94,9 @@ describe('Rebalance & its utils', () => {
   });
 
   it('Change Price', async () => {
-    const { gmxVault, dnGmxJuniorVault, wbtc, weth } = await dnGmxJuniorVaultFixture();
+    const opts = await dnGmxJuniorVaultFixture();
+    const changer = new Changer(opts);
+    const { gmxVault, dnGmxJuniorVault, wbtc, weth } = opts;
 
     console.log('BEFORE');
 
@@ -103,8 +105,8 @@ describe('Rebalance & its utils', () => {
     console.log('BTC price (gmx)', await gmxVault.getMinPrice(wbtc.address));
     console.log('ETH price (gmx)', await gmxVault.getMinPrice(weth.address));
 
-    await changePrice('WBTC', 1000);
-    await changePrice('WETH', 1000);
+    await changer.changePriceToken('WBTC', 1000);
+    await changer.changePriceToken('WETH', 1000);
 
     console.log('AFTER');
 
@@ -115,6 +117,8 @@ describe('Rebalance & its utils', () => {
   });
 
   it('Rebalance Profit', async () => {
+    const opts = await dnGmxJuniorVaultFixture();
+    const changer = new Changer(opts);
     const {
       dnGmxJuniorVault,
       glpBatchingManager,
@@ -124,7 +128,7 @@ describe('Rebalance & its utils', () => {
       users,
       sGlp,
       fsGlp,
-    } = await dnGmxJuniorVaultFixture();
+    } = opts;
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     // becauses price are not changed on uniswap
@@ -147,8 +151,8 @@ describe('Rebalance & its utils', () => {
     await increaseBlockTimestamp(15 * 60);
 
     // ETH: 2,000$ BTC: 25,000$
-    await changePrice('WBTC', 25000);
-    await changePrice('WETH', 2000);
+    await changer.changePriceToken('WBTC', 25000);
+    await changer.changePriceToken('WETH', 2000);
 
     let [currentBtc, currentEth] = await dnGmxJuniorVault.getCurrentBorrows();
     let borrowValue = dnGmxJuniorVault.getBorrowValue(currentBtc, currentEth);
@@ -158,8 +162,8 @@ describe('Rebalance & its utils', () => {
     console.log('PASSED');
 
     // ETH: 1,350$ BTC: 18,000$
-    await changePrice('WBTC', 18000);
-    await changePrice('WETH', 1350);
+    await changer.changePriceToken('WBTC', 18000);
+    await changer.changePriceToken('WETH', 1350);
 
     [currentBtc, currentEth] = await dnGmxJuniorVault.getCurrentBorrows();
     borrowValue = dnGmxJuniorVault.getBorrowValue(currentBtc, currentEth);
@@ -176,7 +180,10 @@ describe('Rebalance & its utils', () => {
   });
 
   it('Rebalance (External)', async () => {
-    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users } = await dnGmxJuniorVaultFixture();
+    const opts = await dnGmxJuniorVaultFixture();
+    const changer = new Changer(opts);
+
+    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users } = opts;
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     // becauses price are not changed on uniswap
@@ -201,8 +208,8 @@ describe('Rebalance & its utils', () => {
     await increaseBlockTimestamp(24 * 60 * 60);
 
     // ETH: 2,000$ BTC: 25,000$
-    await changePrice('WBTC', 25000);
-    await changePrice('WETH', 2000);
+    await changer.changePriceToken('WBTC', 25000);
+    await changer.changePriceToken('WETH', 2000);
 
     // let [currentBtc, currentEth] = await dnGmxJuniorVault.getCurrentBorrows();
     // let borrowValue = dnGmxJuniorVault.getBorrowValue(currentBtc, currentEth);
@@ -213,8 +220,8 @@ describe('Rebalance & its utils', () => {
     console.log('PASSED');
 
     // ETH: 1,350$ BTC: 18,000$
-    await changePrice('WBTC', 18000);
-    await changePrice('WETH', 1350);
+    await changer.changePriceToken('WBTC', 18000);
+    await changer.changePriceToken('WETH', 1350);
 
     // [currentBtc, currentEth] = await dnGmxJuniorVault.getCurrentBorrows();
     // borrowValue = dnGmxJuniorVault.getBorrowValue(currentBtc, currentEth);
