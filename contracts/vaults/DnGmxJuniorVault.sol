@@ -30,7 +30,7 @@ import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
 import { SafeCast } from '../libraries/SafeCast.sol';
 import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
 
-// import 'hardhat/console.sol';
+import 'hardhat/console.sol';
 
 contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable, DnGmxJuniorVaultStorage {
     using FullMath for uint256;
@@ -324,6 +324,11 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         // rebalance profit
         _rebalanceProfit(totalCurrentBorrowValue);
 
+        console.log('currentBtc', currentBtc);
+        console.log('currentEth', currentEth);
+        console.log('totalAssets()', totalAssets());
+        console.log('totalCurrentBorrowValue', totalCurrentBorrowValue);
+
         // calculate current btc and eth positions in GLP
         // get the position value and calculate the collateral needed to borrow that
         // transfer collateral from LB vault to DN vault
@@ -418,12 +423,12 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             bool repayDebtEth
         ) = abi.decode(userData, (uint256, uint256, uint256, uint256, bool, bool));
 
-        // console.log('btcTokenAmount', btcTokenAmount);
-        // console.log('ethTokenAmount', ethTokenAmount);
-        // console.log('btcUsdcAmount', btcUsdcAmount);
-        // console.log('ethUsdcAmount', ethUsdcAmount);
-        // console.log('repayDebtBtc', repayDebtBtc);
-        // console.log('repayDebtEth', repayDebtEth);
+        console.log('btcTokenAmount', btcTokenAmount);
+        console.log('ethTokenAmount', ethTokenAmount);
+        console.log('btcUsdcAmount', btcUsdcAmount);
+        console.log('ethUsdcAmount', ethUsdcAmount);
+        console.log('repayDebtBtc', repayDebtBtc);
+        console.log('repayDebtEth', repayDebtEth);
 
         uint256 btcAssetPremium;
         uint256 ethAssetPremium;
@@ -520,6 +525,9 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     ) internal override {
         if (totalAssets() > depositCap) revert DepositCapExceeded();
         (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
+        console.log('currentBtc', currentBtc);
+        console.log('currentEth', currentEth);
+        console.log('totalAssets()', totalAssets());
 
         //rebalance of hedge based on assets after deposit (after deposit assets)
         _rebalanceHedge(currentBtc, currentEth, totalAssets());
@@ -651,8 +659,8 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     ) internal {
         // console.log('totalAssets()', totalAssets());
         (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrows(glpDeposited);
-        // console.log('optimalBtcBorrow', optimalBtcBorrow);
-        // console.log('optimalEthBorrow', optimalEthBorrow);
+        console.log('optimalBtcBorrow', optimalBtcBorrow);
+        console.log('optimalEthBorrow', optimalEthBorrow);
 
         uint256 optimalBorrowValue = _getBorrowValue(optimalBtcBorrow, optimalEthBorrow);
         // console.log('optimalBorrowValue', optimalBorrowValue);
@@ -668,8 +676,8 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
         uint256 currentDnGmxSeniorVaultAmount = uint256(aUsdc.balanceOf(address(this)).toInt256() - dnUsdcDeposited);
 
-        // console.log('targetDnGmxSeniorVaultAmount', targetDnGmxSeniorVaultAmount);
-        // console.log('currentDnGmxSeniorVaultAmount', currentDnGmxSeniorVaultAmount);
+        console.log('targetDnGmxSeniorVaultAmount', targetDnGmxSeniorVaultAmount);
+        console.log('currentDnGmxSeniorVaultAmount', currentDnGmxSeniorVaultAmount);
 
         if (targetDnGmxSeniorVaultAmount > currentDnGmxSeniorVaultAmount) {
             // Take from LB Vault
@@ -871,6 +879,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             uint256 amountWithPremium = usdcPaid + premium;
             // console.log('amountWithPremium', amountWithPremium, token);
             dnUsdcDeposited -= amountWithPremium.toInt256();
+            console.log('tokensReceived', tokensReceived);
             _executeRepay(token, tokensReceived);
             //withdraws to balancerVault
             _executeWithdraw(address(usdc), amountWithPremium, address(this));
