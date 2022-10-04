@@ -10,26 +10,14 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const { deployer } = await getNamedAccounts();
 
-  await deploy('AaveVault', {
-    contract: 'AaveVault',
+  await deploy('DnGmxBatchingManager', {
+    contract: 'DnGmxBatchingManager',
     from: deployer,
     log: true,
     waitConfirmations,
   });
-
-  const { USDC_ADDRESS, AAVE_POOL_ADDRESS_PROVIDER } = await getNetworkInfo();
-
-  await execute(
-    'AaveVault',
-    { from: deployer, log: true },
-    'initialize',
-    USDC_ADDRESS,
-    'Aave LP Vault',
-    'Aave_LP',
-    AAVE_POOL_ADDRESS_PROVIDER,
-  );
 };
 
 export default func;
 
-func.tags = ['AaveVault'];
+func.tags = ['DnGmxBatchingManager'];

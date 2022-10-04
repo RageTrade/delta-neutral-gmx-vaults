@@ -2,22 +2,21 @@ import { getTokenAddresses } from '@ragetrade/sdk';
 import hre from 'hardhat';
 
 const CHAIN_ID = {
-  mainnet: 1,
-  ropsten: 3,
-  rinkeby: 4,
-  goerli: 5,
-  kovan: 42,
   arbmain: 42161,
-  arbtest: 421611, // arb rinkeby
+  arbtest: 421611,
+  arbgoerli: 421613,
   hardhat: 31337,
 };
 
 export const skip = () => true;
 
 export interface NetworkInfo {
-  USDC_ADDRESS: string;
   WETH_ADDRESS: string;
   WBTC_ADDRESS: string;
+  USDC_ADDRESS: string;
+  USDT_ADDRESS: string;
+
+  CURVE_TRICRYPTO_POOL_ADDRESS: string;
 
   GMX_REWARD_ROUTER: string;
   GMX_SGLP_ADDRESS: string;
@@ -35,9 +34,12 @@ export async function getNetworkInfo(): Promise<NetworkInfo> {
   );
 
   const arbmainNetworkInfo: NetworkInfo = {
-    USDC_ADDRESS: tokens.usdc,
     WETH_ADDRESS: tokens.weth,
     WBTC_ADDRESS: tokens.wbtc,
+    USDC_ADDRESS: tokens.usdc,
+    USDT_ADDRESS: tokens.usdt,
+
+    CURVE_TRICRYPTO_POOL_ADDRESS: '0x960ea3e3C7FB317332d990873d354E18d7645590',
 
     GMX_REWARD_ROUTER: '0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1',
     GMX_SGLP_ADDRESS: '0x2F546AD4eDD93B956C8999Be404cdCAFde3E89AE',
