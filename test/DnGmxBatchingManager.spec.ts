@@ -94,7 +94,7 @@ describe('DnGmx Senior Vault', () => {
   });
 
   describe('Batch Deposit', () => {
-    it.only('Single User Batch Deposit', async () => {
+    it('Single User Batch Deposit', async () => {
       await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('10000', 6), users[1].address);
       const depositAmount = parseUnits('100', 6);
       await usdc.connect(users[1]).approve(glpBatchingManager.address, depositAmount);
