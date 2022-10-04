@@ -1,11 +1,16 @@
 import { deployments, ethers } from 'hardhat';
-import { dnGmxSeniorVaultFixture } from './aave-vault';
-import { generateErc20Balance } from '../utils/erc20';
+import { increaseBlockTimestamp } from '../utils/shared';
+import { generateErc20Balance } from '../utils/generator';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
-import { increaseBlockTimestamp } from '../utils/vault-helpers';
+import { dnGmxSeniorVaultFixture } from './dn-gmx-senior-vault';
 import addresses, { GMX_ECOSYSTEM_ADDRESSES } from './addresses';
 import { glpBatchingStakingManagerFixture } from './glp-batching-staking-manager';
-import { IPool, IPoolAddressesProvider__factory, IPool__factory, IVault__factory } from '../../typechain-types';
+import {
+  IPool__factory,
+  IVault__factory,
+  IGlpManager__factory,
+  IPoolAddressesProvider__factory,
+} from '../../typechain-types';
 
 export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   const [admin, ...users] = await hre.ethers.getSigners();
@@ -15,8 +20,9 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   const usdc = await hre.ethers.getContractAt('ERC20Upgradeable', addresses.USDC);
   const usdt = await hre.ethers.getContractAt('ERC20Upgradeable', addresses.USDT);
 
-  const aUSDC = await hre.ethers.getContractAt('ERC20Upgradeable', addresses.A_USDC);
+  const aUSDC = await hre.ethers.getContractAt('IAToken', addresses.A_USDC);
 
+  const glp = await hre.ethers.getContractAt('ERC20Upgradeable', GMX_ECOSYSTEM_ADDRESSES.GLP);
   const fsGlp = await hre.ethers.getContractAt('ERC20Upgradeable', GMX_ECOSYSTEM_ADDRESSES.fsGLP);
   const sGlp = await hre.ethers.getContractAt('ERC20Upgradeable', GMX_ECOSYSTEM_ADDRESSES.StakedGlp);
 
@@ -112,6 +118,23 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   const poolAddressProvider = IPoolAddressesProvider__factory.connect(addresses.AAVE_POOL_ADDRESS_PROVIDER, admin);
   const lendingPool = IPool__factory.connect(await poolAddressProvider.getPool(), admin);
 
+  const gov = GMX_ECOSYSTEM_ADDRESSES.GOV;
+
+  const glpManager = IGlpManager__factory.connect(GMX_ECOSYSTEM_ADDRESSES.GlpManager, admin);
+
+  const vdWBTC = await hre.ethers.getContractAt(
+    'IDebtToken',
+    (
+      await lendingPool.getReserveData(wbtc.address)
+    ).variableDebtTokenAddress,
+  );
+  const vdWETH = await hre.ethers.getContractAt(
+    'IDebtToken',
+    (
+      await lendingPool.getReserveData(weth.address)
+    ).variableDebtTokenAddress,
+  );
+
   await hre.network.provider.request({
     method: 'hardhat_impersonateAccount',
     params: [dnGmxJuniorVault.address],
@@ -125,6 +148,8 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   const dnGmxJuniorVaultSigner = await hre.ethers.getSigner(dnGmxJuniorVault.address);
 
   return {
+    glp,
+    gov,
     weth,
     wbtc,
     usdc,
@@ -132,9 +157,12 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     sGlp,
     fsGlp,
     aUSDC,
+    vdWBTC,
+    vdWETH,
     admin,
     users,
     gmxVault,
+    glpManager,
     lendingPool,
     dnGmxSeniorVault,
     dnGmxJuniorVault,
