@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { Logger } from './utils/logger';
 import { Changer } from './utils/changer';
+import { Checker } from './utils/checker';
 import { increaseBlockTimestamp } from './utils/shared';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
@@ -87,12 +88,13 @@ describe('Rebalance Scenarios', () => {
     console.log('borrow value after rebalance', await dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_));
   });
 
-  it('Rebalance (Excel)', async () => {
+  it.only('Rebalance (Excel)', async () => {
     let tx;
 
     const opts = await dnGmxJuniorVaultFixture();
     const logger = new Logger(opts);
     const changer = new Changer(opts);
+    const checker = new Checker(opts);
 
     const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC, gmxVault, lendingPool } = opts;
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
@@ -105,17 +107,6 @@ describe('Rebalance Scenarios', () => {
       hedgeUsdcAmountThreshold: parseUnits('10', 6),
     });
 
-    const amount = parseEther('100');
-
-    let usdcBorrowed = await dnGmxJuniorVault.getUsdcBorrowed();
-    let aUSDCBal = await aUSDC.balanceOf(dnGmxJuniorVault.address);
-    let [currentBtc_, currentEth_] = await dnGmxJuniorVault.getCurrentBorrows();
-
-    console.log('aUSDC balance before deposit: ', aUSDCBal);
-    console.log('usdc borrowed from aave vault: ', usdcBorrowed);
-    console.log(`current borrows before deposit: btc: ${currentBtc_}, eth: ${currentEth_}`);
-    console.log('borrow value before deposit', await dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_));
-
     // ETH: $2787.23 BTC: $38694.59
     await changer.changePriceToken('WBTC', 38694.59);
     await changer.changePriceToken('WETH', 2787.23);
@@ -127,21 +118,19 @@ describe('Rebalance Scenarios', () => {
 
     await logger.logTargetWeights();
 
+    await checker.checkTotalAssets(150000000n, 10n ** 15n, false);
+
+    // Deposit
+    const amount = parseEther('100');
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
 
-    usdcBorrowed = await dnGmxJuniorVault.getUsdcBorrowed();
-    aUSDCBal = await aUSDC.balanceOf(dnGmxJuniorVault.address);
-    [currentBtc_, currentEth_] = await dnGmxJuniorVault.getCurrentBorrows();
-
-    console.log('aUSDC balance after deposit: ', aUSDCBal);
-    console.log('usdc borrowed from aave vault: ', usdcBorrowed);
-    console.log(`current borrows after deposit: btc: ${currentBtc_}, eth: ${currentEth_}`);
-    console.log('borrow value after deposit', await dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_));
+    await logger.logBorrowParams();
 
     // await increaseBlockTimestamp(15 * 60);
     // await glpBatchingManager.executeBatchDeposit();
 
     await increaseBlockTimestamp(4 * 24 * 60 * 60);
+    console.log('Rebalance');
 
     // ETH: $3012.65 BTC: $41382.59
     await changer.changePriceToken('WBTC', 41382.59);
@@ -155,14 +144,8 @@ describe('Rebalance Scenarios', () => {
     tx = await dnGmxJuniorVault.rebalance();
     await logger.logGlpRewards(tx);
 
-    usdcBorrowed = await dnGmxJuniorVault.getUsdcBorrowed();
-    aUSDCBal = await aUSDC.balanceOf(dnGmxJuniorVault.address);
-    [currentBtc_, currentEth_] = await dnGmxJuniorVault.getCurrentBorrows();
-
-    console.log('aUSDC balance after rebalance: ', aUSDCBal);
-    console.log('usdc borrowed from aave vault: ', usdcBorrowed);
-    console.log(`current borrows after rebalance: btc: ${currentBtc_}, eth: ${currentEth_}`);
-    console.log('borrow value after rebalance', await dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_));
+    await logger.logAavePosition();
+    await logger.logBorrowParams();
   });
 
   it('New Deposit (Excel)', async () => {
@@ -171,6 +154,7 @@ describe('Rebalance Scenarios', () => {
     const opts = await dnGmxJuniorVaultFixture();
     const logger = new Logger(opts);
     const changer = new Changer(opts);
+    const checker = new Checker(opts);
 
     const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC, gmxVault, lendingPool } = opts;
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
@@ -251,6 +235,7 @@ describe('Rebalance Scenarios', () => {
     const opts = await dnGmxJuniorVaultFixture();
     const logger = new Logger(opts);
     const changer = new Changer(opts);
+    const checker = new Checker(opts);
 
     const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC, gmxVault, lendingPool } = opts;
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
@@ -309,7 +294,7 @@ describe('Rebalance Scenarios', () => {
     await logger.logAavePosition();
 
     // Partial Withdraw
-    // const amount1 = parseEther('-50');
+    // const amount1 = parseEther('50');
     // await dnGmxJuniorVault.connect(users[0]).withdraw(amount1, users[0].address);
 
     tx = await dnGmxJuniorVault.rebalance();
@@ -331,6 +316,7 @@ describe('Rebalance Scenarios', () => {
     const opts = await dnGmxJuniorVaultFixture();
     const logger = new Logger(opts);
     const changer = new Changer(opts);
+    const checker = new Checker(opts);
 
     const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC, gmxVault, lendingPool } = opts;
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
@@ -389,7 +375,7 @@ describe('Rebalance Scenarios', () => {
     await logger.logAavePosition();
 
     // Full Withdraw
-    // const amount1 = parseEther('-100.121740317');
+    // const amount1 = parseEther('100.121740317');
     // await dnGmxJuniorVault.connect(users[0]).withdraw(amount1, users[0].address);
 
     tx = await dnGmxJuniorVault.rebalance();
@@ -411,6 +397,7 @@ describe('Rebalance Scenarios', () => {
     const opts = await dnGmxJuniorVaultFixture();
     const logger = new Logger(opts);
     const changer = new Changer(opts);
+    const checker = new Checker(opts);
 
     const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC, gmxVault, lendingPool } = opts;
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
@@ -521,7 +508,7 @@ describe('Rebalance Scenarios', () => {
     await logger.logAavePosition();
 
     // Partial Withdraw
-    // const amount1 = parseEther('-50');
+    // const amount1 = parseEther('50');
     // await dnGmxJuniorVault.connect(users[0]).withdraw(amount1, users[0].address);
 
     tx = await dnGmxJuniorVault.rebalance();
@@ -543,6 +530,7 @@ describe('Rebalance Scenarios', () => {
     const opts = await dnGmxJuniorVaultFixture();
     const logger = new Logger(opts);
     const changer = new Changer(opts);
+    const checker = new Checker(opts);
 
     const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC, gmxVault, lendingPool } = opts;
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
@@ -655,7 +643,7 @@ describe('Rebalance Scenarios', () => {
     await logger.logAavePosition();
 
     // Partial Withdraw
-    // const amount1 = parseEther('-50');
+    // const amount1 = parseEther('50');
     // await dnGmxJuniorVault.connect(users[0]).withdraw(amount1, users[0].address);
 
     tx = await dnGmxJuniorVault.rebalance();
