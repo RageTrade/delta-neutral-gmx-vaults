@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
-import { dnGmxJuniorVaultFixture } from '../fixtures/dn-gmx-vault';
+import { dnGmxJuniorVaultFixture } from '../fixtures/dn-gmx-junior-vault';
 
-class Checker {
+export class Checker {
   constructor(public opts: Awaited<ReturnType<typeof dnGmxJuniorVaultFixture>>) {
     opts = opts;
   }

@@ -1,7 +1,7 @@
 import { BigNumber, ContractTransaction } from 'ethers';
-import { dnGmxJuniorVaultFixture } from '../fixtures/dn-gmx-vault';
+import { dnGmxJuniorVaultFixture } from '../fixtures/dn-gmx-junior-vault';
 
-class Logger {
+export class Logger {
   public static seperator = '--------------------------------';
 
   constructor(public opts: Awaited<ReturnType<typeof dnGmxJuniorVaultFixture>>) {

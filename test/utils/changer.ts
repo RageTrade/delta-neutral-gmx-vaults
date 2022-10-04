@@ -1,10 +1,10 @@
 import hre, { ethers } from 'hardhat';
 import { increaseBlockTimestamp } from './shared';
-import { dnGmxJuniorVaultFixture } from '../fixtures/dn-gmx-vault';
+import { dnGmxJuniorVaultFixture } from '../fixtures/dn-gmx-junior-vault';
 
 type Asset = 'WETH' | 'WBTC';
 
-class Changer {
+export class Changer {
   public static seperator = '--------------------------------';
 
   constructor(public opts: Awaited<ReturnType<typeof dnGmxJuniorVaultFixture>>) {
