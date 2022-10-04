@@ -1,6 +1,6 @@
 {
   "name": "@ragetrade/delta-neutral-gmx-vaults",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "repository": "https://github.com/RageTrade/delta-neutral-gmx-vaults.git",
   "license": "MIT",
   "scripts": {
@@ -33,8 +33,7 @@
     "@rari-capital/solmate": "https://github.com/Rari-Capital/solmate.git#25015a1d18e75921f8cb1bacd4beb9f364e788a9",
     "@solidity-parser/parser": "^0.14.3",
     "@uniswap/v3-core-0.8-support": "https://github.com/uniswap/v3-core.git#d55e297b938e5b56fd1cf9fe668f5bd385be85b5",
-    "@uniswap/v3-periphery": "^1.4.0",
-    "hardhat-dependency-compiler": "^1.1.3"
+    "@uniswap/v3-periphery": "^1.4.0"
   },
   "devDependencies": {
     "@134dd3v/prettier-plugin-solidity": "^1.0.0-beta.18",
@@ -59,6 +58,7 @@
     "fs-extra": "^10.1.0",
     "hardhat": "2.11.1",
     "hardhat-contract-sizer": "^2.6.1",
+    "hardhat-dependency-compiler": "^1.1.3",
     "hardhat-deploy": "^0.11.14",
     "hardhat-gas-reporter": "^1.0.9",
     "hardhat-storage-layout-changes": "^0.1.2",
