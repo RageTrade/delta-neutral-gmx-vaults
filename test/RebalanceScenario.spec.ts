@@ -20,6 +20,7 @@ describe('Rebalance Scenarios', () => {
       usdcRedeemSlippage: 10_000,
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
+      hedgeUsdcAmountThreshold: parseUnits('10', 6),
     });
 
     const amount = parseEther('77.59866282');
@@ -101,6 +102,7 @@ describe('Rebalance Scenarios', () => {
       usdcRedeemSlippage: 10_000,
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
+      hedgeUsdcAmountThreshold: parseUnits('10', 6),
     });
 
     const amount = parseEther('100');
@@ -178,6 +180,7 @@ describe('Rebalance Scenarios', () => {
       usdcRedeemSlippage: 10_000,
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
+      hedgeUsdcAmountThreshold: parseUnits('10', 6),
     });
 
     const amount = parseEther('100');
@@ -257,6 +260,7 @@ describe('Rebalance Scenarios', () => {
       usdcRedeemSlippage: 10_000,
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
+      hedgeUsdcAmountThreshold: parseUnits('10', 6),
     });
 
     const amount = parseEther('100');
@@ -336,6 +340,7 @@ describe('Rebalance Scenarios', () => {
       usdcRedeemSlippage: 10_000,
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
+      hedgeUsdcAmountThreshold: parseUnits('10', 6),
     });
 
     const amount = parseEther('100');
@@ -415,6 +420,7 @@ describe('Rebalance Scenarios', () => {
       usdcRedeemSlippage: 10_000,
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
+      hedgeUsdcAmountThreshold: parseUnits('10', 6),
     });
 
     const amount = parseEther('100');
@@ -546,6 +552,7 @@ describe('Rebalance Scenarios', () => {
       usdcRedeemSlippage: 10_000,
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
+      hedgeUsdcAmountThreshold: parseUnits('10', 6),
     });
 
     const amount = parseEther('100');
