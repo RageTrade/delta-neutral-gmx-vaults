@@ -172,7 +172,11 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         return _convertAUsdcToAsset(amount);
     }
 
-    function depositToken(address token, uint256 amount, uint256 minUsdg) external {
+    function depositToken(
+        address token,
+        uint256 amount,
+        uint256 minUsdg
+    ) external {
         batchingManager.depositToken(token, amount, minUsdg);
     }
 }
