@@ -74,6 +74,7 @@ describe('Rebalance & its utils', () => {
       usdcRedeemSlippage: 100,
       usdcConversionThreshold: 0,
       seniorVaultWethConversionThreshold: 10n ** 15n,
+      hedgeUsdcAmountThreshold: parseUnits('10', 6),
     });
 
     await dnGmxJuniorVault
@@ -136,6 +137,7 @@ describe('Rebalance & its utils', () => {
       usdcRedeemSlippage: 10_000,
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
+      hedgeUsdcAmountThreshold: parseUnits('10', 6),
     });
 
     const amount = parseEther('100');
@@ -191,6 +193,7 @@ describe('Rebalance & its utils', () => {
       usdcRedeemSlippage: 10_000,
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
+      hedgeUsdcAmountThreshold: parseUnits('10', 6),
     });
 
     const amount = parseEther('100');

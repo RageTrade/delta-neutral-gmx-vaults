@@ -80,6 +80,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     usdcRedeemSlippage: 100,
     usdcConversionThreshold: parseUnits('20', 6),
     seniorVaultWethConversionThreshold: 10n ** 15n,
+    hedgeUsdcAmountThreshold: parseUnits('10', 6),
   });
 
   await dnGmxJuniorVault.setWithdrawFee(50); //50BPS = .5%
