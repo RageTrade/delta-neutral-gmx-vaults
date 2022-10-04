@@ -87,7 +87,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         dnGmxJuniorVault = IDnGmxJuniorVault(_dnGmxJuniorVault);
 
         keeper = _keeper;
-        vaultBatchingState.currentRound=1;
+        vaultBatchingState.currentRound = 1;
         emit KeeperUpdated(_keeper);
     }
 
