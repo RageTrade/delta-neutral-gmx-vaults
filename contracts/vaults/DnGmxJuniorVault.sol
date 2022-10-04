@@ -63,9 +63,10 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     event BatchingManagerUpdated(address _batchingManager);
 
     event YieldParamsUpdated(
-        uint16 indexed usdcRedeemSlippage,
-        uint240 indexed usdcConversionThreshold,
-        uint256 indexed seniorVaultWethConversionThreshold
+        uint16 usdcRedeemSlippage,
+        uint240 usdcConversionThreshold,
+        uint256 seniorVaultWethConversionThreshold,
+        uint256 hedgeUsdcAmountThreshold
     );
     event RebalanceParamsUpdated(uint32 indexed rebalanceTimeThreshold, uint16 indexed rebalanceDeltaThreshold);
 
@@ -193,10 +194,12 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         usdcRedeemSlippage = _ysParams.usdcRedeemSlippage;
         usdcConversionThreshold = _ysParams.usdcConversionThreshold;
         seniorVaultWethConversionThreshold = _ysParams.seniorVaultWethConversionThreshold;
+        hedgeUsdcAmountThreshold = _ysParams.hedgeUsdcAmountThreshold;
         emit YieldParamsUpdated(
             _ysParams.usdcRedeemSlippage,
             _ysParams.usdcConversionThreshold,
-            _ysParams.seniorVaultWethConversionThreshold
+            _ysParams.seniorVaultWethConversionThreshold,
+            _ysParams.hedgeUsdcAmountThreshold
         );
     }
 
@@ -569,7 +572,11 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         // console.log('btcTokenAmount', btcTokenAmount);
         // console.log('ethTokenAmount', ethTokenAmount);
 
-        if (btcTokenAmount == 0 && ethTokenAmount == 0) return;
+        bool btcBeyondThreshold = btcUsdcAmount > hedgeUsdcAmountThreshold;
+        bool ethBeyondThreshold = ethUsdcAmount > hedgeUsdcAmountThreshold;
+
+        // If both eth and btc swap amounts are not beyond the threshold then no flashloan needs to be executed | case 1
+        if (!btcBeyondThreshold && !ethBeyondThreshold) return;
 
         uint256 btcAssetAmount = repayDebtBtc ? btcUsdcAmount : btcTokenAmount;
         uint256 ethAssetAmount = repayDebtEth ? ethUsdcAmount : ethTokenAmount;
@@ -582,7 +589,20 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             amounts[0] = (btcAssetAmount + ethAssetAmount);
             // console.log('asset[0] from if', assets[0]);
             // console.log('amounts[0] from if', amounts[0]);
+        } else if (!(btcBeyondThreshold && ethBeyondThreshold)) {
+            // Exactly one would be true since case-1 excluded (both false) | case-2
+            assets = new address[](1);
+            amounts = new uint256[](1);
+
+            if (btcBeyondThreshold) {
+                assets[0] = (repayDebtBtc ? address(usdc) : address(wbtc));
+                amounts[0] = btcAssetAmount;
+            } else {
+                assets[0] = (repayDebtEth ? address(usdc) : address(weth));
+                amounts[0] = ethAssetAmount;
+            }
         } else {
+            // Both are true | case-3
             assets = new address[](2);
             amounts = new uint256[](2);
 
