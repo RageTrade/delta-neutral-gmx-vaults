@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import hre, { ethers } from 'hardhat';
-import { generateErc20Balance } from './utils/erc20';
+import { generateErc20Balance } from './utils/generator';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
-import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-vault';
+import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 
 describe('Aave interactions & functions', () => {
   it('executeSupply', async () => {
