@@ -123,13 +123,13 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   const glpManager = IGlpManager__factory.connect(GMX_ECOSYSTEM_ADDRESSES.GlpManager, admin);
 
   const vdWBTC = await hre.ethers.getContractAt(
-    'IDebtToken',
+    'contracts/vaults/DnGmxJuniorVaultStorage.sol:IDebtToken',
     (
       await lendingPool.getReserveData(wbtc.address)
     ).variableDebtTokenAddress,
   );
   const vdWETH = await hre.ethers.getContractAt(
-    'IDebtToken',
+    'contracts/vaults/DnGmxJuniorVaultStorage.sol:IDebtToken',
     (
       await lendingPool.getReserveData(weth.address)
     ).variableDebtTokenAddress,

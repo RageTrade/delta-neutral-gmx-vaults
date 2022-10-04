@@ -51,34 +51,34 @@ export class Logger {
     console.log(
       'aUSDC (bal, scaled bal): ',
       await aUSDC.balanceOf(dnGmxSeniorVault.address),
-      aUSDC.scaledBalanceOf(dnGmxSeniorVault.address),
+      await aUSDC.scaledBalanceOf(dnGmxSeniorVault.address),
     );
     console.log(
       'variable debt wBTC (bal, scaled bal): ',
       await vdWBTC.balanceOf(dnGmxSeniorVault.address),
-      vdWBTC.scaledBalanceOf(dnGmxSeniorVault.address),
+      await vdWBTC.scaledBalanceOf(dnGmxSeniorVault.address),
     );
     console.log(
       'variable debt wETH (bal, scaled bal): ',
       await vdWETH.balanceOf(dnGmxSeniorVault.address),
-      vdWETH.scaledBalanceOf(dnGmxSeniorVault.address),
+      await vdWETH.scaledBalanceOf(dnGmxSeniorVault.address),
     );
 
     console.log('junior vault:');
     console.log(
       'aUSDC (bal, scaled bal): ',
       await aUSDC.balanceOf(dnGmxJuniorVault.address),
-      aUSDC.scaledBalanceOf(dnGmxJuniorVault.address),
+      await aUSDC.scaledBalanceOf(dnGmxJuniorVault.address),
     );
     console.log(
       'variable debt wBTC (bal, scaled bal): ',
       await vdWBTC.balanceOf(dnGmxJuniorVault.address),
-      vdWBTC.scaledBalanceOf(dnGmxJuniorVault.address),
+      await vdWBTC.scaledBalanceOf(dnGmxJuniorVault.address),
     );
     console.log(
       'variable debt wETH (bal, scaled bal): ',
       await vdWETH.balanceOf(dnGmxJuniorVault.address),
-      vdWETH.scaledBalanceOf(dnGmxJuniorVault.address),
+      await vdWETH.scaledBalanceOf(dnGmxJuniorVault.address),
     );
 
     console.log(Logger.seperator);
