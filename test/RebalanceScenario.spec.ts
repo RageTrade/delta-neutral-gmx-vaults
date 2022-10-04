@@ -400,7 +400,7 @@ describe('Rebalance Scenarios', () => {
     console.log('borrow value after rebalance', await dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_));
   });
 
-  it.only('EndToEnd1 (Excel)', async () => {
+  it('EndToEnd1 (Excel)', async () => {
     let tx;
 
     const opts = await dnGmxJuniorVaultFixture();
