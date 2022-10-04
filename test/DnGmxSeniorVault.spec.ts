@@ -1,17 +1,21 @@
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { getAddress, hexlify, parseUnits, randomBytes } from 'ethers/lib/utils';
-import hre, { ethers } from 'hardhat';
-import { DnGmxJuniorVaultMock, DnGmxSeniorVault, ERC20Upgradeable, GMXBatchingManager } from '../typechain-types';
-import addresses from './fixtures/addresses';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-vault';
+import { hexlify, parseUnits, randomBytes } from 'ethers/lib/utils';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import {
+  DnGmxJuniorVaultMock,
+  DnGmxSeniorVault,
+  ERC20Upgradeable,
+  GMXBatchingManager,
+  IAToken,
+} from '../typechain-types';
 
 describe('DnGmx Senior Vault', () => {
   let dnGmxJuniorVault: DnGmxJuniorVaultMock;
   let glpBatchingManager: GMXBatchingManager;
   let users: SignerWithAddress[];
-  let aUSDC: ERC20Upgradeable;
+  let aUSDC: IAToken;
   let usdc: ERC20Upgradeable;
 
   let dnGmxSeniorVault: DnGmxSeniorVault;
