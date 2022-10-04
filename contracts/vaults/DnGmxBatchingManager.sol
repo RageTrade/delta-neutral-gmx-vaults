@@ -59,6 +59,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
 
     function initialize(
         IERC20 _sGlp,
+        IERC20 _usdc,
         IRewardRouterV2 _rewardRouter,
         IGlpManager _glpManager,
         address _dnGmxJuniorVault,
@@ -66,24 +67,27 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     ) external initializer {
         __Ownable_init();
         __Pausable_init();
-        __GMXBatchingManager_init(_sGlp, _rewardRouter, _glpManager, _dnGmxJuniorVault, _keeper);
+        __GMXBatchingManager_init(_sGlp, _usdc, _rewardRouter, _glpManager, _dnGmxJuniorVault, _keeper);
     }
 
     /* solhint-disable-next-line func-name-mixedcase */
     function __GMXBatchingManager_init(
         IERC20 _sGlp,
+        IERC20 _usdc,
         IRewardRouterV2 _rewardRouter,
         IGlpManager _glpManager,
         address _dnGmxJuniorVault,
         address _keeper
     ) internal onlyInitializing {
         sGlp = _sGlp;
+        usdc = _usdc;
         rewardRouter = _rewardRouter;
         glpManager = _glpManager;
 
         dnGmxJuniorVault = IDnGmxJuniorVault(_dnGmxJuniorVault);
 
         keeper = _keeper;
+        vaultBatchingState.currentRound=1;
         emit KeeperUpdated(_keeper);
     }
 
@@ -208,7 +212,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     }
 
     /// @notice executes batch and deposits into appropriate vault with/without minting shares
-    function executeBatchStake() external {
+    function executeBatchStake() external whenNotPaused {
         // Transfer vault glp directly
         // Needs to be called only for dnGmxJuniorVault
         // if (dnGmxJuniorVaultGlpBalance > 0) {
@@ -336,6 +340,11 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     /// @notice get the glp balance for current active round
     function roundUsdcBalance() external view returns (uint256) {
         return vaultBatchingState.roundUsdcBalance;
+    }
+
+    /// @notice get the glp balance for current active round
+    function roundGlpStaked() external view returns (uint256) {
+        return vaultBatchingState.roundGlpStaked;
     }
 
     /// @notice get the vaultBatchingState of user deposits
