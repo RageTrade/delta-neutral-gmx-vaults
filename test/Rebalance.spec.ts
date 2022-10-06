@@ -73,6 +73,7 @@ describe('Rebalance & its utils', () => {
     // Otherwise assets are not converted to aUsdc
     // temp: setting hfThreshold to 0
     await dnGmxJuniorVault.setThresholds({
+      slippageThreshold: 100,
       usdcRedeemSlippage: 100,
       hfThreshold: 0,
       usdcConversionThreshold: 0,
@@ -139,6 +140,7 @@ describe('Rebalance & its utils', () => {
     // temp: setting hfThreshold to 0
 
     await dnGmxJuniorVault.setThresholds({
+      slippageThreshold: 100,
       usdcRedeemSlippage: 10_000,
       hfThreshold: 0,
       usdcConversionThreshold: parseUnits('20', 6),
@@ -198,6 +200,7 @@ describe('Rebalance & its utils', () => {
     // temp: setting hfThreshold to 0
 
     await dnGmxJuniorVault.setThresholds({
+      slippageThreshold: 100,
       usdcRedeemSlippage: 10_000,
       hfThreshold: 0,
       usdcConversionThreshold: parseUnits('20', 6),

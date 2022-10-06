@@ -7,7 +7,7 @@ import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 
 describe('Swaps', () => {
-  it.only('Swap Token To USDC', async () => {
+  it('Swap Token To USDC', async () => {
     const { dnGmxJuniorVault, usdc, wbtc, weth } = await dnGmxJuniorVaultFixture();
 
     await generateErc20Balance(weth, parseUnits('1', 18), dnGmxJuniorVault.address);
