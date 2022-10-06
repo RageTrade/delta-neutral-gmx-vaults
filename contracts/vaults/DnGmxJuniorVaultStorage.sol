@@ -108,6 +108,7 @@ contract DnGmxJuniorVaultStorage {
     }
 
     struct YieldStrategyParams {
+        uint256 slippageThreshold;
         uint16 usdcRedeemSlippage;
         uint240 usdcConversionThreshold;
         uint256 hfThreshold;

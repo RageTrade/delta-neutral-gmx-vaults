@@ -31,7 +31,7 @@ import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
 import { SafeCast } from '../libraries/SafeCast.sol';
 import { WadRayMath } from '@aave/core-v3/contracts/protocol/libraries/math/WadRayMath.sol';
 
-import 'hardhat/console.sol';
+// import 'hardhat/console.sol';
 
 contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable, DnGmxJuniorVaultStorage {
     using FullMath for uint256;
@@ -194,6 +194,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     }
 
     function setThresholds(YieldStrategyParams calldata _ysParams) external onlyOwner {
+        slippageThreshold = _ysParams.slippageThreshold;
         usdcRedeemSlippage = _ysParams.usdcRedeemSlippage;
         usdcConversionThreshold = _ysParams.usdcConversionThreshold;
         seniorVaultWethConversionThreshold = _ysParams.seniorVaultWethConversionThreshold;
@@ -281,6 +282,8 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
                 price * (MAX_BPS - slippageThreshold),
                 PRICE_PRECISION * MAX_BPS
             );
+
+            // console.log('usdgAmount', usdgAmount);
 
             usdgAmount = usdgAmount.mulDiv(10**USDG_DECIMALS, 10**WETH_DECIMALS);
 
