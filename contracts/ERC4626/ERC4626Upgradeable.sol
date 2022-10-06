@@ -22,6 +22,9 @@ abstract contract ERC4626Upgradeable is IERC4626, ERC20Upgradeable {
 
     address public asset;
 
+    // these gaps are added to allow adding new variables without shifting down inheritance chain
+    uint256[50] private __gaps;
+
     /* solhint-disable func-name-mixedcase */
     function __ERC4626Upgradeable_init(
         address _asset,

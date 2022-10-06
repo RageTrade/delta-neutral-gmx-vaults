@@ -55,6 +55,9 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
 
     DnGmxJuniorVaultManager.State internal state;
 
+    // these gaps are added to allow adding new variables without shifting down inheritance chain
+    uint256[50] private __gaps;
+
     modifier onlyKeeper() {
         if (msg.sender != state.keeper) revert OnlyKeeperAllowed(msg.sender, state.keeper);
         _;

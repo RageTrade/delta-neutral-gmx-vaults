@@ -118,6 +118,8 @@ library DnGmxJuniorVaultManager {
         // core protocol addrs
         IDnGmxSeniorVault dnGmxSeniorVault;
         IDnGmxBatchingManager batchingManager;
+
+         uint256[50]  __gaps;
     }
 
     /* ##################################################################

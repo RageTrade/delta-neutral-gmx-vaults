@@ -47,7 +47,8 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
 
     VaultBatchingState public vaultBatchingState;
 
-    uint256[100] private _gaps2;
+    // these gaps are added to allow adding new variables without shifting down inheritance chain
+    uint256[50] private __gaps2;
 
     modifier onlyDnGmxJuniorVault() {
         if (msg.sender != address(dnGmxJuniorVault)) revert CallerNotVault();
