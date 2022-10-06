@@ -55,6 +55,9 @@ contract LeveragePool is OwnableUpgradeable, PausableUpgradeable {
 
     mapping(address => UserDeposit) public userDeposits;
 
+    // these gaps are added to allow adding new variables without shifting down inheritance chain
+    uint256[50] private __gaps;
+
     function initialize() external initializer {
         __Ownable_init();
         __Pausable_init();

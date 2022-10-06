@@ -40,6 +40,9 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
 
     mapping(address => uint256) public borrowCaps;
 
+    // these gaps are added to allow adding new variables without shifting down inheritance chain
+    uint256[50] private __gaps;
+
     modifier onlyBorrower() {
         if (msg.sender != address(dnGmxJuniorVault) && msg.sender != address(leveragePool)) revert CallerNotBorrower();
         _;
