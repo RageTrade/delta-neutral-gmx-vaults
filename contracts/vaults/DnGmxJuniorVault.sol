@@ -31,7 +31,7 @@ import { SafeCast } from '../libraries/SafeCast.sol';
 import { WadRayMath } from '@aave/core-v3/contracts/protocol/libraries/math/WadRayMath.sol';
 import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
 
-// import 'hardhat/console.sol';
+import 'hardhat/console.sol';
 
 contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable, DnGmxJuniorVaultStorage {
     using FullMath for uint256;
