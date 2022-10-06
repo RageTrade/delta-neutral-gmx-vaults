@@ -3,17 +3,23 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { getAddress, hexlify, parseUnits, randomBytes } from 'ethers/lib/utils';
 import hre, { ethers } from 'hardhat';
-import { DnGmxBatchingManager, DnGmxJuniorVaultMock, DnGmxSeniorVault, ERC20Upgradeable } from '../typechain-types';
+import {
+  DnGmxBatchingManager,
+  DnGmxJuniorVaultMock,
+  DnGmxSeniorVault,
+  ERC20Upgradeable,
+  IAToken,
+} from '../typechain-types';
 import addresses from './fixtures/addresses';
-import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-vault';
-import { generateErc20Balance } from './utils/erc20';
-import { increaseBlockTimestamp } from './utils/vault-helpers';
+import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
+import { generateErc20Balance } from './utils/generator';
+import { increaseBlockTimestamp } from './utils/shared';
 
 describe('DnGmx Senior Vault', () => {
   let dnGmxJuniorVault: DnGmxJuniorVaultMock;
   let glpBatchingManager: DnGmxBatchingManager;
   let users: SignerWithAddress[];
-  let aUSDC: ERC20Upgradeable;
+  let aUSDC: IAToken;
   let usdc: ERC20Upgradeable;
   let fsGlp: ERC20Upgradeable;
   let dnGmxJuniorVaultSigner: SignerWithAddress;
