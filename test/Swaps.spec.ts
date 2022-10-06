@@ -6,29 +6,46 @@ import { generateErc20Balance } from './utils/generator';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 
-describe('Rebalance & its utils', () => {
-  it('Swap Token To USDC', async () => {
+describe('Swaps', () => {
+  it.only('Swap Token To USDC', async () => {
     const { dnGmxJuniorVault, usdc, wbtc, weth } = await dnGmxJuniorVaultFixture();
+
     await generateErc20Balance(weth, parseUnits('1', 18), dnGmxJuniorVault.address);
     await generateErc20Balance(wbtc, parseUnits('1', 8), dnGmxJuniorVault.address);
 
-    await dnGmxJuniorVault.swapToken(wbtc.address, parseUnits('1', 8), 0);
-    await dnGmxJuniorVault.swapToken(weth.address, parseUnits('1', 18), 0);
+    expect(await usdc.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
 
-    console.log('Vault wbtc balance:', await wbtc.balanceOf(dnGmxJuniorVault.address));
-    console.log('Vault weth balance:', await weth.balanceOf(dnGmxJuniorVault.address));
-    console.log('Vault usdc balance:', await usdc.balanceOf(dnGmxJuniorVault.address));
+    const btcPrice = await dnGmxJuniorVault['getPrice(address)'](wbtc.address);
+    await dnGmxJuniorVault.swapToken(wbtc.address, parseUnits('1', 8), 0);
+    const usdcBal1 = await usdc.balanceOf(dnGmxJuniorVault.address);
+
+    expect(usdcBal1.sub(btcPrice.div(BigNumber.from(10).pow(30 - 8))).abs()).to.lte(BigNumber.from(10).pow(8));
+    expect(await wbtc.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
+
+    const ethPrice = await dnGmxJuniorVault['getPrice(address)'](weth.address);
+    await dnGmxJuniorVault.swapToken(weth.address, parseUnits('1', 18), 0);
+    const usdcBal2 = await usdc.balanceOf(dnGmxJuniorVault.address);
+
+    expect(
+      usdcBal2
+        .sub(usdcBal1)
+        .sub(ethPrice.div(BigNumber.from(10).pow(30 - 18)))
+        .abs(),
+    ).to.lte(BigNumber.from(10).pow(8));
+    expect(await weth.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
   });
 
   it('Swap USDC To Token', async () => {
     const { dnGmxJuniorVault, usdc, wbtc, weth } = await dnGmxJuniorVaultFixture();
     await generateErc20Balance(usdc, parseUnits('100000', 6), dnGmxJuniorVault.address);
 
+    expect(await wbtc.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
+    expect(await weth.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
+
     await dnGmxJuniorVault.swapUSDC(wbtc.address, parseUnits('1', 8), parseUnits('100000', 6));
     await dnGmxJuniorVault.swapUSDC(weth.address, parseUnits('1', 18), parseUnits('100000', 6));
 
-    console.log('Vault wbtc balance:', await wbtc.balanceOf(dnGmxJuniorVault.address));
-    console.log('Vault weth balance:', await weth.balanceOf(dnGmxJuniorVault.address));
-    console.log('Vault usdc balance:', await usdc.balanceOf(dnGmxJuniorVault.address));
+    expect(await wbtc.balanceOf(dnGmxJuniorVault.address)).to.eq(parseUnits('1', 8));
+    expect(await weth.balanceOf(dnGmxJuniorVault.address)).to.eq(parseUnits('1', 18));
   });
 });

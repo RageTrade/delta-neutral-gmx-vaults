@@ -17,8 +17,11 @@ describe('Rebalance Scenarios', () => {
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     // becauses price are not changed on uniswap
+    // temp: setting hfThreshold to 0
+
     await dnGmxJuniorVault.setThresholds({
       usdcRedeemSlippage: 10_000,
+      hfThreshold: 0,
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
       hedgeUsdcAmountThreshold: parseUnits('10', 6),
@@ -100,8 +103,11 @@ describe('Rebalance Scenarios', () => {
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     // becauses price are not changed on uniswap
+    // temp: setting hfThreshold to 0
+
     await dnGmxJuniorVault.setThresholds({
       usdcRedeemSlippage: 10_000,
+      hfThreshold: 0,
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
       hedgeUsdcAmountThreshold: parseUnits('10', 6),
@@ -160,8 +166,11 @@ describe('Rebalance Scenarios', () => {
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     // becauses price are not changed on uniswap
+    // temp: setting hfThreshold to 0
+
     await dnGmxJuniorVault.setThresholds({
       usdcRedeemSlippage: 10_000,
+      hfThreshold: 0,
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
       hedgeUsdcAmountThreshold: parseUnits('10', 6),
@@ -241,8 +250,11 @@ describe('Rebalance Scenarios', () => {
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     // becauses price are not changed on uniswap
+    // temp: setting hfThreshold to 0
+
     await dnGmxJuniorVault.setThresholds({
       usdcRedeemSlippage: 10_000,
+      hfThreshold: 0,
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
       hedgeUsdcAmountThreshold: parseUnits('10', 6),
@@ -322,8 +334,11 @@ describe('Rebalance Scenarios', () => {
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     // becauses price are not changed on uniswap
+    // temp: setting hfThreshold to 0
+
     await dnGmxJuniorVault.setThresholds({
       usdcRedeemSlippage: 10_000,
+      hfThreshold: 0,
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
       hedgeUsdcAmountThreshold: parseUnits('10', 6),
@@ -403,8 +418,11 @@ describe('Rebalance Scenarios', () => {
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     // becauses price are not changed on uniswap
+    // temp: setting hfThreshold to 0
+
     await dnGmxJuniorVault.setThresholds({
       usdcRedeemSlippage: 10_000,
+      hfThreshold: 0,
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
       hedgeUsdcAmountThreshold: parseUnits('10', 6),
@@ -536,8 +554,11 @@ describe('Rebalance Scenarios', () => {
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     // becauses price are not changed on uniswap
+    // temp: setting hfThreshold to 0
+
     await dnGmxJuniorVault.setThresholds({
       usdcRedeemSlippage: 10_000,
+      hfThreshold: 0,
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
       hedgeUsdcAmountThreshold: parseUnits('10', 6),
