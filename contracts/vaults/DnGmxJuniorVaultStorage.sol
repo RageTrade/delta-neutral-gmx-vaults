@@ -32,7 +32,7 @@ contract DnGmxJuniorVaultStorage {
     uint256 public constant USDG_DECIMALS = 18;
     uint256 public constant WETH_DECIMALS = 18;
 
-    uint256 public constant PRICE_PRECISION = 10e30;
+    uint256 public constant PRICE_PRECISION = 1e30;
     uint256 public constant VARIABLE_INTEREST_MODE = 2;
 
     ///@dev common storage
@@ -50,6 +50,7 @@ contract DnGmxJuniorVaultStorage {
     uint256 public wethThreshold;
     uint256 public slippageThreshold;
     uint256 hedgeUsdcAmountThreshold;
+    uint256 hfThreshold;
 
     uint256 public depositCap;
     int256 internal dnUsdcDeposited;
@@ -109,6 +110,7 @@ contract DnGmxJuniorVaultStorage {
     struct YieldStrategyParams {
         uint16 usdcRedeemSlippage;
         uint240 usdcConversionThreshold;
+        uint256 hfThreshold;
         uint256 seniorVaultWethConversionThreshold;
         uint256 hedgeUsdcAmountThreshold;
     }
