@@ -22,6 +22,7 @@ describe('Rebalance Scenarios', () => {
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
       hedgeUsdcAmountThreshold: parseUnits('10', 6),
+      hfThreshold: 12_000,
     });
 
     const amount = parseEther('77.59866282');
@@ -105,6 +106,7 @@ describe('Rebalance Scenarios', () => {
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
       hedgeUsdcAmountThreshold: parseUnits('10', 6),
+      hfThreshold: 12_000,
     });
 
     // ETH: $2787.23 BTC: $38694.59
@@ -165,6 +167,7 @@ describe('Rebalance Scenarios', () => {
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
       hedgeUsdcAmountThreshold: parseUnits('10', 6),
+      hfThreshold: 12_000,
     });
 
     const amount = parseEther('100');
@@ -246,6 +249,7 @@ describe('Rebalance Scenarios', () => {
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
       hedgeUsdcAmountThreshold: parseUnits('10', 6),
+      hfThreshold: 12_000,
     });
 
     const amount = parseEther('100');
@@ -327,6 +331,7 @@ describe('Rebalance Scenarios', () => {
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
       hedgeUsdcAmountThreshold: parseUnits('10', 6),
+      hfThreshold: 12_000,
     });
 
     const amount = parseEther('100');
@@ -408,6 +413,7 @@ describe('Rebalance Scenarios', () => {
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
       hedgeUsdcAmountThreshold: parseUnits('10', 6),
+      hfThreshold: 12_000,
     });
 
     const amount = parseEther('100');
@@ -541,6 +547,7 @@ describe('Rebalance Scenarios', () => {
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
       hedgeUsdcAmountThreshold: parseUnits('10', 6),
+      hfThreshold: 12_000,
     });
 
     const amount = parseEther('100');
