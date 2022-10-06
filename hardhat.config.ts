@@ -7,6 +7,7 @@ import 'hardhat-deploy';
 import 'solidity-coverage';
 import '@nomiclabs/hardhat-etherscan';
 import 'hardhat-dependency-compiler';
+import 'hardhat-storage-layout-changes';
 
 import { config } from 'dotenv';
 import { ethers } from 'ethers';

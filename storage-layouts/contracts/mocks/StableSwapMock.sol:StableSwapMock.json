@@ -1,0 +1,39 @@
+{
+  "storage": [
+    {
+      "astId": 5757,
+      "contract": "contracts/mocks/StableSwapMock.sol:StableSwapMock",
+      "label": "price",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 5762,
+      "contract": "contracts/mocks/StableSwapMock.sol:StableSwapMock",
+      "label": "coins",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_mapping(t_uint256,t_contract(IERC20)1952)"
+    }
+  ],
+  "types": {
+    "t_contract(IERC20)1952": {
+      "encoding": "inplace",
+      "label": "contract IERC20",
+      "numberOfBytes": "20"
+    },
+    "t_mapping(t_uint256,t_contract(IERC20)1952)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => contract IERC20)",
+      "numberOfBytes": "32",
+      "value": "t_contract(IERC20)1952"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    }
+  }
+}
