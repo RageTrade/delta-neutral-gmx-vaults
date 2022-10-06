@@ -1,0 +1,388 @@
+{
+  "storage": [
+    {
+      "astId": 11327,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "FEE",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 11336,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "keeper",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_address"
+    },
+    {
+      "astId": 11339,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "lpVault",
+      "offset": 0,
+      "slot": "2",
+      "type": "t_contract(ILPVault)6611"
+    },
+    {
+      "astId": 11341,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "feeRecipient",
+      "offset": 0,
+      "slot": "3",
+      "type": "t_address"
+    },
+    {
+      "astId": 11343,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "withdrawFeeBps",
+      "offset": 0,
+      "slot": "4",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 11345,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "protocolFee",
+      "offset": 0,
+      "slot": "5",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 11347,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "wethThreshold",
+      "offset": 0,
+      "slot": "6",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 11349,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "slippageThreshold",
+      "offset": 0,
+      "slot": "7",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 11351,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "depositCap",
+      "offset": 0,
+      "slot": "8",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 11353,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "dnUsdcDeposited",
+      "offset": 0,
+      "slot": "9",
+      "type": "t_int256"
+    },
+    {
+      "astId": 11355,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "_hasFlashloaned",
+      "offset": 0,
+      "slot": "10",
+      "type": "t_bool"
+    },
+    {
+      "astId": 11357,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "lastRebalanceTS",
+      "offset": 1,
+      "slot": "10",
+      "type": "t_uint64"
+    },
+    {
+      "astId": 11359,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "rebalanceTimeThreshold",
+      "offset": 9,
+      "slot": "10",
+      "type": "t_uint32"
+    },
+    {
+      "astId": 11361,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "rebalanceDeltaThreshold",
+      "offset": 13,
+      "slot": "10",
+      "type": "t_uint16"
+    },
+    {
+      "astId": 11365,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "pool",
+      "offset": 0,
+      "slot": "11",
+      "type": "t_contract(IPool)1121"
+    },
+    {
+      "astId": 11368,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "oracle",
+      "offset": 0,
+      "slot": "12",
+      "type": "t_contract(IPriceOracle)1350"
+    },
+    {
+      "astId": 11371,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "poolAddressProvider",
+      "offset": 0,
+      "slot": "13",
+      "type": "t_contract(IPoolAddressesProvider)1330"
+    },
+    {
+      "astId": 11374,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "aUsdc",
+      "offset": 0,
+      "slot": "14",
+      "type": "t_contract(IAToken)218"
+    },
+    {
+      "astId": 11377,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "vWbtc",
+      "offset": 0,
+      "slot": "15",
+      "type": "t_contract(IDebtToken)11314"
+    },
+    {
+      "astId": 11380,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "vWeth",
+      "offset": 0,
+      "slot": "16",
+      "type": "t_contract(IDebtToken)11314"
+    },
+    {
+      "astId": 11383,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "swapRouter",
+      "offset": 0,
+      "slot": "17",
+      "type": "t_contract(ISwapRouter)5850"
+    },
+    {
+      "astId": 11386,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "balancerVault",
+      "offset": 0,
+      "slot": "18",
+      "type": "t_contract(IBalancerVault)6406"
+    },
+    {
+      "astId": 11388,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "targetHealthFactor",
+      "offset": 0,
+      "slot": "19",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 11391,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "usdcReedemSlippage",
+      "offset": 0,
+      "slot": "20",
+      "type": "t_uint16"
+    },
+    {
+      "astId": 11393,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "usdcConversionThreshold",
+      "offset": 2,
+      "slot": "20",
+      "type": "t_uint240"
+    },
+    {
+      "astId": 11396,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "glp",
+      "offset": 0,
+      "slot": "21",
+      "type": "t_contract(IERC20Metadata)4828"
+    },
+    {
+      "astId": 11399,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "usdc",
+      "offset": 0,
+      "slot": "22",
+      "type": "t_contract(IERC20Metadata)4828"
+    },
+    {
+      "astId": 11402,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "weth",
+      "offset": 0,
+      "slot": "23",
+      "type": "t_contract(IERC20Metadata)4828"
+    },
+    {
+      "astId": 11405,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "wbtc",
+      "offset": 0,
+      "slot": "24",
+      "type": "t_contract(IERC20Metadata)4828"
+    },
+    {
+      "astId": 11408,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "fsGlp",
+      "offset": 0,
+      "slot": "25",
+      "type": "t_contract(IERC20)4803"
+    },
+    {
+      "astId": 11411,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "gmxVault",
+      "offset": 0,
+      "slot": "26",
+      "type": "t_contract(IVault)7627"
+    },
+    {
+      "astId": 11414,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "glpManager",
+      "offset": 0,
+      "slot": "27",
+      "type": "t_contract(IGlpManager)6883"
+    },
+    {
+      "astId": 11417,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "rewardRouter",
+      "offset": 0,
+      "slot": "28",
+      "type": "t_contract(IRewardRouterV2)7065"
+    },
+    {
+      "astId": 11420,
+      "contract": "contracts/vaults/DNGmxVaultStorage.sol:DNGmxVaultStorage",
+      "label": "batchingManager",
+      "offset": 0,
+      "slot": "29",
+      "type": "t_contract(IGMXBatchingManager)6785"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    },
+    "t_contract(IAToken)218": {
+      "encoding": "inplace",
+      "label": "contract IAToken",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IBalancerVault)6406": {
+      "encoding": "inplace",
+      "label": "contract IBalancerVault",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IDebtToken)11314": {
+      "encoding": "inplace",
+      "label": "contract IDebtToken",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IERC20)4803": {
+      "encoding": "inplace",
+      "label": "contract IERC20",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IERC20Metadata)4828": {
+      "encoding": "inplace",
+      "label": "contract IERC20Metadata",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IGMXBatchingManager)6785": {
+      "encoding": "inplace",
+      "label": "contract IGMXBatchingManager",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IGlpManager)6883": {
+      "encoding": "inplace",
+      "label": "contract IGlpManager",
+      "numberOfBytes": "20"
+    },
+    "t_contract(ILPVault)6611": {
+      "encoding": "inplace",
+      "label": "contract ILPVault",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IPool)1121": {
+      "encoding": "inplace",
+      "label": "contract IPool",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IPoolAddressesProvider)1330": {
+      "encoding": "inplace",
+      "label": "contract IPoolAddressesProvider",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IPriceOracle)1350": {
+      "encoding": "inplace",
+      "label": "contract IPriceOracle",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IRewardRouterV2)7065": {
+      "encoding": "inplace",
+      "label": "contract IRewardRouterV2",
+      "numberOfBytes": "20"
+    },
+    "t_contract(ISwapRouter)5850": {
+      "encoding": "inplace",
+      "label": "contract ISwapRouter",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IVault)7627": {
+      "encoding": "inplace",
+      "label": "contract IVault",
+      "numberOfBytes": "20"
+    },
+    "t_int256": {
+      "encoding": "inplace",
+      "label": "int256",
+      "numberOfBytes": "32"
+    },
+    "t_uint16": {
+      "encoding": "inplace",
+      "label": "uint16",
+      "numberOfBytes": "2"
+    },
+    "t_uint240": {
+      "encoding": "inplace",
+      "label": "uint240",
+      "numberOfBytes": "30"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    },
+    "t_uint32": {
+      "encoding": "inplace",
+      "label": "uint32",
+      "numberOfBytes": "4"
+    },
+    "t_uint64": {
+      "encoding": "inplace",
+      "label": "uint64",
+      "numberOfBytes": "8"
+    }
+  }
+}

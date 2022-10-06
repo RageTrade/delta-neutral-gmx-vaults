@@ -1,0 +1,254 @@
+{
+  "storage": [
+    {
+      "astId": 3452,
+      "contract": "contracts/vaults/AaveVault.sol:AaveVault",
+      "label": "_initialized",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_uint8"
+    },
+    {
+      "astId": 3455,
+      "contract": "contracts/vaults/AaveVault.sol:AaveVault",
+      "label": "_initializing",
+      "offset": 1,
+      "slot": "0",
+      "type": "t_bool"
+    },
+    {
+      "astId": 4721,
+      "contract": "contracts/vaults/AaveVault.sol:AaveVault",
+      "label": "__gap",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_array(t_uint256)50_storage"
+    },
+    {
+      "astId": 3742,
+      "contract": "contracts/vaults/AaveVault.sol:AaveVault",
+      "label": "_balances",
+      "offset": 0,
+      "slot": "51",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 3748,
+      "contract": "contracts/vaults/AaveVault.sol:AaveVault",
+      "label": "_allowances",
+      "offset": 0,
+      "slot": "52",
+      "type": "t_mapping(t_address,t_mapping(t_address,t_uint256))"
+    },
+    {
+      "astId": 3750,
+      "contract": "contracts/vaults/AaveVault.sol:AaveVault",
+      "label": "_totalSupply",
+      "offset": 0,
+      "slot": "53",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 3752,
+      "contract": "contracts/vaults/AaveVault.sol:AaveVault",
+      "label": "_name",
+      "offset": 0,
+      "slot": "54",
+      "type": "t_string_storage"
+    },
+    {
+      "astId": 3754,
+      "contract": "contracts/vaults/AaveVault.sol:AaveVault",
+      "label": "_symbol",
+      "offset": 0,
+      "slot": "55",
+      "type": "t_string_storage"
+    },
+    {
+      "astId": 4333,
+      "contract": "contracts/vaults/AaveVault.sol:AaveVault",
+      "label": "__gap",
+      "offset": 0,
+      "slot": "56",
+      "type": "t_array(t_uint256)45_storage"
+    },
+    {
+      "astId": 5895,
+      "contract": "contracts/vaults/AaveVault.sol:AaveVault",
+      "label": "asset",
+      "offset": 0,
+      "slot": "101",
+      "type": "t_contract(IERC20Metadata)4828"
+    },
+    {
+      "astId": 3324,
+      "contract": "contracts/vaults/AaveVault.sol:AaveVault",
+      "label": "_owner",
+      "offset": 0,
+      "slot": "102",
+      "type": "t_address"
+    },
+    {
+      "astId": 3444,
+      "contract": "contracts/vaults/AaveVault.sol:AaveVault",
+      "label": "__gap",
+      "offset": 0,
+      "slot": "103",
+      "type": "t_array(t_uint256)49_storage"
+    },
+    {
+      "astId": 3617,
+      "contract": "contracts/vaults/AaveVault.sol:AaveVault",
+      "label": "_paused",
+      "offset": 0,
+      "slot": "152",
+      "type": "t_bool"
+    },
+    {
+      "astId": 3722,
+      "contract": "contracts/vaults/AaveVault.sol:AaveVault",
+      "label": "__gap",
+      "offset": 0,
+      "slot": "153",
+      "type": "t_array(t_uint256)49_storage"
+    },
+    {
+      "astId": 8249,
+      "contract": "contracts/vaults/AaveVault.sol:AaveVault",
+      "label": "pool",
+      "offset": 0,
+      "slot": "202",
+      "type": "t_contract(IPool)1121"
+    },
+    {
+      "astId": 8252,
+      "contract": "contracts/vaults/AaveVault.sol:AaveVault",
+      "label": "aUsdc",
+      "offset": 0,
+      "slot": "203",
+      "type": "t_contract(IAToken)218"
+    },
+    {
+      "astId": 8255,
+      "contract": "contracts/vaults/AaveVault.sol:AaveVault",
+      "label": "poolAddressProvider",
+      "offset": 0,
+      "slot": "204",
+      "type": "t_contract(IPoolAddressesProvider)1330"
+    },
+    {
+      "astId": 8257,
+      "contract": "contracts/vaults/AaveVault.sol:AaveVault",
+      "label": "vaultCount",
+      "offset": 20,
+      "slot": "204",
+      "type": "t_uint8"
+    },
+    {
+      "astId": 8262,
+      "contract": "contracts/vaults/AaveVault.sol:AaveVault",
+      "label": "vaults",
+      "offset": 0,
+      "slot": "205",
+      "type": "t_array(t_contract(IBorrowerVault)6414)10_storage"
+    },
+    {
+      "astId": 8266,
+      "contract": "contracts/vaults/AaveVault.sol:AaveVault",
+      "label": "vaultCaps",
+      "offset": 0,
+      "slot": "215",
+      "type": "t_mapping(t_address,t_uint256)"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_array(t_contract(IBorrowerVault)6414)10_storage": {
+      "base": "t_contract(IBorrowerVault)6414",
+      "encoding": "inplace",
+      "label": "contract IBorrowerVault[10]",
+      "numberOfBytes": "320"
+    },
+    "t_array(t_uint256)45_storage": {
+      "base": "t_uint256",
+      "encoding": "inplace",
+      "label": "uint256[45]",
+      "numberOfBytes": "1440"
+    },
+    "t_array(t_uint256)49_storage": {
+      "base": "t_uint256",
+      "encoding": "inplace",
+      "label": "uint256[49]",
+      "numberOfBytes": "1568"
+    },
+    "t_array(t_uint256)50_storage": {
+      "base": "t_uint256",
+      "encoding": "inplace",
+      "label": "uint256[50]",
+      "numberOfBytes": "1600"
+    },
+    "t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    },
+    "t_contract(IAToken)218": {
+      "encoding": "inplace",
+      "label": "contract IAToken",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IBorrowerVault)6414": {
+      "encoding": "inplace",
+      "label": "contract IBorrowerVault",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IERC20Metadata)4828": {
+      "encoding": "inplace",
+      "label": "contract IERC20Metadata",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IPool)1121": {
+      "encoding": "inplace",
+      "label": "contract IPool",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IPoolAddressesProvider)1330": {
+      "encoding": "inplace",
+      "label": "contract IPoolAddressesProvider",
+      "numberOfBytes": "20"
+    },
+    "t_mapping(t_address,t_mapping(t_address,t_uint256))": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => mapping(address => uint256))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_address,t_uint256)"
+    },
+    "t_mapping(t_address,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_string_storage": {
+      "encoding": "bytes",
+      "label": "string",
+      "numberOfBytes": "32"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    },
+    "t_uint8": {
+      "encoding": "inplace",
+      "label": "uint8",
+      "numberOfBytes": "1"
+    }
+  }
+}
