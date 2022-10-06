@@ -31,7 +31,7 @@ import { SafeCast } from '../libraries/SafeCast.sol';
 import { WadRayMath } from '@aave/core-v3/contracts/protocol/libraries/math/WadRayMath.sol';
 import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
 
-// import 'hardhat/console.sol';
+import 'hardhat/console.sol';
 
 contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable, DnGmxJuniorVaultStorage {
     using FullMath for uint256;
@@ -924,25 +924,10 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     }
 
     function _isValidRebalanceHF() internal view returns (bool) {
-        uint256 assetPrice = oracle.getAssetPrice(address(usdc));
-        uint256 normalizedIncome = pool.getReserveNormalizedIncome(address(usdc));
+        (, , , , , uint256 healthFactor) = pool.getUserAccountData(address(this));
+        // healthFactor is in 1e18, dividing by 1e14 for converting to bps
 
-        uint256 totalCollateralBalance = ((aUsdc.scaledBalanceOf(address(this)).rayMul(normalizedIncome)) *
-            assetPrice) / 1e6;
-        totalCollateralBalance = (totalCollateralBalance * _getLiquidationThreshold(address(usdc))) / MAX_BPS;
-
-        assetPrice = oracle.getAssetPrice(address(wbtc));
-        uint256 btcDebt = ((vWbtc.scaledBalanceOf(address(this)).rayMul(normalizedIncome)) * assetPrice) / 1e8;
-
-        assetPrice = oracle.getAssetPrice(address(weth));
-        uint256 ethDebt = ((vWeth.scaledBalanceOf(address(this)).rayMul(normalizedIncome)) * assetPrice) / 1e18;
-
-        if ((btcDebt + ethDebt) != 0) {
-            uint256 hf = totalCollateralBalance.mulDiv(MAX_BPS, btcDebt + ethDebt);
-            return hf < hfThreshold;
-        }
-
-        return false;
+        return (healthFactor / 1e14) < hfThreshold;
     }
 
     function _isValidRebalanceDeviation() internal view returns (bool) {
