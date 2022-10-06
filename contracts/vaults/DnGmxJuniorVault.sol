@@ -69,7 +69,8 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         uint16 usdcRedeemSlippage,
         uint240 usdcConversionThreshold,
         uint256 seniorVaultWethConversionThreshold,
-        uint256 hedgeUsdcAmountThreshold
+        uint256 hedgeUsdcAmountThreshold,
+        uint256 hfThreshold
     );
     event RebalanceParamsUpdated(uint32 indexed rebalanceTimeThreshold, uint16 indexed rebalanceDeltaThreshold);
 
@@ -198,11 +199,13 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         usdcConversionThreshold = _ysParams.usdcConversionThreshold;
         seniorVaultWethConversionThreshold = _ysParams.seniorVaultWethConversionThreshold;
         hedgeUsdcAmountThreshold = _ysParams.hedgeUsdcAmountThreshold;
+        hfThreshold = _ysParams.hfThreshold;
         emit YieldParamsUpdated(
             _ysParams.usdcRedeemSlippage,
             _ysParams.usdcConversionThreshold,
             _ysParams.seniorVaultWethConversionThreshold,
-            _ysParams.hedgeUsdcAmountThreshold
+            _ysParams.hedgeUsdcAmountThreshold,
+            _ysParams.hfThreshold
         );
     }
 
@@ -927,7 +930,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         (, , , , , uint256 healthFactor) = pool.getUserAccountData(address(this));
         // healthFactor is in 1e18, dividing by 1e14 for converting to bps
 
-        return (healthFactor / 1e14) < hfThreshold;
+        return healthFactor < (hfThreshold * 1e14);
     }
 
     function _isValidRebalanceDeviation() internal view returns (bool) {
