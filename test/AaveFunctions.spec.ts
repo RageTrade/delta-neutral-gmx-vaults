@@ -38,7 +38,7 @@ describe('Aave interactions & functions', () => {
     expect(await usdc.balanceOf(dnGmxJuniorVault.address)).to.eq(amount);
   });
 
-  it.only('executeBorrow & executeRepay', async () => {
+  it('executeBorrow & executeRepay', async () => {
     const amount = parseUnits('100', 6);
     const btcAmount = parseUnits('0.002', 8);
     const ethAmount = parseEther('0.02');

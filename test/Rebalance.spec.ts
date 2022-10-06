@@ -73,12 +73,12 @@ describe('Rebalance & its utils', () => {
     // Otherwise assets are not converted to aUsdc
     // temp: setting hfThreshold to 0
     await dnGmxJuniorVault.setThresholds({
+      slippageThreshold: 100,
       usdcRedeemSlippage: 100,
       hfThreshold: 0,
       usdcConversionThreshold: 0,
       seniorVaultWethConversionThreshold: 10n ** 15n,
       hedgeUsdcAmountThreshold: parseUnits('10', 6),
-      hfThreshold: 12_000,
     });
 
     await dnGmxJuniorVault
@@ -140,12 +140,12 @@ describe('Rebalance & its utils', () => {
     // temp: setting hfThreshold to 0
 
     await dnGmxJuniorVault.setThresholds({
+      slippageThreshold: 100,
       usdcRedeemSlippage: 10_000,
       hfThreshold: 0,
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
       hedgeUsdcAmountThreshold: parseUnits('10', 6),
-      hfThreshold: 12_000,
     });
 
     const amount = parseEther('100');
@@ -200,12 +200,12 @@ describe('Rebalance & its utils', () => {
     // temp: setting hfThreshold to 0
 
     await dnGmxJuniorVault.setThresholds({
+      slippageThreshold: 100,
       usdcRedeemSlippage: 10_000,
       hfThreshold: 0,
       usdcConversionThreshold: parseUnits('20', 6),
       seniorVaultWethConversionThreshold: 10n ** 15n,
       hedgeUsdcAmountThreshold: parseUnits('10', 6),
-      hfThreshold: 12_000,
     });
 
     const amount = parseEther('100');
