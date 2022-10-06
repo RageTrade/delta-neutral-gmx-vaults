@@ -1,0 +1,58 @@
+{
+  "storage": [
+    {
+      "astId": 5707,
+      "contract": "contracts/mocks/FeeSplitStrategyMock.sol:FeeSplitStrategyMock",
+      "label": "info",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_struct(Info)5470_storage"
+    }
+  ],
+  "types": {
+    "t_struct(Info)5470_storage": {
+      "encoding": "inplace",
+      "label": "struct FeeSplitStrategy.Info",
+      "members": [
+        {
+          "astId": 5463,
+          "contract": "contracts/mocks/FeeSplitStrategyMock.sol:FeeSplitStrategyMock",
+          "label": "optimalUtilizationRate",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 5465,
+          "contract": "contracts/mocks/FeeSplitStrategyMock.sol:FeeSplitStrategyMock",
+          "label": "baseVariableBorrowRate",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 5467,
+          "contract": "contracts/mocks/FeeSplitStrategyMock.sol:FeeSplitStrategyMock",
+          "label": "variableRateSlope1",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 5469,
+          "contract": "contracts/mocks/FeeSplitStrategyMock.sol:FeeSplitStrategyMock",
+          "label": "variableRateSlope2",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_uint256"
+        }
+      ],
+      "numberOfBytes": "128"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    }
+  }
+}

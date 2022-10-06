@@ -1,0 +1,341 @@
+{
+  "storage": [
+    {
+      "astId": 601,
+      "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+      "label": "_initialized",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_uint8"
+    },
+    {
+      "astId": 604,
+      "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+      "label": "_initializing",
+      "offset": 1,
+      "slot": "0",
+      "type": "t_bool"
+    },
+    {
+      "astId": 1870,
+      "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+      "label": "__gap",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_array(t_uint256)50_storage"
+    },
+    {
+      "astId": 473,
+      "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+      "label": "_owner",
+      "offset": 0,
+      "slot": "51",
+      "type": "t_address"
+    },
+    {
+      "astId": 593,
+      "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+      "label": "__gap",
+      "offset": 0,
+      "slot": "52",
+      "type": "t_array(t_uint256)49_storage"
+    },
+    {
+      "astId": 766,
+      "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+      "label": "_paused",
+      "offset": 0,
+      "slot": "101",
+      "type": "t_bool"
+    },
+    {
+      "astId": 871,
+      "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+      "label": "__gap",
+      "offset": 0,
+      "slot": "102",
+      "type": "t_array(t_uint256)49_storage"
+    },
+    {
+      "astId": 5952,
+      "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+      "label": "_gaps",
+      "offset": 0,
+      "slot": "151",
+      "type": "t_array(t_uint256)100_storage"
+    },
+    {
+      "astId": 5954,
+      "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+      "label": "keeper",
+      "offset": 0,
+      "slot": "251",
+      "type": "t_address"
+    },
+    {
+      "astId": 5957,
+      "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+      "label": "dnGmxJuniorVault",
+      "offset": 0,
+      "slot": "252",
+      "type": "t_contract(IDnGmxJuniorVault)3830"
+    },
+    {
+      "astId": 5959,
+      "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+      "label": "slippageThresholdGmx",
+      "offset": 0,
+      "slot": "253",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 5961,
+      "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+      "label": "dnGmxJuniorVaultGlpBalance",
+      "offset": 0,
+      "slot": "254",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 5964,
+      "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+      "label": "sGlp",
+      "offset": 0,
+      "slot": "255",
+      "type": "t_contract(IERC20)1952"
+    },
+    {
+      "astId": 5967,
+      "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+      "label": "usdc",
+      "offset": 0,
+      "slot": "256",
+      "type": "t_contract(IERC20)1952"
+    },
+    {
+      "astId": 5970,
+      "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+      "label": "glpManager",
+      "offset": 0,
+      "slot": "257",
+      "type": "t_contract(IGlpManager)4436"
+    },
+    {
+      "astId": 5973,
+      "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+      "label": "gmxUnderlyingVault",
+      "offset": 0,
+      "slot": "258",
+      "type": "t_contract(IVault)5300"
+    },
+    {
+      "astId": 5976,
+      "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+      "label": "rewardRouter",
+      "offset": 0,
+      "slot": "259",
+      "type": "t_contract(IRewardRouterV2)4638"
+    },
+    {
+      "astId": 5979,
+      "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+      "label": "vaultBatchingState",
+      "offset": 0,
+      "slot": "260",
+      "type": "t_struct(VaultBatchingState)5945_storage"
+    },
+    {
+      "astId": 5983,
+      "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+      "label": "_gaps2",
+      "offset": 0,
+      "slot": "265",
+      "type": "t_array(t_uint256)100_storage"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_array(t_uint256)100_storage": {
+      "base": "t_uint256",
+      "encoding": "inplace",
+      "label": "uint256[100]",
+      "numberOfBytes": "3200"
+    },
+    "t_array(t_uint256)49_storage": {
+      "base": "t_uint256",
+      "encoding": "inplace",
+      "label": "uint256[49]",
+      "numberOfBytes": "1568"
+    },
+    "t_array(t_uint256)50_storage": {
+      "base": "t_uint256",
+      "encoding": "inplace",
+      "label": "uint256[50]",
+      "numberOfBytes": "1600"
+    },
+    "t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    },
+    "t_contract(IDnGmxJuniorVault)3830": {
+      "encoding": "inplace",
+      "label": "contract IDnGmxJuniorVault",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IERC20)1952": {
+      "encoding": "inplace",
+      "label": "contract IERC20",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IGlpManager)4436": {
+      "encoding": "inplace",
+      "label": "contract IGlpManager",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IRewardRouterV2)4638": {
+      "encoding": "inplace",
+      "label": "contract IRewardRouterV2",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IVault)5300": {
+      "encoding": "inplace",
+      "label": "contract IVault",
+      "numberOfBytes": "20"
+    },
+    "t_mapping(t_address,t_struct(UserDeposit)3635_storage)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => struct IDnGmxBatchingManager.UserDeposit)",
+      "numberOfBytes": "32",
+      "value": "t_struct(UserDeposit)3635_storage"
+    },
+    "t_mapping(t_uint256,t_struct(RoundDeposit)3640_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct IDnGmxBatchingManager.RoundDeposit)",
+      "numberOfBytes": "32",
+      "value": "t_struct(RoundDeposit)3640_storage"
+    },
+    "t_struct(RoundDeposit)3640_storage": {
+      "encoding": "inplace",
+      "label": "struct IDnGmxBatchingManager.RoundDeposit",
+      "members": [
+        {
+          "astId": 3637,
+          "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+          "label": "totalUsdc",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint128"
+        },
+        {
+          "astId": 3639,
+          "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+          "label": "totalShares",
+          "offset": 16,
+          "slot": "0",
+          "type": "t_uint128"
+        }
+      ],
+      "numberOfBytes": "32"
+    },
+    "t_struct(UserDeposit)3635_storage": {
+      "encoding": "inplace",
+      "label": "struct IDnGmxBatchingManager.UserDeposit",
+      "members": [
+        {
+          "astId": 3630,
+          "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+          "label": "round",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 3632,
+          "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+          "label": "usdcBalance",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint128"
+        },
+        {
+          "astId": 3634,
+          "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+          "label": "unclaimedShares",
+          "offset": 16,
+          "slot": "1",
+          "type": "t_uint128"
+        }
+      ],
+      "numberOfBytes": "64"
+    },
+    "t_struct(VaultBatchingState)5945_storage": {
+      "encoding": "inplace",
+      "label": "struct DnGmxBatchingManager.VaultBatchingState",
+      "members": [
+        {
+          "astId": 5930,
+          "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+          "label": "currentRound",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 5932,
+          "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+          "label": "roundGlpStaked",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 5934,
+          "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+          "label": "roundUsdcBalance",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 5939,
+          "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+          "label": "userDeposits",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_mapping(t_address,t_struct(UserDeposit)3635_storage)"
+        },
+        {
+          "astId": 5944,
+          "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
+          "label": "roundDeposits",
+          "offset": 0,
+          "slot": "4",
+          "type": "t_mapping(t_uint256,t_struct(RoundDeposit)3640_storage)"
+        }
+      ],
+      "numberOfBytes": "160"
+    },
+    "t_uint128": {
+      "encoding": "inplace",
+      "label": "uint128",
+      "numberOfBytes": "16"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    },
+    "t_uint8": {
+      "encoding": "inplace",
+      "label": "uint8",
+      "numberOfBytes": "1"
+    }
+  }
+}

@@ -1,0 +1,603 @@
+{
+  "storage": [
+    {
+      "astId": 4084,
+      "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+      "label": "_initialized",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_uint8"
+    },
+    {
+      "astId": 4087,
+      "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+      "label": "_initializing",
+      "offset": 1,
+      "slot": "0",
+      "type": "t_bool"
+    },
+    {
+      "astId": 5353,
+      "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+      "label": "__gap",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_array(t_uint256)50_storage"
+    },
+    {
+      "astId": 4374,
+      "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+      "label": "_balances",
+      "offset": 0,
+      "slot": "51",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 4380,
+      "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+      "label": "_allowances",
+      "offset": 0,
+      "slot": "52",
+      "type": "t_mapping(t_address,t_mapping(t_address,t_uint256))"
+    },
+    {
+      "astId": 4382,
+      "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+      "label": "_totalSupply",
+      "offset": 0,
+      "slot": "53",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 4384,
+      "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+      "label": "_name",
+      "offset": 0,
+      "slot": "54",
+      "type": "t_string_storage"
+    },
+    {
+      "astId": 4386,
+      "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+      "label": "_symbol",
+      "offset": 0,
+      "slot": "55",
+      "type": "t_string_storage"
+    },
+    {
+      "astId": 4965,
+      "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+      "label": "__gap",
+      "offset": 0,
+      "slot": "56",
+      "type": "t_array(t_uint256)45_storage"
+    },
+    {
+      "astId": 6508,
+      "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+      "label": "asset",
+      "offset": 0,
+      "slot": "101",
+      "type": "t_address"
+    },
+    {
+      "astId": 3956,
+      "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+      "label": "_owner",
+      "offset": 0,
+      "slot": "102",
+      "type": "t_address"
+    },
+    {
+      "astId": 4076,
+      "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+      "label": "__gap",
+      "offset": 0,
+      "slot": "103",
+      "type": "t_array(t_uint256)49_storage"
+    },
+    {
+      "astId": 4249,
+      "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+      "label": "_paused",
+      "offset": 0,
+      "slot": "152",
+      "type": "t_bool"
+    },
+    {
+      "astId": 4354,
+      "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+      "label": "__gap",
+      "offset": 0,
+      "slot": "153",
+      "type": "t_array(t_uint256)49_storage"
+    },
+    {
+      "astId": 12491,
+      "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+      "label": "state",
+      "offset": 0,
+      "slot": "202",
+      "type": "t_struct(State)9130_storage"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_array(t_uint256)45_storage": {
+      "base": "t_uint256",
+      "encoding": "inplace",
+      "label": "uint256[45]",
+      "numberOfBytes": "1440"
+    },
+    "t_array(t_uint256)49_storage": {
+      "base": "t_uint256",
+      "encoding": "inplace",
+      "label": "uint256[49]",
+      "numberOfBytes": "1568"
+    },
+    "t_array(t_uint256)50_storage": {
+      "base": "t_uint256",
+      "encoding": "inplace",
+      "label": "uint256[50]",
+      "numberOfBytes": "1600"
+    },
+    "t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    },
+    "t_contract(IAToken)218": {
+      "encoding": "inplace",
+      "label": "contract IAToken",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IBalancerVault)7032": {
+      "encoding": "inplace",
+      "label": "contract IBalancerVault",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IDebtToken)7062": {
+      "encoding": "inplace",
+      "label": "contract IDebtToken",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IDnGmxBatchingManager)7208": {
+      "encoding": "inplace",
+      "label": "contract IDnGmxBatchingManager",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IDnGmxSeniorVault)7400": {
+      "encoding": "inplace",
+      "label": "contract IDnGmxSeniorVault",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IERC20)5435": {
+      "encoding": "inplace",
+      "label": "contract IERC20",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IERC20Metadata)5460": {
+      "encoding": "inplace",
+      "label": "contract IERC20Metadata",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IGlpManager)7868": {
+      "encoding": "inplace",
+      "label": "contract IGlpManager",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IPool)1121": {
+      "encoding": "inplace",
+      "label": "contract IPool",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IPoolAddressesProvider)1330": {
+      "encoding": "inplace",
+      "label": "contract IPoolAddressesProvider",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IPriceOracle)1350": {
+      "encoding": "inplace",
+      "label": "contract IPriceOracle",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IRewardRouterV2)8070": {
+      "encoding": "inplace",
+      "label": "contract IRewardRouterV2",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IRewardTracker)8170": {
+      "encoding": "inplace",
+      "label": "contract IRewardTracker",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IRewardsController)3657": {
+      "encoding": "inplace",
+      "label": "contract IRewardsController",
+      "numberOfBytes": "20"
+    },
+    "t_contract(ISwapRouter)6482": {
+      "encoding": "inplace",
+      "label": "contract ISwapRouter",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IVault)8732": {
+      "encoding": "inplace",
+      "label": "contract IVault",
+      "numberOfBytes": "20"
+    },
+    "t_int256": {
+      "encoding": "inplace",
+      "label": "int256",
+      "numberOfBytes": "32"
+    },
+    "t_mapping(t_address,t_mapping(t_address,t_uint256))": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => mapping(address => uint256))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_address,t_uint256)"
+    },
+    "t_mapping(t_address,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_string_storage": {
+      "encoding": "bytes",
+      "label": "string",
+      "numberOfBytes": "32"
+    },
+    "t_struct(State)9130_storage": {
+      "encoding": "inplace",
+      "label": "struct DnGmxJuniorVaultManager.State",
+      "members": [
+        {
+          "astId": 9029,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "feeBps",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 9031,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "withdrawFeeBps",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 9033,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "keeper",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_address"
+        },
+        {
+          "astId": 9035,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "feeRecipient",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_address"
+        },
+        {
+          "astId": 9037,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "dnUsdcDeposited",
+          "offset": 0,
+          "slot": "4",
+          "type": "t_int256"
+        },
+        {
+          "astId": 9039,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "unhedgedGlpInUsdc",
+          "offset": 0,
+          "slot": "5",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 9041,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "targetHealthFactor",
+          "offset": 0,
+          "slot": "6",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 9043,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "protocolFee",
+          "offset": 0,
+          "slot": "7",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 9045,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "protocolEsGmx",
+          "offset": 0,
+          "slot": "8",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 9047,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "seniorVaultWethRewards",
+          "offset": 0,
+          "slot": "9",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 9049,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "hasFlashloaned",
+          "offset": 0,
+          "slot": "10",
+          "type": "t_bool"
+        },
+        {
+          "astId": 9051,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "lastRebalanceTS",
+          "offset": 0,
+          "slot": "11",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 9053,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "depositCap",
+          "offset": 0,
+          "slot": "12",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 9055,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "hfThreshold",
+          "offset": 0,
+          "slot": "13",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 9057,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "slippageThresholdGmx",
+          "offset": 0,
+          "slot": "14",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 9059,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "slippageThresholdSwap",
+          "offset": 0,
+          "slot": "15",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 9061,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "rebalanceTimeThreshold",
+          "offset": 0,
+          "slot": "16",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 9063,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "rebalanceDeltaThreshold",
+          "offset": 0,
+          "slot": "17",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 9065,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "wethConversionThreshold",
+          "offset": 0,
+          "slot": "18",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 9067,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "usdcConversionThreshold",
+          "offset": 0,
+          "slot": "19",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 9069,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "hedgeUsdcAmountThreshold",
+          "offset": 0,
+          "slot": "20",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 9072,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "fsGlp",
+          "offset": 0,
+          "slot": "21",
+          "type": "t_contract(IERC20)5435"
+        },
+        {
+          "astId": 9075,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "glp",
+          "offset": 0,
+          "slot": "22",
+          "type": "t_contract(IERC20Metadata)5460"
+        },
+        {
+          "astId": 9078,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "usdc",
+          "offset": 0,
+          "slot": "23",
+          "type": "t_contract(IERC20Metadata)5460"
+        },
+        {
+          "astId": 9081,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "weth",
+          "offset": 0,
+          "slot": "24",
+          "type": "t_contract(IERC20Metadata)5460"
+        },
+        {
+          "astId": 9084,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "wbtc",
+          "offset": 0,
+          "slot": "25",
+          "type": "t_contract(IERC20Metadata)5460"
+        },
+        {
+          "astId": 9087,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "pool",
+          "offset": 0,
+          "slot": "26",
+          "type": "t_contract(IPool)1121"
+        },
+        {
+          "astId": 9090,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "aUsdc",
+          "offset": 0,
+          "slot": "27",
+          "type": "t_contract(IAToken)218"
+        },
+        {
+          "astId": 9093,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "vWbtc",
+          "offset": 0,
+          "slot": "28",
+          "type": "t_contract(IDebtToken)7062"
+        },
+        {
+          "astId": 9096,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "vWeth",
+          "offset": 0,
+          "slot": "29",
+          "type": "t_contract(IDebtToken)7062"
+        },
+        {
+          "astId": 9099,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "oracle",
+          "offset": 0,
+          "slot": "30",
+          "type": "t_contract(IPriceOracle)1350"
+        },
+        {
+          "astId": 9102,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "aaveRewardsController",
+          "offset": 0,
+          "slot": "31",
+          "type": "t_contract(IRewardsController)3657"
+        },
+        {
+          "astId": 9105,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "poolAddressProvider",
+          "offset": 0,
+          "slot": "32",
+          "type": "t_contract(IPoolAddressesProvider)1330"
+        },
+        {
+          "astId": 9108,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "gmxVault",
+          "offset": 0,
+          "slot": "33",
+          "type": "t_contract(IVault)8732"
+        },
+        {
+          "astId": 9111,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "sGmx",
+          "offset": 0,
+          "slot": "34",
+          "type": "t_contract(IRewardTracker)8170"
+        },
+        {
+          "astId": 9114,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "glpManager",
+          "offset": 0,
+          "slot": "35",
+          "type": "t_contract(IGlpManager)7868"
+        },
+        {
+          "astId": 9117,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "rewardRouter",
+          "offset": 0,
+          "slot": "36",
+          "type": "t_contract(IRewardRouterV2)8070"
+        },
+        {
+          "astId": 9120,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "swapRouter",
+          "offset": 0,
+          "slot": "37",
+          "type": "t_contract(ISwapRouter)6482"
+        },
+        {
+          "astId": 9123,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "balancerVault",
+          "offset": 0,
+          "slot": "38",
+          "type": "t_contract(IBalancerVault)7032"
+        },
+        {
+          "astId": 9126,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "dnGmxSeniorVault",
+          "offset": 0,
+          "slot": "39",
+          "type": "t_contract(IDnGmxSeniorVault)7400"
+        },
+        {
+          "astId": 9129,
+          "contract": "contracts/mocks/DnGmxJuniorVaultMock.sol:DnGmxJuniorVaultMock",
+          "label": "batchingManager",
+          "offset": 0,
+          "slot": "40",
+          "type": "t_contract(IDnGmxBatchingManager)7208"
+        }
+      ],
+      "numberOfBytes": "1312"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    },
+    "t_uint8": {
+      "encoding": "inplace",
+      "label": "uint8",
+      "numberOfBytes": "1"
+    }
+  }
+}
