@@ -10,4 +10,10 @@ interface IDnGmxSeniorVault is IERC4626 {
     function repay(uint256 amount) external;
 
     function getEthRewardsSplitRate() external returns (uint256);
+
+    function getPriceX128() external view returns (uint256);
+
+    function getVaultMarketValue() external view returns (uint256);
+
+    function depositCap() external view returns(uint256);
 }

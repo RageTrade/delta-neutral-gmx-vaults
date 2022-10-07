@@ -448,11 +448,18 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         return fsGlp.balanceOf(address(this)) + batchingManager.dnGmxJuniorVaultGlpBalance();
     }
 
-    function getPrice() public view returns (uint256) {
+    function getPrice() internal view returns (uint256) {
         uint256 aum = glpManager.getAum(false);
         uint256 totalSupply = glp.totalSupply();
 
         return aum.mulDiv(PRICE_PRECISION, totalSupply * 1e24);
+    }
+
+    function getPriceX128() public view returns (uint256) {
+        uint256 aum = glpManager.getAum(false);
+        uint256 totalSupply = glp.totalSupply();
+
+        return aum.mulDiv(1 << 128, totalSupply * 1e24);
     }
 
     function getMarketValue(uint256 assetAmount) public view returns (uint256 marketValue) {
