@@ -7,8 +7,8 @@ import { increaseBlockTimestamp } from './utils/shared';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 
-describe.skip('Rebalance Scenarios', () => {
-  it('Rebalance (External)', async () => {
+describe('Rebalance Scenarios', () => {
+  it.skip('Rebalance (External)', async () => {
     const opts = await dnGmxJuniorVaultFixture();
     const logger = new Logger(opts);
     const changer = new Changer(opts);
@@ -21,7 +21,7 @@ describe.skip('Rebalance Scenarios', () => {
       slippageThreshold: 100,
       hfThreshold: 0,
       hedgeUsdcAmountThreshold: 0,
-      usdcRedeemSlippage: 10_000,
+      usdcRedeemSlippage: 100,
       usdcConversionThreshold: parseUnits('20', 6),
       wethConversionThreshold: 10n ** 15n,
     });
@@ -98,7 +98,10 @@ describe.skip('Rebalance Scenarios', () => {
     const changer = new Changer(opts);
     const checker = new Checker(opts);
 
-    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC, gmxVault, lendingPool } = opts;
+    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, mocks, aUSDC, gmxVault, lendingPool } = opts;
+    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address, mocks.stableSwapMock.address);
+    await dnGmxJuniorVault.grantAllowances();
+
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     // becauses price are not changed on uniswap
@@ -106,7 +109,7 @@ describe.skip('Rebalance Scenarios', () => {
       slippageThreshold: 100,
       hfThreshold: 0,
       hedgeUsdcAmountThreshold: 0,
-      usdcRedeemSlippage: 10_000,
+      usdcRedeemSlippage: 1000,
       usdcConversionThreshold: parseUnits('20', 6),
       wethConversionThreshold: 10n ** 15n,
     });
@@ -127,9 +130,9 @@ describe.skip('Rebalance Scenarios', () => {
     // Deposit
     console.log('Initial Deposit');
     const amount = parseEther('100');
-    await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
+    tx = await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
 
-    await logger.logAavePosition();
+    await logger.logAavePosition(tx);
     await logger.logBorrowParams();
 
     // await increaseBlockTimestamp(15 * 60);
@@ -137,6 +140,7 @@ describe.skip('Rebalance Scenarios', () => {
 
     await increaseBlockTimestamp(4 * 24 * 60 * 60);
     console.log('Time Increased');
+
     // ETH: $3012.65 BTC: $41382.59
     await changer.changePriceToken('WBTC', 41382.59);
     await changer.changePriceToken('WETH', 3012.65);
@@ -236,7 +240,7 @@ describe.skip('Rebalance Scenarios', () => {
       slippageThreshold: 100,
       hfThreshold: 0,
       hedgeUsdcAmountThreshold: 0,
-      usdcRedeemSlippage: 10_000,
+      usdcRedeemSlippage: 100,
       usdcConversionThreshold: parseUnits('20', 6),
       wethConversionThreshold: 10n ** 15n,
     });

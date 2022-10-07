@@ -1,6 +1,7 @@
 import hre, { ethers } from 'hardhat';
 import { increaseBlockTimestamp } from './shared';
 import { dnGmxJuniorVaultFixture } from '../fixtures/dn-gmx-junior-vault';
+import { parseUnits } from 'ethers/lib/utils';
 
 type Asset = 'WETH' | 'WBTC';
 
@@ -25,6 +26,8 @@ export class Changer {
       slot, // slot
       ethers.utils.hexZeroPad(ethers.utils.parseUnits(price.toString(), 8).toHexString(), 32), // new value
     ]);
+
+    if (asset == 'WBTC') await this.opts.mocks.stableSwapMock.setPrice(parseUnits(price.toString(), 6));
 
     await increaseBlockTimestamp(310);
 

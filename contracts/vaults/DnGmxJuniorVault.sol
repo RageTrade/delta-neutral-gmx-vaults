@@ -605,11 +605,19 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             currentEthBorrow
         );
 
+        // console.log('repayDebtBtc', repayDebtBtc);
+        // console.log('repayDebtEth', repayDebtEth);
+
         // console.log('btcTokenAmount', btcTokenAmount);
+        // console.log('btcUsdcAmount', btcUsdcAmount);
         // console.log('ethTokenAmount', ethTokenAmount);
+        // console.log('ethUsdcAmount', ethUsdcAmount);
 
         bool btcBeyondThreshold = btcUsdcAmount > hedgeUsdcAmountThreshold;
         bool ethBeyondThreshold = ethUsdcAmount > hedgeUsdcAmountThreshold;
+
+        // console.log('btcBeyondThreshold', btcBeyondThreshold);
+        // console.log('ethBeyondThreshold', ethBeyondThreshold);
 
         // If both eth and btc swap amounts are not beyond the threshold then no flashloan needs to be executed | case 1
         if (!btcBeyondThreshold && !ethBeyondThreshold) return;
@@ -706,6 +714,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
         // console.log('targetDnGmxSeniorVaultAmount', targetDnGmxSeniorVaultAmount);
         // console.log('currentDnGmxSeniorVaultAmount', currentDnGmxSeniorVaultAmount);
+        // console.log(optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
 
         if (targetDnGmxSeniorVaultAmount > currentDnGmxSeniorVaultAmount) {
             // Take from LB Vault
@@ -895,7 +904,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         if (!repayDebt) {
             // console.log('swapTokenToUSD');
             uint256 amountWithPremium = tokenAmount + premium;
-            // console.log('amountWithPremium', amountWithPremium, token);
+            // console.log('amountWithPremium borrow', amountWithPremium, token);
             uint256 usdcReceived = _swapToken(token, tokenAmount, usdcAmount);
             _executeSupply(address(usdc), usdcReceived);
             _executeBorrow(token, amountWithPremium);
@@ -1029,6 +1038,11 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
                 tokenAmount * (MAX_BPS + usdcRedeemSlippage),
                 MAX_BPS * PRICE_PRECISION
             );
+            // console.log('currentBorrow', currentBorrow);
+            // console.log('optimalBorrow', optimalBorrow);
+            // console.log('tokenAmount __', tokenAmount);
+            // console.log('usdcAmount __', usdcAmount);
+
             repayDebt = true;
             // In callback: Swap to ETH/BTC and deposit to AAVE
             // Send back some aUSDC to LB vault
