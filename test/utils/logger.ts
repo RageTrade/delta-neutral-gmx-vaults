@@ -166,8 +166,11 @@ export class Logger {
       if (log.topics[0] === this.opts.dnGmxJuniorVault.interface.getEventTopic('RewardsHarvested')) {
         const args = this.opts.dnGmxJuniorVault.interface.parseLog(log).args;
 
-        console.log('total eth harvested (rewards): ', args.totalEthAmount);
-        console.log('junior vault eth share (rewards): ', args.juniorVaultShare);
+        console.log('total eth harvested (including fees): ', args.wethHarvested);
+        console.log('junior vault eth share: ', args.juniorVaultWeth);
+        console.log('senior vault eth share: ', args.seniorVaultWeth);
+        console.log('glp received (junior vault): ', args.juniorVaultGlp);
+        console.log('usdc received (senior vault): ', args.seniorVaultAUsdc);
       }
     }
 

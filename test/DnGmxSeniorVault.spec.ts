@@ -4,6 +4,7 @@ import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 import { hexlify, parseUnits, randomBytes } from 'ethers/lib/utils';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
+  DnGmxBatchingManager,
   DnGmxJuniorVaultMock,
   DnGmxSeniorVault,
   ERC20Upgradeable,
