@@ -42,10 +42,67 @@ describe('Swaps', () => {
     expect(await wbtc.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
     expect(await weth.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
 
-    await dnGmxJuniorVault.swapUSDC(wbtc.address, parseUnits('1', 8), parseUnits('100000', 6));
-    await dnGmxJuniorVault.swapUSDC(weth.address, parseUnits('1', 18), parseUnits('100000', 6));
+    const swapToWBTC = await dnGmxJuniorVault.callStatic.swapUSDC(
+      wbtc.address,
+      parseUnits('1', 8),
+      parseUnits('100000', 6),
+    );
+    const swapToWETH = await dnGmxJuniorVault.callStatic.swapUSDC(
+      weth.address,
+      parseUnits('1', 18),
+      parseUnits('100000', 6),
+    );
 
-    expect(await wbtc.balanceOf(dnGmxJuniorVault.address)).to.eq(parseUnits('1', 8));
-    expect(await weth.balanceOf(dnGmxJuniorVault.address)).to.eq(parseUnits('1', 18));
+    await dnGmxJuniorVault.swapUSDC(
+      wbtc.address,
+      parseUnits('1', 8),
+      parseUnits('100000', 6),
+    );
+    await dnGmxJuniorVault.swapUSDC(
+      weth.address,
+      parseUnits('1', 18),
+      parseUnits('100000', 6),
+    );
+
+    expect(await wbtc.balanceOf(dnGmxJuniorVault.address)).to.eq(swapToWBTC.tokensReceived);
+    expect(await weth.balanceOf(dnGmxJuniorVault.address)).to.eq(swapToWETH.tokensReceived);
+  });
+
+  it.only('swaps with mock', async () => {
+    const { dnGmxJuniorVault, usdc, wbtc, weth, mocks } = await dnGmxJuniorVaultFixture();
+
+    await mocks.stableSwapMock.setPrice(parseUnits('19929', 6))
+    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address, mocks.stableSwapMock.address);
+    await dnGmxJuniorVault.grantAllowances();
+
+    await generateErc20Balance(usdc, parseUnits('200000', 6), dnGmxJuniorVault.address);
+
+    expect(await wbtc.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
+    expect(await weth.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
+
+    const swapToWBTC = await dnGmxJuniorVault.callStatic.swapUSDC(
+      wbtc.address,
+      parseUnits('1', 8),
+      parseUnits('100000', 6),
+    );
+    const swapToWETH = await dnGmxJuniorVault.callStatic.swapUSDC(
+      weth.address,
+      parseUnits('1', 18),
+      parseUnits('100000', 6),
+    );
+
+    await dnGmxJuniorVault.swapUSDC(
+      wbtc.address,
+      parseUnits('1', 8),
+      parseUnits('100000', 6),
+    );
+    await dnGmxJuniorVault.swapUSDC(
+      weth.address,
+      parseUnits('1', 18),
+      parseUnits('100000', 6),
+    );
+
+    expect(await wbtc.balanceOf(dnGmxJuniorVault.address)).to.eq(swapToWBTC.tokensReceived);
+    expect(await weth.balanceOf(dnGmxJuniorVault.address)).to.eq(swapToWETH.tokensReceived);
   });
 });
