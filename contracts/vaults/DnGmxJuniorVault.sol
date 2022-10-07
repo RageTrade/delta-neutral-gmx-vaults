@@ -61,7 +61,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     event FeeRecipientUpdated(address _newFeeRecipient);
     event WithdrawFeeUpdated(uint256 _withdrawFeeBps);
     event FeesWithdrawn(uint256 feeAmount);
-    event RewardsHarvested(uint256 totalEthAmount, uint256 juniorVaultShare);
+    event RewardsHarvested(uint256 wethHarvested, uint256 juniorVaultWeth, uint256 seniorVaultWeth, uint256 juniorVaultGlp, uint256 seniorVaultAUsdc);
     event DepositCapUpdated(uint256 _newDepositCap);
     event BatchingManagerUpdated(address _batchingManager);
 
@@ -290,7 +290,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
             usdgAmount = usdgAmount.mulDiv(10**USDG_DECIMALS, 10**WETH_DECIMALS);
 
-            batchingManager.depositToken(address(weth), dnGmxWethShare, usdgAmount);
+            uint256 glpReceived = batchingManager.depositToken(address(weth), dnGmxWethShare, usdgAmount);
 
             // console.log('_seniorVaultWethRewards', _seniorVaultWethRewards);
             if (_seniorVaultWethRewards > seniorVaultWethConversionThreshold) {
@@ -302,11 +302,14 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
                 uint256 aaveUsdcAmount = _swapToken(address(weth), _seniorVaultWethRewards, minUsdcAmount);
                 _executeSupply(address(usdc), aaveUsdcAmount);
                 seniorVaultWethRewards = 0;
+                emit RewardsHarvested(wethHarvested, dnGmxWethShare, dnGmxSeniorVaultWethShare, glpReceived, aaveUsdcAmount);
             } else {
                 seniorVaultWethRewards = _seniorVaultWethRewards;
+                emit RewardsHarvested(wethHarvested, dnGmxWethShare, dnGmxSeniorVaultWethShare, glpReceived, 0);
             }
 
-            emit RewardsHarvested(wethToCompound, dnGmxWethShare);
+        } else {
+            emit RewardsHarvested(wethHarvested, 0, 0, 0, 0);
         }
     }
 
