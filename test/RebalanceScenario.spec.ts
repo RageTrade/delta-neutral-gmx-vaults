@@ -23,7 +23,7 @@ describe.skip('Rebalance Scenarios', () => {
       hedgeUsdcAmountThreshold: 0,
       usdcRedeemSlippage: 10_000,
       usdcConversionThreshold: parseUnits('20', 6),
-      seniorVaultWethConversionThreshold: 10n ** 15n,
+      wethConversionThreshold: 10n ** 15n,
     });
 
     const amount = parseEther('77.59866282');
@@ -108,7 +108,7 @@ describe.skip('Rebalance Scenarios', () => {
       hedgeUsdcAmountThreshold: 0,
       usdcRedeemSlippage: 10_000,
       usdcConversionThreshold: parseUnits('20', 6),
-      seniorVaultWethConversionThreshold: 10n ** 15n,
+      wethConversionThreshold: 10n ** 15n,
     });
 
     // ETH: $2787.23 BTC: $38694.59
@@ -172,7 +172,7 @@ describe.skip('Rebalance Scenarios', () => {
       hedgeUsdcAmountThreshold: 0,
       usdcRedeemSlippage: 10_000,
       usdcConversionThreshold: parseUnits('20', 6),
-      seniorVaultWethConversionThreshold: 10n ** 15n,
+      wethConversionThreshold: 10n ** 15n,
     });
 
     // ETH: $2787.23 BTC: $38694.59
@@ -238,7 +238,7 @@ describe.skip('Rebalance Scenarios', () => {
       hedgeUsdcAmountThreshold: 0,
       usdcRedeemSlippage: 10_000,
       usdcConversionThreshold: parseUnits('20', 6),
-      seniorVaultWethConversionThreshold: 10n ** 15n,
+      wethConversionThreshold: 10n ** 15n,
     });
 
     // ETH: $2787.23 BTC: $38694.59
@@ -303,7 +303,7 @@ describe.skip('Rebalance Scenarios', () => {
       hfThreshold: 0,
       hedgeUsdcAmountThreshold: 0,
       usdcConversionThreshold: parseUnits('20', 6),
-      seniorVaultWethConversionThreshold: 10n ** 15n,
+      wethConversionThreshold: 10n ** 15n,
     });
 
     // ETH: $2787.23 BTC: $38694.59
@@ -367,7 +367,7 @@ describe.skip('Rebalance Scenarios', () => {
       hedgeUsdcAmountThreshold: 0,
       usdcRedeemSlippage: 10_000,
       usdcConversionThreshold: parseUnits('20', 6),
-      seniorVaultWethConversionThreshold: 10n ** 15n,
+      wethConversionThreshold: 10n ** 15n,
     });
 
     // ETH: $2787.23 BTC: $38694.59
@@ -473,7 +473,7 @@ describe.skip('Rebalance Scenarios', () => {
       hedgeUsdcAmountThreshold: 0,
       usdcRedeemSlippage: 10_000,
       usdcConversionThreshold: parseUnits('20', 6),
-      seniorVaultWethConversionThreshold: 10n ** 15n,
+      wethConversionThreshold: 10n ** 15n,
     });
 
     // ETH: $1859.84 BTC: $31373.1

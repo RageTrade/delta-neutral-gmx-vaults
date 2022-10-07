@@ -77,7 +77,7 @@ describe('Rebalance & its utils', () => {
       usdcRedeemSlippage: 100,
       hfThreshold: 0,
       usdcConversionThreshold: 0,
-      seniorVaultWethConversionThreshold: 10n ** 15n,
+      wethConversionThreshold: 10n ** 15n,
       hedgeUsdcAmountThreshold: parseUnits('10', 6),
     });
 
@@ -144,7 +144,7 @@ describe('Rebalance & its utils', () => {
       usdcRedeemSlippage: 10_000,
       hfThreshold: 0,
       usdcConversionThreshold: parseUnits('20', 6),
-      seniorVaultWethConversionThreshold: 10n ** 15n,
+      wethConversionThreshold: 10n ** 15n,
       hedgeUsdcAmountThreshold: parseUnits('10', 6),
     });
 
@@ -204,7 +204,7 @@ describe('Rebalance & its utils', () => {
       usdcRedeemSlippage: 10_000,
       hfThreshold: 0,
       usdcConversionThreshold: parseUnits('20', 6),
-      seniorVaultWethConversionThreshold: 10n ** 15n,
+      wethConversionThreshold: 10n ** 15n,
       hedgeUsdcAmountThreshold: parseUnits('10', 6),
     });
 
@@ -216,20 +216,12 @@ describe('Rebalance & its utils', () => {
     let [currentBtc_, currentEth_] = await dnGmxJuniorVault.getCurrentBorrows();
     console.log('borrow value after deposit', await dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_));
 
-    await increaseBlockTimestamp(15 * 60);
-    await glpBatchingManager.executeBatchDeposit();
-    await increaseBlockTimestamp(15 * 60);
-
-    await increaseBlockTimestamp(24 * 60 * 60);
-
     // ETH: 2,000$ BTC: 25,000$
     await changer.changePriceToken('WBTC', 25000);
     await changer.changePriceToken('WETH', 2000);
 
-    // let [currentBtc, currentEth] = await dnGmxJuniorVault.getCurrentBorrows();
-    // let borrowValue = dnGmxJuniorVault.getBorrowValue(currentBtc, currentEth);
+    await increaseBlockTimestamp(24 * 60 * 60);
 
-    // await dnGmxJuniorVault.rebalanceProfit(borrowValue);
     await dnGmxJuniorVault.rebalance();
 
     console.log('PASSED');
@@ -238,19 +230,30 @@ describe('Rebalance & its utils', () => {
     await changer.changePriceToken('WBTC', 18000);
     await changer.changePriceToken('WETH', 1350);
 
-    // [currentBtc, currentEth] = await dnGmxJuniorVault.getCurrentBorrows();
-    // borrowValue = dnGmxJuniorVault.getBorrowValue(currentBtc, currentEth);
+    await increaseBlockTimestamp(24 * 60 * 60);
 
     await increaseBlockTimestamp(15 * 60);
     await glpBatchingManager.executeBatchDeposit();
     await increaseBlockTimestamp(15 * 60);
 
-    await increaseBlockTimestamp(24 * 60 * 60);
-
     await dnGmxJuniorVault.rebalance();
+
+    await increaseBlockTimestamp(15 * 60);
+    await glpBatchingManager.executeBatchDeposit();
+    await increaseBlockTimestamp(15 * 60);
 
     console.log('PASSED x2');
 
-    await dnGmxJuniorVault.connect(users[0]).withdraw(amount.div(2), users[0].address, users[0].address);
+    console.log('shares', await dnGmxJuniorVault.balanceOf(users[0].address));
+    console.log('totalAssets', await dnGmxJuniorVault.totalAssets());
+    console.log('totalSupply', await dnGmxJuniorVault.totalSupply());
+
+    await dnGmxJuniorVault
+      .connect(users[0])
+      .redeem(dnGmxJuniorVault.balanceOf(users[0].address), users[0].address, users[0].address);
+
+    console.log('shares', await dnGmxJuniorVault.balanceOf(users[0].address));
+    console.log('totalAssets', await dnGmxJuniorVault.totalAssets());
+    console.log('totalSupply', await dnGmxJuniorVault.totalSupply());
   });
 });

@@ -46,8 +46,7 @@ contract DnGmxJuniorVaultStorage {
     uint256 public withdrawFeeBps;
     uint256 public protocolFee;
     uint256 public seniorVaultWethRewards;
-    uint256 public seniorVaultWethConversionThreshold;
-    uint256 public wethThreshold;
+    uint256 public wethConversionThreshold;
     uint256 public slippageThreshold;
     uint256 hedgeUsdcAmountThreshold;
     uint256 hfThreshold;
@@ -112,7 +111,7 @@ contract DnGmxJuniorVaultStorage {
         uint16 usdcRedeemSlippage;
         uint240 usdcConversionThreshold;
         uint256 hfThreshold;
-        uint256 seniorVaultWethConversionThreshold;
+        uint256 wethConversionThreshold;
         uint256 hedgeUsdcAmountThreshold;
     }
 

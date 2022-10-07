@@ -84,7 +84,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     usdcRedeemSlippage: 100,
     hfThreshold: 12_000,
     usdcConversionThreshold: parseUnits('20', 6),
-    seniorVaultWethConversionThreshold: 10n ** 15n,
+    wethConversionThreshold: 10n ** 15n,
     hedgeUsdcAmountThreshold: parseUnits('10', 6),
   });
 
