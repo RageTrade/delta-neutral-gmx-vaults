@@ -11,6 +11,7 @@ import {
   IGlpManager__factory,
   IPoolAddressesProvider__factory,
 } from '../../typechain-types';
+import { BigNumber } from 'ethers';
 
 export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   const [admin, ...users] = await hre.ethers.getSigners();
@@ -152,6 +153,19 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
 
   const dnGmxJuniorVaultSigner = await hre.ethers.getSigner(dnGmxJuniorVault.address);
 
+  const stableSwapMockFactory = await hre.ethers.getContractFactory('StableSwapMock');
+  const stableSwapMock = await stableSwapMockFactory.deploy();
+
+  await generateErc20Balance(usdt, BigNumber.from(10).pow(6 + 10), stableSwapMock.address);
+  await generateErc20Balance(wbtc, BigNumber.from(10).pow(8 + 10), stableSwapMock.address);
+
+  const swapRouterMockFactory = await hre.ethers.getContractFactory('SwapRouterMock');
+  const swapRouterMock = await swapRouterMockFactory.deploy();
+
+  await generateErc20Balance(usdt, BigNumber.from(10).pow(6 + 10), swapRouterMock.address);
+  await generateErc20Balance(usdc, BigNumber.from(10).pow(6 + 10), swapRouterMock.address);
+  await generateErc20Balance(weth, BigNumber.from(10).pow(18 + 10), swapRouterMock.address);
+
   return {
     glp,
     gov,
@@ -172,6 +186,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     dnGmxSeniorVault,
     dnGmxJuniorVault,
     dnGmxJuniorVaultSigner,
+    mocks: { swapRouterMock, stableSwapMock },
     glpBatchingManager: glpBatchingStakingManagerFixtures.gmxBatchingManager,
   };
 });
