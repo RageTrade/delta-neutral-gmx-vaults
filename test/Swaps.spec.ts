@@ -60,7 +60,7 @@ describe('Swaps', () => {
     expect(await weth.balanceOf(dnGmxJuniorVault.address)).to.eq(swapToWETH.tokensReceived);
   });
 
-  it.only('swaps with mock', async () => {
+  it('swaps with mock', async () => {
     const { dnGmxJuniorVault, usdc, wbtc, weth, mocks } = await dnGmxJuniorVaultFixture();
 
     await mocks.stableSwapMock.setPrice(parseUnits('19929', 6));
