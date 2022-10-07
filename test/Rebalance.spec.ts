@@ -19,7 +19,7 @@ describe('Rebalance & its utils', () => {
 
   it('getPrice of glp', async () => {
     const { dnGmxJuniorVault } = await dnGmxJuniorVaultFixture();
-    console.log(await dnGmxJuniorVault['getPrice()']());
+    console.log(await dnGmxJuniorVault.getPriceX128());
   });
 
   it('Rebalance Borrow', async () => {
