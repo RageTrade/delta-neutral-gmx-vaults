@@ -31,7 +31,7 @@ contract StableSwapMock {
         bool use_eth
     ) external {
         if (use_eth) revert SwapNotAllowed();
-        if (!((i == 0 && j == 1) || (i == 1 && j == 2))) revert SwapNotAllowed();
+        if (!((i == 0 && j == 1) || (i == 1 && j == 0))) revert SwapNotAllowed();
 
         coins[i].transferFrom(msg.sender, address(this), dx);
 

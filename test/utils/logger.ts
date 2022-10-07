@@ -25,15 +25,17 @@ export class Logger {
     console.log(Logger.seperator);
   };
 
-  logBorrowParams = async () => {
+  logBorrowParams = async (tx?: ContractTransaction) => {
     const { dnGmxJuniorVault } = this.opts;
 
     const currentBorrowed = await dnGmxJuniorVault.getCurrentBorrows();
 
     const [usdcBorrowed, optimalBorrows, borrowValue] = await Promise.all([
-      dnGmxJuniorVault.getUsdcBorrowed(),
-      dnGmxJuniorVault.getOptimalBorrows(dnGmxJuniorVault.totalAssets()),
-      dnGmxJuniorVault.getBorrowValue(currentBorrowed[0], currentBorrowed[1]),
+      dnGmxJuniorVault.getUsdcBorrowed({ blockTag: tx?.blockNumber }),
+      dnGmxJuniorVault.getOptimalBorrows(dnGmxJuniorVault.totalAssets({ blockTag: tx?.blockNumber }), {
+        blockTag: tx?.blockNumber,
+      }),
+      dnGmxJuniorVault.getBorrowValue(currentBorrowed[0], currentBorrowed[1], { blockTag: tx?.blockNumber }),
     ]);
 
     console.log('current borrows', currentBorrowed.toString());
@@ -44,41 +46,41 @@ export class Logger {
     console.log(Logger.seperator);
   };
 
-  logAavePosition = async () => {
+  logAavePosition = async (tx?: ContractTransaction) => {
     const { aUSDC, vdWBTC, vdWETH, dnGmxJuniorVault, dnGmxSeniorVault } = this.opts;
 
     console.log('senior vault:');
     console.log(
       'aUSDC (bal, scaled bal): ',
-      await aUSDC.balanceOf(dnGmxSeniorVault.address),
-      await aUSDC.scaledBalanceOf(dnGmxSeniorVault.address),
+      await aUSDC.balanceOf(dnGmxSeniorVault.address, { blockTag: tx?.blockNumber }),
+      await aUSDC.scaledBalanceOf(dnGmxSeniorVault.address, { blockTag: tx?.blockNumber }),
     );
     console.log(
       'variable debt wBTC (bal, scaled bal): ',
-      await vdWBTC.balanceOf(dnGmxSeniorVault.address),
-      await vdWBTC.scaledBalanceOf(dnGmxSeniorVault.address),
+      await vdWBTC.balanceOf(dnGmxSeniorVault.address, { blockTag: tx?.blockNumber }),
+      await vdWBTC.scaledBalanceOf(dnGmxSeniorVault.address, { blockTag: tx?.blockNumber }),
     );
     console.log(
       'variable debt wETH (bal, scaled bal): ',
-      await vdWETH.balanceOf(dnGmxSeniorVault.address),
-      await vdWETH.scaledBalanceOf(dnGmxSeniorVault.address),
+      await vdWETH.balanceOf(dnGmxSeniorVault.address, { blockTag: tx?.blockNumber }),
+      await vdWETH.scaledBalanceOf(dnGmxSeniorVault.address, { blockTag: tx?.blockNumber }),
     );
 
     console.log('junior vault:');
     console.log(
       'aUSDC (bal, scaled bal): ',
-      await aUSDC.balanceOf(dnGmxJuniorVault.address),
-      await aUSDC.scaledBalanceOf(dnGmxJuniorVault.address),
+      await aUSDC.balanceOf(dnGmxJuniorVault.address, { blockTag: tx?.blockNumber }),
+      await aUSDC.scaledBalanceOf(dnGmxJuniorVault.address, { blockTag: tx?.blockNumber }),
     );
     console.log(
       'variable debt wBTC (bal, scaled bal): ',
-      await vdWBTC.balanceOf(dnGmxJuniorVault.address),
-      await vdWBTC.scaledBalanceOf(dnGmxJuniorVault.address),
+      await vdWBTC.balanceOf(dnGmxJuniorVault.address, { blockTag: tx?.blockNumber }),
+      await vdWBTC.scaledBalanceOf(dnGmxJuniorVault.address, { blockTag: tx?.blockNumber }),
     );
     console.log(
       'variable debt wETH (bal, scaled bal): ',
-      await vdWETH.balanceOf(dnGmxJuniorVault.address),
-      await vdWETH.scaledBalanceOf(dnGmxJuniorVault.address),
+      await vdWETH.balanceOf(dnGmxJuniorVault.address, { blockTag: tx?.blockNumber }),
+      await vdWETH.scaledBalanceOf(dnGmxJuniorVault.address, { blockTag: tx?.blockNumber }),
     );
 
     console.log(Logger.seperator);
