@@ -53,16 +53,8 @@ describe('Swaps', () => {
       parseUnits('100000', 6),
     );
 
-    await dnGmxJuniorVault.swapUSDC(
-      wbtc.address,
-      parseUnits('1', 8),
-      parseUnits('100000', 6),
-    );
-    await dnGmxJuniorVault.swapUSDC(
-      weth.address,
-      parseUnits('1', 18),
-      parseUnits('100000', 6),
-    );
+    await dnGmxJuniorVault.swapUSDC(wbtc.address, parseUnits('1', 8), parseUnits('100000', 6));
+    await dnGmxJuniorVault.swapUSDC(weth.address, parseUnits('1', 18), parseUnits('100000', 6));
 
     expect(await wbtc.balanceOf(dnGmxJuniorVault.address)).to.eq(swapToWBTC.tokensReceived);
     expect(await weth.balanceOf(dnGmxJuniorVault.address)).to.eq(swapToWETH.tokensReceived);
@@ -71,7 +63,7 @@ describe('Swaps', () => {
   it.only('swaps with mock', async () => {
     const { dnGmxJuniorVault, usdc, wbtc, weth, mocks } = await dnGmxJuniorVaultFixture();
 
-    await mocks.stableSwapMock.setPrice(parseUnits('19929', 6))
+    await mocks.stableSwapMock.setPrice(parseUnits('19929', 6));
     await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address, mocks.stableSwapMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
@@ -91,16 +83,8 @@ describe('Swaps', () => {
       parseUnits('100000', 6),
     );
 
-    await dnGmxJuniorVault.swapUSDC(
-      wbtc.address,
-      parseUnits('1', 8),
-      parseUnits('100000', 6),
-    );
-    await dnGmxJuniorVault.swapUSDC(
-      weth.address,
-      parseUnits('1', 18),
-      parseUnits('100000', 6),
-    );
+    await dnGmxJuniorVault.swapUSDC(wbtc.address, parseUnits('1', 8), parseUnits('100000', 6));
+    await dnGmxJuniorVault.swapUSDC(weth.address, parseUnits('1', 18), parseUnits('100000', 6));
 
     expect(await wbtc.balanceOf(dnGmxJuniorVault.address)).to.eq(swapToWBTC.tokensReceived);
     expect(await weth.balanceOf(dnGmxJuniorVault.address)).to.eq(swapToWETH.tokensReceived);
