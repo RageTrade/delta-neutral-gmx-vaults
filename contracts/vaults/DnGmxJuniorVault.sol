@@ -74,7 +74,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     event YieldParamsUpdated(
         uint16 usdcRedeemSlippage,
         uint240 usdcConversionThreshold,
-        uint256 seniorVaultWethConversionThreshold,
+        uint256 wethConversionThreshold,
         uint256 hedgeUsdcAmountThreshold,
         uint256 hfThreshold
     );
@@ -204,13 +204,13 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         slippageThreshold = _ysParams.slippageThreshold;
         usdcRedeemSlippage = _ysParams.usdcRedeemSlippage;
         usdcConversionThreshold = _ysParams.usdcConversionThreshold;
-        seniorVaultWethConversionThreshold = _ysParams.seniorVaultWethConversionThreshold;
+        wethConversionThreshold = _ysParams.wethConversionThreshold;
         hedgeUsdcAmountThreshold = _ysParams.hedgeUsdcAmountThreshold;
         hfThreshold = _ysParams.hfThreshold;
         emit YieldParamsUpdated(
             _ysParams.usdcRedeemSlippage,
             _ysParams.usdcConversionThreshold,
-            _ysParams.seniorVaultWethConversionThreshold,
+            _ysParams.wethConversionThreshold,
             _ysParams.hedgeUsdcAmountThreshold,
             _ysParams.hfThreshold
         );
@@ -266,7 +266,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         );
 
         uint256 wethHarvested = weth.balanceOf(address(this)) - protocolFee - seniorVaultWethRewards;
-        if (wethHarvested > wethThreshold) {
+        if (wethHarvested > wethConversionThreshold) {
             uint256 protocolFeeHarvested = (wethHarvested * FEE) / MAX_BPS;
             protocolFee += protocolFeeHarvested;
 
@@ -299,7 +299,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             uint256 glpReceived = batchingManager.depositToken(address(weth), dnGmxWethShare, usdgAmount);
 
             // console.log('_seniorVaultWethRewards', _seniorVaultWethRewards);
-            if (_seniorVaultWethRewards > seniorVaultWethConversionThreshold) {
+            if (_seniorVaultWethRewards > wethConversionThreshold) {
                 // Deposit aave vault share to AAVE in usdc
                 uint256 minUsdcAmount = _getPrice(weth, true).mulDiv(
                     _seniorVaultWethRewards * (MAX_BPS - usdcRedeemSlippage),
@@ -422,6 +422,11 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         _burn(owner, shares);
 
         emit Withdraw(msg.sender, receiver, owner, assetsAfterFees, shares);
+
+        // console.log('assets bal', fsGlp.balanceOf(address(this)));
+        // console.log('withdrawing', assets);
+        // console.log('assetsAfterFees', assetsAfterFees);
+        // console.log('batchingManager.dnGmxJuniorVaultGlpBalance()', batchingManager.dnGmxJuniorVaultGlpBalance());
 
         asset.safeTransfer(receiver, assetsAfterFees);
     }
