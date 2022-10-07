@@ -15,5 +15,5 @@ interface IDnGmxSeniorVault is IERC4626 {
 
     function getVaultMarketValue() external view returns (uint256);
 
-    function depositCap() external view returns(uint256);
+    function depositCap() external view returns (uint256);
 }
