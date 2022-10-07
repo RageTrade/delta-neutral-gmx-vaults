@@ -14,5 +14,7 @@ export const dnGmxSeniorVaultFixture = deployments.createFixture(async hre => {
 
   await dnGmxSeniorVault.grantAllowances();
 
+  await dnGmxSeniorVault.setDepositCap(parseUnits('1000000',6));
+
   return dnGmxSeniorVault;
 });
