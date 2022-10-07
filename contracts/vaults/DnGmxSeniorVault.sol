@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.9;
-
+import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
 import { IPool } from '@aave/core-v3/contracts/interfaces/IPool.sol';
 import { IAToken } from '@aave/core-v3/contracts/interfaces/IAToken.sol';
 import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol';
@@ -14,17 +14,22 @@ import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
 import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
 import { ILeveragePool } from '../interfaces/ILeveragePool.sol';
 import { IBorrower } from '../interfaces/IBorrower.sol';
+import { IPriceOracle } from '@aave/core-v3/contracts/interfaces/IPriceOracle.sol';
 
 contract DnGmxSeniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable {
     using FeeSplitStrategy for FeeSplitStrategy.Info;
+    using FullMath for uint256;
+
     error CallerNotBorrower();
     error UsageCapExceeded();
     error InvalidBorrowerAddress();
     error InvalidCapUpdate();
     error MaxUtilizationBreached();
+    error DepositCapExceeded();
 
     event AllowancesGranted();
-    event VaultCapUpdated(address vault, uint256 newCap);
+    event BorrowCapUpdated(address vault, uint256 newCap);
+    event DepositCapUpdated(uint256 _newDepositCap);
 
     uint16 internal constant MAX_BPS = 10_000;
 
@@ -34,8 +39,10 @@ contract DnGmxSeniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     FeeSplitStrategy.Info public feeStrategy;
     IDnGmxJuniorVault public dnGmxJuniorVault;
     ILeveragePool public leveragePool;
+    IPriceOracle internal oracle;
 
     uint16 public maxUtilizationBps;
+    uint256 public depositCap;
 
     mapping(address => uint256) public vaultCaps;
 
@@ -58,6 +65,7 @@ contract DnGmxSeniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
         pool = IPool(poolAddressProvider.getPool());
         aUsdc = IAToken(pool.getReserveData(_usdc).aTokenAddress);
+        oracle = IPriceOracle(poolAddressProvider.getPriceOracle());
 
         aUsdc.approve(address(pool), type(uint256).max);
         asset.approve(address(pool), type(uint256).max);
@@ -65,6 +73,11 @@ contract DnGmxSeniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
     function setDnGmxJuniorVault(address _dnGmxJuniorVault) external onlyOwner {
         dnGmxJuniorVault = IDnGmxJuniorVault(_dnGmxJuniorVault);
+    }
+
+    function setDepositCap(uint256 _newDepositCap) external onlyOwner {
+        depositCap = _newDepositCap;
+        emit DepositCapUpdated(_newDepositCap);
     }
 
     function setMaxUtilizationBps(uint16 _maxUtilizationBps) external onlyOwner {
@@ -89,7 +102,7 @@ contract DnGmxSeniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
             aUsdc.approve(borrowerAddress, cap);
 
-            emit VaultCapUpdated(borrowerAddress, cap);
+            emit BorrowCapUpdated(borrowerAddress, cap);
         } else {
             revert InvalidCapUpdate();
         }
@@ -166,6 +179,8 @@ contract DnGmxSeniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         address
     ) internal override {
         pool.supply(address(asset), assets, address(this), 0);
+
+        if (totalAssets() > depositCap) revert DepositCapExceeded();
     }
 
     function totalAssets() public view override returns (uint256 amount) {
@@ -177,5 +192,18 @@ contract DnGmxSeniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     function totalUsdcBorrowed() public view returns (uint256 usdcBorrowed) {
         if (address(dnGmxJuniorVault) != address(0)) usdcBorrowed += dnGmxJuniorVault.getUsdcBorrowed();
         if (address(leveragePool) != address(0)) usdcBorrowed += leveragePool.getUsdcBorrowed();
+    }
+
+    function getPriceX128() public view returns (uint256) {
+        uint256 price = oracle.getAssetPrice(address(asset));
+
+        // @dev aave returns from same source as chainlink (which is 8 decimals)
+        return price.mulDiv(1 << 128, 1e8);
+    }
+
+    function getVaultMarketValue() public view returns (uint256) {
+        uint256 price = oracle.getAssetPrice(address(asset));
+
+        return totalAssets().mulDiv(price, 1e8);
     }
 }
