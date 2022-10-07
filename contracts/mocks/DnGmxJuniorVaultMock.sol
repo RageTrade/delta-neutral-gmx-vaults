@@ -5,6 +5,9 @@ pragma solidity ^0.8.9;
 import { DnGmxJuniorVault } from '../vaults/DnGmxJuniorVault.sol';
 import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
+import { IStableSwap } from '../interfaces/curve/IStableSwap.sol';
+import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
+
 contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
     function dnUsdcDepositedExternal() external view returns (int256) {
         return dnUsdcDeposited;
@@ -170,6 +173,11 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
 
     function convertAUsdcToAsset(uint256 amount) external {
         return _convertAUsdcToAsset(amount);
+    }
+
+    function setMocks(ISwapRouter _swapRouter, IStableSwap _stableSwap) external {
+        swapRouter = _swapRouter;
+        tricryptoPool = _stableSwap;
     }
 
     function depositToken(
