@@ -5,6 +5,8 @@ pragma solidity ^0.8.0;
 import { IERC4626 } from './IERC4626.sol';
 
 interface IDnGmxSeniorVault is IERC4626 {
+    function availableBorrow(address borrower) external returns (uint256);
+
     function borrow(uint256 amount) external;
 
     function repay(uint256 amount) external;

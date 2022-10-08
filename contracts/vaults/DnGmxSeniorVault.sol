@@ -22,6 +22,7 @@ contract DnGmxSeniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
     error CallerNotBorrower();
     error UsageCapExceeded();
+    error InvalidBorrowAmount();
     error InvalidBorrowerAddress();
     error InvalidCapUpdate();
     error MaxUtilizationBreached();
@@ -44,7 +45,7 @@ contract DnGmxSeniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     uint16 public maxUtilizationBps;
     uint256 public depositCap;
 
-    mapping(address => uint256) public vaultCaps;
+    mapping(address => uint256) public borrowCaps;
 
     modifier onlyBorrower() {
         if (msg.sender != address(dnGmxJuniorVault) && msg.sender != address(leveragePool)) revert CallerNotBorrower();
@@ -98,7 +99,7 @@ contract DnGmxSeniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             revert InvalidBorrowerAddress();
 
         if (IBorrower(borrowerAddress).getUsdcBorrowed() < cap) {
-            vaultCaps[borrowerAddress] = cap;
+            borrowCaps[borrowerAddress] = cap;
 
             aUsdc.approve(borrowerAddress, cap);
 
@@ -116,14 +117,19 @@ contract DnGmxSeniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         feeSplitRate = feeStrategy.calculateFeeSplit(aUsdc.balanceOf(address(this)), totalUsdcBorrowed());
     }
 
+    function availableBorrow(address borrower) public view returns (uint256 availableAUsdc) {
+        uint256 availableBasisCap = borrowCaps[borrower] - IBorrower(borrower).getUsdcBorrowed();
+        uint256 availableBasisBalance = aUsdc.balanceOf(address(this));
+
+        availableAUsdc = availableBasisCap < availableBasisBalance ? availableBasisCap : availableBasisBalance;
+    }
+
     function borrow(uint256 amount) external onlyBorrower {
         dnGmxJuniorVault.harvestFees();
-        uint256 currentVaultUsage = IBorrower(msg.sender).getUsdcBorrowed();
-
-        if (currentVaultUsage + amount < vaultCaps[msg.sender]) {
-            aUsdc.transfer(msg.sender, amount);
+        if (amount == 0 || amount > availableBorrow(msg.sender)) {
+            revert InvalidBorrowAmount();
         } else {
-            revert UsageCapExceeded();
+            aUsdc.transfer(msg.sender, amount);
         }
     }
 
