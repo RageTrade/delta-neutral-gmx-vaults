@@ -717,8 +717,23 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         // console.log(optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
 
         if (targetDnGmxSeniorVaultAmount > currentDnGmxSeniorVaultAmount) {
-            // Take from LB Vault
-            dnGmxSeniorVault.borrow(targetDnGmxSeniorVaultAmount - currentDnGmxSeniorVaultAmount);
+            uint256 amountToBorrow = targetDnGmxSeniorVaultAmount - currentDnGmxSeniorVaultAmount;
+            uint256 availableBorrow = dnGmxSeniorVault.availableBorrow(address(this));
+            if (amountToBorrow > availableBorrow) {
+                (optimalBtcBorrow, optimalEthBorrow) = _getOptimalCappedBorrows(
+                    currentDnGmxSeniorVaultAmount + availableBorrow,
+                    usdcLiquidationThreshold
+                );
+                // console.log("Optimal token amounts 1",optimalBtcBorrow, optimalEthBorrow);
+                if (availableBorrow > 0) {
+                    dnGmxSeniorVault.borrow(availableBorrow);
+                }
+            } else {
+                // Take from LB Vault
+                dnGmxSeniorVault.borrow(targetDnGmxSeniorVaultAmount - currentDnGmxSeniorVaultAmount);
+            }
+
+            // console.log("Optimal token amounts 2",optimalBtcBorrow, optimalEthBorrow);
             // Rebalance Position
             _rebalanceBorrow(optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
         } else {
@@ -1060,6 +1075,33 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     {
         optimalBtcBorrow = _getTokenReservesInGlp(address(wbtc), glpDeposited);
         optimalEthBorrow = _getTokenReservesInGlp(address(weth), glpDeposited);
+    }
+
+    function _getOptimalCappedBorrows(uint256 availableBorrowAmount, uint256 usdcLiquidationThreshold)
+        internal
+        view
+        returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow)
+    {
+        // console.log("availableBorrowAmount",availableBorrowAmount);
+
+        uint256 maxBorrowValue = availableBorrowAmount.mulDiv(
+            usdcLiquidationThreshold,
+            targetHealthFactor - usdcLiquidationThreshold
+        );
+        // console.log("maxBorrowValue",maxBorrowValue);
+
+        uint256 btcWeight = gmxVault.tokenWeights(address(wbtc));
+        uint256 ethWeight = gmxVault.tokenWeights(address(weth));
+        // console.log("btcWeight",btcWeight);
+        // console.log("ethWeight",ethWeight);
+
+        uint256 btcPrice = _getPrice(wbtc);
+        uint256 ethPrice = _getPrice(weth);
+
+        optimalBtcBorrow = maxBorrowValue.mulDiv(btcWeight * PRICE_PRECISION, (btcWeight + ethWeight) * btcPrice);
+        optimalEthBorrow = maxBorrowValue.mulDiv(ethWeight * PRICE_PRECISION, (btcWeight + ethWeight) * ethPrice);
+        // console.log("optimalBtcBorrow",optimalBtcBorrow);
+        // console.log("optimalEthBorrow",optimalEthBorrow);
     }
 
     function _getTokenReservesInGlp(address token, uint256 glpDeposited) internal view returns (uint256) {
