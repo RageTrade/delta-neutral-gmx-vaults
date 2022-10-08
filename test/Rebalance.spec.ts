@@ -38,7 +38,7 @@ describe('Rebalance & its utils', () => {
 
   it('Rebalance Hedge', async () => {
     const { dnGmxJuniorVault, dnGmxJuniorVaultSigner, dnGmxSeniorVault, users, sGlp } = await dnGmxJuniorVaultFixture();
-    await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
+    await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('100', 6), users[1].address);
 
     const amount = parseEther('100');
 
@@ -60,6 +60,37 @@ describe('Rebalance & its utils', () => {
     const amount = parseEther('100');
 
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
+  });
+
+  it.only('Deposit Beyond Balance', async () => {
+    const { dnGmxJuniorVault, dnGmxSeniorVault, users, lendingPool, vdWBTC, vdWETH } = await dnGmxJuniorVaultFixture();
+    await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('50', 6), users[1].address);
+
+    const amount = parseEther('100');
+
+    console.log('1st Deposit');
+    await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
+    console.log('dnUsdcDeposited', await dnGmxJuniorVault.dnUsdcDepositedExternal());
+    console.log('usdc borrowed', await dnGmxJuniorVault.getUsdcBorrowed());
+    let btcAmount = await vdWBTC.balanceOf(dnGmxJuniorVault.address);
+    let ethAmount = await vdWETH.balanceOf(dnGmxJuniorVault.address);
+
+    console.log('btc borrowed', btcAmount);
+    console.log('eth borrowed', ethAmount);
+    console.log('final borrow value', await dnGmxJuniorVault.getBorrowValue(btcAmount, ethAmount));
+    console.log(await lendingPool.getUserAccountData(dnGmxJuniorVault.address));
+
+    console.log('2nd Deposit');
+    await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
+    console.log('dnUsdcDeposited', await dnGmxJuniorVault.dnUsdcDepositedExternal());
+    console.log('usdc borrowed', await dnGmxJuniorVault.getUsdcBorrowed());
+    btcAmount = await vdWBTC.balanceOf(dnGmxJuniorVault.address);
+    ethAmount = await vdWETH.balanceOf(dnGmxJuniorVault.address);
+
+    console.log('btc borrowed', btcAmount);
+    console.log('eth borrowed', ethAmount);
+    console.log('final borrow value', await dnGmxJuniorVault.getBorrowValue(btcAmount, ethAmount));
+    console.log(await lendingPool.getUserAccountData(dnGmxJuniorVault.address));
   });
 
   it('Full Withdraw', async () => {
