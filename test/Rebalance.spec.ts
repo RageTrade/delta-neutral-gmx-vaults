@@ -8,18 +8,55 @@ import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 describe('Rebalance & its utils', () => {
   it('getPrice of assets', async () => {
     const { dnGmxJuniorVault, usdc, wbtc, weth } = await dnGmxJuniorVaultFixture();
-    console.log(await dnGmxJuniorVault['getPrice(address)'](usdc.address));
-    console.log(await dnGmxJuniorVault['getPrice(address)'](wbtc.address));
-    console.log(await dnGmxJuniorVault['getPrice(address)'](weth.address));
 
-    console.log(await dnGmxJuniorVault['getPrice(address,bool)'](usdc.address, true));
-    console.log(await dnGmxJuniorVault['getPrice(address,bool)'](wbtc.address, true));
-    console.log(await dnGmxJuniorVault['getPrice(address,bool)'](weth.address, true));
+    const usdcUsd = await dnGmxJuniorVault['getPrice(address)'](usdc.address);
+    const wbtcUsd = await dnGmxJuniorVault['getPrice(address)'](wbtc.address);
+    const wethUsd = await dnGmxJuniorVault['getPrice(address)'](weth.address);
+
+    const usdcUsdc = await dnGmxJuniorVault['getPrice(address,bool)'](usdc.address, true);
+    const wbtcUsdc = await dnGmxJuniorVault['getPrice(address,bool)'](wbtc.address, true);
+    const wethUsdc = await dnGmxJuniorVault['getPrice(address,bool)'](weth.address, true);
+
+    const usdcUsdt = await dnGmxJuniorVault['getPrice(address,bool)'](usdc.address, false);
+    const wbtcUsdt = await dnGmxJuniorVault['getPrice(address,bool)'](wbtc.address, false);
+    const wethUsdt = await dnGmxJuniorVault['getPrice(address,bool)'](weth.address, false);
+
+    expect(usdcUsdc).to.eq(BigNumber.from(10).pow(24 + 6));
+    expect(usdcUsd.sub(usdcUsdc).abs()).to.lte(usdcUsdc.div(BigNumber.from(1000))); // within 0.1%
+    expect(usdcUsdt.sub(usdcUsdc).abs()).to.lte(usdcUsdc.div(BigNumber.from(1000)));
+
+    expect(wbtcUsd.sub(wbtcUsdc).abs()).to.lte(wbtcUsdc.div(BigNumber.from(1000)));
+    expect(wbtcUsdt.sub(wbtcUsdc).abs()).to.lte(wbtcUsdc.div(BigNumber.from(1000)));
+
+    expect(wethUsd.sub(wethUsdc).abs()).to.lte(wethUsdc.div(BigNumber.from(1000)));
+    expect(wethUsdt.sub(wethUsdc).abs()).to.lte(wethUsdc.div(BigNumber.from(1000)));
   });
 
   it('getPrice of glp', async () => {
-    const { dnGmxJuniorVault } = await dnGmxJuniorVaultFixture();
-    console.log(await dnGmxJuniorVault.getPriceX128());
+    const { dnGmxJuniorVault, glp, glpManager } = await dnGmxJuniorVaultFixture();
+
+    // aum is in 10^30
+    const [aumMin, aumMax] = await Promise.all([glpManager.getAum(false), glpManager.getAum(true)]);
+
+    // aumInUsdg in 10^18
+    // const [aumInUsdgMin, aumInUsdgMax] = await Promise.all([
+    //   glpManager.getAumInUsdg(false),
+    //   glpManager.getAumInUsdg(true)
+    // ])
+
+    const totalSupply = await glp.totalSupply();
+
+    const PRICE_PRECISION = BigNumber.from(10).pow(30);
+
+    const [priceMin, priceMax] = [
+      aumMin.mul(PRICE_PRECISION).div(totalSupply).div(BigNumber.from(10).pow(24)),
+      aumMax.mul(PRICE_PRECISION).div(totalSupply).div(BigNumber.from(10).pow(24)),
+    ];
+
+    const price = await dnGmxJuniorVault['getPrice()']();
+
+    expect(priceMin).to.eq(price);
+    expect(priceMin).lt(priceMax);
   });
 
   it('Rebalance Borrow', async () => {

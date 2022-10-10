@@ -110,7 +110,7 @@ describe('Rebalance Scenarios', () => {
       hfThreshold: 0,
       hedgeUsdcAmountThreshold: 0,
       usdcRedeemSlippage: 1000,
-      usdcConversionThreshold: parseUnits('20', 6),
+      usdcConversionThreshold: parseUnits('1', 6),
       wethConversionThreshold: 10n ** 15n,
     });
 
