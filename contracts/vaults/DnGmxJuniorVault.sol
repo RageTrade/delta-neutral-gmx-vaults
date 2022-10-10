@@ -811,7 +811,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             uint256 balanceBefore = wbtc.balanceOf(address(this));
             tricryptoPool.exchange(0, 1, usdt.balanceOf(address(this)), 0, false);
 
-            uint256 tokensReceived = wbtc.balanceOf(address(this)) - balanceBefore;
+            tokensReceived = wbtc.balanceOf(address(this)) - balanceBefore;
 
             return (usdcUsed, tokensReceived);
         }
