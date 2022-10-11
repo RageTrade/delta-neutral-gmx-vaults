@@ -45,6 +45,7 @@ contract DnGmxJuniorVaultStorage {
     address public feeRecipient;
     uint256 public withdrawFeeBps;
     uint256 public protocolFee;
+    uint256 public unhedgedGlpInUsdc;
     uint256 public seniorVaultWethRewards;
     uint256 public wethConversionThreshold;
     uint256 public slippageThreshold;

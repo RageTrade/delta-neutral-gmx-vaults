@@ -31,7 +31,7 @@ import { SafeCast } from '../libraries/SafeCast.sol';
 import { WadRayMath } from '@aave/core-v3/contracts/protocol/libraries/math/WadRayMath.sol';
 import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
 
-// import 'hardhat/console.sol';
+import 'hardhat/console.sol';
 
 contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable, DnGmxJuniorVaultStorage {
     using FullMath for uint256;
@@ -484,7 +484,10 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     ################################################################## */
 
     function totalAssets() public view override returns (uint256) {
-        return fsGlp.balanceOf(address(this)) + batchingManager.dnGmxJuniorVaultGlpBalance();
+        return
+            fsGlp.balanceOf(address(this)) +
+            batchingManager.dnGmxJuniorVaultGlpBalance() +
+            unhedgedGlpInUsdc.mulDiv(PRICE_PRECISION, getPrice());
     }
 
     function getPrice() internal view returns (uint256) {
@@ -513,7 +516,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     }
 
     function getUsdcBorrowed() public view returns (uint256 usdcAmount) {
-        return uint256(aUsdc.balanceOf(address(this)).toInt256() - dnUsdcDeposited);
+        return uint256(aUsdc.balanceOf(address(this)).toInt256() - dnUsdcDeposited - unhedgedGlpInUsdc.toInt256());
     }
 
     /* ##################################################################
@@ -710,25 +713,30 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             usdcLiquidationThreshold
         );
 
-        uint256 currentDnGmxSeniorVaultAmount = uint256(aUsdc.balanceOf(address(this)).toInt256() - dnUsdcDeposited);
+        uint256 currentDnGmxSeniorVaultAmount = getUsdcBorrowed();
 
         // console.log('targetDnGmxSeniorVaultAmount', targetDnGmxSeniorVaultAmount);
         // console.log('currentDnGmxSeniorVaultAmount', currentDnGmxSeniorVaultAmount);
-        // console.log(optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
+        console.log(optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
 
         if (targetDnGmxSeniorVaultAmount > currentDnGmxSeniorVaultAmount) {
             uint256 amountToBorrow = targetDnGmxSeniorVaultAmount - currentDnGmxSeniorVaultAmount;
             uint256 availableBorrow = dnGmxSeniorVault.availableBorrow(address(this));
             if (amountToBorrow > availableBorrow) {
+                uint256 optimalUncappedEthBorrow = optimalEthBorrow;
                 (optimalBtcBorrow, optimalEthBorrow) = _getOptimalCappedBorrows(
                     currentDnGmxSeniorVaultAmount + availableBorrow,
                     usdcLiquidationThreshold
                 );
+                _rebalanceUnhedgedGlp(optimalUncappedEthBorrow, optimalEthBorrow);
                 // console.log("Optimal token amounts 1",optimalBtcBorrow, optimalEthBorrow);
                 if (availableBorrow > 0) {
                     dnGmxSeniorVault.borrow(availableBorrow);
                 }
             } else {
+                //No unhedged glp remaining so just pass same value in capped and uncapped (should convert back any ausdc back to sglp)
+                _rebalanceUnhedgedGlp(optimalEthBorrow, optimalEthBorrow);
+
                 // Take from LB Vault
                 dnGmxSeniorVault.borrow(targetDnGmxSeniorVaultAmount - currentDnGmxSeniorVaultAmount);
             }
@@ -864,6 +872,25 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         usdgAmount = usdgAmount.mulDiv(10**USDG_DECIMALS, 10**IERC20Metadata(address(usdc)).decimals());
 
         batchingManager.depositToken(address(usdc), amount, usdgAmount);
+    }
+
+    function _rebalanceUnhedgedGlp(uint256 uncappedTokenHedge, uint256 cappedTokenHedge) internal {
+        // console.log('uncappedTokenHedge',uncappedTokenHedge);
+        // console.log('cappedTokenHedge',cappedTokenHedge);
+        // console.log('totalAssets',totalAssets());
+
+        uint256 unhedgedGlp = totalAssets().mulDiv(uncappedTokenHedge - cappedTokenHedge, uncappedTokenHedge);
+        uint256 unhedgedGlpUsdcAmount = unhedgedGlp.mulDiv(getPrice(), PRICE_PRECISION);
+        // console.log('unhedgedGlp',unhedgedGlp);
+        // console.log('unhedgedGlpUsdcAmount',unhedgedGlpUsdcAmount);
+        if (unhedgedGlpUsdcAmount > unhedgedGlpInUsdc) {
+            uint256 glpToUsdcAmount = unhedgedGlpUsdcAmount - unhedgedGlpInUsdc;
+            unhedgedGlpInUsdc += _convertAssetToAUsdc(glpToUsdcAmount);
+        } else if (unhedgedGlpUsdcAmount < unhedgedGlpInUsdc) {
+            uint256 usdcToGlpAmount = unhedgedGlpInUsdc - unhedgedGlpUsdcAmount;
+            unhedgedGlpInUsdc -= usdcToGlpAmount;
+            _convertAUsdcToAsset(usdcToGlpAmount);
+        }
     }
 
     /*
