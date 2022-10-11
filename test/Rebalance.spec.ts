@@ -100,7 +100,8 @@ describe('Rebalance & its utils', () => {
   });
 
   it.only('Deposit Beyond Balance', async () => {
-    const { dnGmxJuniorVault, dnGmxSeniorVault, users, lendingPool, vdWBTC, vdWETH } = await dnGmxJuniorVaultFixture();
+    const { dnGmxJuniorVault, dnGmxSeniorVault, users, lendingPool, aUSDC, vdWBTC, vdWETH } =
+      await dnGmxJuniorVaultFixture();
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('50', 6), users[1].address);
 
     const amount = parseEther('100');
@@ -109,11 +110,14 @@ describe('Rebalance & its utils', () => {
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
     console.log('dnUsdcDeposited', await dnGmxJuniorVault.dnUsdcDepositedExternal());
     console.log('usdc borrowed', await dnGmxJuniorVault.getUsdcBorrowed());
+    console.log('ausdc balance senior', await aUSDC.balanceOf(dnGmxSeniorVault.address));
+
     let btcAmount = await vdWBTC.balanceOf(dnGmxJuniorVault.address);
     let ethAmount = await vdWETH.balanceOf(dnGmxJuniorVault.address);
 
     console.log('btc borrowed', btcAmount);
     console.log('eth borrowed', ethAmount);
+    console.log('unhedgedGlpInUsdc', await dnGmxJuniorVault.unhedgedGlpInUsdc());
     console.log('final borrow value', await dnGmxJuniorVault.getBorrowValue(btcAmount, ethAmount));
     console.log(await lendingPool.getUserAccountData(dnGmxJuniorVault.address));
 
@@ -121,11 +125,30 @@ describe('Rebalance & its utils', () => {
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
     console.log('dnUsdcDeposited', await dnGmxJuniorVault.dnUsdcDepositedExternal());
     console.log('usdc borrowed', await dnGmxJuniorVault.getUsdcBorrowed());
+    console.log('ausdc balance senior', await aUSDC.balanceOf(dnGmxSeniorVault.address));
+
     btcAmount = await vdWBTC.balanceOf(dnGmxJuniorVault.address);
     ethAmount = await vdWETH.balanceOf(dnGmxJuniorVault.address);
 
     console.log('btc borrowed', btcAmount);
     console.log('eth borrowed', ethAmount);
+    console.log('unhedgedGlpInUsdc', await dnGmxJuniorVault.unhedgedGlpInUsdc());
+    console.log('final borrow value', await dnGmxJuniorVault.getBorrowValue(btcAmount, ethAmount));
+    console.log(await lendingPool.getUserAccountData(dnGmxJuniorVault.address));
+
+    console.log('3rd Deposit');
+    await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
+    await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
+    console.log('dnUsdcDeposited', await dnGmxJuniorVault.dnUsdcDepositedExternal());
+    console.log('usdc borrowed', await dnGmxJuniorVault.getUsdcBorrowed());
+    console.log('ausdc balance senior', await aUSDC.balanceOf(dnGmxSeniorVault.address));
+
+    btcAmount = await vdWBTC.balanceOf(dnGmxJuniorVault.address);
+    ethAmount = await vdWETH.balanceOf(dnGmxJuniorVault.address);
+
+    console.log('btc borrowed', btcAmount);
+    console.log('eth borrowed', ethAmount);
+    console.log('unhedgedGlpInUsdc', await dnGmxJuniorVault.unhedgedGlpInUsdc());
     console.log('final borrow value', await dnGmxJuniorVault.getBorrowValue(btcAmount, ethAmount));
     console.log(await lendingPool.getUserAccountData(dnGmxJuniorVault.address));
   });
