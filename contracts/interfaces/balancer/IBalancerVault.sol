@@ -23,9 +23,4 @@ interface IBalancerVault {
         uint256[] memory amounts,
         bytes memory userData
     ) external;
-
-    /**
-     * @dev Returns `user`'s Internal Balance for a set of tokens.
-     */
-    function getInternalBalance(address user, address[] memory tokens) external view returns (uint256[] memory);
 }

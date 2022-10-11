@@ -22,7 +22,7 @@ import { WadRayMath } from '@aave/core-v3/contracts/protocol/libraries/math/WadR
 import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol';
 import { IRewardsController } from '@aave/periphery-v3/contracts/rewards/interfaces/IRewardsController.sol';
 
-import { IBalancerVault } from '../interfaces/IBalancerVault.sol';
+import { IBalancerVault } from '../interfaces/balancer/IBalancerVault.sol';
 
 import { ERC4626Upgradeable } from '../ERC4626/ERC4626Upgradeable.sol';
 
