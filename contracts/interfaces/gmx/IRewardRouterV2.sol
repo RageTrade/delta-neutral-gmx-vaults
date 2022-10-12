@@ -9,6 +9,14 @@ interface IRewardRouterV2 {
     event StakeGlp(address account, uint256 amount);
     event UnstakeGlp(address account, uint256 amount);
 
+    function stakedGmxTracker() external view returns (address);
+
+    function gmx() external view returns (address);
+
+    function esGmx() external view returns (address);
+
+    function glpVester() external view returns (address);
+
     function batchStakeGmxForAccount(address[] memory _accounts, uint256[] memory _amounts) external;
 
     function stakeGmxForAccount(address _account, uint256 _amount) external;
