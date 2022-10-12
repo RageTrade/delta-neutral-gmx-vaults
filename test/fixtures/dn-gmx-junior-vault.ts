@@ -14,7 +14,7 @@ import {
 import { BigNumber } from 'ethers';
 
 export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
-  const [admin, ...users] = await hre.ethers.getSigners();
+  const [admin, feeRecipient, ...users] = await hre.ethers.getSigners();
 
   const weth = await hre.ethers.getContractAt('ERC20Upgradeable', addresses.WETH);
   const wbtc = await hre.ethers.getContractAt('ERC20Upgradeable', addresses.WBTC);
@@ -28,6 +28,10 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   const sGlp = await hre.ethers.getContractAt('ERC20Upgradeable', GMX_ECOSYSTEM_ADDRESSES.StakedGlp);
 
   const rewardRouter = await hre.ethers.getContractAt('IRewardRouterV2', GMX_ECOSYSTEM_ADDRESSES.RewardRouter);
+  const stakedGmxTracker = await hre.ethers.getContractAt('IRewardTracker', await rewardRouter.stakedGmxTracker());
+  const glpVester = await hre.ethers.getContractAt('IVester', await rewardRouter.glpVester());
+  const gmx = await hre.ethers.getContractAt('ERC20Upgradeable', await rewardRouter.gmx());
+  const esGmx = await hre.ethers.getContractAt('ERC20Upgradeable', await rewardRouter.esGmx());
 
   const dnGmxJuniorVault = await (await hre.ethers.getContractFactory('DnGmxJuniorVaultMock')).deploy();
 
@@ -48,6 +52,8 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     },
     addresses.AAVE_POOL_ADDRESS_PROVIDER, // _poolAddressesProvider
   );
+
+  await dnGmxJuniorVault.setFeeRecipient(feeRecipient.address);
 
   const dnGmxSeniorVault = await dnGmxSeniorVaultFixture();
   await dnGmxSeniorVault.setDnGmxJuniorVault(dnGmxJuniorVault.address);
@@ -175,10 +181,15 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     usdt,
     sGlp,
     fsGlp,
+    gmx,
+    esGmx,
+    stakedGmxTracker,
+    glpVester,
     aUSDC,
     vdWBTC,
     vdWETH,
     admin,
+    feeRecipient,
     users,
     gmxVault,
     glpManager,
