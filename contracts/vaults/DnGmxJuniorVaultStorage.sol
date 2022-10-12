@@ -19,6 +19,7 @@ import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
 import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
 import { IBalancerVault } from '../interfaces/IBalancerVault.sol';
 import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
+import { IRewardTracker } from '../interfaces/gmx/IRewardTracker.sol';
 
 interface IDebtToken is IVariableDebtToken {
     function balanceOf(address user) external view returns (uint256);
@@ -45,6 +46,7 @@ contract DnGmxJuniorVaultStorage {
     address public feeRecipient;
     uint256 public withdrawFeeBps;
     uint256 public protocolFee;
+    uint256 public protocolEsGmx;
     uint256 public unhedgedGlpInUsdc;
     uint256 public seniorVaultWethRewards;
     uint256 public wethConversionThreshold;
@@ -83,6 +85,7 @@ contract DnGmxJuniorVaultStorage {
     uint240 public usdcConversionThreshold;
 
     IERC20 internal fsGlp;
+    IRewardTracker internal sGmx;
 
     IERC20Metadata internal glp;
     IERC20Metadata internal usdc;

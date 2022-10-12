@@ -23,6 +23,9 @@ import { IGlpManager } from '../interfaces/gmx/IGlpManager.sol';
 import { IStableSwap } from '../interfaces/curve/IStableSwap.sol';
 import { ISGLPExtended } from '../interfaces/gmx/ISGLPExtended.sol';
 import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
+import { IRewardTracker } from '../interfaces/gmx/IRewardTracker.sol';
+import { IVester } from '../interfaces/gmx/IVester.sol';
+
 import { IBalancerVault } from '../interfaces/IBalancerVault.sol';
 import { ERC4626Upgradeable } from '../ERC4626/ERC4626Upgradeable.sol';
 import { DnGmxJuniorVaultStorage, IDebtToken } from '../vaults/DnGmxJuniorVaultStorage.sol';
@@ -63,6 +66,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     event FeesWithdrawn(uint256 feeAmount);
     event RewardsHarvested(
         uint256 wethHarvested,
+        uint256 esGmxStaked,
         uint256 juniorVaultWeth,
         uint256 seniorVaultWeth,
         uint256 juniorVaultGlp,
@@ -253,8 +257,33 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         emit FeesWithdrawn(amount);
     }
 
+    function unstakeAndVestEsGmx() external onlyOwner {
+        rewardRouter.unstakeEsGmx(protocolEsGmx);
+        IVester(rewardRouter.glpVester()).deposit(protocolEsGmx);
+        protocolEsGmx = 0;
+    }
+
+    function stopVestAndStakeEsGmx() external onlyOwner {
+        IVester(rewardRouter.glpVester()).withdraw();
+        uint256 esGmxWithdrawn = IERC20(rewardRouter.esGmx()).balanceOf(address(this));
+        rewardRouter.stakeEsGmx(esGmxWithdrawn);
+        protocolEsGmx += esGmxWithdrawn;
+    }
+
+    function claimVestedGmx() external onlyOwner {
+        uint256 gmxClaimed = IVester(rewardRouter.glpVester()).claim();
+
+        //Transfer all of the gmx received to fee recipient
+        IERC20Metadata(rewardRouter.gmx()).safeTransfer(feeRecipient, gmxClaimed);
+    }
+
     /// @notice stakes the rewards from the staked Glp and claims WETH to buy glp
     function harvestFees() public {
+        address esGmx = rewardRouter.esGmx();
+        IRewardTracker sGmx = IRewardTracker(rewardRouter.stakedGmxTracker());
+
+        uint256 sGmxPrevBalance = sGmx.depositBalances(address(this), esGmx);
+
         rewardRouter.handleRewards(
             false, // _shouldClaimGmx
             false, // _shouldStakeGmx
@@ -265,7 +294,15 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             false // _shouldConvertWethToEth
         );
 
+        uint256 sGmxHarvested = sGmx.depositBalances(address(this), esGmx) - sGmxPrevBalance;
+        protocolEsGmx += sGmxHarvested.mulDiv(FEE, MAX_BPS);
+        // console.log('sGmxHarvested', sGmxHarvested);
+        // console.log('protocolEsGmx', protocolEsGmx);
+
+        // console.log('gmx balance', sGmx.depositBalances(address(this), rewardRouter.gmx()));
         uint256 wethHarvested = weth.balanceOf(address(this)) - protocolFee - seniorVaultWethRewards;
+        // console.log('wethHarvested', wethHarvested);
+
         if (wethHarvested > wethConversionThreshold) {
             uint256 protocolFeeHarvested = (wethHarvested * FEE) / MAX_BPS;
             protocolFee += protocolFeeHarvested;
@@ -310,6 +347,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
                 seniorVaultWethRewards = 0;
                 emit RewardsHarvested(
                     wethHarvested,
+                    sGmxHarvested,
                     dnGmxWethShare,
                     dnGmxSeniorVaultWethShare,
                     glpReceived,
@@ -317,10 +355,17 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
                 );
             } else {
                 seniorVaultWethRewards = _seniorVaultWethRewards;
-                emit RewardsHarvested(wethHarvested, dnGmxWethShare, dnGmxSeniorVaultWethShare, glpReceived, 0);
+                emit RewardsHarvested(
+                    wethHarvested,
+                    sGmxHarvested,
+                    dnGmxWethShare,
+                    dnGmxSeniorVaultWethShare,
+                    glpReceived,
+                    0
+                );
             }
         } else {
-            emit RewardsHarvested(wethHarvested, 0, 0, 0, 0);
+            emit RewardsHarvested(wethHarvested, sGmxHarvested, 0, 0, 0, 0);
         }
     }
 
