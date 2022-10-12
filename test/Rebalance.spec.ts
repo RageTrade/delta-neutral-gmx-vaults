@@ -99,7 +99,7 @@ describe('Rebalance & its utils', () => {
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
   });
 
-  it.only('Deposit Beyond Balance', async () => {
+  it('Deposit Beyond Balance', async () => {
     const { dnGmxJuniorVault, dnGmxSeniorVault, users, lendingPool, aUSDC, vdWBTC, vdWETH } =
       await dnGmxJuniorVaultFixture();
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('50', 6), users[1].address);
