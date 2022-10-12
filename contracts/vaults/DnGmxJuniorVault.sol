@@ -34,7 +34,7 @@ import { SafeCast } from '../libraries/SafeCast.sol';
 import { WadRayMath } from '@aave/core-v3/contracts/protocol/libraries/math/WadRayMath.sol';
 import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
 
-import 'hardhat/console.sol';
+// import 'hardhat/console.sol';
 
 contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable, DnGmxJuniorVaultStorage {
     using FullMath for uint256;
@@ -762,7 +762,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
         // console.log('targetDnGmxSeniorVaultAmount', targetDnGmxSeniorVaultAmount);
         // console.log('currentDnGmxSeniorVaultAmount', currentDnGmxSeniorVaultAmount);
-        console.log(optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
+        // console.log(optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
 
         if (targetDnGmxSeniorVaultAmount > currentDnGmxSeniorVaultAmount) {
             uint256 amountToBorrow = targetDnGmxSeniorVaultAmount - currentDnGmxSeniorVaultAmount;
