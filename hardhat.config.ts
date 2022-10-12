@@ -57,6 +57,11 @@ export default {
       accounts: [pk],
       chainId: 421611,
     },
+    arbgoerli: {
+      url: `https://goerli-rollup.arbitrum.io/rpc`,
+      accounts: [pk],
+      chainId: 421613,
+    },
   },
   solidity: {
     compilers: [
