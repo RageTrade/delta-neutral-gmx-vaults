@@ -10,6 +10,7 @@ import {
   IVault__factory,
   IGlpManager__factory,
   IPoolAddressesProvider__factory,
+  IBalancerVault__factory,
 } from '../../typechain-types';
 import { BigNumber } from 'ethers';
 
@@ -89,7 +90,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     slippageThreshold: 100,
     usdcRedeemSlippage: 100,
     hfThreshold: 12_000,
-    usdcConversionThreshold: parseUnits('20', 6),
+    usdcConversionThreshold: parseUnits('1', 6),
     wethConversionThreshold: 10n ** 15n,
     hedgeUsdcAmountThreshold: parseUnits('1', 6),
   });
@@ -101,8 +102,11 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     rebalanceDeltaThreshold: 500, // 5% in bps
   });
 
+  const targetHealthFactor = 15_000;
+  const usdcLiquidationThreshold = 8_500;
+
   await dnGmxJuniorVault.setHedgeParams({
-    targetHealthFactor: 15_000, // 150%
+    targetHealthFactor, // 150%
     vault: addresses.BALANCER_VAULT,
     swapRouter: addresses.UNI_V3_SWAP_ROUTER,
     aaveRewardsController: ethers.constants.AddressZero,
@@ -146,6 +150,8 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
       await lendingPool.getReserveData(weth.address)
     ).variableDebtTokenAddress,
   );
+
+  const balancer = IBalancerVault__factory.connect(addresses.BALANCER_VAULT, admin);
 
   await hre.network.provider.request({
     method: 'hardhat_impersonateAccount',
@@ -191,12 +197,15 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     admin,
     feeRecipient,
     users,
+    balancer,
     gmxVault,
     glpManager,
     lendingPool,
     dnGmxSeniorVault,
     dnGmxJuniorVault,
+    targetHealthFactor,
     dnGmxJuniorVaultSigner,
+    usdcLiquidationThreshold,
     mocks: { swapRouterMock, stableSwapMock },
     glpBatchingManager: glpBatchingStakingManagerFixtures.gmxBatchingManager,
   };

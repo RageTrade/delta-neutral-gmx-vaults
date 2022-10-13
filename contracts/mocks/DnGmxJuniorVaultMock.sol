@@ -29,6 +29,10 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         return _isValidRebalanceDeviation();
     }
 
+    function isValidRebalanceHF() external view returns (bool) {
+        return _isValidRebalanceHF();
+    }
+
     function swapToken(
         address token,
         uint256 tokenAmount,
