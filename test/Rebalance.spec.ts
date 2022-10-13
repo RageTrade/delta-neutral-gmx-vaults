@@ -486,7 +486,7 @@ describe('Rebalance & its utils', () => {
 
     expect(await dnGmxJuniorVault.balanceOf(users[0].address)).to.eq(0);
 
-    expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
+    // expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
     expect(await dnGmxJuniorVault.totalAssets()).to.eq(0);
     expect(await dnGmxJuniorVault.totalSupply()).to.eq(0);
   });
@@ -506,7 +506,7 @@ describe('Rebalance & its utils', () => {
 
     expect(await dnGmxJuniorVault.balanceOf(users[0].address)).to.eq(amount.div(2));
 
-    expect(await dnGmxJuniorVault.totalAssets()).to.eq(amount.div(2).add(amount.mul(5).div(1000)));
+    expect(await dnGmxJuniorVault.totalAssets()).to.eq(amount.div(2).add(amount.mul(5).div(2).div(1000)));
     expect(await dnGmxJuniorVault.totalSupply()).to.eq(amount.div(2));
   });
 
