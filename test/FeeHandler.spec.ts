@@ -8,11 +8,13 @@ import { activateMainnetFork, deactivateMainnetFork } from './utils/mainnet-fork
 
 describe('Fee Handlers', () => {
   before(async () => {
+    // Set mainnet to recent block
     await activateMainnetFork({ blockNumber: 29650000 });
   });
 
   after(async () => {
-    await deactivateMainnetFork();
+    // Reset to default block
+    await activateMainnetFork();
   });
 
   it('Protocol EsGmx Handlers & EsGmx Harvest', async () => {
