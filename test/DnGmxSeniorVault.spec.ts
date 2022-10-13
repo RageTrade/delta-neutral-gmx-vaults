@@ -56,7 +56,7 @@ describe('DnGmx Senior Vault', () => {
     it('Borrow cap', async () => {
       const borrowCap = parseUnits('50', 6n);
       await dnGmxSeniorVault.updateBorrowCap(dnGmxJuniorVault.address, borrowCap);
-      expect(await dnGmxSeniorVault.vaultCaps(dnGmxJuniorVault.address)).to.eq(borrowCap);
+      expect(await dnGmxSeniorVault.borrowCaps(dnGmxJuniorVault.address)).to.eq(borrowCap);
     });
   });
 
@@ -103,7 +103,7 @@ describe('DnGmx Senior Vault', () => {
       await dnGmxSeniorVault.updateBorrowCap(dnGmxJuniorVault.address, borrowCap);
       await dnGmxSeniorVault.connect(users[1]).deposit(depositAmount, users[1].address);
       await expect(dnGmxJuniorVault.executeBorrowFromDnGmxSeniorVault(borrowAmount)).to.be.revertedWith(
-        'UsageCapExceeded()',
+        'InvalidBorrowAmount()',
       );
     });
 
