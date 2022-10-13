@@ -57,7 +57,7 @@ describe('Rebalance & its utils', () => {
       aumMax.mul(PRICE_PRECISION).div(totalSupply).div(BigNumber.from(10).pow(24)),
     ];
 
-    const price = await dnGmxJuniorVault['getPrice()']();
+    const price = await dnGmxJuniorVault.getPriceExternal();
 
     expect(priceMin).to.eq(price);
     expect(priceMin).lt(priceMax);
@@ -93,7 +93,7 @@ describe('Rebalance & its utils', () => {
     );
   });
 
-  it.only('Rebalance Borrow - both repayDebt are true', async () => {
+  it('Rebalance Borrow - both repayDebt are true', async () => {
     let tx;
     const opts = await dnGmxJuniorVaultFixture();
     const { dnGmxJuniorVault, dnGmxSeniorVault, users } = opts;
@@ -407,7 +407,7 @@ describe('Rebalance & its utils', () => {
     console.log('totalSupply', await dnGmxJuniorVault.totalSupply());
     console.log('vaultMktValue', await dnGmxJuniorVault.getVaultMarketValue());
 
-    const vmv = (await dnGmxJuniorVault['getPrice()']()).mul(amount).div(BigNumber.from(10).pow(30));
+    const vmv = (await dnGmxJuniorVault.getPriceExternal()).mul(amount).div(BigNumber.from(10).pow(30));
 
     await checker.checkTotalAssets(amount);
     await checker.checkTotalSupply(amount);
@@ -468,7 +468,7 @@ describe('Rebalance & its utils', () => {
     console.log(await lendingPool.getUserAccountData(dnGmxJuniorVault.address));
   });
 
-  it.only('Full Withdraw', async () => {
+  it('Full Withdraw', async () => {
     const opts = await dnGmxJuniorVaultFixture();
     const logger = new Logger(opts);
     const { gmxVault, dnGmxJuniorVault, dnGmxSeniorVault, users, aUSDC, wbtc, weth } = opts;
@@ -480,6 +480,8 @@ describe('Rebalance & its utils', () => {
 
     expect(await dnGmxJuniorVault.balanceOf(users[0].address)).to.eq(amount);
 
+    const totalAssetsBeforeRedeem = await dnGmxJuniorVault.totalAssets();
+
     await dnGmxJuniorVault
       .connect(users[0])
       .redeem(dnGmxJuniorVault.balanceOf(users[0].address), users[0].address, users[0].address);
@@ -487,11 +489,13 @@ describe('Rebalance & its utils', () => {
     expect(await dnGmxJuniorVault.balanceOf(users[0].address)).to.eq(0);
 
     // expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
-    expect(await dnGmxJuniorVault.totalAssets()).to.eq(0);
+    expect(await dnGmxJuniorVault.totalAssets()).to.eq(
+      totalAssetsBeforeRedeem.mul(await dnGmxJuniorVault.FEE()).div(10_000),
+    );
     expect(await dnGmxJuniorVault.totalSupply()).to.eq(0);
   });
 
-  it.only('Partial Withdraw & withdrawFeeBps', async () => {
+  it('Partial Withdraw & withdrawFeeBps', async () => {
     const opts = await dnGmxJuniorVaultFixture();
     const logger = new Logger(opts);
     const { gmxVault, dnGmxJuniorVault, dnGmxSeniorVault, users, wbtc, weth } = opts;
@@ -602,7 +606,7 @@ describe('Rebalance & its utils', () => {
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
     await dnGmxJuniorVault.rebalance();
 
-    originalSum = (await dnGmxJuniorVault['getPrice()']())
+    originalSum = (await dnGmxJuniorVault.getPriceExternal())
       .div(PRICE_PRECISION)
       .mul(await dnGmxJuniorVault.totalAssets())
       .add(await aUSDC.balanceOf(dnGmxJuniorVault.address));
@@ -625,7 +629,7 @@ describe('Rebalance & its utils', () => {
 
     await dnGmxJuniorVault.rebalanceProfit(borrowValue);
 
-    sum = (await dnGmxJuniorVault['getPrice()']())
+    sum = (await dnGmxJuniorVault.getPriceExternal())
       .div(PRICE_PRECISION)
       .mul(await dnGmxJuniorVault.totalAssets())
       .add(await aUSDC.balanceOf(dnGmxJuniorVault.address));
@@ -644,7 +648,7 @@ describe('Rebalance & its utils', () => {
 
     await dnGmxJuniorVault.rebalanceProfit(borrowValue_);
 
-    sum = (await dnGmxJuniorVault['getPrice()']())
+    sum = (await dnGmxJuniorVault.getPriceExternal())
       .div(PRICE_PRECISION)
       .mul(await dnGmxJuniorVault.totalAssets())
       .add(await aUSDC.balanceOf(dnGmxJuniorVault.address));

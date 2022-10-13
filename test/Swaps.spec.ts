@@ -94,7 +94,7 @@ describe('Swaps', () => {
     const assets = parseEther('150');
     const usdcAmount = parseUnits('100', 6);
 
-    const price = await dnGmxJuniorVault['getPrice()']();
+    const price = await dnGmxJuniorVault.getPriceExternal();
     const PRICE_PRECISION = BigNumber.from(10).pow(30);
 
     await sGlp.connect(users[0]).transfer(dnGmxJuniorVault.address, assets);
@@ -153,7 +153,7 @@ describe('Swaps', () => {
     const PRICE_PRECISION = BigNumber.from(10).pow(30);
 
     const priceOfUsdc = await gmxVault.getMinPrice(usdc.address);
-    const priceOfGlp = await dnGmxJuniorVault['getPrice()']();
+    const priceOfGlp = await dnGmxJuniorVault.getPriceExternal();
 
     const USDC_DECIMALS = 6;
     const USDG_DECIMALS = 18;
