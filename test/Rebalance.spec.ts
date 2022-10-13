@@ -394,7 +394,7 @@ describe('Rebalance & its utils', () => {
   it('Deposit', async () => {
     let tx;
     const opts = await dnGmxJuniorVaultFixture();
-    const { dnGmxJuniorVault, dnGmxSeniorVault, users } = opts;
+    const { dnGmxJuniorVault, dnGmxSeniorVault, aUSDC, users } = opts;
     const checker = new Checker(opts);
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('100', 6), users[1].address);
@@ -415,7 +415,8 @@ describe('Rebalance & its utils', () => {
   });
 
   it('Deposit Beyond Balance', async () => {
-    const { dnGmxJuniorVault, dnGmxSeniorVault, users, lendingPool, vdWBTC, vdWETH } = await dnGmxJuniorVaultFixture();
+    const { dnGmxJuniorVault, dnGmxSeniorVault, users, lendingPool, aUSDC, vdWBTC, vdWETH } =
+      await dnGmxJuniorVaultFixture();
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('50', 6), users[1].address);
 
     const amount = parseEther('100');
@@ -490,7 +491,7 @@ describe('Rebalance & its utils', () => {
 
     // expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
     expect(await dnGmxJuniorVault.totalAssets()).to.eq(
-      totalAssetsBeforeRedeem.mul(await dnGmxJuniorVault.FEE()).div(10_000),
+      totalAssetsBeforeRedeem.mul(await dnGmxJuniorVault.withdrawFeeBps()).div(10_000),
     );
     expect(await dnGmxJuniorVault.totalSupply()).to.eq(0);
   });
