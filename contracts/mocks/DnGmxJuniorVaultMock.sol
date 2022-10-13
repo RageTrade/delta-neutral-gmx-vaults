@@ -139,6 +139,10 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         return _rebalanceBorrow(optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
     }
 
+    function getPriceExternal() external view returns (uint256) {
+        return getPrice();
+    }
+
     function getPrice(IERC20Metadata token) external view returns (uint256) {
         return _getPrice(token);
     }
