@@ -117,7 +117,7 @@ export class Logger {
       dnGmxSeniorVault.maxUtilizationBps(),
       dnGmxSeniorVault.totalUsdcBorrowed(),
       dnGmxSeniorVault.getEthRewardsSplitRate(),
-      dnGmxSeniorVault.vaultCaps(dnGmxJuniorVault.address),
+      dnGmxSeniorVault.borrowCaps(dnGmxJuniorVault.address),
     ]);
 
     console.log('totalAssets', totalAssetsSenior.toString());

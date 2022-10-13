@@ -41,12 +41,10 @@ export class Checker {
     expect(currentBorrowed[1].sub(expected[1]).abs()).to.lte(variance[1]);
   };
 
-  checkFlashloanedAmounts = async (tx: ContractTransaction, expected: BigNumberish[]) => {
-    const { dnGmxJuniorVault } = this.opts;
-
+  checkFlashloanedAmounts = async (tx: ContractTransaction, expected: BigNumber[], variance: BigNumberish[]) => {
     const confirmed = await tx.wait();
 
-    const emitted: BigNumberish[] = [];
+    const emitted: BigNumber[] = [];
 
     for (const log of confirmed.logs) {
       if (log.topics[0] === this.opts.balancer.interface.getEventTopic('FlashLoan')) {
@@ -56,7 +54,9 @@ export class Checker {
       }
     }
 
-    expect(expected).to.deep.eq(emitted);
+    for (const index of emitted.keys()) {
+      expect(expected[index].sub(emitted[index]).abs()).to.lte(variance[index]);
+    }
   };
 
   checkBorrowValue = async (expected: BigNumberish, variance: BigNumberish = 0) => {
