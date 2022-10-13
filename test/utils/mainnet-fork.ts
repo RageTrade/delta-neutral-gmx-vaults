@@ -20,7 +20,7 @@ export async function activateMainnetFork(options?: MainnetForkOptions) {
         options.blockNumber = 13075000;
         break;
       case 'arbitrum-mainnet':
-        options.blockNumber = 4454178;
+        options.blockNumber = 22049346;
         break;
       default:
         throw new Error('Incorrect network');
