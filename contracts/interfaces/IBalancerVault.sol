@@ -3,6 +3,8 @@
 pragma solidity ^0.8.0;
 
 interface IBalancerVault {
+    event FlashLoan(address indexed recipient, address indexed token, uint256 amount, uint256 feeAmount);
+
     /**
      * @dev Performs a 'flash loan', sending tokens to `recipient`, executing the `receiveFlashLoan` hook on it,
      * and then reverting unless the tokens plus a proportional protocol fee have been returned.

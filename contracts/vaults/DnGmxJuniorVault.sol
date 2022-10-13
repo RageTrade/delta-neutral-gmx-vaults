@@ -765,6 +765,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         // console.log(optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
 
         if (targetDnGmxSeniorVaultAmount > currentDnGmxSeniorVaultAmount) {
+            // console.log('IF');
             uint256 amountToBorrow = targetDnGmxSeniorVaultAmount - currentDnGmxSeniorVaultAmount;
             uint256 availableBorrow = dnGmxSeniorVault.availableBorrow(address(this));
             if (amountToBorrow > availableBorrow) {
@@ -790,6 +791,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             // Rebalance Position
             _rebalanceBorrow(optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
         } else {
+            // console.log('ELSE');
             // Rebalance Position
             _rebalanceBorrow(optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
             _rebalanceProfit(optimalBorrowValue);
@@ -1046,7 +1048,8 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
     function _isValidRebalanceHF() internal view returns (bool) {
         (, , , , , uint256 healthFactor) = pool.getUserAccountData(address(this));
-        // healthFactor is in 1e18, dividing by 1e14 for converting to bps
+        // console.log('healthFactor', healthFactor);
+        // console.log('hfThreshold', hfThreshold);
 
         return healthFactor < (hfThreshold * 1e14);
     }
@@ -1147,6 +1150,8 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     {
         optimalBtcBorrow = _getTokenReservesInGlp(address(wbtc), glpDeposited);
         optimalEthBorrow = _getTokenReservesInGlp(address(weth), glpDeposited);
+        // console.log('optimalEthBorrow', optimalEthBorrow);
+        // console.log('optimalBtcBorrow', optimalBtcBorrow);
     }
 
     function _getOptimalCappedBorrows(uint256 availableBorrowAmount, uint256 usdcLiquidationThreshold)
@@ -1193,6 +1198,6 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         uint256 diff = optimalBorrow > currentBorrow ? optimalBorrow - currentBorrow : currentBorrow - optimalBorrow;
         // console.log('diff', diff);
         // console.log('RHS', uint256(rebalanceDeltaThreshold).mulDiv(currentBorrow, MAX_BPS));
-        return diff < uint256(rebalanceDeltaThreshold).mulDiv(currentBorrow, MAX_BPS);
+        return diff <= uint256(rebalanceDeltaThreshold).mulDiv(currentBorrow, MAX_BPS);
     }
 }
