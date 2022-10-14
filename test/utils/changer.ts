@@ -27,8 +27,6 @@ export class Changer {
       ethers.utils.hexZeroPad(ethers.utils.parseUnits(price.toString(), 8).toHexString(), 32), // new value
     ]);
 
-    if (asset == 'WBTC') await this.opts.mocks.stableSwapMock.setPrice(parseUnits(price.toString(), 6));
-
     await increaseBlockTimestamp(310);
 
     console.log(`${asset} price changed to ${price}`);
