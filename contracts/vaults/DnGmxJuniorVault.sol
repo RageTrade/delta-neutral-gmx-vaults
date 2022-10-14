@@ -33,6 +33,7 @@ import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
 import { SafeCast } from '../libraries/SafeCast.sol';
 import { WadRayMath } from '@aave/core-v3/contracts/protocol/libraries/math/WadRayMath.sol';
 import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
+import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMathLib.sol';
 
 // import 'hardhat/console.sol';
 
@@ -43,6 +44,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     using WadRayMath for uint256;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using SafeERC20 for IERC20Metadata;
+    using FixedPointMathLib for uint256;
 
     error InvalidRebalance();
     error DepositCapExceeded();
@@ -529,14 +531,11 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     ################################################################## */
 
     function totalAssets() public view override returns (uint256) {
-        return
-            fsGlp.balanceOf(address(this)) +
-            batchingManager.dnGmxJuniorVaultGlpBalance() +
-            unhedgedGlpInUsdc.mulDiv(PRICE_PRECISION, getPrice());
+        return _totalAssets(false);
     }
 
-    function getPrice() internal view returns (uint256) {
-        uint256 aum = glpManager.getAum(false);
+    function getPrice(bool maximize) public view returns (uint256) {
+        uint256 aum = glpManager.getAum(maximize);
         uint256 totalSupply = glp.totalSupply();
 
         return aum.mulDiv(PRICE_PRECISION, totalSupply * 1e24);
@@ -550,18 +549,50 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     }
 
     function getMarketValue(uint256 assetAmount) public view returns (uint256 marketValue) {
-        marketValue = assetAmount.mulDiv(getPrice(), PRICE_PRECISION);
+        marketValue = assetAmount.mulDiv(getPrice(false), PRICE_PRECISION);
     }
 
     function getVaultMarketValue() public view returns (int256 vaultMarketValue) {
         (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
         uint256 totalCurrentBorrowValue = _getBorrowValue(currentBtc, currentEth);
-        vaultMarketValue = ((getMarketValue(totalAssets()).toInt256() + dnUsdcDeposited) -
+        uint256 glpBalance = fsGlp.balanceOf(address(this)) + batchingManager.dnGmxJuniorVaultGlpBalance();
+        vaultMarketValue = ((getMarketValue(glpBalance).toInt256() + dnUsdcDeposited + unhedgedGlpInUsdc.toInt256()) -
             totalCurrentBorrowValue.toInt256());
     }
 
     function getUsdcBorrowed() public view returns (uint256 usdcAmount) {
         return uint256(aUsdc.balanceOf(address(this)).toInt256() - dnUsdcDeposited - unhedgedGlpInUsdc.toInt256());
+    }
+    function maxDeposit(address) public view override returns (uint256) {
+        return depositCap - _totalAssets(true);
+    }
+
+    function maxMint(address receiver) public view override returns (uint256) {
+        return convertToShares(maxDeposit(receiver));
+    }
+
+    function convertToShares(uint256 assets) public view override returns (uint256) {
+        uint256 supply = totalSupply(); // Saves an extra SLOAD if totalSupply is non-zero.
+
+        return supply == 0 ? assets : assets.mulDivDown(supply, _totalAssets(true));
+    }
+
+    function convertToAssets(uint256 shares) public view override returns (uint256) {
+        uint256 supply = totalSupply(); // Saves an extra SLOAD if totalSupply is non-zero.
+
+        return supply == 0 ? shares : shares.mulDivDown(_totalAssets(false), supply);
+    }
+
+    function previewMint(uint256 shares) public view override returns (uint256) {
+        uint256 supply = totalSupply(); // Saves an extra SLOAD if totalSupply is non-zero.
+
+        return supply == 0 ? shares : shares.mulDivUp(_totalAssets(true), supply);
+    }
+
+    function previewWithdraw(uint256 assets) public view override returns (uint256) {
+        uint256 supply = totalSupply(); // Saves an extra SLOAD if totalSupply is non-zero.
+
+        return supply == 0 ? assets : assets.mulDivUp(supply, _totalAssets(false));
     }
 
     /* ##################################################################
@@ -891,7 +922,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     function _convertAssetToAUsdc(uint256 usdcAmountDesired) internal returns (uint256 usdcAmount) {
         /// @dev if usdcAmountDesired < 10, then there is precision issue in gmx contracts while redeeming for usdg
         if (usdcAmountDesired < usdcConversionThreshold) return 0;
-        uint256 glpAmountDesired = usdcAmountDesired.mulDiv(PRICE_PRECISION, getPrice());
+        uint256 glpAmountDesired = usdcAmountDesired.mulDiv(PRICE_PRECISION, getPrice(false));
         // USDG has 18 decimals and usdc has 6 decimals => 18-6 = 12
         // console.log('GLP PRICE: ', getPrice());
         // console.log('glpAmountDesired', glpAmountDesired);
@@ -927,7 +958,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         // console.log('totalAssets',totalAssets());
 
         uint256 unhedgedGlp = totalAssets().mulDiv(uncappedTokenHedge - cappedTokenHedge, uncappedTokenHedge);
-        uint256 unhedgedGlpUsdcAmount = unhedgedGlp.mulDiv(getPrice(), PRICE_PRECISION);
+        uint256 unhedgedGlpUsdcAmount = unhedgedGlp.mulDiv(getPrice(false), PRICE_PRECISION);
         // console.log('unhedgedGlp',unhedgedGlp);
         // console.log('unhedgedGlpUsdcAmount',unhedgedGlpUsdcAmount);
         if (unhedgedGlpUsdcAmount > unhedgedGlpInUsdc) {
@@ -1040,6 +1071,12 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     /* ##################################################################
                             INTERNAL VIEW FUNCTIONS
     ################################################################## */
+
+    function _totalAssets(bool maximize) internal view returns (uint256) {
+        uint256 unhedgedGlp = unhedgedGlpInUsdc.mulDiv(PRICE_PRECISION, getPrice(!maximize));
+        if (!maximize) unhedgedGlp = unhedgedGlp.mulDiv(MAX_BPS - usdcRedeemSlippage, MAX_BPS);
+        return fsGlp.balanceOf(address(this)) + batchingManager.dnGmxJuniorVaultGlpBalance() + unhedgedGlp;
+    }
 
     /* solhint-disable not-rely-on-time */
     function _isValidRebalanceTime() internal view returns (bool) {
@@ -1185,7 +1222,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         uint256 targetWeight = gmxVault.tokenWeights(token);
         uint256 totalTokenWeights = gmxVault.totalTokenWeights();
 
-        uint256 glpPrice = getPrice();
+        uint256 glpPrice = getPrice(false);
         uint256 tokenPrice = _getPrice(IERC20Metadata(token));
 
         return targetWeight.mulDiv(glpDeposited * glpPrice, totalTokenWeights * tokenPrice);
