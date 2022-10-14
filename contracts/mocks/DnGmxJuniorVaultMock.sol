@@ -140,7 +140,7 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
     }
 
     function getPriceExternal() external view returns (uint256) {
-        return getPrice();
+        return getPrice(false);
     }
 
     function getPrice(IERC20Metadata token) external view returns (uint256) {
