@@ -496,6 +496,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             bool repayDebtEth
         ) = abi.decode(userData, (uint256, uint256, uint256, uint256, bool, bool));
 
+        // console.log('### RECEIVE FLASHLOAN ###');
         // console.log('btcTokenAmount', btcTokenAmount);
         // console.log('ethTokenAmount', ethTokenAmount);
         // console.log('btcUsdcAmount', btcUsdcAmount);
@@ -507,21 +508,31 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         uint256 ethAssetPremium;
         // adjust asset amounts for premiums (zero for balancer at the time of dev)
         if (repayDebtBtc && repayDebtEth) {
+            // console.log('CASE 1');
             // Here amounts[0] should be equal to btcTokenAmount+ethTokenAmount
-            btcAssetPremium = feeAmounts[0].mulDiv(btcTokenAmount, amounts[0]);
+            btcAssetPremium = feeAmounts[0].mulDiv(btcUsdcAmount, amounts[0]);
             // console.log('btcAssetPremium', btcAssetPremium);
             ethAssetPremium = (feeAmounts[0] - btcAssetPremium);
             // console.log('ethAssetPremium', ethAssetPremium);
-        } else {
+        } else if (btcTokenAmount != 0 && ethTokenAmount != 0) {
+            // console.log('CASE 2');
+
             // Here amounts[0] should be equal to btcTokenAmount and amounts[1] should be equal to ethTokenAmount
             bool btcFirst = false;
             if (repayDebtBtc ? tokens[0] == usdc : tokens[0] == wbtc) btcFirst = true;
             btcAssetPremium = feeAmounts[btcFirst ? 0 : 1];
             ethAssetPremium = feeAmounts[btcFirst ? 1 : 0];
+        } else {
+            // console.log('CASE 3');
+
+            if (btcTokenAmount != 0) btcAssetPremium = feeAmounts[0];
+            else ethAssetPremium = feeAmounts[0];
         }
 
-        _executeOperationToken(address(wbtc), btcTokenAmount, btcUsdcAmount, btcAssetPremium, repayDebtBtc);
-        _executeOperationToken(address(weth), ethTokenAmount, ethUsdcAmount, ethAssetPremium, repayDebtEth);
+        if (btcTokenAmount > 0)
+            _executeOperationToken(address(wbtc), btcTokenAmount, btcUsdcAmount, btcAssetPremium, repayDebtBtc);
+        if (ethTokenAmount > 0)
+            _executeOperationToken(address(weth), ethTokenAmount, ethUsdcAmount, ethAssetPremium, repayDebtEth);
     }
 
     /* ##################################################################
@@ -690,20 +701,30 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         // console.log('btcUsdcAmount', btcUsdcAmount);
         // console.log('ethTokenAmount', ethTokenAmount);
         // console.log('ethUsdcAmount', ethUsdcAmount);
+        // console.log('hedgeUsdcAmountThreshold', hedgeUsdcAmountThreshold);
 
-        bool btcBeyondThreshold = btcUsdcAmount > hedgeUsdcAmountThreshold;
-        bool ethBeyondThreshold = ethUsdcAmount > hedgeUsdcAmountThreshold;
+        if (btcUsdcAmount < hedgeUsdcAmountThreshold) {
+            // console.log('BTC Below Threshold');
+            btcTokenAmount = 0;
+            btcUsdcAmount = 0;
+        }
+        if (ethUsdcAmount < hedgeUsdcAmountThreshold) {
+            // console.log('ETH Below Threshold');
+            ethTokenAmount = 0;
+            ethUsdcAmount = 0;
+        }
 
         // console.log('btcBeyondThreshold', btcBeyondThreshold);
         // console.log('ethBeyondThreshold', ethBeyondThreshold);
 
-        // If both eth and btc swap amounts are not beyond the threshold then no flashloan needs to be executed | case 1
-        if (!btcBeyondThreshold && !ethBeyondThreshold) return;
-
         uint256 btcAssetAmount = repayDebtBtc ? btcUsdcAmount : btcTokenAmount;
         uint256 ethAssetAmount = repayDebtEth ? ethUsdcAmount : ethTokenAmount;
 
+        // If both eth and btc swap amounts are not beyond the threshold then no flashloan needs to be executed | case 1
+        if (btcAssetAmount == 0 && ethAssetAmount == 0) return;
+
         if (repayDebtBtc && repayDebtEth) {
+            // console.log('### BOTH REPAY CASE ###');
             assets = new address[](1);
             amounts = new uint256[](1);
 
@@ -711,12 +732,13 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             amounts[0] = (btcAssetAmount + ethAssetAmount);
             // console.log('asset[0] from if', assets[0]);
             // console.log('amounts[0] from if', amounts[0]);
-        } else if (!(btcBeyondThreshold && ethBeyondThreshold)) {
+        } else if (btcAssetAmount == 0 || ethAssetAmount == 0) {
             // Exactly one would be true since case-1 excluded (both false) | case-2
+            // console.log('### CASE-2 ###');
             assets = new address[](1);
             amounts = new uint256[](1);
 
-            if (btcBeyondThreshold) {
+            if (btcAssetAmount == 0) {
                 assets[0] = (repayDebtBtc ? address(usdc) : address(wbtc));
                 amounts[0] = btcAssetAmount;
             } else {
@@ -724,6 +746,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
                 amounts[0] = ethAssetAmount;
             }
         } else {
+            // console.log('### CASE-3 ###');
             // Both are true | case-3
             assets = new address[](2);
             amounts = new uint256[](2);
