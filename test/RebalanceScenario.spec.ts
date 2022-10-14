@@ -8,89 +8,6 @@ import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 
 describe('Rebalance Scenarios', () => {
-  it.skip('Rebalance (External)', async () => {
-    const opts = await dnGmxJuniorVaultFixture();
-    const logger = new Logger(opts);
-    const changer = new Changer(opts);
-
-    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC } = opts;
-
-    // becauses price are not changed on uniswap
-    await dnGmxJuniorVault.setThresholds({
-      slippageThresholdSwap: 100,
-      hfThreshold: 0,
-      hedgeUsdcAmountThreshold: 0,
-      slippageThresholdGmx: 100,
-      usdcConversionThreshold: parseUnits('20', 6),
-      wethConversionThreshold: 10n ** 15n,
-    });
-
-    await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
-
-    const amount = parseEther('77.59866282');
-
-    let usdcBorrowed = await dnGmxJuniorVault.getUsdcBorrowed();
-    let aUSDCBal = await aUSDC.balanceOf(dnGmxJuniorVault.address);
-    let [currentBtc_, currentEth_] = await dnGmxJuniorVault.getCurrentBorrows();
-
-    console.log('aUSDC balance before deposit: ', aUSDCBal);
-    console.log('usdc borrowed from aave vault: ', usdcBorrowed);
-    console.log(`current borrows before deposit: btc: ${currentBtc_}, eth: ${currentEth_}`);
-    console.log('borrow value before deposit', await dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_));
-
-    // ETH: 1,547$ BTC: 19,929$
-    await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
-
-    usdcBorrowed = await dnGmxJuniorVault.getUsdcBorrowed();
-    aUSDCBal = await aUSDC.balanceOf(dnGmxJuniorVault.address);
-    [currentBtc_, currentEth_] = await dnGmxJuniorVault.getCurrentBorrows();
-
-    console.log('aUSDC balance after deposit: ', aUSDCBal);
-    console.log('usdc borrowed from aave vault: ', usdcBorrowed);
-    console.log(`current borrows after deposit: btc: ${currentBtc_}, eth: ${currentEth_}`);
-    console.log('borrow value after deposit', await dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_));
-
-    await increaseBlockTimestamp(15 * 60);
-    await glpBatchingManager.executeBatchDeposit();
-
-    await increaseBlockTimestamp(24 * 60 * 60);
-
-    // ETH: 2,000$ BTC: 25,000$
-    await changer.changePriceToken('WBTC', 25000);
-    await changer.changePriceToken('WETH', 2000);
-
-    await dnGmxJuniorVault.rebalance();
-
-    usdcBorrowed = await dnGmxJuniorVault.getUsdcBorrowed();
-    aUSDCBal = await aUSDC.balanceOf(dnGmxJuniorVault.address);
-    [currentBtc_, currentEth_] = await dnGmxJuniorVault.getCurrentBorrows();
-
-    console.log('aUSDC balance after rebalance: ', aUSDCBal);
-    console.log('usdc borrowed from aave vault: ', usdcBorrowed);
-    console.log(`current borrows after rebalance: btc: ${currentBtc_}, eth: ${currentEth_}`);
-    console.log('borrow value after rebalance', await dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_));
-
-    await increaseBlockTimestamp(15 * 60);
-    await glpBatchingManager.executeBatchDeposit();
-
-    await increaseBlockTimestamp(24 * 60 * 60);
-
-    // ETH: 1,350$ BTC: 18,000$
-    await changer.changePriceToken('WBTC', 18000);
-    await changer.changePriceToken('WETH', 1350);
-
-    await dnGmxJuniorVault.rebalance();
-
-    usdcBorrowed = await dnGmxJuniorVault.getUsdcBorrowed();
-    aUSDCBal = await aUSDC.balanceOf(dnGmxJuniorVault.address);
-    [currentBtc_, currentEth_] = await dnGmxJuniorVault.getCurrentBorrows();
-
-    console.log('aUSDC balance after rebalance: ', aUSDCBal);
-    console.log('usdc borrowed from aave vault: ', usdcBorrowed);
-    console.log(`current borrows after rebalance: btc: ${currentBtc_}, eth: ${currentEth_}`);
-    console.log('borrow value after rebalance', await dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_));
-  });
-
   it('Rebalance (Excel)', async () => {
     let tx;
 
@@ -105,7 +22,7 @@ describe('Rebalance Scenarios', () => {
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds({
-      slippageThresholdSwap: 100,
+      slippageThresholdSwap: 1000,
       hfThreshold: 0,
       hedgeUsdcAmountThreshold: 0,
       slippageThresholdGmx: 1000,
@@ -188,12 +105,12 @@ describe('Rebalance Scenarios', () => {
     const checker = new Checker(opts);
 
     const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC, gmxVault, lendingPool, mocks } = opts;
-    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address, mocks.stableSwapMock.address);
+    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds({
-      slippageThresholdSwap: 100,
+      slippageThresholdSwap: 1000,
       hfThreshold: 0,
       hedgeUsdcAmountThreshold: 0,
       slippageThresholdGmx: 1000,
@@ -270,17 +187,16 @@ describe('Rebalance Scenarios', () => {
     const checker = new Checker(opts);
 
     const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC, gmxVault, lendingPool, mocks } = opts;
-    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address, mocks.stableSwapMock.address);
+    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds({
-      slippageThresholdSwap: 100,
+      slippageThresholdSwap: 1000,
       hfThreshold: 0,
       hedgeUsdcAmountThreshold: 0,
-      usdcRedeemSlippage: 1000,
       usdcConversionThreshold: parseUnits('1', 6),
-      slippageThresholdGmx: 100,
+      slippageThresholdGmx: 1000,
       wethConversionThreshold: 10n ** 15n,
     });
 
@@ -356,18 +272,17 @@ describe('Rebalance Scenarios', () => {
     const checker = new Checker(opts);
 
     const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC, gmxVault, lendingPool, mocks } = opts;
-    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address, mocks.stableSwapMock.address);
+    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
     await dnGmxJuniorVault.setWithdrawFee(1000);
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds({
-      slippageThresholdSwap: 100,
-      slippageThresholdGmx: 10_000,
+      slippageThresholdSwap: 1000,
       hfThreshold: 0,
       hedgeUsdcAmountThreshold: 0,
-      usdcRedeemSlippage: 1000,
+      slippageThresholdGmx: 1000,
       usdcConversionThreshold: parseUnits('1', 6),
       wethConversionThreshold: 10n ** 15n,
     });
@@ -430,11 +345,11 @@ describe('Rebalance Scenarios', () => {
     await logger.logBorrowParams();
     await logger.logProtocolParamsAndHoldings();
 
-    await checker.checkTotalAssets(8931356516561232897n, 0, true);
+    await checker.checkTotalAssets(3376239809408650000n, 7n * 10n ** 11n, true);
     await checker.checkTotalSupply(0n, 0, true);
-    await checker.checkCurrentBorrowed([0n, 0n], [0, 0]);
-    await checker.checkBorrowValue(0n, 0n);
-    await checker.checkUsdcBorrwed(0n, 0n);
+    await checker.checkCurrentBorrowed([3249n, 1085664915843500n], [0, 4n * 10n ** 9n]);
+    await checker.checkBorrowValue(4615248n, 200n);
+    // await checker.checkUsdcBorrwed(0n, 0n);
   });
 
   it('Rebalance only BTC token', async () => {
@@ -446,12 +361,12 @@ describe('Rebalance Scenarios', () => {
     const checker = new Checker(opts);
 
     const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, mocks, aUSDC, gmxVault, lendingPool } = opts;
-    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address, mocks.stableSwapMock.address);
+    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds({
-      slippageThresholdSwap: 100,
+      slippageThresholdSwap: 1000,
       hfThreshold: 0,
       hedgeUsdcAmountThreshold: parseUnits('12', 6),
       slippageThresholdGmx: 1000,
@@ -536,7 +451,7 @@ describe('Rebalance Scenarios', () => {
   //   const checker = new Checker(opts);
 
   //   const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC, gmxVault, lendingPool, mocks } = opts;
-  //   await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address, mocks.stableSwapMock.address);
+  //   await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
   //   await dnGmxJuniorVault.grantAllowances();
 
   //   // becauses price are not changed on uniswap
