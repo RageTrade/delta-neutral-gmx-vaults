@@ -13,8 +13,6 @@ import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPool
 import { IRewardsController } from '@aave/periphery-v3/contracts/rewards/interfaces/IRewardsController.sol';
 import { IVault } from '../interfaces/gmx/IVault.sol';
 import { IGlpManager } from '../interfaces/gmx/IGlpManager.sol';
-import { IExchange } from '../interfaces/curve/IExchange.sol';
-import { IStableSwap } from '../interfaces/curve/IStableSwap.sol';
 import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
 import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
 import { IBalancerVault } from '../interfaces/IBalancerVault.sol';
@@ -50,7 +48,6 @@ contract DnGmxJuniorVaultStorage {
     uint256 public unhedgedGlpInUsdc;
     uint256 public seniorVaultWethRewards;
     uint256 public wethConversionThreshold;
-    uint256 public slippageThreshold;
     uint256 hedgeUsdcAmountThreshold;
     uint256 hfThreshold;
 
@@ -81,8 +78,9 @@ contract DnGmxJuniorVaultStorage {
 
     ///@dev storage for yield strategy
 
-    uint16 public usdcRedeemSlippage;
-    uint240 public usdcConversionThreshold;
+    uint16 public slippageThresholdGmx;
+    uint16 public slippageThresholdSwap;
+    uint208 public usdcConversionThreshold;
 
     IERC20 internal fsGlp;
     IRewardTracker internal sGmx;
@@ -98,8 +96,6 @@ contract DnGmxJuniorVaultStorage {
     IRewardRouterV2 internal rewardRouter;
     IDnGmxBatchingManager internal batchingManager;
 
-    IStableSwap internal tricryptoPool;
-
     /// @dev structs used to initialize
 
     struct Tokens {
@@ -111,8 +107,8 @@ contract DnGmxJuniorVaultStorage {
     }
 
     struct YieldStrategyParams {
-        uint256 slippageThreshold;
-        uint16 usdcRedeemSlippage;
+        uint256 slippageThresholdSwap;
+        uint16 slippageThresholdGmx;
         uint240 usdcConversionThreshold;
         uint256 hfThreshold;
         uint256 wethConversionThreshold;

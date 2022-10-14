@@ -34,7 +34,17 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   const gmx = await hre.ethers.getContractAt('ERC20Upgradeable', await rewardRouter.gmx());
   const esGmx = await hre.ethers.getContractAt('ERC20Upgradeable', await rewardRouter.esGmx());
 
-  const dnGmxJuniorVault = await (await hre.ethers.getContractFactory('DnGmxJuniorVaultMock')).deploy();
+  const swapManager = await (
+    await hre.ethers.getContractFactory('contracts/libraries/SwapManager.sol:SwapManager')
+  ).deploy();
+
+  const dnGmxJuniorVault = await (
+    await hre.ethers.getContractFactory('DnGmxJuniorVaultMock', {
+      libraries: {
+        ['contracts/libraries/SwapManager.sol:SwapManager']: swapManager.address,
+      },
+    })
+  ).deploy();
 
   const gmxVault = IVault__factory.connect(GMX_ECOSYSTEM_ADDRESSES.Vault, admin);
 
@@ -43,7 +53,6 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     'DN_GMX', // _symbol
     addresses.UNI_V3_SWAP_ROUTER, // _swapRouter
     GMX_ECOSYSTEM_ADDRESSES.RewardRouter, // _rewardRouter
-    addresses.TRICRYPTO, // tricrypto pool
     {
       weth: addresses.WETH,
       wbtc: addresses.WBTC,
@@ -87,8 +96,8 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   await dnGmxJuniorVault.setBatchingManager(glpBatchingStakingManagerFixtures.gmxBatchingManager.address);
 
   await dnGmxJuniorVault.setThresholds({
-    slippageThreshold: 100,
-    usdcRedeemSlippage: 100,
+    slippageThresholdSwap: 100,
+    slippageThresholdGmx: 100,
     hfThreshold: 12_000,
     usdcConversionThreshold: parseUnits('1', 6),
     wethConversionThreshold: 10n ** 15n,
