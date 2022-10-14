@@ -34,6 +34,8 @@ import { SafeCast } from '../libraries/SafeCast.sol';
 import { WadRayMath } from '@aave/core-v3/contracts/protocol/libraries/math/WadRayMath.sol';
 import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
 
+import { SwapManager } from 'contracts/libraries/SwapManager.sol';
+
 // import 'hardhat/console.sol';
 
 contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable, DnGmxJuniorVaultStorage {
@@ -76,7 +78,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     event BatchingManagerUpdated(address _batchingManager);
 
     event YieldParamsUpdated(
-        uint16 usdcRedeemSlippage,
+        uint16 slippageThresholdGmx,
         uint240 usdcConversionThreshold,
         uint256 wethConversionThreshold,
         uint256 hedgeUsdcAmountThreshold,
@@ -113,7 +115,6 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         string calldata _symbol,
         address _swapRouter,
         address _rewardRouter,
-        address _tricryptoPool,
         Tokens calldata _tokens,
         IPoolAddressesProvider _poolAddressesProvider
     ) external initializer {
@@ -136,7 +137,6 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         fsGlp = IERC20(ISGLPExtended(address(asset)).stakedGlpTracker());
 
         gmxVault = IVault(glpManager.vault());
-        tricryptoPool = IStableSwap(_tricryptoPool);
 
         pool = IPool(poolAddressProvider.getPool());
         oracle = IPriceOracle(poolAddressProvider.getPriceOracle());
@@ -154,10 +154,9 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     function grantAllowances() external onlyOwner {
         address aavePool = address(pool);
         address swapRouter = address(swapRouter);
-        address tricrypto = address(tricryptoPool);
 
         wbtc.approve(aavePool, type(uint256).max);
-        wbtc.approve(tricrypto, type(uint256).max);
+        wbtc.approve(swapRouter, type(uint256).max);
 
         weth.approve(aavePool, type(uint256).max);
         weth.approve(swapRouter, type(uint256).max);
@@ -166,11 +165,6 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         usdc.approve(aavePool, type(uint256).max);
         usdc.approve(address(swapRouter), type(uint256).max);
         usdc.approve(address(batchingManager), type(uint256).max);
-
-        usdt.approve(tricrypto, 0);
-        usdt.approve(swapRouter, 0);
-        usdt.approve(tricrypto, type(uint256).max);
-        usdt.approve(swapRouter, type(uint256).max);
 
         aUsdc.approve(address(dnGmxSeniorVault), type(uint256).max);
 
@@ -205,14 +199,14 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     }
 
     function setThresholds(YieldStrategyParams calldata _ysParams) external onlyOwner {
-        slippageThreshold = _ysParams.slippageThreshold;
-        usdcRedeemSlippage = _ysParams.usdcRedeemSlippage;
-        usdcConversionThreshold = _ysParams.usdcConversionThreshold;
+        slippageThresholdSwap = uint16(_ysParams.slippageThresholdSwap);
+        slippageThresholdGmx = uint16(_ysParams.slippageThresholdGmx);
+        usdcConversionThreshold = uint208(_ysParams.usdcConversionThreshold);
         wethConversionThreshold = _ysParams.wethConversionThreshold;
         hedgeUsdcAmountThreshold = _ysParams.hedgeUsdcAmountThreshold;
         hfThreshold = _ysParams.hfThreshold;
         emit YieldParamsUpdated(
-            _ysParams.usdcRedeemSlippage,
+            _ysParams.slippageThresholdGmx,
             _ysParams.usdcConversionThreshold,
             _ysParams.wethConversionThreshold,
             _ysParams.hedgeUsdcAmountThreshold,
@@ -325,7 +319,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             uint256 price = gmxVault.getMinPrice(address(weth));
 
             uint256 usdgAmount = dnGmxWethShare.mulDiv(
-                price * (MAX_BPS - slippageThreshold),
+                price * (MAX_BPS - slippageThresholdSwap),
                 PRICE_PRECISION * MAX_BPS
             );
 
@@ -339,10 +333,14 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             if (_seniorVaultWethRewards > wethConversionThreshold) {
                 // Deposit aave vault share to AAVE in usdc
                 uint256 minUsdcAmount = _getPrice(weth, true).mulDiv(
-                    _seniorVaultWethRewards * (MAX_BPS - usdcRedeemSlippage),
+                    _seniorVaultWethRewards * (MAX_BPS - slippageThresholdSwap),
                     MAX_BPS * PRICE_PRECISION
                 );
-                uint256 aaveUsdcAmount = _swapToken(address(weth), _seniorVaultWethRewards, minUsdcAmount);
+                (uint256 aaveUsdcAmount, uint256 tokensUsed) = SwapManager.swapToken(
+                    address(weth),
+                    _seniorVaultWethRewards,
+                    minUsdcAmount
+                );
                 _executeSupply(address(usdc), aaveUsdcAmount);
                 seniorVaultWethRewards = 0;
                 emit RewardsHarvested(
@@ -803,89 +801,6 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         }
     }
 
-    /*
-        SWAP HELPERS
-    */
-
-    function _swapToken(
-        address token,
-        uint256 tokenAmount,
-        uint256 minUsdcAmount
-    ) internal returns (uint256 usdcAmount) {
-        if (token == address(wbtc)) {
-            usdcAmount = _swapWBTC(tokenAmount, minUsdcAmount);
-            return usdcAmount;
-        }
-
-        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
-            tokenIn: token,
-            tokenOut: address(usdc),
-            fee: uint24(500),
-            recipient: address(this),
-            deadline: block.timestamp,
-            amountIn: tokenAmount,
-            amountOutMinimum: minUsdcAmount,
-            sqrtPriceLimitX96: 0
-        });
-
-        usdcAmount = swapRouter.exactInputSingle(params);
-    }
-
-    function _swapWBTC(uint256 tokenAmount, uint256 minUsdcAmount) internal returns (uint256 usdcAmount) {
-        // USDT = 0, WBTC = 1, WETH = 2
-        tricryptoPool.exchange(1, 0, tokenAmount, 0, false);
-
-        usdcAmount = _swapToken(address(usdt), usdt.balanceOf(address(this)), minUsdcAmount);
-    }
-
-    function _swapUSDC(
-        address token,
-        uint256 tokenAmount,
-        uint256 maxUsdcAmount
-    ) internal returns (uint256 usdcUsed, uint256 tokensReceived) {
-        if (token == address(wbtc)) {
-            uint256 usdtAmount = _getPrice(IERC20Metadata(token), false).mulDiv(
-                tokenAmount * (MAX_BPS + usdcRedeemSlippage / 2),
-                MAX_BPS * PRICE_PRECISION
-            );
-
-            ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter.ExactOutputSingleParams({
-                tokenIn: address(usdc),
-                tokenOut: address(usdt),
-                fee: 500,
-                recipient: address(this),
-                deadline: block.timestamp,
-                amountOut: usdtAmount,
-                amountInMaximum: maxUsdcAmount,
-                sqrtPriceLimitX96: 0
-            });
-
-            usdcUsed = swapRouter.exactOutputSingle(params);
-
-            // USDT = 0, WBTC = 1, WETH = 2
-            uint256 balanceBefore = wbtc.balanceOf(address(this));
-            tricryptoPool.exchange(0, 1, usdt.balanceOf(address(this)), 0, false);
-
-            tokensReceived = wbtc.balanceOf(address(this)) - balanceBefore;
-
-            return (usdcUsed, tokensReceived);
-        }
-
-        ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter.ExactOutputSingleParams({
-            tokenIn: address(usdc),
-            tokenOut: address(weth),
-            fee: 500,
-            recipient: address(this),
-            deadline: block.timestamp,
-            amountOut: tokenAmount,
-            amountInMaximum: maxUsdcAmount,
-            sqrtPriceLimitX96: 0
-        });
-
-        usdcUsed = swapRouter.exactOutputSingle(params);
-        tokensReceived = tokenAmount;
-    }
-
     /// @notice withdraws LP tokens from gauge, sells LP token for usdc
     /// @param usdcAmountDesired amount of USDC desired
     function _convertAssetToAUsdc(uint256 usdcAmountDesired) internal returns (uint256 usdcAmount) {
@@ -899,7 +814,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         rewardRouter.unstakeAndRedeemGlp(
             address(usdc),
             glpAmountDesired, // glp amount
-            usdcAmountDesired.mulDiv(MAX_BPS - usdcRedeemSlippage, MAX_BPS), // usdc
+            usdcAmountDesired.mulDiv(MAX_BPS - slippageThresholdGmx, MAX_BPS), // usdc
             address(this)
         );
 
@@ -914,7 +829,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         _executeWithdraw(address(usdc), amount, address(this));
         // USDG has 18 decimals and usdc has 6 decimals => 18-6 = 12
         uint256 price = gmxVault.getMinPrice(address(usdc));
-        uint256 usdgAmount = amount.mulDiv(price * (MAX_BPS - slippageThreshold), PRICE_PRECISION * MAX_BPS);
+        uint256 usdgAmount = amount.mulDiv(price * (MAX_BPS - slippageThresholdGmx), PRICE_PRECISION * MAX_BPS);
 
         usdgAmount = usdgAmount.mulDiv(10**USDG_DECIMALS, 10**IERC20Metadata(address(usdc)).decimals());
 
@@ -994,14 +909,14 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             // console.log('swapTokenToUSD');
             uint256 amountWithPremium = tokenAmount + premium;
             // console.log('amountWithPremium borrow', amountWithPremium, token);
-            uint256 usdcReceived = _swapToken(token, tokenAmount, usdcAmount);
+            (uint256 usdcReceived, uint256 tokensUsed) = SwapManager.swapToken(token, tokenAmount, usdcAmount);
             _executeSupply(address(usdc), usdcReceived);
             _executeBorrow(token, amountWithPremium);
             IERC20(token).transfer(address(balancerVault), amountWithPremium);
             dnUsdcDeposited += usdcReceived.toInt256();
         } else {
             // console.log('swapUSDCToToken');
-            (uint256 usdcPaid, uint256 tokensReceived) = _swapUSDC(token, tokenAmount, usdcAmount);
+            (uint256 usdcPaid, uint256 tokensReceived) = SwapManager.swapUSDC(token, tokenAmount, usdcAmount);
             uint256 amountWithPremium = usdcPaid + premium;
             // console.log('amountWithPremium', amountWithPremium, token);
             dnUsdcDeposited -= amountWithPremium.toInt256();
@@ -1113,7 +1028,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             tokenAmount = optimalBorrow - currentBorrow;
             // To swap with the amount in specified hence usdcAmount should be the min amount out
             usdcAmount = _getPrice(IERC20Metadata(token), true).mulDiv(
-                tokenAmount * (MAX_BPS - usdcRedeemSlippage),
+                tokenAmount * (MAX_BPS - slippageThresholdSwap),
                 MAX_BPS * PRICE_PRECISION
             );
 
@@ -1125,7 +1040,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             tokenAmount = (currentBorrow - optimalBorrow);
             // To swap with amount out specified hence usdcAmount should be the max amount in
             usdcAmount = _getPrice(IERC20Metadata(token), true).mulDiv(
-                tokenAmount * (MAX_BPS + usdcRedeemSlippage),
+                tokenAmount * (MAX_BPS + slippageThresholdSwap),
                 MAX_BPS * PRICE_PRECISION
             );
             // console.log('currentBorrow', currentBorrow);

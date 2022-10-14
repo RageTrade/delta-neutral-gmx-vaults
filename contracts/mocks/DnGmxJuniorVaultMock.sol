@@ -8,6 +8,8 @@ import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/I
 import { IStableSwap } from '../interfaces/curve/IStableSwap.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 
+import { SwapManager } from 'contracts/libraries/SwapManager.sol';
+
 contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
     function dnUsdcDepositedExternal() external view returns (int256) {
         return dnUsdcDeposited;
@@ -37,16 +39,16 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         address token,
         uint256 tokenAmount,
         uint256 minUsdcAmount
-    ) external returns (uint256 usdcAmount) {
-        return _swapToken(token, tokenAmount, minUsdcAmount);
+    ) external returns (uint256 usdcReceived, uint256 tokensUsed) {
+        return SwapManager.swapToken(token, tokenAmount, minUsdcAmount);
     }
 
     function swapUSDC(
         address token,
         uint256 tokenAmount,
         uint256 maxUsdcAmount
-    ) external returns (uint256 usdcAmount, uint256 tokensReceived) {
-        return _swapUSDC(token, tokenAmount, maxUsdcAmount);
+    ) external returns (uint256 usdcPaid, uint256 tokensReceived) {
+        return SwapManager.swapUSDC(token, tokenAmount, maxUsdcAmount);
     }
 
     function executeFlashloan(
@@ -183,9 +185,8 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         return _convertAUsdcToAsset(amount);
     }
 
-    function setMocks(ISwapRouter _swapRouter, IStableSwap _stableSwap) external {
+    function setMocks(ISwapRouter _swapRouter) external {
         swapRouter = _swapRouter;
-        tricryptoPool = _stableSwap;
     }
 
     function depositToken(
