@@ -5,35 +5,49 @@ import { formatEther, formatUnits, parseEther, parseUnits } from 'ethers/lib/uti
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 
 describe('Swaps', () => {
-  it('Swap Token To USDC', async () => {
+  it.only('Swap Token To USDC', async () => {
     const { dnGmxJuniorVault, usdc, wbtc, weth } = await dnGmxJuniorVaultFixture();
+
+    const MAX_BPS = BigNumber.from(10_000);
+    const PRICE_PRECISION = BigNumber.from(10).pow(30);
+
+    const slippageThresholdSwap = BigNumber.from(100);
 
     await generateErc20Balance(weth, parseUnits('1', 18), dnGmxJuniorVault.address);
     await generateErc20Balance(wbtc, parseUnits('1', 8), dnGmxJuniorVault.address);
 
     expect(await usdc.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
 
-    const btcPrice = await dnGmxJuniorVault['getPrice(address)'](wbtc.address);
     await dnGmxJuniorVault.swapToken(wbtc.address, parseUnits('1', 8), 0);
+
+    const btcPrice = await dnGmxJuniorVault['getPrice(address)'](wbtc.address);
     const usdcBal1 = await usdc.balanceOf(dnGmxJuniorVault.address);
 
-    expect(usdcBal1.sub(btcPrice.div(BigNumber.from(10).pow(30 - 8))).abs()).to.lte(BigNumber.from(10).pow(8));
+    const usdcEstimated1 = btcPrice
+      .mul(parseUnits('1', 8))
+      .mul(MAX_BPS.sub(slippageThresholdSwap))
+      .div(PRICE_PRECISION)
+      .div(MAX_BPS);
+
+    expect(usdcBal1).to.gt(usdcEstimated1);
     expect(await wbtc.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
 
-    const ethPrice = await dnGmxJuniorVault['getPrice(address)'](weth.address);
     await dnGmxJuniorVault.swapToken(weth.address, parseUnits('1', 18), 0);
+
+    const ethPrice = await dnGmxJuniorVault['getPrice(address)'](weth.address);
     const usdcBal2 = await usdc.balanceOf(dnGmxJuniorVault.address);
 
-    expect(
-      usdcBal2
-        .sub(usdcBal1)
-        .sub(ethPrice.div(BigNumber.from(10).pow(30 - 18)))
-        .abs(),
-    ).to.lte(BigNumber.from(10).pow(8));
+    const usdcEstimated2 = ethPrice
+      .mul(parseUnits('1', 18))
+      .mul(MAX_BPS.sub(slippageThresholdSwap))
+      .div(PRICE_PRECISION)
+      .div(MAX_BPS);
+
+    expect(usdcBal2.sub(usdcBal1)).to.gt(usdcEstimated2);
     expect(await weth.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
   });
 
-  it('Swap USDC To Token', async () => {
+  it.only('Swap USDC To Token', async () => {
     const { dnGmxJuniorVault, usdc, wbtc, weth } = await dnGmxJuniorVaultFixture();
     await generateErc20Balance(usdc, parseUnits('100000', 6), dnGmxJuniorVault.address);
 
@@ -62,7 +76,7 @@ describe('Swaps', () => {
     const { dnGmxJuniorVault, usdc, wbtc, weth, mocks } = await dnGmxJuniorVaultFixture();
 
     await mocks.stableSwapMock.setPrice(parseUnits('19929', 6));
-    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address, mocks.stableSwapMock.address);
+    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
     await generateErc20Balance(usdc, parseUnits('200000', 6), dnGmxJuniorVault.address);
@@ -102,7 +116,7 @@ describe('Swaps', () => {
     expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
     expect(await dnGmxJuniorVault.totalAssets()).to.eq(assets);
 
-    await dnGmxJuniorVault.convertAssetToAUsdc(usdcAmount); // usdcRedeemSlippage = 1% (from fixture)
+    await dnGmxJuniorVault.convertAssetToAUsdc(usdcAmount); // slippageThresholdGmx = 1% (from fixture)
 
     const glpToUnstakeAndRedeem = usdcAmount.mul(PRICE_PRECISION).div(price);
     const minUsdcOut = usdcAmount.mul(99).div(100);
@@ -123,8 +137,8 @@ describe('Swaps', () => {
     const usdcAmount = parseUnits('100', 6);
 
     await dnGmxJuniorVault.setThresholds({
-      slippageThreshold: 100,
-      usdcRedeemSlippage: 10,
+      slippageThresholdSwap: 100,
+      slippageThresholdGmx: 10,
       hfThreshold: 12_000,
       usdcConversionThreshold: parseUnits('1', 6),
       wethConversionThreshold: 10n ** 15n,
@@ -136,7 +150,7 @@ describe('Swaps', () => {
     expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
     expect(await dnGmxJuniorVault.totalAssets()).to.eq(assets);
 
-    // usdcRedeemSlippage = 0.1%
+    // slippageThresholdGmx = 0.1%
     expect(dnGmxJuniorVault.convertAssetToAUsdc(usdcAmount)).to.be.revertedWith(
       `VM Exception while processing transaction: reverted with reason string 'GlpManager: insufficient output'`,
     );
@@ -148,7 +162,7 @@ describe('Swaps', () => {
 
     const aUSDCAmount = parseUnits('100', 6);
 
-    const slippageThreshold = BigNumber.from(100); // 1%
+    const slippageThresholdGmx = BigNumber.from(100); // 1%
     const MAX_BPS = BigNumber.from(10_000);
     const PRICE_PRECISION = BigNumber.from(10).pow(30);
 
@@ -158,7 +172,11 @@ describe('Swaps', () => {
     const USDC_DECIMALS = 6;
     const USDG_DECIMALS = 18;
 
-    let minUsdgOut = aUSDCAmount.mul(priceOfUsdc).mul(MAX_BPS.sub(slippageThreshold)).div(MAX_BPS).div(PRICE_PRECISION);
+    let minUsdgOut = aUSDCAmount
+      .mul(priceOfUsdc)
+      .mul(MAX_BPS.sub(slippageThresholdGmx))
+      .div(MAX_BPS)
+      .div(PRICE_PRECISION);
 
     // console.log('minUsdgOut (intermidiate)', formatEther(minUsdgOut))
 
@@ -176,7 +194,7 @@ describe('Swaps', () => {
     expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.eq(aUSDCAmount);
     expect(await dnGmxJuniorVault.totalAssets()).to.eq(0);
 
-    await dnGmxJuniorVault.convertAUsdcToAsset(aUSDCAmount); // usdcRedeemSlippage = 1% (from fixture)
+    await dnGmxJuniorVault.convertAUsdcToAsset(aUSDCAmount); // slippageThresholdGmx = 1% (from fixture)
 
     // console.log('min glp out', formatEther(minGlpOut));
 
@@ -195,8 +213,8 @@ describe('Swaps', () => {
     const aUSDCAmount = parseUnits('100', 6);
 
     await dnGmxJuniorVault.setThresholds({
-      slippageThreshold: 10,
-      usdcRedeemSlippage: 100,
+      slippageThresholdSwap: 100,
+      slippageThresholdGmx: 10,
       hfThreshold: 12_000,
       usdcConversionThreshold: parseUnits('1', 6),
       wethConversionThreshold: 10n ** 15n,
@@ -208,7 +226,7 @@ describe('Swaps', () => {
     expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.eq(aUSDCAmount);
     expect(await dnGmxJuniorVault.totalAssets()).to.eq(0);
 
-    // usdcRedeemSlippage = 0.1%
+    // slippageThresholdGmx = 0.1%
     expect(dnGmxJuniorVault.convertAssetToAUsdc(aUSDCAmount)).to.be.revertedWith(
       `VM Exception while processing transaction: reverted with reason string 'GlpManager: insufficient output'`,
     );

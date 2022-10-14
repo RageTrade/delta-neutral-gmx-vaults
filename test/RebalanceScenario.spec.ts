@@ -17,10 +17,10 @@ describe('Rebalance Scenarios', () => {
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds({
-      slippageThreshold: 100,
+      slippageThresholdSwap: 100,
       hfThreshold: 0,
       hedgeUsdcAmountThreshold: 0,
-      usdcRedeemSlippage: 100,
+      slippageThresholdGmx: 100,
       usdcConversionThreshold: parseUnits('20', 6),
       wethConversionThreshold: 10n ** 15n,
     });
@@ -100,15 +100,15 @@ describe('Rebalance Scenarios', () => {
     const checker = new Checker(opts);
 
     const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, mocks, aUSDC, gmxVault, lendingPool } = opts;
-    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address, mocks.stableSwapMock.address);
+    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds({
-      slippageThreshold: 100,
+      slippageThresholdSwap: 100,
       hfThreshold: 0,
       hedgeUsdcAmountThreshold: 0,
-      usdcRedeemSlippage: 1000,
+      slippageThresholdGmx: 1000,
       usdcConversionThreshold: parseUnits('1', 6),
       wethConversionThreshold: 10n ** 15n,
     });
@@ -193,10 +193,10 @@ describe('Rebalance Scenarios', () => {
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds({
-      slippageThreshold: 100,
+      slippageThresholdSwap: 100,
       hfThreshold: 0,
       hedgeUsdcAmountThreshold: 0,
-      usdcRedeemSlippage: 1000,
+      slippageThresholdGmx: 1000,
       usdcConversionThreshold: parseUnits('1', 6),
       wethConversionThreshold: 10n ** 15n,
     });
@@ -275,11 +275,12 @@ describe('Rebalance Scenarios', () => {
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds({
-      slippageThreshold: 100,
+      slippageThresholdSwap: 100,
       hfThreshold: 0,
       hedgeUsdcAmountThreshold: 0,
       usdcRedeemSlippage: 1000,
       usdcConversionThreshold: parseUnits('1', 6),
+      slippageThresholdGmx: 100,
       wethConversionThreshold: 10n ** 15n,
     });
 
@@ -362,7 +363,8 @@ describe('Rebalance Scenarios', () => {
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds({
-      slippageThreshold: 100,
+      slippageThresholdSwap: 100,
+      slippageThresholdGmx: 10_000,
       hfThreshold: 0,
       hedgeUsdcAmountThreshold: 0,
       usdcRedeemSlippage: 1000,
@@ -449,10 +451,10 @@ describe('Rebalance Scenarios', () => {
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds({
-      slippageThreshold: 100,
+      slippageThresholdSwap: 100,
       hfThreshold: 0,
       hedgeUsdcAmountThreshold: parseUnits('12', 6),
-      usdcRedeemSlippage: 1000,
+      slippageThresholdGmx: 1000,
       usdcConversionThreshold: parseUnits('1', 6),
       wethConversionThreshold: 10n ** 15n,
     });
