@@ -5,7 +5,7 @@ import { formatEther, formatUnits, parseEther, parseUnits } from 'ethers/lib/uti
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 
 describe('Swaps', () => {
-  it.only('Swap Token To USDC', async () => {
+  it('Swap Token To USDC', async () => {
     const { dnGmxJuniorVault, usdc, wbtc, weth } = await dnGmxJuniorVaultFixture();
 
     const MAX_BPS = BigNumber.from(10_000);
@@ -47,7 +47,7 @@ describe('Swaps', () => {
     expect(await weth.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
   });
 
-  it.only('Swap USDC To Token', async () => {
+  it('Swap USDC To Token', async () => {
     const { dnGmxJuniorVault, usdc, wbtc, weth } = await dnGmxJuniorVaultFixture();
     await generateErc20Balance(usdc, parseUnits('100000', 6), dnGmxJuniorVault.address);
 
