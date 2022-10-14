@@ -114,7 +114,8 @@ describe('DnGmx Senior Vault', () => {
       await dnGmxSeniorVault.connect(users[1]).deposit(depositAmount, users[1].address);
       await dnGmxJuniorVault.executeBorrowFromDnGmxSeniorVault(borrowAmount);
 
-      expect(await dnGmxSeniorVault.totalAssets()).to.eq(depositAmount);
+      // Can slightly vary because of the interest accrued on AAVE
+      expect(await dnGmxSeniorVault.totalAssets()).to.closeTo(depositAmount, 1n);
       expect(await aUSDC.balanceOf(dnGmxSeniorVault.address)).to.eq(depositAmount.sub(borrowAmount));
       expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.eq(borrowAmount);
     });
