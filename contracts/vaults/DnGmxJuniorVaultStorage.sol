@@ -70,7 +70,7 @@ contract DnGmxJuniorVaultStorage {
     IDebtToken internal vWbtc;
     IDebtToken internal vWeth;
 
-    ISwapRouter internal swapRouter;
+    ISwapRouter public swapRouter;
     IBalancerVault internal balancerVault;
 
     uint256 internal targetHealthFactor;
