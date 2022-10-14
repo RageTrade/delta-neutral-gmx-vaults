@@ -563,6 +563,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     function getUsdcBorrowed() public view returns (uint256 usdcAmount) {
         return uint256(aUsdc.balanceOf(address(this)).toInt256() - dnUsdcDeposited - unhedgedGlpInUsdc.toInt256());
     }
+
     function maxDeposit(address) public view override returns (uint256) {
         return depositCap - _totalAssets(true);
     }
