@@ -1,12 +1,13 @@
 import { expect } from 'chai';
-import { BigNumber } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { generateErc20Balance } from './utils/generator';
 import { formatEther, formatUnits, parseEther, parseUnits } from 'ethers/lib/utils';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 
 describe('Swaps', () => {
   it('Swap Token To USDC', async () => {
-    const { dnGmxJuniorVault, usdc, wbtc, weth } = await dnGmxJuniorVaultFixture();
+    const { dnGmxJuniorVault, dnGmxSeniorVault, dnGmxJuniorVaultSigner, usdc, wbtc, weth } =
+      await dnGmxJuniorVaultFixture();
 
     const MAX_BPS = BigNumber.from(10_000);
     const PRICE_PRECISION = BigNumber.from(10).pow(30);
@@ -16,66 +17,86 @@ describe('Swaps', () => {
     await generateErc20Balance(weth, parseUnits('1', 18), dnGmxJuniorVault.address);
     await generateErc20Balance(wbtc, parseUnits('1', 8), dnGmxJuniorVault.address);
 
-    expect(await usdc.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
+    const btcPrice = await dnGmxJuniorVault['getPrice(address,bool)'](wbtc.address, true);
 
-    await dnGmxJuniorVault.swapToken(wbtc.address, parseUnits('1', 8), 0);
-
-    const btcPrice = await dnGmxJuniorVault['getPrice(address)'](wbtc.address);
-    const usdcBal1 = await usdc.balanceOf(dnGmxJuniorVault.address);
-
-    const usdcEstimated1 = btcPrice
+    let minUsdcOut = btcPrice
       .mul(parseUnits('1', 8))
       .mul(MAX_BPS.sub(slippageThresholdSwap))
       .div(PRICE_PRECISION)
       .div(MAX_BPS);
 
-    expect(usdcBal1).to.gt(usdcEstimated1);
+    console.log('btc price', btcPrice.mul(parseUnits('1', 8)).div(PRICE_PRECISION));
+
+    await dnGmxJuniorVault.swapToken(wbtc.address, parseUnits('1', 8), minUsdcOut);
+    let usdcBal = await usdc.balanceOf(dnGmxJuniorVault.address);
+
+    expect(usdcBal).gt(minUsdcOut);
     expect(await wbtc.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
 
-    await dnGmxJuniorVault.swapToken(weth.address, parseUnits('1', 18), 0);
+    // reset usdc bal to 0
+    await usdc
+      .connect(dnGmxJuniorVaultSigner)
+      .transfer(ethers.constants.AddressZero, usdc.balanceOf(dnGmxSeniorVault.address));
 
     const ethPrice = await dnGmxJuniorVault['getPrice(address)'](weth.address);
-    const usdcBal2 = await usdc.balanceOf(dnGmxJuniorVault.address);
 
-    const usdcEstimated2 = ethPrice
+    minUsdcOut = ethPrice
       .mul(parseUnits('1', 18))
       .mul(MAX_BPS.sub(slippageThresholdSwap))
       .div(PRICE_PRECISION)
       .div(MAX_BPS);
 
-    expect(usdcBal2.sub(usdcBal1)).to.gt(usdcEstimated2);
+    await dnGmxJuniorVault.swapToken(weth.address, parseUnits('1', 18), minUsdcOut);
+    usdcBal = await usdc.balanceOf(dnGmxJuniorVault.address);
+
+    expect(usdcBal).to.gt(minUsdcOut);
     expect(await weth.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
   });
 
   it('Swap USDC To Token', async () => {
-    const { dnGmxJuniorVault, usdc, wbtc, weth } = await dnGmxJuniorVaultFixture();
-    await generateErc20Balance(usdc, parseUnits('100000', 6), dnGmxJuniorVault.address);
+    const { dnGmxJuniorVault, dnGmxSeniorVault, dnGmxJuniorVaultSigner, usdc, wbtc, weth } =
+      await dnGmxJuniorVaultFixture();
 
-    expect(await wbtc.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
-    expect(await weth.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
+    const MAX_BPS = BigNumber.from(10_000);
+    const PRICE_PRECISION = BigNumber.from(10).pow(30);
 
-    const swapToWBTC = await dnGmxJuniorVault.callStatic.swapUSDC(
-      wbtc.address,
-      parseUnits('1', 8),
-      parseUnits('100000', 6),
-    );
-    const swapToWETH = await dnGmxJuniorVault.callStatic.swapUSDC(
-      weth.address,
-      parseUnits('1', 18),
-      parseUnits('100000', 6),
-    );
+    const slippageThresholdSwap = BigNumber.from(100);
 
-    await dnGmxJuniorVault.swapUSDC(wbtc.address, parseUnits('1', 8), parseUnits('100000', 6));
+    const btcPrice = await dnGmxJuniorVault['getPrice(address,bool)'](wbtc.address, true);
+
+    let maxUsdcIn = btcPrice
+      .mul(parseUnits('1', 8))
+      .mul(MAX_BPS.add(slippageThresholdSwap))
+      .div(PRICE_PRECISION)
+      .div(MAX_BPS);
+
+    await generateErc20Balance(usdc, maxUsdcIn, dnGmxJuniorVault.address);
+    await dnGmxJuniorVault.swapUSDC(wbtc.address, parseUnits('1', 8), maxUsdcIn);
+
+    expect(await wbtc.balanceOf(dnGmxJuniorVault.address)).to.eq(parseUnits('1', 8));
+
+    // reset usdc bal to 0
+    await usdc
+      .connect(dnGmxJuniorVaultSigner)
+      .transfer(ethers.constants.AddressZero, usdc.balanceOf(dnGmxSeniorVault.address));
+
+    const ethPrice = await dnGmxJuniorVault['getPrice(address,bool)'](wbtc.address, true);
+
+    maxUsdcIn = ethPrice
+      .mul(parseUnits('1', 8))
+      .mul(MAX_BPS.add(slippageThresholdSwap))
+      .div(PRICE_PRECISION)
+      .div(MAX_BPS);
+
+    await generateErc20Balance(usdc, maxUsdcIn, dnGmxJuniorVault.address);
     await dnGmxJuniorVault.swapUSDC(weth.address, parseUnits('1', 18), parseUnits('100000', 6));
 
-    expect(await wbtc.balanceOf(dnGmxJuniorVault.address)).to.eq(swapToWBTC.tokensReceived);
-    expect(await weth.balanceOf(dnGmxJuniorVault.address)).to.eq(swapToWETH.tokensReceived);
+    expect(await weth.balanceOf(dnGmxJuniorVault.address)).to.eq(parseUnits('1', 18));
   });
 
   it('swaps with mock', async () => {
     const { dnGmxJuniorVault, usdc, wbtc, weth, mocks } = await dnGmxJuniorVaultFixture();
 
-    await mocks.stableSwapMock.setPrice(parseUnits('19929', 6));
     await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
