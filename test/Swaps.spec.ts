@@ -36,7 +36,7 @@ describe('Swaps', () => {
     // reset usdc bal to 0
     await usdc
       .connect(dnGmxJuniorVaultSigner)
-      .transfer(ethers.constants.AddressZero, usdc.balanceOf(dnGmxSeniorVault.address));
+      .transfer(dnGmxSeniorVault.address, usdc.balanceOf(dnGmxJuniorVault.address));
 
     const ethPrice = await dnGmxJuniorVault['getPrice(address)'](weth.address);
 
@@ -78,7 +78,7 @@ describe('Swaps', () => {
     // reset usdc bal to 0
     await usdc
       .connect(dnGmxJuniorVaultSigner)
-      .transfer(ethers.constants.AddressZero, usdc.balanceOf(dnGmxSeniorVault.address));
+      .transfer(dnGmxSeniorVault.address, usdc.balanceOf(dnGmxJuniorVault.address));
 
     const ethPrice = await dnGmxJuniorVault['getPrice(address,bool)'](wbtc.address, true);
 
