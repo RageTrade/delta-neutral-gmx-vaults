@@ -990,7 +990,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
     function _totalAssets(bool maximize) internal view returns (uint256) {
         uint256 unhedgedGlp = unhedgedGlpInUsdc.mulDiv(PRICE_PRECISION, getPrice(!maximize));
-        if (!maximize) unhedgedGlp = unhedgedGlp.mulDiv(MAX_BPS - usdcRedeemSlippage, MAX_BPS);
+        if (!maximize) unhedgedGlp = unhedgedGlp.mulDiv(MAX_BPS - slippageThresholdGmx, MAX_BPS);
         return fsGlp.balanceOf(address(this)) + batchingManager.dnGmxJuniorVaultGlpBalance() + unhedgedGlp;
     }
 
