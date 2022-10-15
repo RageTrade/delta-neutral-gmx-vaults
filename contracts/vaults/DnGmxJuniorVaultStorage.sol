@@ -26,39 +26,39 @@ interface IDebtToken is IVariableDebtToken {
 contract DnGmxJuniorVaultStorage {
     ///@dev constants
 
-    uint16 public constant MAX_BPS = 10_000;
+    uint16 internal constant MAX_BPS = 10_000;
 
-    uint256 public constant USDG_DECIMALS = 18;
-    uint256 public constant WETH_DECIMALS = 18;
+    uint256 internal constant USDG_DECIMALS = 18;
+    uint256 internal constant WETH_DECIMALS = 18;
 
-    uint256 public constant PRICE_PRECISION = 1e30;
-    uint256 public constant VARIABLE_INTEREST_MODE = 2;
+    uint256 internal constant PRICE_PRECISION = 1e30;
+    uint256 internal constant VARIABLE_INTEREST_MODE = 2;
 
     ///@dev common storage
 
     /* solhint-disable var-name-mixedcase */
-    uint256 public FEE = 1000;
+    uint256 internal FEE = 1000;
 
-    address public keeper;
-    IDnGmxSeniorVault public dnGmxSeniorVault;
-    address public feeRecipient;
-    uint256 public withdrawFeeBps;
-    uint256 public protocolFee;
-    uint256 public protocolEsGmx;
-    uint256 public unhedgedGlpInUsdc;
-    uint256 public seniorVaultWethRewards;
-    uint256 public wethConversionThreshold;
-    uint256 hedgeUsdcAmountThreshold;
-    uint256 hfThreshold;
+    address internal keeper;
+    IDnGmxSeniorVault internal dnGmxSeniorVault;
+    address internal feeRecipient;
+    uint256 internal withdrawFeeBps;
+    uint256 internal protocolFee;
+    uint256 internal protocolEsGmx;
+    uint256 internal unhedgedGlpInUsdc;
+    uint256 internal seniorVaultWethRewards;
+    uint256 internal wethConversionThreshold;
+    uint256 internal hedgeUsdcAmountThreshold;
+    uint256 internal hfThreshold;
 
-    uint256 public depositCap;
+    uint256 internal depositCap;
     int256 internal dnUsdcDeposited;
 
     bool internal _hasFlashloaned;
 
-    uint64 public lastRebalanceTS;
-    uint32 public rebalanceTimeThreshold;
-    uint16 public rebalanceDeltaThreshold;
+    uint64 internal lastRebalanceTS;
+    uint32 internal rebalanceTimeThreshold;
+    uint16 internal rebalanceDeltaThreshold;
 
     ///@dev storage for hedge strategy
 
@@ -78,9 +78,9 @@ contract DnGmxJuniorVaultStorage {
 
     ///@dev storage for yield strategy
 
-    uint16 public slippageThresholdGmx;
-    uint16 public slippageThresholdSwap;
-    uint208 public usdcConversionThreshold;
+    uint16 internal slippageThresholdGmx;
+    uint16 internal slippageThresholdSwap;
+    uint208 internal usdcConversionThreshold;
 
     IERC20 internal fsGlp;
     IRewardTracker internal sGmx;
