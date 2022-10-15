@@ -2,21 +2,26 @@
 
 pragma solidity ^0.8.9;
 
-import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
-import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
-
-import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
-import { PausableUpgradeable } from '@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol';
-
+import { WadRayMath } from '@aave/core-v3/contracts/protocol/libraries/math/WadRayMath.sol';
 import { IPool } from '@aave/core-v3/contracts/interfaces/IPool.sol';
 import { IAToken } from '@aave/core-v3/contracts/interfaces/IAToken.sol';
 import { IPriceOracle } from '@aave/core-v3/contracts/interfaces/IPriceOracle.sol';
 import { DataTypes } from '@aave/core-v3/contracts/protocol/libraries/types/DataTypes.sol';
 import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol';
 import { ReserveConfiguration } from '@aave/core-v3/contracts/protocol/libraries/configuration/ReserveConfiguration.sol';
+import { IRewardsController } from '@aave/periphery-v3/contracts/rewards/interfaces/IRewardsController.sol';
+
+import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
+import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import { PausableUpgradeable } from '@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol';
+
+import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMathLib.sol';
+
+import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
+import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
+
 import { IVault } from '../interfaces/gmx/IVault.sol';
 import { IGlpManager } from '../interfaces/gmx/IGlpManager.sol';
 import { IStableSwap } from '../interfaces/curve/IStableSwap.sol';
@@ -24,17 +29,16 @@ import { ISGLPExtended } from '../interfaces/gmx/ISGLPExtended.sol';
 import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
 import { IRewardTracker } from '../interfaces/gmx/IRewardTracker.sol';
 import { IVester } from '../interfaces/gmx/IVester.sol';
-
 import { IBalancerVault } from '../interfaces/IBalancerVault.sol';
+import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
+import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
+
+import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
+import { SwapManager } from '../libraries/SwapManager.sol';
+import { SafeCast } from '../libraries/SafeCast.sol';
+
 import { ERC4626Upgradeable } from '../ERC4626/ERC4626Upgradeable.sol';
 import { DnGmxJuniorVaultStorage, IDebtToken } from '../vaults/DnGmxJuniorVaultStorage.sol';
-import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
-import { SafeCast } from '../libraries/SafeCast.sol';
-import { WadRayMath } from '@aave/core-v3/contracts/protocol/libraries/math/WadRayMath.sol';
-import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
-import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMathLib.sol';
-
-import { SwapManager } from 'contracts/libraries/SwapManager.sol';
 
 // import 'hardhat/console.sol';
 
@@ -198,33 +202,37 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         emit WithdrawFeeUpdated(_withdrawFeeBps);
     }
 
-    function setThresholds(YieldStrategyParams calldata _ysParams) external onlyOwner {
-        slippageThresholdSwap = uint16(_ysParams.slippageThresholdSwap);
-        slippageThresholdGmx = uint16(_ysParams.slippageThresholdGmx);
-        usdcConversionThreshold = uint208(_ysParams.usdcConversionThreshold);
-        wethConversionThreshold = _ysParams.wethConversionThreshold;
-        hedgeUsdcAmountThreshold = _ysParams.hedgeUsdcAmountThreshold;
-        hfThreshold = _ysParams.hfThreshold;
-        emit YieldParamsUpdated(
-            _ysParams.slippageThresholdGmx,
-            _ysParams.usdcConversionThreshold,
-            _ysParams.wethConversionThreshold,
-            _ysParams.hedgeUsdcAmountThreshold,
-            _ysParams.hfThreshold
-        );
+    function setThresholds(
+        uint16 _slippageThresholdSwap,
+        uint16 _slippageThresholdGmx,
+        uint208 _usdcConversionThreshold,
+        uint256 _hfThreshold,
+        uint256 _wethConversionThreshold,
+        uint256 _hedgeUsdcAmountThreshold
+    ) external onlyOwner {
+        slippageThresholdSwap = _slippageThresholdSwap;
+        slippageThresholdGmx = _slippageThresholdGmx;
+        usdcConversionThreshold = _usdcConversionThreshold;
+        wethConversionThreshold = _wethConversionThreshold;
+        hedgeUsdcAmountThreshold = _hedgeUsdcAmountThreshold;
+        hfThreshold = _hfThreshold;
     }
 
-    function setRebalanceParams(RebalanceStrategyParams calldata _rsParams) external onlyOwner {
-        rebalanceTimeThreshold = _rsParams.rebalanceTimeThreshold;
-        rebalanceDeltaThreshold = _rsParams.rebalanceDeltaThreshold;
-        emit RebalanceParamsUpdated(_rsParams.rebalanceTimeThreshold, _rsParams.rebalanceDeltaThreshold);
+    function setRebalanceParams(uint32 _rebalanceTimeThreshold, uint16 _rebalanceDeltaThreshold) external onlyOwner {
+        rebalanceTimeThreshold = _rebalanceTimeThreshold;
+        rebalanceDeltaThreshold = _rebalanceDeltaThreshold;
     }
 
-    function setHedgeParams(HedgeStrategyParams calldata _hedgeParams) external onlyOwner {
-        balancerVault = _hedgeParams.vault;
-        swapRouter = _hedgeParams.swapRouter;
-        targetHealthFactor = _hedgeParams.targetHealthFactor;
-        aaveRewardsController = _hedgeParams.aaveRewardsController;
+    function setHedgeParams(
+        IBalancerVault _vault,
+        ISwapRouter _swapRouter,
+        uint256 _targetHealthFactor,
+        IRewardsController _aaveRewardsController
+    ) external onlyOwner {
+        balancerVault = _vault;
+        swapRouter = _swapRouter;
+        targetHealthFactor = _targetHealthFactor;
+        aaveRewardsController = _aaveRewardsController;
     }
 
     function pause() external onlyOwner {

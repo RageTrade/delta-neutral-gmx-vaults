@@ -105,25 +105,4 @@ contract DnGmxJuniorVaultStorage {
         IERC20Metadata usdc;
         IERC20Metadata usdt;
     }
-
-    struct YieldStrategyParams {
-        uint256 slippageThresholdSwap;
-        uint16 slippageThresholdGmx;
-        uint240 usdcConversionThreshold;
-        uint256 hfThreshold;
-        uint256 wethConversionThreshold;
-        uint256 hedgeUsdcAmountThreshold;
-    }
-
-    struct HedgeStrategyParams {
-        IBalancerVault vault;
-        ISwapRouter swapRouter;
-        uint256 targetHealthFactor;
-        IRewardsController aaveRewardsController;
-    }
-
-    struct RebalanceStrategyParams {
-        uint32 rebalanceTimeThreshold;
-        uint16 rebalanceDeltaThreshold;
-    }
 }
