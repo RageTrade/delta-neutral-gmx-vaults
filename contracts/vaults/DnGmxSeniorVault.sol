@@ -204,7 +204,7 @@ contract DnGmxSeniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         uint256 price = oracle.getAssetPrice(address(asset));
 
         // @dev aave returns from same source as chainlink (which is 8 decimals)
-        return price.mulDiv(1 << 128, 1e8);
+        return price.mulDiv(1 << 128, 1e20); // usdc decimals - (chainlink decimals + asset decimals) = 6-8-18 = 20
     }
 
     function getVaultMarketValue() public view returns (uint256) {
