@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { parseEther, parseUnits } from 'ethers/lib/utils';
+import { formatUnits, parseEther, parseUnits } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 import { Changer } from './utils/changer';
@@ -394,8 +394,9 @@ describe('Rebalance & its utils', () => {
   it('Deposit', async () => {
     let tx;
     const opts = await dnGmxJuniorVaultFixture();
-    const { dnGmxJuniorVault, dnGmxSeniorVault, aUSDC, users } = opts;
+    const { dnGmxJuniorVault, dnGmxSeniorVault, vdWBTC, vdWETH, aUSDC, fsGlp, users } = opts;
     const checker = new Checker(opts);
+    const logger = new Logger(opts);
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('100', 6), users[1].address);
 
@@ -403,15 +404,21 @@ describe('Rebalance & its utils', () => {
 
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
 
-    console.log('totalAssets', await dnGmxJuniorVault.totalAssets());
-    console.log('totalSupply', await dnGmxJuniorVault.totalSupply());
-    console.log('vaultMktValue', await dnGmxJuniorVault.getVaultMarketValue());
-
     const vmv = (await dnGmxJuniorVault.getPriceExternal()).mul(amount).div(BigNumber.from(10).pow(30));
 
     await checker.checkTotalAssets(amount);
     await checker.checkTotalSupply(amount);
-    await checker.checkVaultMktValue(vmv);
+    await checker.checkVaultMktValue(vmv, vmv.mul(2).div(await dnGmxJuniorVault.slippageThresholdSwap()));
+
+    // const borrows = await dnGmxJuniorVault.getCurrentBorrows()
+    // console.log('vmv', vmv)
+    // console.log('vault market value', await dnGmxJuniorVault.getVaultMarketValue())
+    // console.log('vault glp balance', await fsGlp.balanceOf(dnGmxJuniorVault.address));
+    // console.log('dnUsdcDeposited', await dnGmxJuniorVault.dnUsdcDepositedExternal())
+    // console.log('unhedgedGlpInUsdc', await dnGmxJuniorVault.unhedgedGlpInUsdc())
+    // console.log('total current borrow value', await dnGmxJuniorVault.getBorrowValue(borrows[0], borrows[1]))
+
+    // await logger.logAavePosition();
   });
 
   it('Deposit Beyond Balance', async () => {
@@ -472,8 +479,10 @@ describe('Rebalance & its utils', () => {
   it('Full Withdraw', async () => {
     const opts = await dnGmxJuniorVaultFixture();
     const logger = new Logger(opts);
-    const { gmxVault, dnGmxJuniorVault, dnGmxSeniorVault, users, aUSDC, wbtc, weth } = opts;
+    const { dnGmxJuniorVault, dnGmxSeniorVault, users } = opts;
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
+
+    await dnGmxJuniorVault.setWithdrawFee(100); //50BPS = .5%
 
     const amount = parseEther('100');
 
@@ -515,57 +524,28 @@ describe('Rebalance & its utils', () => {
     expect(await dnGmxJuniorVault.totalSupply()).to.eq(amount.div(2));
   });
 
-  it.skip('Change Price', async () => {
+  it('Change Price', async () => {
     const opts = await dnGmxJuniorVaultFixture();
     const changer = new Changer(opts);
     const { gmxVault, dnGmxJuniorVault, wbtc, weth } = opts;
 
-    let btcPriceCL = await dnGmxJuniorVault['getPrice(address)'](wbtc.address);
-    let ethPriceCL = await dnGmxJuniorVault['getPrice(address)'](weth.address);
+    const PRICE_PRECISION = BigNumber.from(10).pow(30);
+    const USDC_DECIMALS = BigNumber.from(10).pow(6);
 
-    let btcPriceGmxMin = await gmxVault.getMinPrice(wbtc.address);
-    let ethPriceGmxMin = await gmxVault.getMinPrice(weth.address);
+    let btcPriceCL = (await dnGmxJuniorVault['getPrice(address)'](wbtc.address))
+      .mul(parseUnits('1', 8))
+      .div(PRICE_PRECISION)
+      .div(USDC_DECIMALS);
+    let ethPriceCL = (await dnGmxJuniorVault['getPrice(address)'](weth.address))
+      .mul(parseUnits('1', 18))
+      .div(PRICE_PRECISION)
+      .div(USDC_DECIMALS);
 
-    let btcPriceGmxMax = await gmxVault.getMaxPrice(wbtc.address);
-    let ethPriceGmxMax = await gmxVault.getMaxPrice(weth.address);
+    let btcPriceGmxMin = (await gmxVault.getMinPrice(wbtc.address)).div(PRICE_PRECISION);
+    let ethPriceGmxMin = (await gmxVault.getMinPrice(weth.address)).div(PRICE_PRECISION);
 
-    btcPriceCL = btcPriceCL.mul(BigNumber.from(10).pow(12));
-    ethPriceCL = ethPriceCL.mul(BigNumber.from(10).pow(12));
-
-    console.log(ethPriceCL);
-    console.log(ethPriceGmxMin);
-    console.log(ethPriceGmxMax);
-
-    expect(btcPriceCL).gt(btcPriceGmxMin);
-    // expect(btcPriceCL).lt(btcPriceGmxMax);
-
-    expect(ethPriceCL).gt(ethPriceGmxMin);
-    expect(ethPriceCL).lt(ethPriceGmxMax);
-
-    console.log(btcPriceCL.sub(btcPriceGmxMin).abs());
-    console.log(ethPriceCL.sub(ethPriceGmxMin).abs());
-
-    expect(btcPriceCL.sub(btcPriceGmxMin)).to.eq(btcPriceCL.mul(BigNumber.from(98.5)));
-    expect(ethPriceCL.sub(ethPriceGmxMin)).to.eq(ethPriceCL.mul(BigNumber.from(98.5)));
-
-    await changer.changePriceToken('WBTC', 1000);
-    await changer.changePriceToken('WETH', 1000);
-
-    btcPriceCL = await dnGmxJuniorVault['getPrice(address)'](wbtc.address);
-    ethPriceCL = await dnGmxJuniorVault['getPrice(address)'](weth.address);
-
-    btcPriceGmxMin = await gmxVault.getMinPrice(wbtc.address);
-    ethPriceGmxMin = await gmxVault.getMinPrice(weth.address);
-
-    btcPriceGmxMax = await gmxVault.getMaxPrice(wbtc.address);
-    ethPriceGmxMax = await gmxVault.getMaxPrice(weth.address);
-
-    console.log(ethPriceCL);
-    console.log(ethPriceGmxMin);
-    console.log(ethPriceGmxMax);
-
-    btcPriceCL = btcPriceCL.mul(BigNumber.from(10).pow(12));
-    ethPriceCL = ethPriceCL.mul(BigNumber.from(10).pow(12));
+    let btcPriceGmxMax = (await gmxVault.getMaxPrice(wbtc.address)).div(PRICE_PRECISION);
+    let ethPriceGmxMax = (await gmxVault.getMaxPrice(weth.address)).div(PRICE_PRECISION);
 
     expect(btcPriceCL).gt(btcPriceGmxMin);
     expect(btcPriceCL).lt(btcPriceGmxMax);
@@ -573,8 +553,29 @@ describe('Rebalance & its utils', () => {
     expect(ethPriceCL).gt(ethPriceGmxMin);
     expect(ethPriceCL).lt(ethPriceGmxMax);
 
-    expect(btcPriceCL.sub(btcPriceGmxMin)).to.eq(btcPriceCL.mul(BigNumber.from(98.5)));
-    expect(ethPriceCL.sub(ethPriceGmxMin)).to.eq(ethPriceCL.mul(BigNumber.from(98.5)));
+    await changer.changePriceToken('WBTC', 1000);
+    await changer.changePriceToken('WETH', 1000);
+
+    btcPriceCL = (await dnGmxJuniorVault['getPrice(address)'](wbtc.address))
+      .mul(parseUnits('1', 8))
+      .div(PRICE_PRECISION)
+      .div(USDC_DECIMALS);
+    ethPriceCL = (await dnGmxJuniorVault['getPrice(address)'](weth.address))
+      .mul(parseUnits('1', 18))
+      .div(PRICE_PRECISION)
+      .div(USDC_DECIMALS);
+
+    btcPriceGmxMin = (await gmxVault.getMinPrice(wbtc.address)).div(PRICE_PRECISION);
+    ethPriceGmxMin = (await gmxVault.getMinPrice(weth.address)).div(PRICE_PRECISION);
+
+    btcPriceGmxMax = (await gmxVault.getMaxPrice(wbtc.address)).div(PRICE_PRECISION);
+    ethPriceGmxMax = (await gmxVault.getMaxPrice(weth.address)).div(PRICE_PRECISION);
+
+    expect(btcPriceCL).gt(btcPriceGmxMin);
+    expect(btcPriceCL).lt(btcPriceGmxMax);
+
+    expect(ethPriceCL).gt(ethPriceGmxMin);
+    expect(ethPriceCL).lt(ethPriceGmxMax);
   });
 
   it('Rebalance Profit - borrowVal > dnUsdcDeposited', async () => {
