@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.9;
 
-import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
@@ -40,7 +39,6 @@ import { SwapManager } from 'contracts/libraries/SwapManager.sol';
 // import 'hardhat/console.sol';
 
 contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable, DnGmxJuniorVaultStorage {
-    using FullMath for uint256;
     using SafeCast for uint256;
 
     using WadRayMath for uint256;
@@ -291,7 +289,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         );
 
         uint256 sGmxHarvested = sGmx.depositBalances(address(this), esGmx) - sGmxPrevBalance;
-        protocolEsGmx += sGmxHarvested.mulDiv(FEE, MAX_BPS);
+        protocolEsGmx += sGmxHarvested.mulDivDown(FEE, MAX_BPS);
         // console.log('sGmxHarvested', sGmxHarvested);
         // console.log('protocolEsGmx', protocolEsGmx);
 
@@ -305,7 +303,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
             uint256 wethToCompound = wethHarvested - protocolFeeHarvested;
 
-            uint256 dnGmxSeniorVaultWethShare = dnGmxSeniorVault.getEthRewardsSplitRate().mulDiv(
+            uint256 dnGmxSeniorVaultWethShare = dnGmxSeniorVault.getEthRewardsSplitRate().mulDivDown(
                 wethToCompound,
                 FeeSplitStrategy.RATE_PRECISION
             );
@@ -320,21 +318,21 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
             uint256 price = gmxVault.getMinPrice(address(weth));
 
-            uint256 usdgAmount = dnGmxWethShare.mulDiv(
+            uint256 usdgAmount = dnGmxWethShare.mulDivDown(
                 price * (MAX_BPS - slippageThresholdSwap),
                 PRICE_PRECISION * MAX_BPS
             );
 
             // console.log('usdgAmount', usdgAmount);
 
-            usdgAmount = usdgAmount.mulDiv(10**USDG_DECIMALS, 10**WETH_DECIMALS);
+            usdgAmount = usdgAmount.mulDivDown(10**USDG_DECIMALS, 10**WETH_DECIMALS);
 
             uint256 glpReceived = batchingManager.depositToken(address(weth), dnGmxWethShare, usdgAmount);
 
             // console.log('_seniorVaultWethRewards', _seniorVaultWethRewards);
             if (_seniorVaultWethRewards > wethConversionThreshold) {
                 // Deposit aave vault share to AAVE in usdc
-                uint256 minUsdcAmount = _getPrice(weth, true).mulDiv(
+                uint256 minUsdcAmount = _getPrice(weth, true).mulDivDown(
                     _seniorVaultWethRewards * (MAX_BPS - slippageThresholdSwap),
                     MAX_BPS * PRICE_PRECISION
                 );
@@ -433,7 +431,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
             if (allowed != type(uint256).max) _approve(owner, msg.sender, allowed - shares);
         }
-        uint256 assetsAfterFees = assets.mulDiv(MAX_BPS - withdrawFeeBps, MAX_BPS);
+        uint256 assetsAfterFees = assets.mulDivDown(MAX_BPS - withdrawFeeBps, MAX_BPS);
 
         beforeWithdraw(assetsAfterFees, shares, receiver);
 
@@ -460,7 +458,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         // Check for rounding error since we round down in previewRedeem.
         require((assets = previewRedeem(shares)) != 0, 'ZERO_ASSETS');
 
-        uint256 assetsAfterFees = assets.mulDiv(MAX_BPS - withdrawFeeBps, MAX_BPS);
+        uint256 assetsAfterFees = assets.mulDivDown(MAX_BPS - withdrawFeeBps, MAX_BPS);
 
         beforeWithdraw(assetsAfterFees, shares, receiver);
 
@@ -510,7 +508,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         if (repayDebtBtc && repayDebtEth) {
             // console.log('CASE 1');
             // Here amounts[0] should be equal to btcTokenAmount+ethTokenAmount
-            btcAssetPremium = feeAmounts[0].mulDiv(btcUsdcAmount, amounts[0]);
+            btcAssetPremium = feeAmounts[0].mulDivDown(btcUsdcAmount, amounts[0]);
             // console.log('btcAssetPremium', btcAssetPremium);
             ethAssetPremium = (feeAmounts[0] - btcAssetPremium);
             // console.log('ethAssetPremium', ethAssetPremium);
@@ -547,18 +545,18 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         uint256 aum = glpManager.getAum(maximize);
         uint256 totalSupply = glp.totalSupply();
 
-        return aum.mulDiv(PRICE_PRECISION, totalSupply * 1e24);
+        return aum.mulDivDown(PRICE_PRECISION, totalSupply * 1e24);
     }
 
     function getPriceX128() public view returns (uint256) {
         uint256 aum = glpManager.getAum(false);
         uint256 totalSupply = glp.totalSupply();
 
-        return aum.mulDiv(1 << 128, totalSupply * 1e24);
+        return aum.mulDivDown(1 << 128, totalSupply * 1e24);
     }
 
     function getMarketValue(uint256 assetAmount) public view returns (uint256 marketValue) {
-        marketValue = assetAmount.mulDiv(getPrice(false), PRICE_PRECISION);
+        marketValue = assetAmount.mulDivDown(getPrice(false), PRICE_PRECISION);
     }
 
     function getVaultMarketValue() public view returns (int256 vaultMarketValue) {
@@ -806,7 +804,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
         // Settle net change in market value and deposit/withdraw collateral tokens
         // Vault market value is just the collateral value since profit has been settled
-        uint256 targetDnGmxSeniorVaultAmount = (targetHealthFactor - usdcLiquidationThreshold).mulDiv(
+        uint256 targetDnGmxSeniorVaultAmount = (targetHealthFactor - usdcLiquidationThreshold).mulDivDown(
             optimalBorrowValue,
             usdcLiquidationThreshold
         );
@@ -863,7 +861,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     function _convertAssetToAUsdc(uint256 usdcAmountDesired) internal returns (uint256 usdcAmount) {
         /// @dev if usdcAmountDesired < 10, then there is precision issue in gmx contracts while redeeming for usdg
         if (usdcAmountDesired < usdcConversionThreshold) return 0;
-        uint256 glpAmountDesired = usdcAmountDesired.mulDiv(PRICE_PRECISION, getPrice(false));
+        uint256 glpAmountDesired = usdcAmountDesired.mulDivDown(PRICE_PRECISION, getPrice(false));
         // USDG has 18 decimals and usdc has 6 decimals => 18-6 = 12
         // console.log('GLP PRICE: ', getPrice());
         // console.log('glpAmountDesired', glpAmountDesired);
@@ -871,7 +869,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         rewardRouter.unstakeAndRedeemGlp(
             address(usdc),
             glpAmountDesired, // glp amount
-            usdcAmountDesired.mulDiv(MAX_BPS - slippageThresholdGmx, MAX_BPS), // usdc
+            usdcAmountDesired.mulDivDown(MAX_BPS - slippageThresholdGmx, MAX_BPS), // usdc
             address(this)
         );
 
@@ -886,9 +884,9 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         _executeWithdraw(address(usdc), amount, address(this));
         // USDG has 18 decimals and usdc has 6 decimals => 18-6 = 12
         uint256 price = gmxVault.getMinPrice(address(usdc));
-        uint256 usdgAmount = amount.mulDiv(price * (MAX_BPS - slippageThresholdGmx), PRICE_PRECISION * MAX_BPS);
+        uint256 usdgAmount = amount.mulDivDown(price * (MAX_BPS - slippageThresholdGmx), PRICE_PRECISION * MAX_BPS);
 
-        usdgAmount = usdgAmount.mulDiv(10**USDG_DECIMALS, 10**IERC20Metadata(address(usdc)).decimals());
+        usdgAmount = usdgAmount.mulDivDown(10**USDG_DECIMALS, 10**IERC20Metadata(address(usdc)).decimals());
 
         batchingManager.depositToken(address(usdc), amount, usdgAmount);
     }
@@ -898,8 +896,8 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         // console.log('cappedTokenHedge',cappedTokenHedge);
         // console.log('totalAssets',totalAssets());
 
-        uint256 unhedgedGlp = totalAssets().mulDiv(uncappedTokenHedge - cappedTokenHedge, uncappedTokenHedge);
-        uint256 unhedgedGlpUsdcAmount = unhedgedGlp.mulDiv(getPrice(false), PRICE_PRECISION);
+        uint256 unhedgedGlp = totalAssets().mulDivDown(uncappedTokenHedge - cappedTokenHedge, uncappedTokenHedge);
+        uint256 unhedgedGlpUsdcAmount = unhedgedGlp.mulDivDown(getPrice(false), PRICE_PRECISION);
         // console.log('unhedgedGlp',unhedgedGlp);
         // console.log('unhedgedGlpUsdcAmount',unhedgedGlpUsdcAmount);
         if (unhedgedGlpUsdcAmount > unhedgedGlpInUsdc) {
@@ -1014,8 +1012,8 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     ################################################################## */
 
     function _totalAssets(bool maximize) internal view returns (uint256) {
-        uint256 unhedgedGlp = unhedgedGlpInUsdc.mulDiv(PRICE_PRECISION, getPrice(!maximize));
-        if (!maximize) unhedgedGlp = unhedgedGlp.mulDiv(MAX_BPS - slippageThresholdGmx, MAX_BPS);
+        uint256 unhedgedGlp = unhedgedGlpInUsdc.mulDivDown(PRICE_PRECISION, getPrice(!maximize));
+        if (!maximize) unhedgedGlp = unhedgedGlp.mulDivDown(MAX_BPS - slippageThresholdGmx, MAX_BPS);
         return fsGlp.balanceOf(address(this)) + batchingManager.dnGmxJuniorVaultGlpBalance() + unhedgedGlp;
     }
 
@@ -1047,7 +1045,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         uint256 price = oracle.getAssetPrice(address(token));
 
         // @dev aave returns from same source as chainlink (which is 8 decimals)
-        return price.mulDiv(PRICE_PRECISION, 10**(decimals + 2));
+        return price.mulDivDown(PRICE_PRECISION, 10**(decimals + 2));
     }
 
     // @dev returns price in terms of usdc
@@ -1060,15 +1058,15 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
         isUsdc ? quotePrice = oracle.getAssetPrice(address(usdc)) : quotePrice = oracle.getAssetPrice(address(usdt));
 
-        scaledPrice = price.mulDiv(PRICE_PRECISION, quotePrice * 10**(decimals - 6));
+        scaledPrice = price.mulDivDown(PRICE_PRECISION, quotePrice * 10**(decimals - 6));
     }
 
     /// @dev returns the borrow value in USDC
     function _getBorrowValue(uint256 btcAmount, uint256 ethAmount) internal view returns (uint256 borrowValue) {
         borrowValue =
-            btcAmount.mulDiv(_getPrice(wbtc), PRICE_PRECISION) +
-            ethAmount.mulDiv(_getPrice(weth), PRICE_PRECISION);
-        borrowValue = borrowValue.mulDiv(PRICE_PRECISION, _getPrice(usdc));
+            btcAmount.mulDivDown(_getPrice(wbtc), PRICE_PRECISION) +
+            ethAmount.mulDivDown(_getPrice(weth), PRICE_PRECISION);
+        borrowValue = borrowValue.mulDivDown(PRICE_PRECISION, _getPrice(usdc));
     }
 
     function _flashloanAmounts(
@@ -1090,7 +1088,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         if (optimalBorrow > currentBorrow) {
             tokenAmount = optimalBorrow - currentBorrow;
             // To swap with the amount in specified hence usdcAmount should be the min amount out
-            usdcAmount = _getPrice(IERC20Metadata(token), true).mulDiv(
+            usdcAmount = _getPrice(IERC20Metadata(token), true).mulDivDown(
                 tokenAmount * (MAX_BPS - slippageThresholdSwap),
                 MAX_BPS * PRICE_PRECISION
             );
@@ -1102,7 +1100,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             // To Decrease
             tokenAmount = (currentBorrow - optimalBorrow);
             // To swap with amount out specified hence usdcAmount should be the max amount in
-            usdcAmount = _getPrice(IERC20Metadata(token), true).mulDiv(
+            usdcAmount = _getPrice(IERC20Metadata(token), true).mulDivDown(
                 tokenAmount * (MAX_BPS + slippageThresholdSwap),
                 MAX_BPS * PRICE_PRECISION
             );
@@ -1138,7 +1136,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         uint256 optimalTokenBorrow
     ) internal view returns (uint256 optimalCappedTokenBorrow) {
         // console.log("availableBorrowAmount",availableBorrowAmount);
-        optimalCappedTokenBorrow = optimalTokenBorrow.mulDiv(availableBorrow, requiredBorrow);
+        optimalCappedTokenBorrow = optimalTokenBorrow.mulDivDown(availableBorrow, requiredBorrow);
         // console.log("optimalBtcBorrow",optimalBtcBorrow);
         // console.log("optimalEthBorrow",optimalEthBorrow);
     }
@@ -1150,7 +1148,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         uint256 glpPrice = getPrice(false);
         uint256 tokenPrice = _getPrice(IERC20Metadata(token));
 
-        return targetWeight.mulDiv(glpDeposited * glpPrice, totalTokenWeights * tokenPrice);
+        return targetWeight.mulDivDown(glpDeposited * glpPrice, totalTokenWeights * tokenPrice);
     }
 
     function _isWithinAllowedDelta(uint256 optimalBorrow, uint256 currentBorrow) internal view returns (bool) {
@@ -1159,7 +1157,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
         uint256 diff = optimalBorrow > currentBorrow ? optimalBorrow - currentBorrow : currentBorrow - optimalBorrow;
         // console.log('diff', diff);
-        // console.log('RHS', uint256(rebalanceDeltaThreshold).mulDiv(currentBorrow, MAX_BPS));
-        return diff <= uint256(rebalanceDeltaThreshold).mulDiv(currentBorrow, MAX_BPS);
+        // console.log('RHS', uint256(rebalanceDeltaThreshold).mulDivDown(currentBorrow, MAX_BPS));
+        return diff <= uint256(rebalanceDeltaThreshold).mulDivDown(currentBorrow, MAX_BPS);
     }
 }
