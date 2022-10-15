@@ -844,7 +844,12 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             // console.log('ELSE');
             // Rebalance Position
             _rebalanceBorrow(optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
-            _rebalanceProfit(optimalBorrowValue);
+            uint256 totalCurrentBorrowValue;
+            {
+                (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows();
+                totalCurrentBorrowValue = _getBorrowValue(currentBtc, currentEth);
+            }
+            _rebalanceProfit(totalCurrentBorrowValue);
             // Deposit to LB Vault
             // console.log('dnUsdcDeposited');
             // console.logInt(dnUsdcDeposited);
