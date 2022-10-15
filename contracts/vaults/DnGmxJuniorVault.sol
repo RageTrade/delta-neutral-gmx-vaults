@@ -177,29 +177,18 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         emit AllowancesGranted();
     }
 
-    function setKeeper(address _newKeeper) external onlyOwner {
+    function setAdminParams(
+        address _newKeeper,
+        address _dnGmxSeniorVault,
+        uint256 _newDepositCap,
+        address _batchingManager,
+        uint256 _withdrawFeeBps
+    ) external onlyOwner {
         keeper = _newKeeper;
-        emit KeeperUpdated(_newKeeper);
-    }
-
-    function setDnGmxSeniorVault(address _dnGmxSeniorVault) external onlyOwner {
         dnGmxSeniorVault = IDnGmxSeniorVault(_dnGmxSeniorVault);
-        emit DnGmxSeniorVaultUpdated(_dnGmxSeniorVault);
-    }
-
-    function setDepositCap(uint256 _newDepositCap) external onlyOwner {
         depositCap = _newDepositCap;
-        emit DepositCapUpdated(_newDepositCap);
-    }
-
-    function setBatchingManager(address _batchingManager) external onlyOwner {
         batchingManager = IDnGmxBatchingManager(_batchingManager);
-        emit BatchingManagerUpdated(_batchingManager);
-    }
-
-    function setWithdrawFee(uint256 _withdrawFeeBps) external onlyOwner {
         withdrawFeeBps = _withdrawFeeBps;
-        emit WithdrawFeeUpdated(_withdrawFeeBps);
     }
 
     function setThresholds(
