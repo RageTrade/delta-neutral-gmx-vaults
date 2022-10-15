@@ -275,15 +275,15 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
 
         uint256 sGmxPrevBalance = sGmx.depositBalances(address(this), esGmx);
 
-        rewardRouter.handleRewards(
-            false, // _shouldClaimGmx
-            false, // _shouldStakeGmx
-            true, // _shouldClaimEsGmx
-            true, // _shouldStakeEsGmx
-            true, // _shouldStakeMultiplierPoints
-            true, // _shouldClaimWeth
-            false // _shouldConvertWethToEth
-        );
+        rewardRouter.handleRewards({
+            shouldClaimGmx: false,
+            shouldStakeGmx: false,
+            shouldClaimEsGmx: true,
+            shouldStakeEsGmx: true,
+            shouldStakeMultiplierPoints: true,
+            shouldClaimWeth: true,
+            shouldConvertWethToEth: false
+        });
 
         uint256 sGmxHarvested = sGmx.depositBalances(address(this), esGmx) - sGmxPrevBalance;
         protocolEsGmx += sGmxHarvested.mulDivDown(FEE, MAX_BPS);
