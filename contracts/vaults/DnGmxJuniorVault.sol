@@ -341,6 +341,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
                     _seniorVaultWethRewards,
                     minUsdcAmount
                 );
+                tokensUsed; // silence warning
                 _executeSupply(address(usdc), aaveUsdcAmount);
                 seniorVaultWethRewards = 0;
                 emit RewardsHarvested(
@@ -968,6 +969,7 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             uint256 amountWithPremium = tokenAmount + premium;
             // console.log('amountWithPremium borrow', amountWithPremium, token);
             (uint256 usdcReceived, uint256 tokensUsed) = SwapManager.swapToken(token, tokenAmount, usdcAmount);
+            tokensUsed; // silence warning
             _executeSupply(address(usdc), usdcReceived);
             _executeBorrow(token, amountWithPremium);
             IERC20(token).transfer(address(balancerVault), amountWithPremium);
