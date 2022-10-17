@@ -4,17 +4,24 @@ import { getNetworkInfo, waitConfirmations } from './network-info';
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {
-    deployments: { deploy, execute },
+    deployments: { get, deploy, execute },
     getNamedAccounts,
   } = hre;
 
   const { deployer } = await getNamedAccounts();
+
+  const SwapManagerLibraryDeployment = await get('SwapManagerLibrary');
+  const DnGmxJuniorVaultHelpersLibraryDeployment = await get('DnGmxJuniorVaultHelpersLibrary');
 
   await deploy('DnGmxJuniorVault', {
     contract: 'DnGmxJuniorVault',
     from: deployer,
     log: true,
     waitConfirmations,
+    libraries: {
+      SwapManager: SwapManagerLibraryDeployment.address,
+      DnGmxJuniorVaultHelpers: DnGmxJuniorVaultHelpersLibraryDeployment.address,
+    },
   });
 
   const {
@@ -39,7 +46,6 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     'DN_GMX_JUNIOR', // _symbol
     UNI_V3_SWAP_ROUTER,
     GMX_REWARD_ROUTER,
-    CURVE_TRICRYPTO_POOL_ADDRESS,
     {
       weth: WETH_ADDRESS,
       wbtc: WBTC_ADDRESS,
@@ -54,3 +60,4 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 export default func;
 
 func.tags = ['DnGmxJuniorVault'];
+func.dependencies = ['SwapManagerLibrary', 'DnGmxJuniorVaultHelpersLibrary'];
