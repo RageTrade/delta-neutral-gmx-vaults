@@ -214,7 +214,7 @@ describe('Rebalance & its utils', () => {
     expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.eq(currentDnGmxSeniorVaultAmountAfter);
   });
 
-  it.only('Rebalance Hedge - target > current && available to borrow < amount required', async () => {
+  it('Rebalance Hedge - target > current && available to borrow < amount required', async () => {
     /**
      * - target > current && available to borrow > amount requred
      * - target > current && available to borrow < amount requred
