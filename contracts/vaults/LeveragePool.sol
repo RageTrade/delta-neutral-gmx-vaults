@@ -17,12 +17,7 @@ import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
 import { IGlpStakingManager } from '../interfaces/gmx/IGlpStakingManager.sol';
 import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
 import { SafeCast } from '../libraries/SafeCast.sol';
-
-interface IDebtToken is IVariableDebtToken {
-    function balanceOf(address user) external view returns (uint256);
-
-    function totalSupply() external view returns (uint256);
-}
+import { IDebtToken } from '../interfaces/IDebtToken.sol';
 
 contract LeveragePool is OwnableUpgradeable, PausableUpgradeable {
     using FullMath for uint256;
