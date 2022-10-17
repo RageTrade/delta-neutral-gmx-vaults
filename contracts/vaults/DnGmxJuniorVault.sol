@@ -52,6 +52,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
 
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using DnGmxJuniorVaultHelpers for DnGmxJuniorVaultHelpers.State;
+    using SwapManager for DnGmxJuniorVaultHelpers.State;
 
     uint16 internal constant MAX_BPS = 10_000;
 
@@ -314,7 +315,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
                     _seniorVaultWethRewards * (MAX_BPS - state.slippageThresholdSwap),
                     MAX_BPS * PRICE_PRECISION
                 );
-                (uint256 aaveUsdcAmount, uint256 tokensUsed) = SwapManager.swapToken(
+                (uint256 aaveUsdcAmount, uint256 tokensUsed) = state.swapToken(
                     address(state.weth),
                     _seniorVaultWethRewards,
                     minUsdcAmount
@@ -760,7 +761,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
             // console.log('swapTokenToUSD');
             uint256 amountWithPremium = tokenAmount + premium;
             // console.log('amountWithPremium borrow', amountWithPremium, token);
-            (uint256 usdcReceived, uint256 tokensUsed) = SwapManager.swapToken(token, tokenAmount, usdcAmount);
+            (uint256 usdcReceived, uint256 tokensUsed) = state.swapToken(token, tokenAmount, usdcAmount);
             tokensUsed; // silence warning
             _executeSupply(address(state.usdc), usdcReceived);
             _executeBorrow(token, amountWithPremium);
@@ -768,7 +769,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
             state.dnUsdcDeposited += usdcReceived.toInt256();
         } else {
             // console.log('swapUSDCToToken');
-            (uint256 usdcPaid, uint256 tokensReceived) = SwapManager.swapUSDC(token, tokenAmount, usdcAmount);
+            (uint256 usdcPaid, uint256 tokensReceived) = state.swapUSDC(token, tokenAmount, usdcAmount);
             uint256 amountWithPremium = usdcPaid + premium;
             // console.log('amountWithPremium', amountWithPremium, token);
             state.dnUsdcDeposited -= amountWithPremium.toInt256();

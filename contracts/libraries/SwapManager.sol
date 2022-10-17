@@ -5,9 +5,7 @@ pragma solidity ^0.8.0;
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
-interface ISwapRouterGetter {
-    function swapRouter() external view returns (ISwapRouter);
-}
+import { DnGmxJuniorVaultHelpers } from './DnGmxJuniorVaultHelpers.sol';
 
 library SwapManager {
     address internal constant wbtc = 0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f;
@@ -23,11 +21,12 @@ library SwapManager {
     // ISwapRouter internal constant swapRouter = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
 
     function swapToken(
+        DnGmxJuniorVaultHelpers.State storage state,
         address token,
         uint256 tokenAmount,
         uint256 minUsdcAmount
     ) external returns (uint256 usdcReceived, uint256 tokensUsed) {
-        ISwapRouter swapRouter = ISwapRouterGetter(address(this)).swapRouter();
+        ISwapRouter swapRouter = state.swapRouter;
 
         bytes memory path = token == weth ? WETH_TO_USDC : WBTC_TO_USDC;
 
@@ -44,11 +43,12 @@ library SwapManager {
     }
 
     function swapUSDC(
+        DnGmxJuniorVaultHelpers.State storage state,
         address token,
         uint256 tokenAmount,
         uint256 maxUsdcAmount
     ) external returns (uint256 usdcPaid, uint256 tokensReceived) {
-        ISwapRouter swapRouter = ISwapRouterGetter(address(this)).swapRouter();
+        ISwapRouter swapRouter = state.swapRouter;
 
         bytes memory path = token == weth ? USDC_TO_WETH : USDC_TO_WBTC;
 
