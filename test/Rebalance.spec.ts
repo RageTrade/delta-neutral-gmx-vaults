@@ -86,7 +86,7 @@ describe('Rebalance & its utils', () => {
     ]);
 
     tx = await dnGmxJuniorVault.rebalanceBorrow(optimalBtc, currentBtc, optimalEth, currentEth);
-    await checker.checkCurrentBorrowed([optimalBtc, optimalEth]);
+    await checker.checkCurrentBorrowed([optimalBtc, optimalEth], [1, 1]);
     await checker.checkFlashloanedAmounts(
       tx,
       [optimalBtc.sub(currentBtc).abs(), optimalEth.sub(currentEth).abs()],
