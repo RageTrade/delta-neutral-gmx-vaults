@@ -16,6 +16,8 @@ import { ILeveragePool } from '../interfaces/ILeveragePool.sol';
 import { IBorrower } from '../interfaces/IBorrower.sol';
 import { IPriceOracle } from '@aave/core-v3/contracts/interfaces/IPriceOracle.sol';
 
+import 'hardhat/console.sol';
+
 contract DnGmxSeniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable {
     using FeeSplitStrategy for FeeSplitStrategy.Info;
     using FullMath for uint256;
@@ -134,6 +136,8 @@ contract DnGmxSeniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     }
 
     function repay(uint256 amount) external onlyBorrower {
+        console.log('msg.sender bal', aUsdc.balanceOf(msg.sender));
+        console.log('amount_', amount);
         dnGmxJuniorVault.harvestFees();
         aUsdc.transferFrom(msg.sender, address(this), amount);
     }

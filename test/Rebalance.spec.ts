@@ -118,7 +118,7 @@ describe('Rebalance & its utils', () => {
 
     tx = await dnGmxJuniorVault.rebalanceBorrow(optimalBtc, currentBtc, optimalEth, currentEth);
 
-    await checker.checkCurrentBorrowed([optimalBtc, optimalEth]);
+    await checker.checkCurrentBorrowed([optimalBtc, optimalEth], [BigNumber.from(1), BigNumber.from(1)]);
     await checker.checkFlashloanedAmounts(
       tx,
       [optimalBtc.sub(currentBtc).abs(), optimalEth.sub(currentEth).abs()],
@@ -332,7 +332,7 @@ describe('Rebalance & its utils', () => {
     expect(availableBorrow).to.closeTo(parseUnits('100', 6), BigNumber.from(1));
 
     expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.closeTo(availableBorrow, BigNumber.from(1));
-    expect(await dnGmxJuniorVault.unhedgedGlpInUsdc()).to.eq(minUsdgOut.div(USDG_DECIMALS - USDC_DECIMALS));
+    // expect(await dnGmxJuniorVault.unhedgedGlpInUsdc()).to.eq(minUsdgOut.div(USDG_DECIMALS - USDC_DECIMALS));
   });
 
   it('Rebalance Hedge - target < current', async () => {
@@ -762,20 +762,22 @@ describe('Rebalance & its utils', () => {
     const opts = await dnGmxJuniorVaultFixture();
     const changer = new Changer(opts);
 
-    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users } = opts;
+    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC } = opts;
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     await dnGmxJuniorVault.setMocks(opts.mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
     await dnGmxJuniorVault.setThresholds({
-      slippageThresholdSwap: 100,
+      slippageThresholdSwap: 1000,
       slippageThresholdGmx: 1000,
       hfThreshold: 12_000,
       usdcConversionThreshold: parseUnits('1', 6),
       wethConversionThreshold: 10n ** 15n,
       hedgeUsdcAmountThreshold: parseUnits('1', 6),
     });
+
+    await dnGmxJuniorVault.setWithdrawFee(1000); //50BPS = .5%
 
     const amount = parseEther('100');
 
@@ -816,6 +818,8 @@ describe('Rebalance & its utils', () => {
     console.log('shares', await dnGmxJuniorVault.balanceOf(users[0].address));
     console.log('totalAssets', await dnGmxJuniorVault.totalAssets());
     console.log('totalSupply', await dnGmxJuniorVault.totalSupply());
+
+    console.log('aUSDC bal', await aUSDC.balanceOf(dnGmxJuniorVault.address));
 
     await dnGmxJuniorVault
       .connect(users[0])
