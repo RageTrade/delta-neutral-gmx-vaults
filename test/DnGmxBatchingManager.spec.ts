@@ -15,7 +15,7 @@ import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 import { generateErc20Balance } from './utils/generator';
 import { increaseBlockTimestamp } from './utils/shared';
 
-describe('DnGmx Senior Vault', () => {
+describe('Dn Gmx Batching Manager', () => {
   let dnGmxJuniorVault: DnGmxJuniorVaultMock;
   let glpBatchingManager: DnGmxBatchingManager;
   let users: SignerWithAddress[];

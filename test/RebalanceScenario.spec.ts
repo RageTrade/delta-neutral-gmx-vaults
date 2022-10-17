@@ -21,14 +21,14 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.grantAllowances();
 
     // becauses price are not changed on uniswap
-    await dnGmxJuniorVault.setThresholds({
-      slippageThresholdSwap: 1000,
-      hfThreshold: 0,
-      hedgeUsdcAmountThreshold: 0,
-      slippageThresholdGmx: 1000,
-      usdcConversionThreshold: parseUnits('1', 6),
-      wethConversionThreshold: 10n ** 15n,
-    });
+    await dnGmxJuniorVault.setThresholds(
+      1000, //slippageThresholdSwap
+      1000, //slippageThresholdGmx
+      0, //hedgeUsdcAmountThreshold
+      0, //hfThreshold
+      parseUnits('1', 6), //usdcConversionThreshold
+      10n ** 15n, //wethConversionThreshold
+    );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
@@ -108,14 +108,14 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.grantAllowances();
 
     // becauses price are not changed on uniswap
-    await dnGmxJuniorVault.setThresholds({
-      slippageThresholdSwap: 1000,
-      hfThreshold: 0,
-      hedgeUsdcAmountThreshold: 0,
-      slippageThresholdGmx: 1000,
-      usdcConversionThreshold: parseUnits('1', 6),
-      wethConversionThreshold: 10n ** 15n,
-    });
+    await dnGmxJuniorVault.setThresholds(
+      1000, //slippageThresholdSwap
+      1000, //slippageThresholdGmx
+      0, //hedgeUsdcAmountThreshold
+      0, //hfThreshold
+      parseUnits('1', 6), //usdcConversionThreshold
+      10n ** 15n, //wethConversionThreshold
+    );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
@@ -190,14 +190,14 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.grantAllowances();
 
     // becauses price are not changed on uniswap
-    await dnGmxJuniorVault.setThresholds({
-      slippageThresholdSwap: 1000,
-      hfThreshold: 0,
-      hedgeUsdcAmountThreshold: 0,
-      usdcConversionThreshold: parseUnits('1', 6),
-      slippageThresholdGmx: 1000,
-      wethConversionThreshold: 10n ** 15n,
-    });
+    await dnGmxJuniorVault.setThresholds(
+      1000, //slippageThresholdSwap
+      1000, //slippageThresholdGmx
+      0, //hedgeUsdcAmountThreshold
+      0, //hfThreshold
+      parseUnits('1', 6), //usdcConversionThreshold
+      10n ** 15n, //wethConversionThreshold
+    );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
@@ -267,21 +267,36 @@ describe('Rebalance Scenarios', () => {
     const changer = new Changer(opts);
     const checker = new Checker(opts);
 
-    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC, gmxVault, lendingPool, mocks } = opts;
+    const {
+      dnGmxJuniorVault,
+      dnGmxSeniorVault,
+      glpBatchingManager,
+      users,
+      admin,
+      aUSDC,
+      gmxVault,
+      lendingPool,
+      mocks,
+    } = opts;
     await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
-    await dnGmxJuniorVault.setWithdrawFee(1000);
-
+    await dnGmxJuniorVault.setAdminParams(
+      admin.address,
+      dnGmxSeniorVault.address,
+      ethers.constants.MaxUint256,
+      glpBatchingManager.address,
+      50,
+    );
     // becauses price are not changed on uniswap
-    await dnGmxJuniorVault.setThresholds({
-      slippageThresholdSwap: 1000,
-      hfThreshold: 0,
-      hedgeUsdcAmountThreshold: 0,
-      slippageThresholdGmx: 1000,
-      usdcConversionThreshold: parseUnits('1', 6),
-      wethConversionThreshold: 10n ** 15n,
-    });
+    await dnGmxJuniorVault.setThresholds(
+      1000, //slippageThresholdSwap
+      1000, //slippageThresholdGmx
+      0, //hedgeUsdcAmountThreshold
+      0, //hfThreshold
+      parseUnits('1', 6), //usdcConversionThreshold
+      10n ** 15n, //wethConversionThreshold
+    );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
@@ -362,14 +377,14 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.grantAllowances();
 
     // becauses price are not changed on uniswap
-    await dnGmxJuniorVault.setThresholds({
-      slippageThresholdSwap: 1000,
-      hfThreshold: 0,
-      hedgeUsdcAmountThreshold: parseUnits('12', 6),
-      slippageThresholdGmx: 1000,
-      usdcConversionThreshold: parseUnits('1', 6),
-      wethConversionThreshold: 10n ** 15n,
-    });
+    await dnGmxJuniorVault.setThresholds(
+      1000, //slippageThresholdSwap
+      1000, //slippageThresholdGmx
+      parseUnits('12', 6), //hedgeUsdcAmountThreshold
+      0, //hfThreshold
+      parseUnits('1', 6), //usdcConversionThreshold
+      10n ** 15n, //wethConversionThreshold
+    );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
@@ -451,14 +466,14 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.grantAllowances();
 
     // becauses price are not changed on uniswap
-    await dnGmxJuniorVault.setThresholds({
-      slippageThresholdSwap: 1000,
-      hfThreshold: 0,
-      hedgeUsdcAmountThreshold: parseUnits('12', 6),
-      slippageThresholdGmx: 1000,
-      usdcConversionThreshold: parseUnits('1', 6),
-      wethConversionThreshold: 10n ** 15n,
-    });
+    await dnGmxJuniorVault.setThresholds(
+      1000, //slippageThresholdSwap
+      1000, //slippageThresholdGmx
+      parseUnits('12', 6), //hedgeUsdcAmountThreshold
+      0, //hfThreshold
+      parseUnits('1', 6), //usdcConversionThreshold
+      10n ** 15n, //wethConversionThreshold
+    );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
@@ -540,14 +555,14 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.grantAllowances();
 
     // becauses price are not changed on uniswap
-    await dnGmxJuniorVault.setThresholds({
-      slippageThresholdSwap: 1000,
-      hfThreshold: 0,
-      hedgeUsdcAmountThreshold: parseUnits('12', 6),
-      slippageThresholdGmx: 1000,
-      usdcConversionThreshold: parseUnits('1', 6),
-      wethConversionThreshold: 10n ** 15n,
-    });
+    await dnGmxJuniorVault.setThresholds(
+      1000, //slippageThresholdSwap
+      1000, //slippageThresholdGmx
+      parseUnits('12', 6), //hedgeUsdcAmountThreshold
+      0, //hfThreshold
+      parseUnits('1', 6), //usdcConversionThreshold
+      10n ** 15n, //wethConversionThreshold
+    );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
@@ -630,14 +645,14 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.grantAllowances();
 
     // becauses price are not changed on uniswap
-    await dnGmxJuniorVault.setThresholds({
-      slippageThresholdSwap: 1000,
-      hfThreshold: 0,
-      hedgeUsdcAmountThreshold: 0,
-      slippageThresholdGmx: 1000,
-      usdcConversionThreshold: parseUnits('1', 6),
-      wethConversionThreshold: 10n ** 15n,
-    });
+    await dnGmxJuniorVault.setThresholds(
+      1000, //slippageThresholdSwap
+      1000, //slippageThresholdGmx
+      0, //hedgeUsdcAmountThreshold
+      0, //hfThreshold
+      parseUnits('1', 6), //usdcConversionThreshold
+      10n ** 15n, //wethConversionThreshold
+    );
 
     console.log('--------------------Sr. Tranche Initial Deposit--------------------');
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('60', 6), users[1].address);
@@ -757,14 +772,14 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.grantAllowances();
 
     // becauses price are not changed on uniswap
-    await dnGmxJuniorVault.setThresholds({
-      slippageThresholdSwap: 1000,
-      hfThreshold: 0,
-      hedgeUsdcAmountThreshold: 0,
-      slippageThresholdGmx: 1000,
-      usdcConversionThreshold: parseUnits('1', 6),
-      wethConversionThreshold: 10n ** 15n,
-    });
+    await dnGmxJuniorVault.setThresholds(
+      1000, //slippageThresholdSwap
+      1000, //slippageThresholdGmx
+      0, //hedgeUsdcAmountThreshold
+      0, //hfThreshold
+      parseUnits('1', 6), //usdcConversionThreshold
+      10n ** 15n, //wethConversionThreshold
+    );
 
     console.log('--------------------Sr. Tranche Initial Deposit--------------------');
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('60', 6), users[1].address);
@@ -887,14 +902,14 @@ describe('Rebalance Scenarios', () => {
     await increaseBlockTimestamp(15 * 60);
 
     // becauses price are not changed on uniswap
-    await dnGmxJuniorVault.setThresholds({
-      slippageThresholdSwap: 1000,
-      hfThreshold: 0,
-      hedgeUsdcAmountThreshold: 0,
-      slippageThresholdGmx: 1000,
-      usdcConversionThreshold: parseUnits('1', 6),
-      wethConversionThreshold: 10n ** 15n,
-    });
+    await dnGmxJuniorVault.setThresholds(
+      1000, //slippageThresholdSwap
+      1000, //slippageThresholdGmx
+      0, //hedgeUsdcAmountThreshold
+      0, //hfThreshold
+      parseUnits('1', 6), //usdcConversionThreshold
+      10n ** 15n, //wethConversionThreshold
+    );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('800000', 6), users[1].address);
 
@@ -973,6 +988,7 @@ describe('Rebalance Scenarios', () => {
       dnGmxJuniorVault,
       dnGmxSeniorVault,
       glpBatchingManager,
+      admin,
       users,
       aUSDC,
       sGlp,
@@ -984,16 +1000,22 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
-    await dnGmxJuniorVault.setWithdrawFee(1000);
+    await dnGmxJuniorVault.setAdminParams(
+      admin.address,
+      dnGmxSeniorVault.address,
+      ethers.constants.MaxUint256,
+      glpBatchingManager.address,
+      50,
+    );
     // becauses price are not changed on uniswap
-    await dnGmxJuniorVault.setThresholds({
-      slippageThresholdSwap: 1000,
-      hfThreshold: 0,
-      hedgeUsdcAmountThreshold: 0,
-      slippageThresholdGmx: 1000,
-      usdcConversionThreshold: parseUnits('1', 6),
-      wethConversionThreshold: 10n ** 15n,
-    });
+    await dnGmxJuniorVault.setThresholds(
+      1000, //slippageThresholdSwap
+      1000, //slippageThresholdGmx
+      0, //hedgeUsdcAmountThreshold
+      0, //hfThreshold
+      parseUnits('1', 6), //usdcConversionThreshold
+      10n ** 15n, //wethConversionThreshold
+    );
 
     await sGlp.connect(users[2]).approve(dnGmxJuniorVault.address, ethers.constants.MaxUint256);
 

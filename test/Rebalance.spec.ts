@@ -405,10 +405,10 @@ describe('Rebalance & its utils', () => {
   it('valid rebalance - time', async () => {
     const { dnGmxJuniorVault } = await dnGmxJuniorVaultFixture();
 
-    await dnGmxJuniorVault.setRebalanceParams({
-      rebalanceTimeThreshold: 86400,
-      rebalanceDeltaThreshold: 500, // 5% in bps
-    });
+    await dnGmxJuniorVault.setRebalanceParams(
+      86400, //rebalanceTimeThreshold:
+      500, // 5% in bps rebalanceDeltaThreshold:
+    );
 
     expect(await dnGmxJuniorVault.isValidRebalanceTime()).to.be.true;
     await dnGmxJuniorVault.rebalance();
@@ -539,11 +539,16 @@ describe('Rebalance & its utils', () => {
   it('Full Withdraw', async () => {
     const opts = await dnGmxJuniorVaultFixture();
     const logger = new Logger(opts);
-    const { dnGmxJuniorVault, dnGmxSeniorVault, users } = opts;
+    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, admin, users } = opts;
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
-    await dnGmxJuniorVault.setWithdrawFee(100); //50BPS = .5%
-
+    await dnGmxJuniorVault.setAdminParams(
+      admin.address,
+      dnGmxSeniorVault.address,
+      ethers.constants.MaxUint256,
+      glpBatchingManager.address,
+      100,
+    );
     const amount = parseEther('100');
 
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
@@ -762,22 +767,29 @@ describe('Rebalance & its utils', () => {
     const opts = await dnGmxJuniorVaultFixture();
     const changer = new Changer(opts);
 
-    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC } = opts;
+    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC, admin } = opts;
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     await dnGmxJuniorVault.setMocks(opts.mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
-    await dnGmxJuniorVault.setThresholds({
-      slippageThresholdSwap: 1000,
-      slippageThresholdGmx: 1000,
-      hfThreshold: 12_000,
-      usdcConversionThreshold: parseUnits('1', 6),
-      wethConversionThreshold: 10n ** 15n,
-      hedgeUsdcAmountThreshold: parseUnits('1', 6),
-    });
+    await dnGmxJuniorVault.setThresholds(
+      1000, //slippageThresholdSwap
+      1000, //slippageThresholdGmx
+      parseUnits('1', 6), //usdcConversionThreshold
+      12_000, //hfThreshold
+      10n ** 15n, //wethConversionThreshold
+      parseUnits('1', 6), //hedgeUsdcAmountThreshold
+    );
 
-    await dnGmxJuniorVault.setWithdrawFee(1000); //50BPS = .5%
+    await dnGmxJuniorVault.setAdminParams(
+      admin.address,
+      dnGmxSeniorVault.address,
+      ethers.constants.MaxUint256,
+      glpBatchingManager.address,
+      1000,
+    );
+    //50BPS = .5%
 
     const amount = parseEther('100');
 
