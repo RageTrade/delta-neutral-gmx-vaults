@@ -62,7 +62,7 @@ contract DnGmxSeniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     ) external initializer {
         __Ownable_init();
         __Pausable_init();
-        __ERC4626Upgradeable_init(IERC20Metadata(_usdc), _name, _symbol);
+        __ERC4626Upgradeable_init(_usdc, _name, _symbol);
 
         poolAddressProvider = IPoolAddressesProvider(_poolAddressesProvider);
 
@@ -71,7 +71,7 @@ contract DnGmxSeniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         oracle = IPriceOracle(poolAddressProvider.getPriceOracle());
 
         aUsdc.approve(address(pool), type(uint256).max);
-        asset.approve(address(pool), type(uint256).max);
+        IERC20Metadata(asset).approve(address(pool), type(uint256).max);
     }
 
     function setDnGmxJuniorVault(address _dnGmxJuniorVault) external onlyOwner {
@@ -90,7 +90,7 @@ contract DnGmxSeniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
     function grantAllowances() external onlyOwner {
         address aavePool = address(pool);
 
-        asset.approve(aavePool, type(uint256).max);
+        IERC20Metadata(asset).approve(aavePool, type(uint256).max);
         aUsdc.approve(aavePool, type(uint256).max);
 
         emit AllowancesGranted();

@@ -15,7 +15,7 @@ import { IERC4626 } from 'contracts/interfaces/IERC4626.sol';
 import { IGlpManager } from 'contracts/interfaces/gmx/IGlpManager.sol';
 import { IRewardRouterV2 } from 'contracts/interfaces/gmx/IRewardRouterV2.sol';
 import { IDnGmxBatchingManager } from 'contracts/interfaces/IDnGmxBatchingManager.sol';
-import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
+import { IERC4626 } from '../interfaces/IDnGmxJuniorVault.sol';
 
 contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, PausableUpgradeable {
     using FullMath for uint256;
@@ -35,7 +35,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     uint256[100] private _gaps;
 
     address public keeper;
-    IDnGmxJuniorVault public dnGmxJuniorVault; // used for depositing harvested rewards
+    IERC4626 public dnGmxJuniorVault; // used for depositing harvested rewards
 
     uint16 public vaultCount;
     uint256 public dnGmxJuniorVaultGlpBalance;
@@ -86,7 +86,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         rewardRouter = _rewardRouter;
         glpManager = _glpManager;
 
-        dnGmxJuniorVault = IDnGmxJuniorVault(_dnGmxJuniorVault);
+        dnGmxJuniorVault = IERC4626(_dnGmxJuniorVault);
 
         keeper = _keeper;
         vaultBatchingState.currentRound = 1;
