@@ -165,6 +165,14 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         return _getOptimalBorrows(glpDeposited);
     }
 
+    function getOptimalCappedBorrows(uint256 availableBorrowAmount, uint256 usdcLiquidationThreshold)
+        external
+        view
+        returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow)
+    {
+        return _getOptimalCappedBorrows(availableBorrowAmount, usdcLiquidationThreshold);
+    }
+
     function getTokenReservesInGlp(address token, uint256 glpDeposited) external view returns (uint256) {
         return _getTokenReservesInGlp(token, glpDeposited);
     }
