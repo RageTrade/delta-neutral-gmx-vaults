@@ -820,16 +820,19 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
             uint256 amountToBorrow = targetDnGmxSeniorVaultAmount - currentDnGmxSeniorVaultAmount;
             uint256 availableBorrow = dnGmxSeniorVault.availableBorrow(address(this));
             if (amountToBorrow > availableBorrow) {
-                optimalBtcBorrow = _getOptimalCappedBorrow(amountToBorrow, availableBorrow, optimalBtcBorrow);
-                optimalEthBorrow = _getOptimalCappedBorrow(amountToBorrow, availableBorrow, optimalEthBorrow);
-                _rebalanceUnhedgedGlp(amountToBorrow, availableBorrow);
+                uint256 optimalUncappedEthBorrow = optimalEthBorrow;
+                (optimalBtcBorrow, optimalEthBorrow) = _getOptimalCappedBorrows(
+                    currentDnGmxSeniorVaultAmount + availableBorrow,
+                    usdcLiquidationThreshold
+                );
+                _rebalanceUnhedgedGlp(optimalUncappedEthBorrow, optimalEthBorrow);
                 // console.log("Optimal token amounts 1",optimalBtcBorrow, optimalEthBorrow);
                 if (availableBorrow > 0) {
                     dnGmxSeniorVault.borrow(availableBorrow);
                 }
             } else {
                 //No unhedged glp remaining so just pass same value in capped and uncapped (should convert back any ausdc back to sglp)
-                _rebalanceUnhedgedGlp(amountToBorrow, amountToBorrow);
+                _rebalanceUnhedgedGlp(optimalEthBorrow, optimalEthBorrow);
 
                 // Take from LB Vault
                 dnGmxSeniorVault.borrow(targetDnGmxSeniorVaultAmount - currentDnGmxSeniorVaultAmount);
@@ -1130,13 +1133,29 @@ contract DnGmxJuniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         // console.log('optimalBtcBorrow', optimalBtcBorrow);
     }
 
-    function _getOptimalCappedBorrow(
-        uint256 requiredBorrow,
-        uint256 availableBorrow,
-        uint256 optimalTokenBorrow
-    ) internal view returns (uint256 optimalCappedTokenBorrow) {
+    function _getOptimalCappedBorrows(uint256 availableBorrowAmount, uint256 usdcLiquidationThreshold)
+        internal
+        view
+        returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow)
+    {
         // console.log("availableBorrowAmount",availableBorrowAmount);
-        optimalCappedTokenBorrow = optimalTokenBorrow.mulDivDown(availableBorrow, requiredBorrow);
+
+        uint256 maxBorrowValue = availableBorrowAmount.mulDivDown(
+            usdcLiquidationThreshold,
+            targetHealthFactor - usdcLiquidationThreshold
+        );
+        // console.log("maxBorrowValue",maxBorrowValue);
+
+        uint256 btcWeight = gmxVault.tokenWeights(address(wbtc));
+        uint256 ethWeight = gmxVault.tokenWeights(address(weth));
+        // console.log("btcWeight",btcWeight);
+        // console.log("ethWeight",ethWeight);
+
+        uint256 btcPrice = _getPrice(wbtc);
+        uint256 ethPrice = _getPrice(weth);
+
+        optimalBtcBorrow = maxBorrowValue.mulDivDown(btcWeight * PRICE_PRECISION, (btcWeight + ethWeight) * btcPrice);
+        optimalEthBorrow = maxBorrowValue.mulDivDown(ethWeight * PRICE_PRECISION, (btcWeight + ethWeight) * ethPrice);
         // console.log("optimalBtcBorrow",optimalBtcBorrow);
         // console.log("optimalEthBorrow",optimalEthBorrow);
     }
