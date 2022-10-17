@@ -98,23 +98,12 @@ export default {
             },
           },
         },
-      }
-    ],
-  },
-  dependencyCompiler: {
-    paths: [
-      '@ragetrade/vaults/contracts/yieldStrategy/gmx/GlpStakingManager.sol',
-      '@ragetrade/vaults/contracts/yieldStrategy/gmx/GMXBatchingManager.sol',
-      // '@uniswap/v3-periphery/contracts/interfaces/INonfungiblePositionManager.sol',
+      },
     ],
   },
   typechain: {
     target: 'ethers-v5',
     alwaysGenerateOverloads: false,
-    externalArtifacts: [
-      'node_modules/@ragetrade/vaults/contracts/gmx',
-      // 'node_modules/@uniswap/v3-periphery/contracts/interfaces/INonfungiblePositionManager.sol'
-    ],
   },
   etherscan: {
     apiKey: {
@@ -139,5 +128,5 @@ export default {
       : {
           default: 0,
         },
-  }
+  },
 };

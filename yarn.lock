@@ -2,11 +2,6 @@
 # yarn lockfile v1
 
 
-"@134dd3v/arbos-precompiles@^1.0.4":
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/@134dd3v/arbos-precompiles/-/arbos-precompiles-1.0.4.tgz#40ac8e75aca3b60d98e568c1e698a9259015fd5a"
-  integrity sha512-f9D/nlGnSrjP7tiokXj9RbgVYYahPjYLT8SJ9SCihgjde1Rcq0VkcF0MZzSs/lPx4ym7tXYNx2d5DoNb0H+Umg==
-
 "@134dd3v/prettier-plugin-solidity@^1.0.0-beta.18":
   version "1.0.0-beta.18"
   resolved "https://registry.yarnpkg.com/@134dd3v/prettier-plugin-solidity/-/prettier-plugin-solidity-1.0.0-beta.18.tgz#9669d4c6aa88f0a0b12d9668bad8bb07be188cc2"
@@ -64,11 +59,6 @@
     "@babel/helper-validator-identifier" "^7.18.6"
     chalk "^2.0.0"
     js-tokens "^4.0.0"
-
-"@chainlink/contracts@^0.4.0":
-  version "0.4.1"
-  resolved "https://registry.yarnpkg.com/@chainlink/contracts/-/contracts-0.4.1.tgz#1c4f824920b89fbe5ff2294c35a86bca83c8253d"
-  integrity sha512-eC8biY6Ks8k9kZKVt5305veCP3z57yyiy6Os5aR6auta6Bp34xWQ/s4qvrifcW4FNgWw1HJPwMPXDGfiehcLjg==
 
 "@colors/colors@1.5.0":
   version "1.5.0"
@@ -936,7 +926,7 @@
     "@types/sinon-chai" "^3.2.3"
     "@types/web3" "1.0.19"
 
-"@openzeppelin/contracts-upgradeable@^4.1.0", "@openzeppelin/contracts-upgradeable@^4.5.2", "@openzeppelin/contracts-upgradeable@^4.7.3":
+"@openzeppelin/contracts-upgradeable@^4.7.3":
   version "4.7.3"
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts-upgradeable/-/contracts-upgradeable-4.7.3.tgz#f1d606e2827d409053f3e908ba4eb8adb1dd6995"
   integrity sha512-+wuegAMaLcZnLCJIvrVUDzA9z/Wp93f0Dla/4jJvIhijRrPabjQbZe6fWiECLaJyfn5ci9fqf9vTw3xpQOad2A==
@@ -946,34 +936,10 @@
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-3.4.2-solc-0.7.tgz#38f4dbab672631034076ccdf2f3201fab1726635"
   integrity sha512-W6QmqgkADuFcTLzHL8vVoNBtkwjvQRpYIAom7KiUNoLKghyx3FgH0GBjt8NRvigV1ZmMOBllvE1By1C+bi8WpA==
 
-"@openzeppelin/contracts@^4.0.0", "@openzeppelin/contracts@^4.5.0", "@openzeppelin/contracts@^4.7.3":
+"@openzeppelin/contracts@^4.7.3":
   version "4.7.3"
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-4.7.3.tgz#939534757a81f8d69cc854c7692805684ff3111e"
   integrity sha512-dGRS0agJzu8ybo44pCIf3xBaPQN/65AIXNgK8+4gzKd5kbvlqyxryUYVLJv7fK98Seyd2hDZzVEHSWAh0Bt1Yw==
-
-"@ragetrade/core@https://github.com/RageTrade/core.git#969ad6b00d8221933cce2a24234206d99dd10ab9":
-  version "1.0.1"
-  resolved "https://github.com/RageTrade/core.git#969ad6b00d8221933cce2a24234206d99dd10ab9"
-  dependencies:
-    "@chainlink/contracts" "^0.4.0"
-    "@openzeppelin/contracts" "^4.5.0"
-    "@openzeppelin/contracts-upgradeable" "^4.5.2"
-    "@uniswap/v3-core-0.8-support" "https://github.com/uniswap/v3-core.git#d55e297b938e5b56fd1cf9fe668f5bd385be85b5"
-    "@uniswap/v3-periphery" "^1.4.0"
-
-"@ragetrade/vaults@https://github.com/RageTrade/vaults.git#6824add3e611e68e035b40015b5ef1eb4286b99f":
-  version "1.0.1"
-  resolved "https://github.com/RageTrade/vaults.git#6824add3e611e68e035b40015b5ef1eb4286b99f"
-  dependencies:
-    "@134dd3v/arbos-precompiles" "^1.0.4"
-    "@openzeppelin/contracts" "^4.0.0"
-    "@openzeppelin/contracts-upgradeable" "^4.1.0"
-    "@ragetrade/core" "https://github.com/RageTrade/core.git#969ad6b00d8221933cce2a24234206d99dd10ab9"
-    "@rari-capital/solmate" "https://github.com/Rari-Capital/solmate.git#25015a1d18e75921f8cb1bacd4beb9f364e788a9"
-    "@uniswap/v2-core" "^1.0.1"
-    "@uniswap/v2-periphery" "^1.1.0-beta.0"
-    "@uniswap/v3-periphery" "^1.4.0"
-    hardhat-dependency-compiler "^1.1.2"
 
 "@rari-capital/solmate@https://github.com/Rari-Capital/solmate.git#25015a1d18e75921f8cb1bacd4beb9f364e788a9":
   version "6.2.0"
@@ -1381,33 +1347,15 @@
   resolved "https://registry.yarnpkg.com/@ungap/promise-all-settled/-/promise-all-settled-1.1.2.tgz#aa58042711d6e3275dd37dc597e5d31e8c290a44"
   integrity sha512-sL/cEvJWAnClXw0wHk85/2L0G6Sj8UB0Ctc1TEMbKSsmpRosqhwj9gWgFRZSrBr2f9tiXISwNhCPmlfqUqyb9Q==
 
-"@uniswap/lib@1.1.1":
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/@uniswap/lib/-/lib-1.1.1.tgz#0afd29601846c16e5d082866cbb24a9e0758e6bc"
-  integrity sha512-2yK7sLpKIT91TiS5sewHtOa7YuM8IuBXVl4GZv2jZFys4D2sY7K5vZh6MqD25TPA95Od+0YzCVq6cTF2IKrOmg==
-
 "@uniswap/lib@^4.0.1-alpha":
   version "4.0.1-alpha"
   resolved "https://registry.yarnpkg.com/@uniswap/lib/-/lib-4.0.1-alpha.tgz#2881008e55f075344675b3bca93f020b028fbd02"
   integrity sha512-f6UIliwBbRsgVLxIaBANF6w09tYqc6Y/qXdsrbEmXHyFA7ILiKrIwRFXe1yOg8M3cksgVsO9N7yuL2DdCGQKBA==
 
-"@uniswap/v2-core@1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@uniswap/v2-core/-/v2-core-1.0.0.tgz#e0fab91a7d53e8cafb5326ae4ca18351116b0844"
-  integrity sha512-BJiXrBGnN8mti7saW49MXwxDBRFiWemGetE58q8zgfnPPzQKq55ADltEILqOt6VFZ22kVeVKbF8gVd8aY3l7pA==
-
-"@uniswap/v2-core@1.0.1", "@uniswap/v2-core@^1.0.1":
+"@uniswap/v2-core@1.0.1":
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/@uniswap/v2-core/-/v2-core-1.0.1.tgz#af8f508bf183204779938969e2e54043e147d425"
   integrity sha512-MtybtkUPSyysqLY2U210NBDeCHX+ltHt3oADGdjqoThZaFRDKwM6k1Nb3F0A3hk5hwuQvytFWhrWHOEq6nVJ8Q==
-
-"@uniswap/v2-periphery@^1.1.0-beta.0":
-  version "1.1.0-beta.0"
-  resolved "https://registry.yarnpkg.com/@uniswap/v2-periphery/-/v2-periphery-1.1.0-beta.0.tgz#20a4ccfca22f1a45402303aedb5717b6918ebe6d"
-  integrity sha512-6dkwAMKza8nzqYiXEr2D86dgW3TTavUvCR0w2Tu33bAbM8Ah43LKAzH7oKKPRT5VJQaMi1jtkGs1E8JPor1n5g==
-  dependencies:
-    "@uniswap/lib" "1.1.1"
-    "@uniswap/v2-core" "1.0.0"
 
 "@uniswap/v3-core-0.8-support@https://github.com/uniswap/v3-core.git#d55e297b938e5b56fd1cf9fe668f5bd385be85b5":
   version "1.0.2-solc-0.8-simulate"
@@ -5362,7 +5310,7 @@ hardhat-contract-sizer@^2.6.1:
     chalk "^4.0.0"
     cli-table3 "^0.6.0"
 
-hardhat-dependency-compiler@^1.1.2, hardhat-dependency-compiler@^1.1.3:
+hardhat-dependency-compiler@^1.1.3:
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/hardhat-dependency-compiler/-/hardhat-dependency-compiler-1.1.3.tgz#1e49e23f68878bd713f860c66648a711bc4a4a79"
   integrity sha512-bCDqsOxGST6WkbMvj4lPchYWidNSSBm5CFnkyAex1T11cGmr9otZTGl81W6f9pmrtBXbKCvr3OSuNJ6Q394sAw==

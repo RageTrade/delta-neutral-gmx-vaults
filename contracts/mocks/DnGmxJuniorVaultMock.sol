@@ -2,21 +2,23 @@
 
 pragma solidity ^0.8.9;
 
-import { DnGmxJuniorVault } from '../vaults/DnGmxJuniorVault.sol';
+import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
 import { IStableSwap } from '../interfaces/curve/IStableSwap.sol';
-import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
-
-import { SwapManager } from 'contracts/libraries/SwapManager.sol';
+import { DnGmxJuniorVaultHelpers } from '../libraries/DnGmxJuniorVaultHelpers.sol';
+import { SwapManager } from '../libraries/SwapManager.sol';
+import { DnGmxJuniorVault } from '../vaults/DnGmxJuniorVault.sol';
 
 contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
+    using DnGmxJuniorVaultHelpers for DnGmxJuniorVaultHelpers.State;
+
     function dnUsdcDepositedExternal() external view returns (int256) {
-        return dnUsdcDeposited;
+        return state.dnUsdcDeposited;
     }
 
     function getBorrowValue(uint256 btcAmount, uint256 ethAmount) external view returns (uint256 borrowValue) {
-        return _getBorrowValue(btcAmount, ethAmount);
+        return state.getBorrowValue(btcAmount, ethAmount);
     }
 
     function rebalanceBeforeShareAllocation() external {
@@ -24,15 +26,15 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
     }
 
     function isValidRebalanceTime() external view returns (bool) {
-        return _isValidRebalanceTime();
+        return state.isValidRebalanceTime();
     }
 
     function isValidRebalanceDeviation() external view returns (bool) {
-        return _isValidRebalanceDeviation();
+        return state.isValidRebalanceDeviation();
     }
 
     function isValidRebalanceHF() external view returns (bool) {
-        return _isValidRebalanceHF();
+        return state.isValidRebalanceHF();
     }
 
     function swapToken(
@@ -75,27 +77,27 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
     }
 
     function executeBorrow(address token, uint256 amount) external {
-        pool.borrow(token, amount, VARIABLE_INTEREST_MODE, 0, address(this));
+        state.pool.borrow(token, amount, VARIABLE_INTEREST_MODE, 0, address(this));
     }
 
     function executeRepay(address token, uint256 amount) external {
-        pool.repay(token, amount, VARIABLE_INTEREST_MODE, address(this));
+        state.pool.repay(token, amount, VARIABLE_INTEREST_MODE, address(this));
     }
 
     function executeSupply(address token, uint256 amount) external {
-        pool.supply(token, amount, address(this), 0);
+        state.pool.supply(token, amount, address(this), 0);
     }
 
     function executeWithdraw(address token, uint256 amount) external {
-        pool.withdraw(token, amount, address(this));
+        state.pool.withdraw(token, amount, address(this));
     }
 
     function executeBorrowFromDnGmxSeniorVault(uint256 amount) external {
-        dnGmxSeniorVault.borrow(amount);
+        state.dnGmxSeniorVault.borrow(amount);
     }
 
     function executeRepayFromDnGmxSeniorVault(uint256 amount) external {
-        dnGmxSeniorVault.repay(amount);
+        state.dnGmxSeniorVault.repay(amount);
     }
 
     function executeOperationToken(
@@ -121,11 +123,11 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
             bool repayDebt
         )
     {
-        return _flashloanAmounts(token, optimalBorrow, currentBorrow);
+        return state.flashloanAmounts(token, optimalBorrow, currentBorrow);
     }
 
     function rebalanceProfit(uint256 borrowValue) external {
-        return _rebalanceProfit(borrowValue);
+        return state.rebalanceProfit(borrowValue);
     }
 
     function getLiquidationThreshold(address asset) internal view returns (uint256) {
@@ -138,7 +140,7 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         uint256 optimalEthBorrow,
         uint256 currentEthBorrow
     ) external {
-        return _rebalanceBorrow(optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
+        return state.rebalanceBorrow(optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
     }
 
     function getPriceExternal() external view returns (uint256) {
@@ -146,15 +148,15 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
     }
 
     function getPrice(IERC20Metadata token) external view returns (uint256) {
-        return _getPrice(token);
+        return state.getTokenPrice(token);
     }
 
     function getPrice(IERC20Metadata token, bool isUsdc) external view returns (uint256) {
-        return _getPrice(token, isUsdc);
+        return state.getTokenPriceInUsdc(token, isUsdc);
     }
 
     function getCurrentBorrows() external view returns (uint256 currentBtcBorrow, uint256 currentEthBorrow) {
-        return _getCurrentBorrows();
+        return state.getCurrentBorrows();
     }
 
     function getOptimalBorrows(uint256 glpDeposited)
@@ -162,7 +164,7 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         view
         returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow)
     {
-        return _getOptimalBorrows(glpDeposited);
+        return state.getOptimalBorrows(glpDeposited);
     }
 
     function getOptimalCappedBorrows(uint256 availableBorrowAmount, uint256 usdcLiquidationThreshold)
@@ -170,19 +172,19 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         view
         returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow)
     {
-        return _getOptimalCappedBorrows(availableBorrowAmount, usdcLiquidationThreshold);
+        return state.getOptimalCappedBorrows(availableBorrowAmount, usdcLiquidationThreshold);
     }
 
     function getTokenReservesInGlp(address token, uint256 glpDeposited) external view returns (uint256) {
-        return _getTokenReservesInGlp(token, glpDeposited);
+        return state.getTokenReservesInGlp(token, glpDeposited);
     }
 
     function isWithinAllowedDelta(uint256 optimalBorrow, uint256 currentBorrow) external view returns (bool) {
-        return _isWithinAllowedDelta(optimalBorrow, currentBorrow);
+        return state.isWithinAllowedDelta(optimalBorrow, currentBorrow);
     }
 
     function rebalanceHedge(uint256 currentBtcBorrow, uint256 currentEthBorrow) external {
-        return _rebalanceHedge(currentBtcBorrow, currentEthBorrow, totalAssets());
+        return state.rebalanceHedge(currentBtcBorrow, currentEthBorrow, totalAssets());
     }
 
     function convertAssetToAUsdc(uint256 usdcAmountDesired) external returns (uint256 usdcAmount) {
@@ -194,7 +196,7 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
     }
 
     function setMocks(ISwapRouter _swapRouter) external {
-        swapRouter = _swapRouter;
+        state.swapRouter = _swapRouter;
     }
 
     function depositToken(
@@ -202,6 +204,6 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         uint256 amount,
         uint256 minUsdg
     ) external {
-        batchingManager.depositToken(token, amount, minUsdg);
+        state.batchingManager.depositToken(token, amount, minUsdg);
     }
 }

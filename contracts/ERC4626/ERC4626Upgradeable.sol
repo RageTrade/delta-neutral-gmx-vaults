@@ -8,35 +8,23 @@ import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 
 import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMathLib.sol';
 
+import { IERC4626 } from '../interfaces/IERC4626.sol';
+
 /// @notice Minimal ERC4626 tokenized Vault implementation.
 /// @author Copied and modified from Solmate (https://github.com/Rari-Capital/solmate/blob/main/src/mixins/ERC4626.sol)
-abstract contract ERC4626Upgradeable is ERC20Upgradeable {
+abstract contract ERC4626Upgradeable is IERC4626, ERC20Upgradeable {
     using SafeERC20 for IERC20Metadata;
     using FixedPointMathLib for uint256;
-
-    /*//////////////////////////////////////////////////////////////
-                                 EVENTS
-    //////////////////////////////////////////////////////////////*/
-
-    event Deposit(address indexed caller, address indexed owner, uint256 assets, uint256 shares);
-
-    event Withdraw(
-        address indexed caller,
-        address indexed receiver,
-        address indexed owner,
-        uint256 assets,
-        uint256 shares
-    );
 
     /*//////////////////////////////////////////////////////////////
                                STATE
     //////////////////////////////////////////////////////////////*/
 
-    IERC20Metadata public asset;
+    address public asset;
 
     /* solhint-disable func-name-mixedcase */
     function __ERC4626Upgradeable_init(
-        IERC20Metadata _asset,
+        address _asset,
         string memory _name,
         string memory _symbol
     ) internal {
@@ -53,7 +41,7 @@ abstract contract ERC4626Upgradeable is ERC20Upgradeable {
         require((shares = previewDeposit(assets)) != 0, 'ZERO_SHARES');
 
         // Need to transfer before minting or ERC777s could reenter.
-        asset.safeTransferFrom(msg.sender, address(this), assets);
+        IERC20Metadata(asset).safeTransferFrom(msg.sender, address(this), assets);
 
         _mint(receiver, shares);
 
@@ -66,7 +54,7 @@ abstract contract ERC4626Upgradeable is ERC20Upgradeable {
         assets = previewMint(shares); // No need to check for rounding error, previewMint rounds up.
 
         // Need to transfer before minting or ERC777s could reenter.
-        asset.safeTransferFrom(msg.sender, address(this), assets);
+        IERC20Metadata(asset).safeTransferFrom(msg.sender, address(this), assets);
 
         _mint(receiver, shares);
 
@@ -94,7 +82,7 @@ abstract contract ERC4626Upgradeable is ERC20Upgradeable {
 
         emit Withdraw(msg.sender, receiver, owner, assets, shares);
 
-        asset.safeTransfer(receiver, assets);
+        IERC20Metadata(asset).safeTransfer(receiver, assets);
     }
 
     function redeem(
@@ -117,7 +105,7 @@ abstract contract ERC4626Upgradeable is ERC20Upgradeable {
 
         emit Withdraw(msg.sender, receiver, owner, assets, shares);
 
-        asset.safeTransfer(receiver, assets);
+        IERC20Metadata(asset).safeTransfer(receiver, assets);
     }
 
     /*//////////////////////////////////////////////////////////////
