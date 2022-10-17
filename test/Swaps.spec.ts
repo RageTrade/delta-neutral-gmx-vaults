@@ -155,14 +155,14 @@ describe('Swaps', () => {
     const assets = parseEther('150');
     const usdcAmount = parseUnits('100', 6);
 
-    await dnGmxJuniorVault.setThresholds({
-      slippageThresholdSwap: 100,
-      slippageThresholdGmx: 10,
-      hfThreshold: 12_000,
-      usdcConversionThreshold: parseUnits('1', 6),
-      wethConversionThreshold: 10n ** 15n,
-      hedgeUsdcAmountThreshold: parseUnits('1', 6),
-    });
+    await dnGmxJuniorVault.setThresholds(
+      100, //slippageThresholdSwap
+      10, //slippageThresholdGmx
+      parseUnits('1', 6), //usdcConversionThreshold
+      12_000, //hfThreshold
+      10n ** 15n, //wethConversionThreshold
+      parseUnits('1', 6), //hedgeUsdcAmountThreshold
+    );
 
     await sGlp.connect(users[0]).transfer(dnGmxJuniorVault.address, assets);
 
@@ -231,14 +231,14 @@ describe('Swaps', () => {
 
     const aUSDCAmount = parseUnits('100', 6);
 
-    await dnGmxJuniorVault.setThresholds({
-      slippageThresholdSwap: 100,
-      slippageThresholdGmx: 10,
-      hfThreshold: 12_000,
-      usdcConversionThreshold: parseUnits('1', 6),
-      wethConversionThreshold: 10n ** 15n,
-      hedgeUsdcAmountThreshold: parseUnits('1', 6),
-    });
+    await dnGmxJuniorVault.setThresholds(
+      100, //slippageThresholdSwap
+      10, //slippageThresholdGmx
+      parseUnits('1', 6), //usdcConversionThreshold
+      12_000, //hfThreshold
+      10n ** 15n, //wethConversionThreshold
+      parseUnits('1', 6), //hedgeUsdcAmountThreshold
+    );
 
     await dnGmxJuniorVault.executeBorrowFromDnGmxSeniorVault(aUSDCAmount);
 
