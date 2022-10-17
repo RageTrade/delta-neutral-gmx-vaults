@@ -25,8 +25,6 @@ describe('Swaps', () => {
       .div(PRICE_PRECISION)
       .div(MAX_BPS);
 
-    console.log('btc price', btcPrice.mul(parseUnits('1', 8)).div(PRICE_PRECISION));
-
     await dnGmxJuniorVault.swapToken(wbtc.address, parseUnits('1', 8), minUsdcOut);
     let usdcBal = await usdc.balanceOf(dnGmxJuniorVault.address);
 
