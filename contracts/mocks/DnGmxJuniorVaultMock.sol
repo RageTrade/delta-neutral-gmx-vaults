@@ -22,6 +22,10 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         return state.protocolEsGmx;
     }
 
+    function protocolFee() external view returns (uint256) {
+        return state.protocolFee;
+    }
+
     function withdrawFeeBps() external view returns (uint256) {
         return state.withdrawFeeBps;
     }
