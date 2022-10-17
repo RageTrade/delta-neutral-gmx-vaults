@@ -210,7 +210,7 @@ describe('Rebalance & its utils', () => {
       dnUsdcDepositedAfter,
     );
 
-    expect(currentDnGmxSeniorVaultAmountAfter).to.eq(targetDnGmxSeniorVaultAmount.sub(1));
+    expect(currentDnGmxSeniorVaultAmountAfter).to.closeTo(targetDnGmxSeniorVaultAmount, BigNumber.from(1));
     expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.eq(currentDnGmxSeniorVaultAmountAfter);
   });
 
@@ -331,8 +331,8 @@ describe('Rebalance & its utils', () => {
     // availableBorrow = max(borrowCap, balanceOf)
     expect(availableBorrow).to.closeTo(parseUnits('100', 6), BigNumber.from(1));
 
-    expect(await dnGmxJuniorVault.unhedgedGlpInUsdc()).to.eq(minGlpOut);
-    expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.eq(availableBorrow);
+    expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.closeTo(availableBorrow, BigNumber.from(1));
+    expect(await dnGmxJuniorVault.unhedgedGlpInUsdc()).to.eq(minUsdgOut.div(USDG_DECIMALS - USDC_DECIMALS));
   });
 
   it('Rebalance Hedge - target < current', async () => {
@@ -393,7 +393,7 @@ describe('Rebalance & its utils', () => {
     console.log('available borrow', await dnGmxSeniorVault.availableBorrow(dnGmxJuniorVault.address));
     console.log('borrow caps', await dnGmxSeniorVault.borrowCaps(dnGmxJuniorVault.address));
 
-    expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.eq(targetDnGmxSeniorVaultAmount);
+    expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.closeTo(targetDnGmxSeniorVaultAmount, BigNumber.from(1));
 
     const diff = (await dnGmxSeniorVault.borrowCaps(dnGmxJuniorVault.address)).sub(
       await dnGmxSeniorVault.availableBorrow(dnGmxJuniorVault.address),
@@ -767,6 +767,15 @@ describe('Rebalance & its utils', () => {
 
     await dnGmxJuniorVault.setMocks(opts.mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
+
+    await dnGmxJuniorVault.setThresholds({
+      slippageThresholdSwap: 100,
+      slippageThresholdGmx: 1000,
+      hfThreshold: 12_000,
+      usdcConversionThreshold: parseUnits('1', 6),
+      wethConversionThreshold: 10n ** 15n,
+      hedgeUsdcAmountThreshold: parseUnits('1', 6),
+    });
 
     const amount = parseEther('100');
 
