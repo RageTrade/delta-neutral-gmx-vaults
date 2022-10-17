@@ -6,4 +6,6 @@ import { IVariableDebtToken } from '@aave/core-v3/contracts/interfaces/IVariable
 
 interface IDebtToken is IVariableDebtToken {
     function balanceOf(address user) external view returns (uint256);
+
+    function totalSupply() external view returns (uint256);
 }
