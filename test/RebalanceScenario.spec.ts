@@ -349,7 +349,7 @@ describe('Rebalance Scenarios', () => {
     await checker.checkUsdcBorrwed(4734292n, 100n);
   });
 
-  it('TokenThreshold 1 : BtcWeight Decrease > threshold, EthWeight Decrease < threshold', async () => {
+  it.skip('TokenThreshold 1 : BtcWeight Decrease > threshold, EthWeight Decrease < threshold', async () => {
     let tx;
 
     const opts = await dnGmxJuniorVaultFixture();
