@@ -12,9 +12,30 @@ import { DnGmxJuniorVault } from '../vaults/DnGmxJuniorVault.sol';
 
 contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
     using DnGmxJuniorVaultHelpers for DnGmxJuniorVaultHelpers.State;
+    using SwapManager for DnGmxJuniorVaultHelpers.State;
 
     function dnUsdcDepositedExternal() external view returns (int256) {
         return state.dnUsdcDeposited;
+    }
+
+    function protocolEsGmx() external view returns (uint256) {
+        return state.protocolEsGmx;
+    }
+
+    function withdrawFeeBps() external view returns (uint256) {
+        return state.withdrawFeeBps;
+    }
+
+    function FEE() external view returns (uint256) {
+        return state.FEE;
+    }
+
+    function slippageThresholdSwap() external view returns (uint256) {
+        return state.slippageThresholdSwap;
+    }
+
+    function unhedgedGlpInUsdc() external view returns (uint256) {
+        return state.unhedgedGlpInUsdc;
     }
 
     function getBorrowValue(uint256 btcAmount, uint256 ethAmount) external view returns (uint256 borrowValue) {
@@ -42,7 +63,7 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         uint256 tokenAmount,
         uint256 minUsdcAmount
     ) external returns (uint256 usdcReceived, uint256 tokensUsed) {
-        return SwapManager.swapToken(token, tokenAmount, minUsdcAmount);
+        return state.swapToken(token, tokenAmount, minUsdcAmount);
     }
 
     function swapUSDC(
@@ -50,7 +71,7 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         uint256 tokenAmount,
         uint256 maxUsdcAmount
     ) external returns (uint256 usdcPaid, uint256 tokensReceived) {
-        return SwapManager.swapUSDC(token, tokenAmount, maxUsdcAmount);
+        return state.swapUSDC(token, tokenAmount, maxUsdcAmount);
     }
 
     function executeFlashloan(
