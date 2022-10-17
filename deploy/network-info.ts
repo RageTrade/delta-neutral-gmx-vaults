@@ -14,6 +14,7 @@ export const skip = () => true;
 export interface NetworkInfo {
   KEEPER_ADDRESS: string;
   DEPOSIT_CAP_JUNIOR_VAULT: string;
+  DEPOSIT_CAP_SENIOR_VAULT: string;
   FEE_RECIPIENT?: string;
 
   WETH_ADDRESS: string;
@@ -40,7 +41,8 @@ export async function getNetworkInfo(): Promise<NetworkInfo> {
 
   const arbmainNetworkInfo: NetworkInfo = {
     KEEPER_ADDRESS: '0xe1829BaD81E9146E18f28E28691D930c052483bA',
-    DEPOSIT_CAP_JUNIOR_VAULT: parseEther('1000000').toString(), // TODO
+    DEPOSIT_CAP_JUNIOR_VAULT: parseEther('10000000').toString(), // TODO
+    DEPOSIT_CAP_SENIOR_VAULT: parseEther('10000000').toString(), // TODO
     FEE_RECIPIENT: '', // TODO
 
     WETH_ADDRESS: tokensAddresses.wethAddress,
@@ -61,6 +63,7 @@ export async function getNetworkInfo(): Promise<NetworkInfo> {
   const arbgoerliNetworkInfo: NetworkInfo = {
     KEEPER_ADDRESS: '0xe1829BaD81E9146E18f28E28691D930c052483bA',
     DEPOSIT_CAP_JUNIOR_VAULT: parseEther('10000000').toString(), // TODO
+    DEPOSIT_CAP_SENIOR_VAULT: parseEther('10000000').toString(), // TODO
 
     WETH_ADDRESS: '0xCDa739D69067333974cD73A722aB92E5e0ad8a4F',
     USDT_ADDRESS: '0xbAc565f93f3192D35E9106E67B9d5c9348bD9389',
