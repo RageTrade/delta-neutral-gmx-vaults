@@ -212,12 +212,15 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         _unpause();
     }
 
-    function setFeeRecipient(address _feeRecipient) external onlyOwner {
+    function setFeeParams(uint256 _feeBps, address _feeRecipient) external onlyOwner {
         if (state.feeRecipient != _feeRecipient) {
             state.feeRecipient = _feeRecipient;
         } else revert InvalidFeeRecipient();
 
-        emit FeeRecipientUpdated(_feeRecipient);
+        if (_feeBps > 3000) revert InvalidFeeBps();
+        state.feeBps = _feeBps;
+
+        emit FeeParamsUpdated(_feeBps, _feeRecipient);
     }
 
     /// @notice withdraw accumulated WETH fees
@@ -266,16 +269,17 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         });
 
         uint256 sGmxHarvested = sGmx.depositBalances(address(this), esGmx) - sGmxPrevBalance;
-        state.protocolEsGmx += sGmxHarvested.mulDivDown(state.FEE, MAX_BPS);
+        state.protocolEsGmx += sGmxHarvested.mulDivDown(state.feeBps, MAX_BPS);
+        // console.log('feeBps', state.feeBps);
         // console.log('sGmxHarvested', sGmxHarvested);
-        // console.log('protocolEsGmx', protocolEsGmx);
+        // console.log('protocolEsGmx state', state.protocolEsGmx);
 
         // console.log('gmx balance', sGmx.depositBalances(address(this), rewardRouter.gmx()));
         uint256 wethHarvested = state.weth.balanceOf(address(this)) - state.protocolFee - state.seniorVaultWethRewards;
         // console.log('wethHarvested', wethHarvested);
 
         if (wethHarvested > state.wethConversionThreshold) {
-            uint256 protocolFeeHarvested = (wethHarvested * state.FEE) / MAX_BPS;
+            uint256 protocolFeeHarvested = (wethHarvested * state.feeBps) / MAX_BPS;
             state.protocolFee += protocolFeeHarvested;
 
             uint256 wethToCompound = wethHarvested - protocolFeeHarvested;

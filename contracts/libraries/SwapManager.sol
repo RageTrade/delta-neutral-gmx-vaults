@@ -55,7 +55,7 @@ library SwapManager {
     bytes internal constant WBTC_TO_USDC = abi.encodePacked(wbtc, uint24(3000), weth, uint24(500), usdc);
 
     struct State {
-        uint256 FEE; // = 1000;
+        uint256 feeBps; // = 1000;
         address keeper;
         IDnGmxSeniorVault dnGmxSeniorVault;
         address feeRecipient;

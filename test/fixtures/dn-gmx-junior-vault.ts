@@ -63,7 +63,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     addresses.AAVE_POOL_ADDRESS_PROVIDER, // _poolAddressesProvider
   );
 
-  await dnGmxJuniorVault.setFeeRecipient(feeRecipient.address);
+  await dnGmxJuniorVault.setFeeParams(1000, feeRecipient.address);
 
   const dnGmxSeniorVault = await dnGmxSeniorVaultFixture();
   await dnGmxSeniorVault.setDnGmxJuniorVault(dnGmxJuniorVault.address);
