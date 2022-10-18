@@ -38,15 +38,10 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     await hre.ethers.getContractFactory('contracts/libraries/SwapManager.sol:SwapManager')
   ).deploy();
 
-  const juniorVaultHelpers = await (
-    await hre.ethers.getContractFactory('contracts/libraries/DnGmxJuniorVaultHelpers.sol:DnGmxJuniorVaultHelpers')
-  ).deploy();
-
   const dnGmxJuniorVault = await (
     await hre.ethers.getContractFactory('DnGmxJuniorVaultMock', {
       libraries: {
         ['contracts/libraries/SwapManager.sol:SwapManager']: swapManager.address,
-        ['contracts/libraries/DnGmxJuniorVaultHelpers.sol:DnGmxJuniorVaultHelpers']: juniorVaultHelpers.address,
       },
     })
   ).deploy();
