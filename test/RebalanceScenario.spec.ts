@@ -24,10 +24,10 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.setThresholds(
       1000, //slippageThresholdSwap
       1000, //slippageThresholdGmx
-      0, //hedgeUsdcAmountThreshold
-      0, //hfThreshold
       parseUnits('1', 6), //usdcConversionThreshold
+      0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
+      0, //hedgeUsdcAmountThreshold
     );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
@@ -111,10 +111,10 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.setThresholds(
       1000, //slippageThresholdSwap
       1000, //slippageThresholdGmx
-      0, //hedgeUsdcAmountThreshold
-      0, //hfThreshold
       parseUnits('1', 6), //usdcConversionThreshold
+      0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
+      0, //hedgeUsdcAmountThreshold
     );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
@@ -193,10 +193,10 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.setThresholds(
       1000, //slippageThresholdSwap
       1000, //slippageThresholdGmx
-      0, //hedgeUsdcAmountThreshold
-      0, //hfThreshold
       parseUnits('1', 6), //usdcConversionThreshold
+      0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
+      0, //hedgeUsdcAmountThreshold
     );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
@@ -292,10 +292,10 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.setThresholds(
       1000, //slippageThresholdSwap
       1000, //slippageThresholdGmx
-      0, //hedgeUsdcAmountThreshold
-      0, //hfThreshold
       parseUnits('1', 6), //usdcConversionThreshold
+      0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
+      0, //hedgeUsdcAmountThreshold
     );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
@@ -380,10 +380,10 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.setThresholds(
       1000, //slippageThresholdSwap
       1000, //slippageThresholdGmx
-      parseUnits('12', 6), //hedgeUsdcAmountThreshold
-      0, //hfThreshold
       parseUnits('1', 6), //usdcConversionThreshold
+      0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
+      parseUnits('12', 6), //hedgeUsdcAmountThreshold
     );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
@@ -469,10 +469,10 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.setThresholds(
       1000, //slippageThresholdSwap
       1000, //slippageThresholdGmx
-      parseUnits('12', 6), //hedgeUsdcAmountThreshold
-      0, //hfThreshold
       parseUnits('1', 6), //usdcConversionThreshold
+      0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
+      0, //hedgeUsdcAmountThreshold
     );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
@@ -558,10 +558,10 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.setThresholds(
       1000, //slippageThresholdSwap
       1000, //slippageThresholdGmx
-      parseUnits('12', 6), //hedgeUsdcAmountThreshold
-      0, //hfThreshold
       parseUnits('1', 6), //usdcConversionThreshold
+      0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
+      0, //hedgeUsdcAmountThreshold
     );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
@@ -648,10 +648,10 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.setThresholds(
       1000, //slippageThresholdSwap
       1000, //slippageThresholdGmx
-      0, //hedgeUsdcAmountThreshold
-      0, //hfThreshold
       parseUnits('1', 6), //usdcConversionThreshold
+      0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
+      0, //hedgeUsdcAmountThreshold
     );
 
     console.log('--------------------Sr. Tranche Initial Deposit--------------------');
@@ -775,10 +775,10 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.setThresholds(
       1000, //slippageThresholdSwap
       1000, //slippageThresholdGmx
-      0, //hedgeUsdcAmountThreshold
-      0, //hfThreshold
       parseUnits('1', 6), //usdcConversionThreshold
+      0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
+      0, //hedgeUsdcAmountThreshold
     );
 
     console.log('--------------------Sr. Tranche Initial Deposit--------------------');
@@ -905,10 +905,10 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.setThresholds(
       1000, //slippageThresholdSwap
       1000, //slippageThresholdGmx
-      0, //hedgeUsdcAmountThreshold
-      0, //hfThreshold
       parseUnits('1', 6), //usdcConversionThreshold
+      0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
+      0, //hedgeUsdcAmountThreshold
     );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('800000', 6), users[1].address);
@@ -1011,10 +1011,10 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.setThresholds(
       1000, //slippageThresholdSwap
       1000, //slippageThresholdGmx
-      0, //hedgeUsdcAmountThreshold
-      0, //hfThreshold
       parseUnits('1', 6), //usdcConversionThreshold
+      0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
+      0, //hedgeUsdcAmountThreshold
     );
 
     await sGlp.connect(users[2]).approve(dnGmxJuniorVault.address, ethers.constants.MaxUint256);
