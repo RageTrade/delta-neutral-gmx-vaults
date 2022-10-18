@@ -217,7 +217,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
             state.feeRecipient = _feeRecipient;
         } else revert InvalidFeeRecipient();
 
-        if(_feeBps > 3000) revert InvalidFeeBps();
+        if (_feeBps > 3000) revert InvalidFeeBps();
         state.feeBps = _feeBps;
 
         emit FeeParamsUpdated(_feeBps, _feeRecipient);
@@ -303,8 +303,6 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
                 price * (MAX_BPS - state.slippageThresholdSwap),
                 PRICE_PRECISION * MAX_BPS
             );
-
-            // console.log('usdgAmount', usdgAmount);
 
             usdgAmount = usdgAmount.mulDivDown(10**USDG_DECIMALS, 10**WETH_DECIMALS);
 
@@ -654,24 +652,26 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
 
     /// @notice withdraws LP tokens from gauge, sells LP token for usdc
     /// @param usdcAmountDesired amount of USDC desired
-    function _convertAssetToAUsdc(uint256 usdcAmountDesired) internal returns (uint256 usdcAmount) {
+    function _convertAssetToAUsdc(uint256 usdcAmountDesired) internal returns (uint256 usdcAmountOut) {
         /// @dev if usdcAmountDesired < 10, then there is precision issue in gmx contracts while redeeming for usdg
         if (usdcAmountDesired < state.usdcConversionThreshold) return 0;
-        uint256 glpAmountDesired = usdcAmountDesired.mulDivDown(PRICE_PRECISION, getPrice(false));
-        // USDG has 18 decimals and usdc has 6 decimals => 18-6 = 12
-        // console.log('GLP PRICE: ', getPrice());
-        // console.log('glpAmountDesired', glpAmountDesired);
-        // console.log('TA', totalAssets());
-        state.rewardRouter.unstakeAndRedeemGlp(
-            address(state.usdc),
-            glpAmountDesired, // glp amount
-            usdcAmountDesired.mulDivDown(MAX_BPS - state.slippageThresholdGmx, MAX_BPS), // usdc
-            address(this)
+
+        address _usdc = address(state.usdc);
+
+        // @dev using max price of usdc becausing buying usdc for glp
+        uint256 usdcPrice = state.gmxVault.getMaxPrice(_usdc);
+
+        uint256 minUsdcOut = usdcAmountDesired.mulDivDown(usdcPrice, PRICE_PRECISION);
+
+        // @dev adjusting slippage on glp input amount to receive atleast 'minUsdcOut'
+        uint256 glpAmountInput = minUsdcOut.mulDivDown(
+            PRICE_PRECISION * (MAX_BPS + state.slippageThresholdGmx),
+            getPrice(false) * MAX_BPS
         );
 
-        usdcAmount = state.usdc.balanceOf(address(this));
+        usdcAmountOut = state.rewardRouter.unstakeAndRedeemGlp(_usdc, glpAmountInput, usdcAmountDesired, address(this));
 
-        _executeSupply(address(state.usdc), usdcAmount);
+        _executeSupply(_usdc, usdcAmountOut);
     }
 
     /// @notice sells usdc for LP tokens and then stakes LP tokens
