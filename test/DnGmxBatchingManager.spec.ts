@@ -1,7 +1,7 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { getAddress, hexlify, parseUnits, randomBytes } from 'ethers/lib/utils';
+import { getAddress, hexlify, parseEther, parseUnits, randomBytes } from 'ethers/lib/utils';
 import hre, { ethers } from 'hardhat';
 import {
   DnGmxBatchingManager,
@@ -20,6 +20,7 @@ describe('Dn Gmx Batching Manager', () => {
   let glpBatchingManager: DnGmxBatchingManager;
   let users: SignerWithAddress[];
   let aUSDC: IAToken;
+  let sGlp: ERC20Upgradeable;
   let usdc: ERC20Upgradeable;
   let fsGlp: ERC20Upgradeable;
   let dnGmxJuniorVaultSigner: SignerWithAddress;
@@ -27,7 +28,7 @@ describe('Dn Gmx Batching Manager', () => {
   let dnGmxSeniorVault: DnGmxSeniorVault;
 
   beforeEach(async () => {
-    ({ dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, fsGlp, aUSDC, usdc } =
+    ({ dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, fsGlp, aUSDC, usdc, sGlp } =
       await dnGmxJuniorVaultFixture());
   });
 
@@ -551,6 +552,48 @@ describe('Dn Gmx Batching Manager', () => {
       expect(user1Deposit.round).to.eq(1);
       expect(user1Deposit.usdcBalance).to.eq(0);
       expect(user1Deposit.unclaimedShares).to.eq(user1Share.sub(shareAmountWithdrawn));
+    });
+  });
+
+  describe.skip('failure cases', () => {
+    it('execute batch', async () => {
+      /**- deposit some sglp in junior vault and increase timestamp to accure rewards
+       * - deposit usdc
+       * - execute stake (will pause contract)
+       * - wait 15 mins
+       * - execute batch -> juniorVault.deposit -> harvestFees() -> batchingManager.depositToken -> revert: paused
+       */
+      const amount = parseEther('1000');
+      const depositAmount = parseUnits('100', 6);
+
+      await sGlp.connect(users[0]).transfer(dnGmxJuniorVault.address, amount);
+      await increaseBlockTimestamp(60 * 60 * 48);
+
+      await generateErc20Balance(usdc, depositAmount, users[1].address);
+      await usdc.connect(users[1]).approve(glpBatchingManager.address, depositAmount);
+      await glpBatchingManager.connect(users[1]).depositUsdc(depositAmount, users[1].address);
+
+      await glpBatchingManager.executeBatchStake();
+      console.log('passed');
+      await increaseBlockTimestamp(15 * 60 + 1);
+
+      expect(await glpBatchingManager.paused()).to.true;
+
+      await glpBatchingManager.executeBatchDeposit();
+    });
+
+    it('does not work due to insufficient glp out', async () => {
+      const amount = parseEther('1000');
+      const depositAmount = parseUnits('1000', 6);
+
+      await sGlp.connect(users[0]).transfer(dnGmxJuniorVault.address, amount);
+      // await increaseBlockTimestamp(60 * 60 * 48)
+
+      await generateErc20Balance(usdc, depositAmount, users[1].address);
+      await usdc.connect(users[1]).approve(glpBatchingManager.address, depositAmount);
+      await glpBatchingManager.connect(users[1]).depositUsdc(depositAmount, users[1].address);
+
+      await glpBatchingManager.executeBatchStake();
     });
   });
 });
