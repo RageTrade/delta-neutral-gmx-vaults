@@ -304,8 +304,6 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
                 PRICE_PRECISION * MAX_BPS
             );
 
-            // console.log('usdgAmount', usdgAmount);
-
             usdgAmount = usdgAmount.mulDivDown(10**USDG_DECIMALS, 10**WETH_DECIMALS);
 
             uint256 glpReceived = state.batchingManager.depositToken(address(state.weth), dnGmxWethShare, usdgAmount);
