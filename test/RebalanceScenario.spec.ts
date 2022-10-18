@@ -1,3 +1,4 @@
+// REBALANCE SCENARIO
 import { expect } from 'chai';
 import { BigNumber, ethers } from 'ethers';
 import { Logger } from './utils/logger';
@@ -286,7 +287,7 @@ describe('Rebalance Scenarios', () => {
       dnGmxSeniorVault.address,
       ethers.constants.MaxUint256,
       glpBatchingManager.address,
-      50,
+      1000,
     );
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds(
@@ -339,14 +340,6 @@ describe('Rebalance Scenarios', () => {
     await checker.checkVaultMktValue(116812897n, 4n * 10n ** 2n);
     await checker.checkBorrowValue(73477703n, 5n * 10n ** 2n);
 
-    // console.log('--------------------Rebalance before Withdraw--------------------');
-    // tx = await dnGmxJuniorVault.rebalance();
-    // await logger.logGlpRewards(tx);
-
-    // await logger.logAavePosition();
-    // await logger.logBorrowParams();
-    // await logger.logProtocolParamsAndHoldings();
-
     console.log('--------------------Full Withdraw--------------------');
     // Full Withdraw 89313565165612328971 assets
     const amount1 = dnGmxJuniorVault.balanceOf(users[0].address);
@@ -364,7 +357,7 @@ describe('Rebalance Scenarios', () => {
     await checker.checkUsdcBorrwed(4734292n, 100n);
   });
 
-  it.skip('TokenThreshold 1 : BtcWeight Decrease > threshold, EthWeight Decrease < threshold', async () => {
+  it('TokenThreshold 1 : BtcWeight Decrease > threshold, EthWeight Decrease < threshold', async () => {
     let tx;
 
     const opts = await dnGmxJuniorVaultFixture();
@@ -472,7 +465,7 @@ describe('Rebalance Scenarios', () => {
       parseUnits('1', 6), //usdcConversionThreshold
       0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
-      0, //hedgeUsdcAmountThreshold
+      parseUnits('12', 6), //hedgeUsdcAmountThreshold
     );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
@@ -561,7 +554,7 @@ describe('Rebalance Scenarios', () => {
       parseUnits('1', 6), //usdcConversionThreshold
       0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
-      0, //hedgeUsdcAmountThreshold
+      parseUnits('12', 6), //hedgeUsdcAmountThreshold
     );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
@@ -708,11 +701,15 @@ describe('Rebalance Scenarios', () => {
     await logger.logBorrowParams();
     await logger.logProtocolParamsAndHoldings();
 
-    // await checker.checkTotalAssets(134831549403668000000n, 2n * 10n ** 14n, true);
-    // await checker.checkTotalSupply(155139066349129000000n, 4n * 10n ** 13n, true);
-    // await checker.checkCurrentBorrowed([89444n,13760737193388000n + 6n], [0, 4n * 10n ** 10n]);
-    // await checker.checkBorrowValue(78470527n, 4000n);
-    // await checker.checkUsdcBorrwed(60006873n, 300n);
+    // 134831440275369833890
+    await checker.checkTotalAssets(134831549403668000000n, 2n * 10n ** 14n, true);
+    // 155139098395746290781
+    await checker.checkTotalSupply(155139066349129000000n, 4n * 10n ** 13n, true);
+    // Borrow ETH : 13760737544110385
+    // Deviation : 350722378
+    await checker.checkCurrentBorrowed([89444n, 13760737193388000n + 6n], [10n, 10n]);
+    await checker.checkBorrowValue(78470527n, 4000n);
+    await checker.checkUsdcBorrwed(60006873n, 300n);
 
     console.log('--------------------Time Increased--------------------');
     await increaseBlockTimestamp(60);
@@ -726,10 +723,10 @@ describe('Rebalance Scenarios', () => {
     await logger.logBorrowParams();
     await logger.logProtocolParamsAndHoldings();
 
-    // await checker.checkTotalAssets(134831549403668000000n, 2n * 10n ** 14n, true);
-    // await checker.checkTotalSupply(155139066349129000000n, 4n * 10n ** 13n, true);
-    // await checker.checkBorrowValue(78473587n, 0n);
-    // await checker.checkVaultMktValue(116812897n, 4n * 10n ** 2n);
+    await checker.checkTotalAssets(134831549403668000000n, 2n * 10n ** 14n, true);
+    await checker.checkTotalSupply(155139066349129000000n, 4n * 10n ** 13n, true);
+    await checker.checkBorrowValue(78473587n, 0n);
+    // await checker.checkVaultMktValue(172585388n, 4n * 10n ** 2n);
 
     console.log('--------------------Sr. Tranche New Deposit--------------------');
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('40', 6), users[1].address);
@@ -750,13 +747,13 @@ describe('Rebalance Scenarios', () => {
     await logger.logBorrowParams();
     await logger.logProtocolParamsAndHoldings();
 
-    // await checker.checkTotalAssets(89313883234732900000n, 4n * 10n ** 14n, true);
-    // await checker.checkTotalSupply(100000000000000000000n, 0, true);
+    await checker.checkTotalAssets(135033668650057000000n, 2n * 10n ** 14n, true);
+    await checker.checkTotalSupply(155139066349129000000n, 4n * 10n ** 13n, true);
 
-    // await checker.checkCurrentBorrowed([70568n - 636n,10856649158435000n], [10n ** 4n, 4n * 10n ** 10n]);
+    await checker.checkCurrentBorrowed([104261n - 1n, 16040172420497200n], [0, 2n * 10n ** 10n]);
     // await checker.checkVaultMktValue(115230209n, 4n * 10n ** 3n);
-    // await checker.checkBorrowValue(61646956n, 3n * 10n ** 3n);
-    // await checker.checkUsdcBorrwed(47343106n, 2n * 10n ** 3n);
+    await checker.checkBorrowValue(91472889n, 500n);
+    await checker.checkUsdcBorrwed(69949856n, 400n);
   });
 
   it('Sr Tranche Insufficient Funds 2 : Withdraw from JrTranche (Excel)', async () => {
@@ -835,11 +832,15 @@ describe('Rebalance Scenarios', () => {
     await logger.logBorrowParams();
     await logger.logProtocolParamsAndHoldings();
 
-    // await checker.checkTotalAssets(140680077504275000000n, 4n * 10n ** 14n, true);
-    // await checker.checkTotalSupply(155138903027120000000n, 2n * 10n ** 14n, true);
-    // await checker.checkCurrentBorrowed([109479n-1n,16842886409899100n], [0, 4n * 10n ** 10n]);
-    // await checker.checkBorrowValue(96050555n, 400n);
-    // await checker.checkUsdcBorrwed(73450424n, 300n);
+    // 134831440275369833890
+    await checker.checkTotalAssets(134831549403668000000n, 2n * 10n ** 14n, true);
+    // 155139098395746290781
+    await checker.checkTotalSupply(155139066349129000000n, 4n * 10n ** 13n, true);
+    // Borrow ETH : 13760737544110385
+    // Deviation : 350722378
+    await checker.checkCurrentBorrowed([89444n, 13760737193388000n + 6n], [10, 10n]);
+    await checker.checkBorrowValue(78470527n, 4000n);
+    await checker.checkUsdcBorrwed(60006873n, 300n);
 
     console.log('--------------------Time Increased--------------------');
     await increaseBlockTimestamp(60);
@@ -853,8 +854,13 @@ describe('Rebalance Scenarios', () => {
     await logger.logBorrowParams();
     await logger.logProtocolParamsAndHoldings();
 
+    await checker.checkTotalAssets(134831549403668000000n, 2n * 10n ** 14n, true);
+    await checker.checkTotalSupply(155139066349129000000n, 4n * 10n ** 13n, true);
+    await checker.checkBorrowValue(78473587n, 0n);
+    // await checker.checkVaultMktValue(172585388n, 4n * 10n ** 2n);
+
     console.log('--------------------Jr. Tranche Partial Withdraw--------------------');
-    const amount2 = parseEther('25');
+    const amount2 = parseEther('15');
     await dnGmxJuniorVault.connect(users[0]).withdraw(amount2, users[0].address, users[0].address);
 
     // ETH: $2787.23 BTC: $38694.59
@@ -866,13 +872,14 @@ describe('Rebalance Scenarios', () => {
     await logger.logBorrowParams();
     await logger.logProtocolParamsAndHoldings();
 
-    // await checker.checkTotalAssets(89313883234732900000n, 4n * 10n ** 14n, true);
-    // await checker.checkTotalSupply(100000000000000000000n, 0, true);
+    // 119908187001729000000n
+    await checker.checkTotalAssets(119908186927301000000n, 10n ** 6n, true);
+    await checker.checkTotalSupply(137769566188088000000n, 2n * 10n ** 14n, true);
 
-    // await checker.checkCurrentBorrowed([70568n - 636n,10856649158435000n], [10n ** 4n, 4n * 10n ** 10n]);
+    await checker.checkCurrentBorrowed([89444n, 13760742442810100n], [0, 5n * 10n ** 9n]);
     // await checker.checkVaultMktValue(115230209n, 4n * 10n ** 3n);
-    // await checker.checkBorrowValue(61646956n, 3n * 10n ** 3n);
-    // await checker.checkUsdcBorrwed(47343106n, 2n * 10n ** 3n);
+    await checker.checkBorrowValue(78473587n, 20n);
+    await checker.checkUsdcBorrwed(60009213n, 3n * 10n ** 3n);
   });
 
   it('Large TVL : Swap Liquidity (Excel)', async () => {
@@ -1005,7 +1012,7 @@ describe('Rebalance Scenarios', () => {
       dnGmxSeniorVault.address,
       ethers.constants.MaxUint256,
       glpBatchingManager.address,
-      50,
+      1000,
     );
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds(
@@ -1026,6 +1033,7 @@ describe('Rebalance Scenarios', () => {
     await rewardRouter.connect(users[2]).mintAndStakeGlpETH(0, 0, {
       value: parseEther('1000'),
     });
+    await increaseBlockTimestamp(15 * 60);
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
@@ -1049,11 +1057,12 @@ describe('Rebalance Scenarios', () => {
     await logger.logBorrowParams();
     await logger.logProtocolParamsAndHoldings();
 
-    // await checker.checkTotalAssets(100000000000000000000n, 0, true);
-    // await checker.checkTotalSupply(100000000000000000000n, 0, true);
-    // await checker.checkCurrentBorrowed([83259n, 12945732922165800n], [0, 6n * 10n ** 10n]);
-    // await checker.checkBorrowValue(68302112n, 20n);
-    // await checker.checkUsdcBorrwed(52231026n, 20n);
+    await checker.checkTotalAssets(100000000000000000000n, 0, true);
+    await checker.checkTotalSupply(100000000000000000000n, 0, true);
+    await checker.checkCurrentBorrowed([83511n - 1n, 12984871030298600n], [0, 2n * 10n ** 9n]);
+    await checker.checkBorrowValue(68508606n, 300n);
+    await checker.checkUsdcBorrwed(52388934n, 300n);
+    await checker.checkVaultMktValue(122406938n, 50n);
 
     await increaseBlockTimestamp(4 * 24 * 60 * 60);
     console.log('--------------------Time Increased--------------------');
@@ -1067,10 +1076,10 @@ describe('Rebalance Scenarios', () => {
     await logger.logBorrowParams();
     await logger.logProtocolParamsAndHoldings();
 
-    // await checker.checkTotalAssets(100000000000000000000n, 0, true);
-    // await checker.checkTotalSupply(100000000000000000000n, 0, true);
-    // await checker.checkVaultMktValue(116812897n, 4n * 10n ** 2n);
-    // await checker.checkBorrowValue(73477703n, 5n * 10n ** 2n);
+    await checker.checkTotalAssets(100000000000000000000n, 0, true);
+    await checker.checkTotalSupply(100000000000000000000n, 0, true);
+    await checker.checkVaultMktValue(115895688n, 100n);
+    await checker.checkBorrowValue(66179309n, 5n);
 
     // New Deposit
     console.log('--------------------User2 Initial Deposit--------------------');
