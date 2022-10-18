@@ -6,13 +6,11 @@ import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRou
 import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
 import { IStableSwap } from '../interfaces/curve/IStableSwap.sol';
-import { DnGmxJuniorVaultHelpers } from '../libraries/DnGmxJuniorVaultHelpers.sol';
 import { SwapManager } from '../libraries/SwapManager.sol';
 import { DnGmxJuniorVault } from '../vaults/DnGmxJuniorVault.sol';
 
 contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
-    using DnGmxJuniorVaultHelpers for DnGmxJuniorVaultHelpers.State;
-    using SwapManager for DnGmxJuniorVaultHelpers.State;
+    using SwapManager for SwapManager.State;
 
     function dnUsdcDepositedExternal() external view returns (int256) {
         return state.dnUsdcDeposited;
