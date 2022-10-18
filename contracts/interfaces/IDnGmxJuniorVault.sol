@@ -17,13 +17,14 @@ interface IDnGmxJuniorVault is IERC4626, IBorrower {
     error FlashloanNotInitiated();
 
     error InvalidFeeRecipient();
+    error InvalidFeeBps();
 
     event Rebalanced();
     event AllowancesGranted();
 
     event DnGmxSeniorVaultUpdated(address _dnGmxSeniorVault);
     event KeeperUpdated(address _newKeeper);
-    event FeeRecipientUpdated(address _newFeeRecipient);
+    event FeeParamsUpdated(uint256 feeBps, address _newFeeRecipient);
     event WithdrawFeeUpdated(uint256 _withdrawFeeBps);
     event FeesWithdrawn(uint256 feeAmount);
     event RewardsHarvested(

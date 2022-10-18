@@ -28,8 +28,8 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         return state.withdrawFeeBps;
     }
 
-    function FEE() external view returns (uint256) {
-        return state.FEE;
+    function feeBps() external view returns (uint256) {
+        return state.feeBps;
     }
 
     function slippageThresholdSwap() external view returns (uint256) {
