@@ -17,6 +17,8 @@ import { IRewardRouterV2 } from 'contracts/interfaces/gmx/IRewardRouterV2.sol';
 import { IDnGmxBatchingManager } from 'contracts/interfaces/IDnGmxBatchingManager.sol';
 import { IERC4626 } from '../interfaces/IDnGmxJuniorVault.sol';
 
+import { IVault } from 'contracts/interfaces/gmx/IVault.sol';
+
 contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, PausableUpgradeable {
     using FullMath for uint256;
     using FullMath for uint128;
@@ -43,6 +45,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     IERC20 private sGlp;
     IERC20 private usdc;
     IGlpManager private glpManager;
+    IVault private gmxUnderlyingVault;
     IRewardRouterV2 private rewardRouter;
 
     VaultBatchingState public vaultBatchingState;
@@ -86,7 +89,8 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         rewardRouter = _rewardRouter;
         glpManager = _glpManager;
 
-        dnGmxJuniorVault = IERC4626(_dnGmxJuniorVault);
+        dnGmxJuniorVault = IDnGmxJuniorVault(_dnGmxJuniorVault);
+        gmxUnderlyingVault = IVault(glpManager.vault());
 
         keeper = _keeper;
         vaultBatchingState.currentRound = 1;
@@ -253,7 +257,11 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     function _executeVaultUserBatchStake() internal {
         uint256 _roundUsdcBalance = vaultBatchingState.roundUsdcBalance;
         if (_roundUsdcBalance > 0) {
-            uint256 minUsdg = _roundUsdcBalance.mulDiv((MAX_BPS - USDC_REDEEM_SLIPPAGE_BPS) * 1e12, MAX_BPS); // calculates minUsdg in 10**18 (usdg 10**18 and usdc 10**6)
+            uint256 price = gmxUnderlyingVault.getMinPrice(address(usdc));
+            uint256 minUsdg = _roundUsdcBalance.mulDiv(
+                price * 1e12 * (MAX_BPS - USDC_REDEEM_SLIPPAGE_BPS),
+                1e30 * MAX_BPS
+            );
 
             vaultBatchingState.roundGlpStaked = _stakeGlp(address(usdc), _roundUsdcBalance, minUsdg);
             emit BatchStake(vaultBatchingState.currentRound, _roundUsdcBalance, vaultBatchingState.roundGlpStaked);
