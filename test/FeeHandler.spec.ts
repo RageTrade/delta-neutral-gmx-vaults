@@ -35,7 +35,7 @@ describe('Fee Handlers', () => {
     const protocolEsGmxHarvested = await dnGmxJuniorVault.protocolEsGmx();
     // console.log("staked es gmx:", await stakedGmxTracker.depositBalances(dnGmxJuniorVault.address,esGmx.address));
     // console.log("protocolEsGmx", await dnGmxJuniorVault.protocolEsGmx());
-    expect(protocolEsGmxHarvested).to.eq(stakedEsGmxAmountHarvested.mul(await dnGmxJuniorVault.FEE()).div(10_000));
+    expect(protocolEsGmxHarvested).to.eq(stakedEsGmxAmountHarvested.mul(await dnGmxJuniorVault.feeBps()).div(10_000));
 
     await increaseBlockTimestamp(1000000);
 
