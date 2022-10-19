@@ -8,7 +8,7 @@ import {
   DnGmxSeniorVault,
   ERC20Upgradeable,
   IAToken,
-  IVault
+  IVault,
 } from '../typechain-types';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 import { generateErc20Balance } from './utils/generator';
