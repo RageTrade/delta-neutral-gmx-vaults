@@ -1,35 +1,40 @@
 import { DeployFunction } from 'hardhat-deploy/types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
+import { DnGmxSeniorVault__factory } from '../typechain-types';
 import { getNetworkInfo, waitConfirmations } from './network-info';
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {
-    deployments: { deploy, execute },
+    deployments: { get, deploy, save },
     getNamedAccounts,
   } = hre;
 
   const { deployer } = await getNamedAccounts();
-
-  await deploy('DnGmxSeniorVault', {
-    contract: 'DnGmxSeniorVault',
-    from: deployer,
-    log: true,
-    waitConfirmations,
-  });
-
   const { USDC_ADDRESS, AAVE_POOL_ADDRESS_PROVIDER } = await getNetworkInfo();
 
-  await execute(
-    'DnGmxSeniorVault',
-    { from: deployer, log: true },
-    'initialize',
-    USDC_ADDRESS,
-    'Aave LP Vault',
-    'Aave_LP',
-    AAVE_POOL_ADDRESS_PROVIDER,
-  );
+  const ProxyAdminDeployment = await get('ProxyAdmin');
+  const DnGmxSeniorVaultLogicDeployment = await get('DnGmxSeniorVaultLogic');
+
+  const proxyDeployment = await deploy('DnGmxSeniorVault', {
+    contract: 'TransparentUpgradeableProxy',
+    from: deployer,
+    log: true,
+    args: [
+      DnGmxSeniorVaultLogicDeployment.address,
+      ProxyAdminDeployment.address,
+      DnGmxSeniorVault__factory.createInterface().encodeFunctionData('initialize', [
+        USDC_ADDRESS,
+        'Aave LP Vault',
+        'Aave_LP',
+        AAVE_POOL_ADDRESS_PROVIDER,
+      ]),
+    ],
+    waitConfirmations,
+  });
+  await save('DnGmxSeniorVault', { ...proxyDeployment, abi: DnGmxSeniorVaultLogicDeployment.abi });
 };
 
 export default func;
 
 func.tags = ['DnGmxSeniorVault'];
+func.dependencies = ['ProxyAdmin', 'DnGmxSeniorVaultLogic'];

@@ -10,8 +10,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const { deployer } = await getNamedAccounts();
 
-  await deploy('DnGmxJuniorVaultHelpersLibrary', {
-    contract: 'DnGmxJuniorVaultHelpers',
+  await deploy('DnGmxJuniorVaultManagerLibrary', {
+    contract: 'DnGmxJuniorVaultManager',
     from: deployer,
     log: true,
     waitConfirmations,
@@ -20,4 +20,4 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
 export default func;
 
-func.tags = ['DnGmxJuniorVaultHelpersLibrary'];
+func.tags = ['DnGmxJuniorVaultManagerLibrary'];
