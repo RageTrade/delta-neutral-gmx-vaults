@@ -43,16 +43,6 @@ library DnGmxJuniorVaultManager {
     uint256 internal constant PRICE_PRECISION = 1e30;
     uint256 internal constant VARIABLE_INTEREST_MODE = 2;
 
-    address internal constant wbtc = 0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f;
-    address internal constant weth = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
-    address internal constant usdc = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
-
-    bytes internal constant USDC_TO_WETH = abi.encodePacked(weth, uint24(500), usdc);
-    bytes internal constant USDC_TO_WBTC = abi.encodePacked(wbtc, uint24(3000), weth, uint24(500), usdc);
-
-    bytes internal constant WETH_TO_USDC = abi.encodePacked(weth, uint24(500), usdc);
-    bytes internal constant WBTC_TO_USDC = abi.encodePacked(wbtc, uint24(3000), weth, uint24(500), usdc);
-
     struct Tokens {
         IERC20Metadata weth;
         IERC20Metadata wbtc;
@@ -830,7 +820,7 @@ library DnGmxJuniorVaultManager {
     ) external returns (uint256 usdcReceived, uint256 tokensUsed) {
         ISwapRouter swapRouter = state.swapRouter;
 
-        bytes memory path = token == weth ? WETH_TO_USDC : WBTC_TO_USDC;
+        bytes memory path = token == address(state.weth) ? WETH_TO_USDC(state) : WBTC_TO_USDC(state);
 
         ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
             path: path,
@@ -852,7 +842,7 @@ library DnGmxJuniorVaultManager {
     ) external returns (uint256 usdcPaid, uint256 tokensReceived) {
         ISwapRouter swapRouter = state.swapRouter;
 
-        bytes memory path = token == weth ? USDC_TO_WETH : USDC_TO_WBTC;
+        bytes memory path = token == address(state.weth) ? USDC_TO_WETH(state) : USDC_TO_WBTC(state);
 
         ISwapRouter.ExactOutputParams memory params = ISwapRouter.ExactOutputParams({
             path: path,
@@ -864,5 +854,21 @@ library DnGmxJuniorVaultManager {
 
         tokensReceived = tokenAmount;
         usdcPaid = swapRouter.exactOutput(params);
+    }
+
+    function USDC_TO_WETH(State storage state) internal view returns (bytes memory) {
+        return abi.encodePacked(state.weth, uint24(500), state.usdc);
+    }
+
+    function USDC_TO_WBTC(State storage state) internal view returns (bytes memory) {
+        return abi.encodePacked(state.wbtc, uint24(3000), state.weth, uint24(500), state.usdc);
+    }
+
+    function WETH_TO_USDC(State storage state) internal view returns (bytes memory) {
+        return abi.encodePacked(state.weth, uint24(500), state.usdc);
+    }
+
+    function WBTC_TO_USDC(State storage state) internal view returns (bytes memory) {
+        return abi.encodePacked(state.wbtc, uint24(3000), state.weth, uint24(500), state.usdc);
     }
 }
