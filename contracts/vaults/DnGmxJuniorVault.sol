@@ -619,6 +619,10 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         return state.getOptimalBorrows(glpDeposited);
     }
 
+    function dnUsdcDeposited() external view returns (int256) {
+        return state.dnUsdcDeposited;
+    }
+
     /* ##################################################################
                             INTERNAL FUNCTIONS
     ################################################################## */
