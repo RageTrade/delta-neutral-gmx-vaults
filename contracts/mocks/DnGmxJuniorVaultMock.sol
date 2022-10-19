@@ -178,18 +178,6 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         return state.getTokenPriceInUsdc(token, isUsdc);
     }
 
-    function getCurrentBorrows() external view returns (uint256 currentBtcBorrow, uint256 currentEthBorrow) {
-        return state.getCurrentBorrows();
-    }
-
-    function getOptimalBorrows(uint256 glpDeposited)
-        external
-        view
-        returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow)
-    {
-        return state.getOptimalBorrows(glpDeposited);
-    }
-
     function getOptimalCappedBorrows(uint256 availableBorrowAmount, uint256 usdcLiquidationThreshold)
         external
         view
