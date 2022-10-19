@@ -346,15 +346,20 @@ library DnGmxJuniorVaultManager {
         // @dev using max price of usdc becausing buying usdc for glp
         uint256 usdcPrice = state.gmxVault.getMaxPrice(_usdc);
 
-        uint256 minUsdcOut = usdcAmountDesired.mulDivDown(usdcPrice, PRICE_PRECISION);
-
-        // @dev adjusting slippage on glp input amount to receive atleast 'minUsdcOut'
-        uint256 glpAmountInput = minUsdcOut.mulDivDown(
-            PRICE_PRECISION * (MAX_BPS + state.slippageThresholdGmx),
-            _getGlpPrice(state, false) * MAX_BPS
+        uint256 minUsdcOut = usdcAmountDesired.mulDivDown(
+            usdcPrice * (MAX_BPS - state.slippageThresholdGmx),
+            PRICE_PRECISION * MAX_BPS
         );
 
-        usdcAmountOut = state.rewardRouter.unstakeAndRedeemGlp(_usdc, glpAmountInput, usdcAmountDesired, address(this));
+        uint256 glpAmountInput = usdcAmountDesired.mulDivDown(PRICE_PRECISION, _getGlpPrice(state, false));
+
+        // console.log('usdcAmountDesired', usdcAmountDesired);
+        // console.log('usdcPrice', usdcPrice);
+        // console.log('minUsdcOut', minUsdcOut);
+        // console.log('priceOfGlp', _getGlpPrice(state, false));
+        // console.log('glpAmountInput', glpAmountInput);
+
+        usdcAmountOut = state.rewardRouter.unstakeAndRedeemGlp(_usdc, glpAmountInput, minUsdcOut, address(this));
 
         _executeSupply(state, _usdc, usdcAmountOut);
     }
@@ -380,9 +385,9 @@ library DnGmxJuniorVaultManager {
         uint256 uncappedTokenHedge,
         uint256 cappedTokenHedge
     ) private {
-        // console.log('uncappedTokenHedge',uncappedTokenHedge);
-        // console.log('cappedTokenHedge',cappedTokenHedge);
-        // console.log('totalAssets',totalAssets());
+        // console.log('uncappedTokenHedge', uncappedTokenHedge);
+        // console.log('cappedTokenHedge', cappedTokenHedge);
+        // console.log('totalAssets', IERC4626(address(this)).totalAssets());
 
         uint256 unhedgedGlp = _totalAssets(state, false).mulDivDown(
             uncappedTokenHedge - cappedTokenHedge,
