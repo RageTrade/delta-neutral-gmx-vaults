@@ -4,16 +4,16 @@ import { Deployment } from 'hardhat-deploy/types';
 async function main() {
   const { get } = deployments;
 
-  const swapManagerLibrary = await hreVerify('SwapManagerLibrary');
+  const dnGmxJuniorVaultManagerLibrary = await hreVerify('DnGmxJuniorVaultManagerLibrary');
   const logicLibrary = await hreVerify('LogicLibrary', {
     libraries: {
-      SwapManager: swapManagerLibrary.address,
+      DnGmxJuniorVaultManager: dnGmxJuniorVaultManagerLibrary.address,
     },
   });
 
   await hreVerify('CurveYieldStrategyLogic', {
     libraries: {
-      SwapManager: swapManagerLibrary.address,
+      DnGmxJuniorVaultManager: dnGmxJuniorVaultManagerLibrary.address,
       Logic: logicLibrary.address,
     },
   });

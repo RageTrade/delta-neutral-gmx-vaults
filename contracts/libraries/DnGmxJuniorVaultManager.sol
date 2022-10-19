@@ -29,8 +29,8 @@ import { IRewardTracker } from '../interfaces/gmx/IRewardTracker.sol';
 
 import { SafeCast } from '../libraries/SafeCast.sol';
 
-library SwapManager {
-    using SwapManager for State;
+library DnGmxJuniorVaultManager {
+    using DnGmxJuniorVaultManager for State;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     using FixedPointMathLib for uint256;

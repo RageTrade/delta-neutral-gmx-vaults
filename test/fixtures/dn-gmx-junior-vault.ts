@@ -34,14 +34,14 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   const gmx = await hre.ethers.getContractAt('ERC20Upgradeable', await rewardRouter.gmx());
   const esGmx = await hre.ethers.getContractAt('ERC20Upgradeable', await rewardRouter.esGmx());
 
-  const swapManager = await (
-    await hre.ethers.getContractFactory('contracts/libraries/SwapManager.sol:SwapManager')
+  const dnGmxJuniorVaultManager = await (
+    await hre.ethers.getContractFactory('contracts/libraries/DnGmxJuniorVaultManager.sol:DnGmxJuniorVaultManager')
   ).deploy();
 
   const dnGmxJuniorVault = await (
     await hre.ethers.getContractFactory('DnGmxJuniorVaultMock', {
       libraries: {
-        ['contracts/libraries/SwapManager.sol:SwapManager']: swapManager.address,
+        ['contracts/libraries/DnGmxJuniorVaultManager.sol:DnGmxJuniorVaultManager']: dnGmxJuniorVaultManager.address,
       },
     })
   ).deploy();

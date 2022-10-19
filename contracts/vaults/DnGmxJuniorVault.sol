@@ -36,7 +36,7 @@ import { IDnGmxJuniorVault, IERC4626 } from '../interfaces/IDnGmxJuniorVault.sol
 import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
 
 import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
-import { SwapManager } from '../libraries/SwapManager.sol';
+import { DnGmxJuniorVaultManager } from '../libraries/DnGmxJuniorVaultManager.sol';
 import { SafeCast } from '../libraries/SafeCast.sol';
 
 import { ERC4626Upgradeable } from '../ERC4626/ERC4626Upgradeable.sol';
@@ -50,7 +50,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     using FixedPointMathLib for uint256;
 
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
-    using SwapManager for SwapManager.State;
+    using DnGmxJuniorVaultManager for DnGmxJuniorVaultManager.State;
 
     uint16 internal constant MAX_BPS = 10_000;
 
@@ -60,7 +60,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     uint256 internal constant PRICE_PRECISION = 1e30;
     uint256 internal constant VARIABLE_INTEREST_MODE = 2;
 
-    SwapManager.State internal state;
+    DnGmxJuniorVaultManager.State internal state;
 
     modifier onlyKeeper() {
         if (msg.sender != state.keeper) revert OnlyKeeperAllowed(msg.sender, state.keeper);
