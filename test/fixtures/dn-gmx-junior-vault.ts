@@ -170,6 +170,20 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     params: [GMX_ECOSYSTEM_ADDRESSES.GOV],
   });
 
+  await hre.network.provider.request({
+    method: 'hardhat_impersonateAccount',
+    params: ['0x7b1FFdDEEc3C4797079C7ed91057e399e9D43a8B'],
+  });
+
+  const govSigner = await hre.ethers.getSigner('0x7b1FFdDEEc3C4797079C7ed91057e399e9D43a8B');
+
+  const IVaultPriceFeed = ['function setMaxStrictPriceDeviation(uint256 _maxStrictPriceDeviation) external'];
+
+  const priceFeed = new ethers.Contract(await gmxVault.priceFeed(), IVaultPriceFeed, govSigner);
+
+  /// @dev changing price of USDC on gmx to be 1$, currently on mainnet it is 1$ with 0.01 deviation threshold
+  await priceFeed.setMaxStrictPriceDeviation(ethers.constants.MaxUint256);
+
   const dnGmxJuniorVaultSigner = await hre.ethers.getSigner(dnGmxJuniorVault.address);
 
   const swapRouterMockFactory = await hre.ethers.getContractFactory('SwapRouterMock');
