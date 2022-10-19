@@ -1,16 +1,15 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
-import { BigNumber } from 'ethers';
-import { getAddress, hexlify, parseEther, parseUnits, randomBytes } from 'ethers/lib/utils';
-import hre, { ethers } from 'hardhat';
+import { parseEther, parseUnits } from 'ethers/lib/utils';
+import { ethers } from 'hardhat';
 import {
   DnGmxBatchingManager,
   DnGmxJuniorVaultMock,
   DnGmxSeniorVault,
   ERC20Upgradeable,
   IAToken,
+  IVault
 } from '../typechain-types';
-import addresses from './fixtures/addresses';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 import { generateErc20Balance } from './utils/generator';
 import { increaseBlockTimestamp } from './utils/shared';
@@ -19,16 +18,15 @@ describe('Dn Gmx Batching Manager', () => {
   let dnGmxJuniorVault: DnGmxJuniorVaultMock;
   let glpBatchingManager: DnGmxBatchingManager;
   let users: SignerWithAddress[];
-  let aUSDC: IAToken;
   let sGlp: ERC20Upgradeable;
   let usdc: ERC20Upgradeable;
   let fsGlp: ERC20Upgradeable;
-  let dnGmxJuniorVaultSigner: SignerWithAddress;
+  let gmxVault: IVault;
 
   let dnGmxSeniorVault: DnGmxSeniorVault;
 
   beforeEach(async () => {
-    ({ dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, fsGlp, aUSDC, usdc, sGlp } =
+    ({ dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, fsGlp, usdc, sGlp, gmxVault } =
       await dnGmxJuniorVaultFixture());
   });
 
@@ -555,7 +553,7 @@ describe('Dn Gmx Batching Manager', () => {
     });
   });
 
-  describe.skip('failure cases', () => {
+  describe('failure cases', () => {
     it('execute batch', async () => {
       /**- deposit some sglp in junior vault and increase timestamp to accure rewards
        * - deposit usdc
@@ -563,11 +561,19 @@ describe('Dn Gmx Batching Manager', () => {
        * - wait 15 mins
        * - execute batch -> juniorVault.deposit -> harvestFees() -> batchingManager.depositToken -> revert: paused
        */
-      const amount = parseEther('1000');
+      const amount = parseEther('10000');
       const depositAmount = parseUnits('100', 6);
 
+      // console.log('price of usdc from glp (min)', await gmxVault.getMinPrice(usdc.address));
+      // console.log('price of usdc from glp (max)', await gmxVault.getMaxPrice(usdc.address));
+      // console.log('get price', await dnGmxJuniorVault['getPrice(address)'](usdc.address));
+
       await sGlp.connect(users[0]).transfer(dnGmxJuniorVault.address, amount);
-      await increaseBlockTimestamp(60 * 60 * 48);
+      await increaseBlockTimestamp(60 * 60 * 480);
+
+      // console.log('price of usdc from glp (min)', await gmxVault.getMinPrice(usdc.address));
+      // console.log('price of usdc from glp (max)', await gmxVault.getMaxPrice(usdc.address));
+      // console.log('get price', await dnGmxJuniorVault['getPrice(address)'](usdc.address));
 
       await generateErc20Balance(usdc, depositAmount, users[1].address);
       await usdc.connect(users[1]).approve(glpBatchingManager.address, depositAmount);
@@ -580,20 +586,6 @@ describe('Dn Gmx Batching Manager', () => {
       expect(await glpBatchingManager.paused()).to.true;
 
       await glpBatchingManager.executeBatchDeposit();
-    });
-
-    it('does not work due to insufficient glp out', async () => {
-      const amount = parseEther('1000');
-      const depositAmount = parseUnits('1000', 6);
-
-      await sGlp.connect(users[0]).transfer(dnGmxJuniorVault.address, amount);
-      // await increaseBlockTimestamp(60 * 60 * 48)
-
-      await generateErc20Balance(usdc, depositAmount, users[1].address);
-      await usdc.connect(users[1]).approve(glpBatchingManager.address, depositAmount);
-      await glpBatchingManager.connect(users[1]).depositUsdc(depositAmount, users[1].address);
-
-      await glpBatchingManager.executeBatchStake();
     });
   });
 });
