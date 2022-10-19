@@ -114,6 +114,9 @@ export default {
     target: 'ethers-v5',
     alwaysGenerateOverloads: false,
   },
+  dependencyCompiler: {
+    paths: ['@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol'],
+  },
   etherscan: {
     apiKey: {
       arbitrumTestnet: process.env.ETHERSCAN_KEY,

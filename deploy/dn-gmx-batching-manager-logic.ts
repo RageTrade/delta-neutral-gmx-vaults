@@ -1,17 +1,18 @@
 import { DeployFunction } from 'hardhat-deploy/types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
-import { waitConfirmations } from './network-info';
+import { DnGmxBatchingManager__factory } from '../typechain-types';
+import { getNetworkInfo, waitConfirmations } from './network-info';
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {
-    deployments: { deploy },
+    deployments: { deploy, save, get },
     getNamedAccounts,
   } = hre;
 
   const { deployer } = await getNamedAccounts();
 
-  await deploy('SwapManagerLibrary', {
-    contract: 'SwapManager',
+  await deploy('DnGmxBatchingManagerLogic', {
+    contract: 'DnGmxBatchingManager',
     from: deployer,
     log: true,
     waitConfirmations,
@@ -20,4 +21,4 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
 export default func;
 
-func.tags = ['SwapManagerLibrary'];
+func.tags = ['DnGmxBatchingManagerLogic'];
