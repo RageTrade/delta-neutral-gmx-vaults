@@ -5,7 +5,7 @@ pragma solidity ^0.8.9;
 import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 
-import { SwapManager } from '../libraries/SwapManager.sol';
+import { DnGmxJuniorVaultManager } from '../libraries/DnGmxJuniorVaultManager.sol';
 
 contract SwapRouterMock {
     function exactOutputSingle(ISwapRouter.ExactOutputSingleParams calldata params)
@@ -29,12 +29,12 @@ contract SwapRouterMock {
 
         bytes memory path = params.path;
 
-        if (keccak256(path) == keccak256(SwapManager.USDC_TO_WETH)) {
-            from = SwapManager.usdc;
-            to = SwapManager.weth;
+        if (keccak256(path) == keccak256(DnGmxJuniorVaultManager.USDC_TO_WETH)) {
+            from = DnGmxJuniorVaultManager.usdc;
+            to = DnGmxJuniorVaultManager.weth;
         } else {
-            from = SwapManager.usdc;
-            to = SwapManager.wbtc;
+            from = DnGmxJuniorVaultManager.usdc;
+            to = DnGmxJuniorVaultManager.wbtc;
         }
 
         IERC20(from).transferFrom(msg.sender, address(this), params.amountInMaximum);
@@ -48,12 +48,12 @@ contract SwapRouterMock {
 
         bytes memory path = params.path;
 
-        if (keccak256(path) == keccak256(SwapManager.WETH_TO_USDC)) {
-            from = SwapManager.weth;
-            to = SwapManager.usdc;
+        if (keccak256(path) == keccak256(DnGmxJuniorVaultManager.WETH_TO_USDC)) {
+            from = DnGmxJuniorVaultManager.weth;
+            to = DnGmxJuniorVaultManager.usdc;
         } else {
-            from = SwapManager.wbtc;
-            to = SwapManager.usdc;
+            from = DnGmxJuniorVaultManager.wbtc;
+            to = DnGmxJuniorVaultManager.usdc;
         }
 
         IERC20(from).transferFrom(msg.sender, address(this), params.amountIn);
