@@ -15,7 +15,9 @@ export interface NetworkInfo {
   KEEPER_ADDRESS: string;
   DEPOSIT_CAP_JUNIOR_VAULT: string;
   DEPOSIT_CAP_SENIOR_VAULT: string;
+  FEE_BPS: number;
   FEE_RECIPIENT?: string;
+
   PROXY_ADMIN_ADDRESS?: string;
 
   WETH_ADDRESS: string;
@@ -45,6 +47,7 @@ export async function getNetworkInfo(): Promise<NetworkInfo> {
     KEEPER_ADDRESS: '0xe1829BaD81E9146E18f28E28691D930c052483bA',
     DEPOSIT_CAP_JUNIOR_VAULT: parseEther('10000000').toString(), // TODO
     DEPOSIT_CAP_SENIOR_VAULT: parseEther('10000000').toString(), // TODO
+    FEE_BPS: 1000,
     FEE_RECIPIENT: '', // TODO
 
     WETH_ADDRESS: tokensAddresses.wethAddress,
@@ -67,6 +70,8 @@ export async function getNetworkInfo(): Promise<NetworkInfo> {
     KEEPER_ADDRESS: '0xe1829BaD81E9146E18f28E28691D930c052483bA',
     DEPOSIT_CAP_JUNIOR_VAULT: parseEther('10000000').toString(), // TODO
     DEPOSIT_CAP_SENIOR_VAULT: parseEther('10000000').toString(), // TODO
+    FEE_BPS: 1000,
+
     PROXY_ADMIN_ADDRESS: '0x0f48093988a12D8173F9F928dA800e6729f9cFc3',
 
     WETH_ADDRESS: '0xCDa739D69067333974cD73A722aB92E5e0ad8a4F',
