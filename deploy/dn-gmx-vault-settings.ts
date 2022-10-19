@@ -14,8 +14,14 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const { deployer } = await getNamedAccounts();
 
-  const { KEEPER_ADDRESS, DEPOSIT_CAP_JUNIOR_VAULT, DEPOSIT_CAP_SENIOR_VAULT, UNI_V3_SWAP_ROUTER, FEE_RECIPIENT } =
-    await getNetworkInfo();
+  const {
+    KEEPER_ADDRESS,
+    DEPOSIT_CAP_JUNIOR_VAULT,
+    DEPOSIT_CAP_SENIOR_VAULT,
+    UNI_V3_SWAP_ROUTER,
+    FEE_RECIPIENT,
+    FEE_BPS,
+  } = await getNetworkInfo();
 
   const DnGmxJuniorVaultDeployment = await get('DnGmxJuniorVault');
   const DnGmxSeniorVaultDeployment = await get('DnGmxSeniorVault');
@@ -99,7 +105,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     ethers.constants.AddressZero, // aaveRewardsController
   );
 
-  await execute('DnGmxJuniorVault', { from: deployer, log: true }, 'setFeeRecipient', FEE_RECIPIENT || deployer);
+  await execute('DnGmxJuniorVault', { from: deployer, log: true }, 'setFeeParams', FEE_BPS, FEE_RECIPIENT || deployer);
 
   await execute('DnGmxJuniorVault', { from: deployer, log: true }, 'grantAllowances');
 };
