@@ -8,6 +8,16 @@ import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRou
 import { DnGmxJuniorVaultManager } from '../libraries/DnGmxJuniorVaultManager.sol';
 
 contract SwapRouterMock {
+    address internal constant wbtc = 0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f;
+    address internal constant weth = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
+    address internal constant usdc = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
+
+    bytes internal constant USDC_TO_WETH = abi.encodePacked(weth, uint24(500), usdc);
+    bytes internal constant USDC_TO_WBTC = abi.encodePacked(wbtc, uint24(3000), weth, uint24(500), usdc);
+
+    bytes internal constant WETH_TO_USDC = abi.encodePacked(weth, uint24(500), usdc);
+    bytes internal constant WBTC_TO_USDC = abi.encodePacked(wbtc, uint24(3000), weth, uint24(500), usdc);
+
     function exactOutputSingle(ISwapRouter.ExactOutputSingleParams calldata params)
         external
         returns (uint256 amountIn)
@@ -29,12 +39,12 @@ contract SwapRouterMock {
 
         bytes memory path = params.path;
 
-        if (keccak256(path) == keccak256(DnGmxJuniorVaultManager.USDC_TO_WETH)) {
-            from = DnGmxJuniorVaultManager.usdc;
-            to = DnGmxJuniorVaultManager.weth;
+        if (keccak256(path) == keccak256(USDC_TO_WETH)) {
+            from = usdc;
+            to = weth;
         } else {
-            from = DnGmxJuniorVaultManager.usdc;
-            to = DnGmxJuniorVaultManager.wbtc;
+            from = usdc;
+            to = wbtc;
         }
 
         IERC20(from).transferFrom(msg.sender, address(this), params.amountInMaximum);
@@ -48,12 +58,12 @@ contract SwapRouterMock {
 
         bytes memory path = params.path;
 
-        if (keccak256(path) == keccak256(DnGmxJuniorVaultManager.WETH_TO_USDC)) {
-            from = DnGmxJuniorVaultManager.weth;
-            to = DnGmxJuniorVaultManager.usdc;
+        if (keccak256(path) == keccak256(WETH_TO_USDC)) {
+            from = weth;
+            to = usdc;
         } else {
-            from = DnGmxJuniorVaultManager.wbtc;
-            to = DnGmxJuniorVaultManager.usdc;
+            from = wbtc;
+            to = usdc;
         }
 
         IERC20(from).transferFrom(msg.sender, address(this), params.amountIn);
