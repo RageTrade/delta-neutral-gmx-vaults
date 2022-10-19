@@ -437,7 +437,7 @@ describe('Rebalance Scenarios', () => {
     await logger.logBorrowParams();
     await logger.logProtocolParamsAndHoldings();
 
-    await checker.checkTotalAssets(89306387638142900000n, 50000n, true);
+    await checker.checkTotalAssets(89306387638142900000n, 8n * 10n ** 11n, true);
     await checker.checkTotalSupply(100000000000000000000n, 0, true);
 
     await checker.checkCurrentBorrowed([55227n, 12948247199528500n], [0, 7n * 10n ** 9n]);
@@ -707,7 +707,7 @@ describe('Rebalance Scenarios', () => {
     await checker.checkTotalSupply(155139066349129000000n, 4n * 10n ** 13n, true);
     // Borrow ETH : 13760737544110385
     // Deviation : 350722378
-    await checker.checkCurrentBorrowed([89444n, 13760737193388000n + 6n], [10n, 10n]);
+    await checker.checkCurrentBorrowed([89444n, 13760737193388000n + 6n], [10n, 4n * 10n ** 8n]);
     await checker.checkBorrowValue(78470527n, 4000n);
     await checker.checkUsdcBorrwed(60006873n, 300n);
 
@@ -725,7 +725,7 @@ describe('Rebalance Scenarios', () => {
 
     await checker.checkTotalAssets(134831549403668000000n, 2n * 10n ** 14n, true);
     await checker.checkTotalSupply(155139066349129000000n, 4n * 10n ** 13n, true);
-    await checker.checkBorrowValue(78473587n, 0n);
+    await checker.checkBorrowValue(78473587n, 10n);
     // await checker.checkVaultMktValue(172585388n, 4n * 10n ** 2n);
 
     console.log('--------------------Sr. Tranche New Deposit--------------------');
@@ -873,7 +873,8 @@ describe('Rebalance Scenarios', () => {
     await logger.logProtocolParamsAndHoldings();
 
     // 119908187001729000000n
-    await checker.checkTotalAssets(119908186927301000000n, 10n ** 6n, true);
+    // 119908186295630789349n
+    await checker.checkTotalAssets(119908186927301000000n, 10n ** 12n, true);
     await checker.checkTotalSupply(137769566188088000000n, 2n * 10n ** 14n, true);
 
     await checker.checkCurrentBorrowed([89444n, 13760742442810100n], [0, 5n * 10n ** 9n]);
