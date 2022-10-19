@@ -335,7 +335,7 @@ library DnGmxJuniorVaultManager {
     /// @notice withdraws LP tokens from gauge, sells LP token for usdc
     /// @param usdcAmountDesired amount of USDC desired
     function _convertAssetToAUsdc(State storage state, uint256 usdcAmountDesired)
-        private
+        internal
         returns (uint256 usdcAmountOut)
     {
         /// @dev if usdcAmountDesired < 10, then there is precision issue in gmx contracts while redeeming for usdg
