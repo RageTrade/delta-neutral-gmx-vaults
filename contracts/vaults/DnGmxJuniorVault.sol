@@ -652,63 +652,6 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         state.rebalanceHedge(currentBtc, currentEth, totalAssets());
     }
 
-    /// @notice withdraws LP tokens from gauge, sells LP token for usdc
-    /// @param usdcAmountDesired amount of USDC desired
-    function _convertAssetToAUsdc(uint256 usdcAmountDesired) internal returns (uint256 usdcAmount) {
-        /// @dev if usdcAmountDesired < 10, then there is precision issue in gmx contracts while redeeming for usdg
-        if (usdcAmountDesired < state.usdcConversionThreshold) return 0;
-        uint256 glpAmountDesired = usdcAmountDesired.mulDivDown(PRICE_PRECISION, getPrice(false));
-        // USDG has 18 decimals and usdc has 6 decimals => 18-6 = 12
-        // console.log('GLP PRICE: ', getPrice());
-        // console.log('glpAmountDesired', glpAmountDesired);
-        // console.log('TA', totalAssets());
-        state.rewardRouter.unstakeAndRedeemGlp(
-            address(state.usdc),
-            glpAmountDesired, // glp amount
-            usdcAmountDesired.mulDivDown(MAX_BPS - state.slippageThresholdGmx, MAX_BPS), // usdc
-            address(this)
-        );
-
-        usdcAmount = state.usdc.balanceOf(address(this));
-
-        _executeSupply(address(state.usdc), usdcAmount);
-    }
-
-    /// @notice sells usdc for LP tokens and then stakes LP tokens
-    /// @param amount amount of usdc
-    function _convertAUsdcToAsset(uint256 amount) internal {
-        _executeWithdraw(address(state.usdc), amount, address(this));
-        // USDG has 18 decimals and usdc has 6 decimals => 18-6 = 12
-        uint256 price = state.gmxVault.getMinPrice(address(state.usdc));
-        uint256 usdgAmount = amount.mulDivDown(
-            price * (MAX_BPS - state.slippageThresholdGmx),
-            PRICE_PRECISION * MAX_BPS
-        );
-
-        usdgAmount = usdgAmount.mulDivDown(10**USDG_DECIMALS, 10**IERC20Metadata(address(state.usdc)).decimals());
-
-        state.batchingManager.depositToken(address(state.usdc), amount, usdgAmount);
-    }
-
-    function _rebalanceUnhedgedGlp(uint256 uncappedTokenHedge, uint256 cappedTokenHedge) internal {
-        // console.log('uncappedTokenHedge',uncappedTokenHedge);
-        // console.log('cappedTokenHedge',cappedTokenHedge);
-        // console.log('totalAssets',totalAssets());
-
-        uint256 unhedgedGlp = totalAssets().mulDivDown(uncappedTokenHedge - cappedTokenHedge, uncappedTokenHedge);
-        uint256 unhedgedGlpUsdcAmount = unhedgedGlp.mulDivDown(getPrice(false), PRICE_PRECISION);
-        // console.log('unhedgedGlp',unhedgedGlp);
-        // console.log('unhedgedGlpUsdcAmount',unhedgedGlpUsdcAmount);
-        if (unhedgedGlpUsdcAmount > state.unhedgedGlpInUsdc) {
-            uint256 glpToUsdcAmount = unhedgedGlpUsdcAmount - state.unhedgedGlpInUsdc;
-            state.unhedgedGlpInUsdc += _convertAssetToAUsdc(glpToUsdcAmount);
-        } else if (unhedgedGlpUsdcAmount < state.unhedgedGlpInUsdc) {
-            uint256 usdcToGlpAmount = state.unhedgedGlpInUsdc - unhedgedGlpUsdcAmount;
-            state.unhedgedGlpInUsdc -= usdcToGlpAmount;
-            _convertAUsdcToAsset(usdcToGlpAmount);
-        }
-    }
-
     /*
         AAVE HELPERS
     */

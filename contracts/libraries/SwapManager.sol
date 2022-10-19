@@ -334,7 +334,10 @@ library SwapManager {
 
     /// @notice withdraws LP tokens from gauge, sells LP token for usdc
     /// @param usdcAmountDesired amount of USDC desired
-    function _convertAssetToAUsdc(State storage state, uint256 usdcAmountDesired) private returns (uint256 usdcAmount) {
+    function _convertAssetToAUsdc(State storage state, uint256 usdcAmountDesired)
+        internal
+        returns (uint256 usdcAmount)
+    {
         /// @dev if usdcAmountDesired < 10, then there is precision issue in gmx contracts while redeeming for usdg
         if (usdcAmountDesired < state.usdcConversionThreshold) return 0;
         uint256 glpAmountDesired = usdcAmountDesired.mulDivDown(PRICE_PRECISION, _getGlpPrice(state, false));
@@ -356,7 +359,7 @@ library SwapManager {
 
     /// @notice sells usdc for LP tokens and then stakes LP tokens
     /// @param amount amount of usdc
-    function _convertAUsdcToAsset(State storage state, uint256 amount) private {
+    function _convertAUsdcToAsset(State storage state, uint256 amount) internal {
         _executeWithdraw(state, address(state.usdc), amount, address(this));
         // USDG has 18 decimals and usdc has 6 decimals => 18-6 = 12
         uint256 price = state.gmxVault.getMinPrice(address(state.usdc));

@@ -211,11 +211,11 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
     }
 
     function convertAssetToAUsdc(uint256 usdcAmountDesired) external returns (uint256 usdcAmount) {
-        return _convertAssetToAUsdc(usdcAmountDesired);
+        return state._convertAssetToAUsdc(usdcAmountDesired);
     }
 
     function convertAUsdcToAsset(uint256 amount) external {
-        return _convertAUsdcToAsset(amount);
+        return state._convertAUsdcToAsset(amount);
     }
 
     function setMocks(ISwapRouter _swapRouter) external {
