@@ -46,21 +46,21 @@ interface IDnGmxBatchingManager {
         uint256 minUSDG
     ) external returns (uint256 glpStaked);
 
-    function depositUsdc(uint256 amount, address receiver) external returns (uint256 glpStaked);
-
     function executeBatchStake() external;
 
     function executeBatchDeposit() external;
 
-    function dnGmxJuniorVaultGlpBalance() external view returns (uint256 balance);
-
-    function usdcBalance(address account) external view returns (uint256 balance);
-
-    function unclaimedShares(address account) external view returns (uint256 shares);
+    function currentRound() external view returns (uint256);
 
     function claim(address receiver, uint256 amount) external;
 
-    function currentRound() external view returns (uint256);
+    function usdcBalance(address account) external view returns (uint256 balance);
+
+    function dnGmxJuniorVaultGlpBalance() external view returns (uint256 balance);
+
+    function unclaimedShares(address account) external view returns (uint256 shares);
 
     function roundDeposits(uint256 round) external view returns (RoundDeposit memory);
+
+    function depositUsdc(uint256 amount, address receiver) external returns (uint256 glpStaked);
 }
