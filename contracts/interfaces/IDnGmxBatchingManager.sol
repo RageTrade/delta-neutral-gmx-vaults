@@ -5,19 +5,13 @@ import { IERC4626 } from './IERC4626.sol';
 pragma solidity ^0.8.0;
 
 interface IDnGmxBatchingManager {
-    error InvalidVault(address vault);
+    error NoUsdcBalance();
+
+    error CallerNotVault();
+    error CallerNotKeeper();
+
     error InvalidInput(uint256 errorCode);
     error InsufficientShares(uint256 balance);
-    error InvalidSetDepositPaused(bool currentValue);
-
-    error ZeroBalance();
-
-    error VaultAlreadyAdded();
-    error VaultsLimitExceeded();
-
-    error CallerNotKeeper();
-    error CallerNotVault();
-    error NoUsdcBalance();
 
     event DepositToken(
         uint256 indexed round,
@@ -27,13 +21,13 @@ interface IDnGmxBatchingManager {
         uint256 glpStaked
     );
 
-    event VaultAdded(address vault);
     event VaultDeposit(uint256 vaultGlpAmount);
 
     event KeeperUpdated(address newKeeper);
+    event ThresholdsUpdated(uint256 newSlippageThresholdGmx);
 
-    event SharesClaimed(address indexed from, address indexed receiver, uint256 claimAmount);
     event BatchStake(uint256 indexed round, uint256 userUsdcAmount, uint256 userGlpAmount);
+    event SharesClaimed(address indexed from, address indexed receiver, uint256 claimAmount);
     event BatchDeposit(uint256 indexed round, uint256 userUsdcAmount, uint256 userGlpAmount, uint256 userShareAmount);
 
     struct UserDeposit {

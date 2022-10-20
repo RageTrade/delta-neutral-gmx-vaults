@@ -2,18 +2,15 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import { IERC20Metadata } from '@openzeppelin/contracts/interfaces/IERC20Metadata.sol';
-
 import { SafeCast } from '../libraries/SafeCast.sol';
 import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
 
 import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import { PausableUpgradeable } from '@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol';
 
-import { IERC4626 } from 'contracts/interfaces/IERC4626.sol';
 import { IVault } from 'contracts/interfaces/gmx/IVault.sol';
 import { IGlpManager } from 'contracts/interfaces/gmx/IGlpManager.sol';
+import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { IRewardRouterV2 } from 'contracts/interfaces/gmx/IRewardRouterV2.sol';
 import { IDnGmxJuniorVault } from 'contracts/interfaces/IDnGmxJuniorVault.sol';
 import { IDnGmxBatchingManager } from 'contracts/interfaces/IDnGmxBatchingManager.sol';
@@ -25,24 +22,25 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
 
     struct VaultBatchingState {
         uint256 currentRound;
-        uint256 roundUsdcBalance;
         uint256 roundGlpStaked;
+        uint256 roundUsdcBalance;
         mapping(address => UserDeposit) userDeposits;
         mapping(uint256 => RoundDeposit) roundDeposits;
     }
-    uint256 private constant USDC_REDEEM_SLIPPAGE_BPS = 100;
+
     uint256 private constant MAX_BPS = 10_000;
 
     uint256[100] private _gaps;
 
     address public keeper;
-    IERC4626 public dnGmxJuniorVault; // used for depositing harvested rewards
+    IDnGmxJuniorVault public dnGmxJuniorVault;
 
-    uint16 public vaultCount;
+    uint256 public slippageThresholdGmx;
     uint256 public dnGmxJuniorVaultGlpBalance;
 
     IERC20 private sGlp;
     IERC20 private usdc;
+
     IGlpManager private glpManager;
     IVault private gmxUnderlyingVault;
     IRewardRouterV2 private rewardRouter;
@@ -85,15 +83,16 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     ) internal onlyInitializing {
         sGlp = _sGlp;
         usdc = _usdc;
-        rewardRouter = _rewardRouter;
         glpManager = _glpManager;
+        rewardRouter = _rewardRouter;
 
-        dnGmxJuniorVault = IDnGmxJuniorVault(_dnGmxJuniorVault);
         gmxUnderlyingVault = IVault(glpManager.vault());
+        dnGmxJuniorVault = IDnGmxJuniorVault(_dnGmxJuniorVault);
 
         keeper = _keeper;
-        vaultBatchingState.currentRound = 1;
         emit KeeperUpdated(_keeper);
+
+        vaultBatchingState.currentRound = 1;
     }
 
     /// @notice grants the allowance to the vault to pull sGLP (via safeTransfer from in vault.deposit)
@@ -109,6 +108,13 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         emit KeeperUpdated(_keeper);
     }
 
+    /// @notice sets the slippage (in bps) to use while staking on gmx
+    /// @param _slippageThresholdGmx slippage (in bps)
+    function setThresholds(uint256 _slippageThresholdGmx) external onlyOwner {
+        slippageThresholdGmx = _slippageThresholdGmx;
+        emit ThresholdsUpdated(_slippageThresholdGmx);
+    }
+
     /// @notice pauses deposits (to prevent DOS due to GMX 15 min cooldown)
     function pauseDeposit() external onlyKeeper {
         _pause();
@@ -120,7 +126,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     }
 
     /// @notice convert the token into glp and obtain staked glp
-    /// @dev this function should be only called by staking manager
+    /// @dev this function should be only called by junior vault
     /// @param token address of input token (should be supported on gmx)
     /// @param amount amount of token to be used
     /// @param minUSDG minimum output of swap in terms of USDG
@@ -141,60 +147,16 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         emit DepositToken(0, token, msg.sender, amount, glpStaked);
     }
 
-    // /// @notice convert the token into glp and obtain staked glp and deposits sGLP into vault
-    // /// @param token address of input token (should be supported on gmx)
-    // /// @param amount amount of token to be used
-    // /// @param minUSDG minimum output of swap in terms of USDG
-    // /// @param receiver address which will receive shares from vault+
-    // function depositToken(
-    //     address token,
-    //     uint256 amount,
-    //     uint256 minUSDG,
-    //     address receiver
-    // ) external whenNotPaused returns (uint256 glpStaked) {
-    //     if (token == address(0)) revert InvalidInput(0x20);
-    //     if (amount == 0) revert InvalidInput(0x21);
-    //     if (receiver == address(0)) revert InvalidInput(0x22);
-
-    //     // Transfer Tokens To Manager
-    //     IERC20(token).transferFrom(msg.sender, address(this), amount);
-
-    //     UserDeposit storage userDeposit = vaultBatchingState.userDeposits[receiver];
-    //     uint128 userUsdcBalance = userDeposit.usdcBalance;
-
-    //     //Convert previous round glp balance into unredeemed shares
-    //     uint256 userDepositRound = userDeposit.round;
-    //     if (userDepositRound < vaultBatchingState.currentRound && userUsdcBalance > 0) {
-    //         RoundDeposit storage roundDeposit = vaultBatchingState.roundDeposits[userDepositRound];
-    //         userDeposit.unclaimedShares += userDeposit
-    //             .usdcBalance
-    //             .mulDiv(roundDeposit.totalShares, roundDeposit.totalUsdc)
-    //             .toUint128();
-    //         userUsdcBalance = 0;
-    //     }
-
-    //     // Convert tokens to glp
-    //     glpStaked = _stakeGlp(token, amount, minUSDG);
-
-    //     //Update round and glp balance for current round
-    //     userDeposit.round = vaultBatchingState.currentRound;
-    //     userDeposit.usdcBalance = userUsdcBalance + glpStaked.toUint128();
-    //     vaultBatchingState.roundUsdcBalance += glpStaked.toUint128();
-
-    //     emit DepositToken(vaultBatchingState.currentRound, token, receiver, amount, glpStaked);
-    // }
-
     function depositUsdc(uint256 amount, address receiver) external whenNotPaused returns (uint256 glpStaked) {
         if (amount == 0) revert InvalidInput(0x21);
         if (receiver == address(0)) revert InvalidInput(0x22);
 
-        // Transfer Tokens To Manager
         usdc.transferFrom(msg.sender, address(this), amount);
 
         UserDeposit storage userDeposit = vaultBatchingState.userDeposits[receiver];
         uint128 userUsdcBalance = userDeposit.usdcBalance;
 
-        //Convert previous round glp balance into unredeemed shares
+        // Convert previous round glp balance into unredeemed shares
         uint256 userDepositRound = userDeposit.round;
         if (userDepositRound < vaultBatchingState.currentRound && userUsdcBalance > 0) {
             RoundDeposit storage roundDeposit = vaultBatchingState.roundDeposits[userDepositRound];
@@ -205,10 +167,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
             userUsdcBalance = 0;
         }
 
-        // Convert tokens to glp
-        // glpStaked = _stakeGlp(token, amount, minUSDG);
-
-        //Update round and glp balance for current round
+        // Update round and glp balance for current round
         userDeposit.round = vaultBatchingState.currentRound;
         userDeposit.usdcBalance = userUsdcBalance + amount.toUint128();
         vaultBatchingState.roundUsdcBalance += amount.toUint128();
@@ -217,28 +176,23 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     }
 
     /// @notice executes batch and deposits into appropriate vault with/without minting shares
-    function executeBatchStake() external whenNotPaused {
-        // Transfer vault glp directly
-        // Needs to be called only for dnGmxJuniorVault
-        // if (dnGmxJuniorVaultGlpBalance > 0) {
-        //     uint256 glpToTransfer = dnGmxJuniorVaultGlpBalance;
-        //     dnGmxJuniorVaultGlpBalance = 0;
-        //     sGlp.transfer(address(dnGmxJuniorVault), glpToTransfer);
-        //     emit VaultDeposit(glpToTransfer);
-        // }
+    function executeBatchStake() external whenNotPaused onlyKeeper {
+        // Harvest fees prior to executing batch deposit to prevent cooldown
+        dnGmxJuniorVault.harvestFees();
 
+        // Convert usdc in round to sglp
         _executeVaultUserBatchStake();
-        // If the deposit is unpaused then pause on execute batch stake
+
         // To be unpaused when the staked amount is deposited
-        if (!paused()) {
-            _pause();
-        }
+        _pause();
     }
 
     /// @notice executes batch and deposits into appropriate vault with/without minting shares
     function executeBatchDeposit() external {
-        // Transfer vault glp directly
-        // Needs to be called only for dnGmxJuniorVault
+        // If the deposit is paused then unpause on execute batch deposit
+        if (paused()) _unpause();
+
+        // Transfer vault glp directly, Needs to be called only for dnGmxJuniorVault
         if (dnGmxJuniorVaultGlpBalance > 0) {
             uint256 glpToTransfer = dnGmxJuniorVaultGlpBalance;
             dnGmxJuniorVaultGlpBalance = 0;
@@ -247,50 +201,54 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         }
 
         _executeVaultUserBatchDeposit();
-        // If the deposit is paused then unpause on execute batch deposit
-        if (paused()) {
-            _unpause();
-        }
+    }
+
+    function _stakeGlp(
+        address token,
+        uint256 amount,
+        uint256 minUSDG
+    ) internal returns (uint256 glpStaked) {
+        // swap token to obtain sGLP
+        IERC20(token).approve(address(glpManager), amount);
+        glpStaked = rewardRouter.mintAndStakeGlp(token, amount, minUSDG, 0);
     }
 
     function _executeVaultUserBatchStake() internal {
         uint256 _roundUsdcBalance = vaultBatchingState.roundUsdcBalance;
-        if (_roundUsdcBalance > 0) {
-            uint256 price = gmxUnderlyingVault.getMinPrice(address(usdc));
-            uint256 minUsdg = _roundUsdcBalance.mulDiv(
-                price * 1e12 * (MAX_BPS - USDC_REDEEM_SLIPPAGE_BPS),
-                1e30 * MAX_BPS
-            );
 
-            vaultBatchingState.roundGlpStaked = _stakeGlp(address(usdc), _roundUsdcBalance, minUsdg);
-            emit BatchStake(vaultBatchingState.currentRound, _roundUsdcBalance, vaultBatchingState.roundGlpStaked);
-        } else {
-            revert NoUsdcBalance();
-        }
+        if (_roundUsdcBalance == 0) revert NoUsdcBalance();
+
+        uint256 price = gmxUnderlyingVault.getMinPrice(address(usdc));
+
+        uint256 minUsdg = _roundUsdcBalance.mulDiv(price * 1e12 * (MAX_BPS - slippageThresholdGmx), 1e30 * MAX_BPS);
+
+        vaultBatchingState.roundGlpStaked = _stakeGlp(address(usdc), _roundUsdcBalance, minUsdg);
+
+        emit BatchStake(vaultBatchingState.currentRound, _roundUsdcBalance, vaultBatchingState.roundGlpStaked);
     }
 
     function _executeVaultUserBatchDeposit() internal {
         // Transfer user glp through deposit
-        if (vaultBatchingState.roundGlpStaked > 0) {
-            uint256 totalShares = dnGmxJuniorVault.deposit(vaultBatchingState.roundGlpStaked, address(this));
+        if (vaultBatchingState.roundGlpStaked == 0) return;
 
-            // Update round data
-            vaultBatchingState.roundDeposits[vaultBatchingState.currentRound] = RoundDeposit(
-                vaultBatchingState.roundUsdcBalance.toUint128(),
-                totalShares.toUint128()
-            );
+        uint256 totalShares = dnGmxJuniorVault.deposit(vaultBatchingState.roundGlpStaked, address(this));
 
-            emit BatchDeposit(
-                vaultBatchingState.currentRound,
-                vaultBatchingState.roundUsdcBalance,
-                vaultBatchingState.roundGlpStaked,
-                totalShares
-            );
+        // Update round data
+        vaultBatchingState.roundDeposits[vaultBatchingState.currentRound] = RoundDeposit(
+            vaultBatchingState.roundUsdcBalance.toUint128(),
+            totalShares.toUint128()
+        );
 
-            vaultBatchingState.roundUsdcBalance = 0;
-            vaultBatchingState.roundGlpStaked = 0;
-            ++vaultBatchingState.currentRound;
-        }
+        emit BatchDeposit(
+            vaultBatchingState.currentRound,
+            vaultBatchingState.roundUsdcBalance,
+            vaultBatchingState.roundGlpStaked,
+            totalShares
+        );
+
+        vaultBatchingState.roundUsdcBalance = 0;
+        vaultBatchingState.roundGlpStaked = 0;
+        ++vaultBatchingState.currentRound;
     }
 
     /// @notice get the glp balance for a given vault and account address
@@ -319,10 +277,12 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         if (amount == 0) revert InvalidInput(0x11);
 
         UserDeposit storage userDeposit = vaultBatchingState.userDeposits[msg.sender];
-        uint128 userUnclaimedShares = userDeposit.unclaimedShares;
+
         uint128 userUsdcBalance = userDeposit.usdcBalance;
+        uint128 userUnclaimedShares = userDeposit.unclaimedShares;
+
         {
-            //Convert previous round glp balance into unredeemed shares
+            // Convert previous round glp balance into unredeemed shares
             uint256 userDepositRound = userDeposit.round;
             if (userDepositRound < vaultBatchingState.currentRound && userUsdcBalance > 0) {
                 RoundDeposit storage roundDeposit = vaultBatchingState.roundDeposits[userDepositRound];
@@ -332,6 +292,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
                 userDeposit.usdcBalance = 0;
             }
         }
+
         if (userUnclaimedShares < amount.toUint128()) revert InsufficientShares(userUnclaimedShares);
         userDeposit.unclaimedShares = userUnclaimedShares - amount.toUint128();
         dnGmxJuniorVault.transfer(receiver, amount);
@@ -364,15 +325,5 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     /// @param round address of user
     function roundDeposits(uint256 round) external view returns (RoundDeposit memory) {
         return vaultBatchingState.roundDeposits[round];
-    }
-
-    function _stakeGlp(
-        address token,
-        uint256 amount,
-        uint256 minUSDG
-    ) internal returns (uint256 glpStaked) {
-        // Convert tokens to glp and stake glp to obtain sGLP
-        IERC20(token).approve(address(glpManager), amount);
-        glpStaked = rewardRouter.mintAndStakeGlp(token, amount, minUSDG, 0);
     }
 }
