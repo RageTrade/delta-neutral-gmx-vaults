@@ -672,21 +672,6 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         state.pool.withdraw(token, amount, receiver);
     }
 
-    function _getLiquidationThreshold(address asset) internal view returns (uint256) {
-        DataTypes.ReserveConfigurationMap memory config = state.pool.getConfiguration(asset);
-        (
-            ,
-            /** uint256 ltv **/
-            uint256 liquidationThreshold, /** uint256 liquidationBonus */ /** uint256 decimals */ /** uint256 reserveFactor */
-            ,
-            ,
-            ,
-
-        ) = config.getParams();
-
-        return liquidationThreshold;
-    }
-
     /*
         BALANCER HELPERS
     */

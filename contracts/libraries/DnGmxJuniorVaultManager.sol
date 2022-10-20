@@ -587,6 +587,10 @@ library DnGmxJuniorVaultManager {
         scaledPrice = price.mulDivDown(PRICE_PRECISION, quotePrice * 10**(decimals - 6));
     }
 
+    function getLiquidationThreshold(State storage state, address asset) external view returns (uint256) {
+        return _getLiquidationThreshold(state, asset);
+    }
+
     /// @dev returns the borrow value in USDC
     function getBorrowValue(
         State storage state,
