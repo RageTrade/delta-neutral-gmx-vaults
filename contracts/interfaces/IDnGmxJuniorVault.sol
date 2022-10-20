@@ -47,13 +47,13 @@ interface IDnGmxJuniorVault is IERC4626, IBorrower {
     );
     event RebalanceParamsUpdated(uint32 indexed rebalanceTimeThreshold, uint16 indexed rebalanceDeltaThreshold);
 
-    function getMarketValue(uint256 assetAmount) external view returns (uint256 marketValue);
-
     function harvestFees() external;
+
+    function depositCap() external view returns (uint256);
 
     function getPriceX128() external view returns (uint256);
 
     function getVaultMarketValue() external view returns (int256);
 
-    function depositCap() external view returns (uint256);
+    function getMarketValue(uint256 assetAmount) external view returns (uint256 marketValue);
 }
