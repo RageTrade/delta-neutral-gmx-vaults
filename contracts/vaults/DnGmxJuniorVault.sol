@@ -2,44 +2,42 @@
 
 pragma solidity ^0.8.9;
 
-import { WadRayMath } from '@aave/core-v3/contracts/protocol/libraries/math/WadRayMath.sol';
+import { SafeCast } from '../libraries/SafeCast.sol';
+import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
+import { DnGmxJuniorVaultManager } from '../libraries/DnGmxJuniorVaultManager.sol';
+import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMathLib.sol';
+
+import { IVault } from '../interfaces/gmx/IVault.sol';
+import { IVester } from '../interfaces/gmx/IVester.sol';
+import { IGlpManager } from '../interfaces/gmx/IGlpManager.sol';
+import { ISGLPExtended } from '../interfaces/gmx/ISGLPExtended.sol';
+import { IRewardTracker } from '../interfaces/gmx/IRewardTracker.sol';
+import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
+
+import { IDebtToken } from '../interfaces/IDebtToken.sol';
 import { IPool } from '@aave/core-v3/contracts/interfaces/IPool.sol';
 import { IAToken } from '@aave/core-v3/contracts/interfaces/IAToken.sol';
 import { IPriceOracle } from '@aave/core-v3/contracts/interfaces/IPriceOracle.sol';
-import { DataTypes } from '@aave/core-v3/contracts/protocol/libraries/types/DataTypes.sol';
+import { WadRayMath } from '@aave/core-v3/contracts/protocol/libraries/math/WadRayMath.sol';
 import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol';
-import { ReserveConfiguration } from '@aave/core-v3/contracts/protocol/libraries/configuration/ReserveConfiguration.sol';
 import { IRewardsController } from '@aave/periphery-v3/contracts/rewards/interfaces/IRewardsController.sol';
 
-import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
-import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
-import { PausableUpgradeable } from '@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol';
-
-import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMathLib.sol';
-
-import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
-import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
-
-import { IVault } from '../interfaces/gmx/IVault.sol';
-import { IDebtToken } from '../interfaces/IDebtToken.sol';
-import { IGlpManager } from '../interfaces/gmx/IGlpManager.sol';
-import { IStableSwap } from '../interfaces/curve/IStableSwap.sol';
-import { ISGLPExtended } from '../interfaces/gmx/ISGLPExtended.sol';
-import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
-import { IRewardTracker } from '../interfaces/gmx/IRewardTracker.sol';
-import { IVester } from '../interfaces/gmx/IVester.sol';
 import { IBalancerVault } from '../interfaces/IBalancerVault.sol';
-import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
-import { IDnGmxJuniorVault, IERC4626 } from '../interfaces/IDnGmxJuniorVault.sol';
-import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
-
-import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
-import { DnGmxJuniorVaultManager } from '../libraries/DnGmxJuniorVaultManager.sol';
-import { SafeCast } from '../libraries/SafeCast.sol';
 
 import { ERC4626Upgradeable } from '../ERC4626/ERC4626Upgradeable.sol';
+
+import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
+import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
+import { IDnGmxJuniorVault, IERC4626 } from '../interfaces/IDnGmxJuniorVault.sol';
+
+import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
+
+import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
+
+import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import { PausableUpgradeable } from '@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol';
 
 contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable {
     using SafeCast for uint256;
@@ -47,7 +45,6 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     using SafeERC20 for IERC20Metadata;
     using FixedPointMathLib for uint256;
 
-    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using DnGmxJuniorVaultManager for DnGmxJuniorVaultManager.State;
 
     uint256 internal constant MAX_BPS = 10_000;
