@@ -57,7 +57,6 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
       weth: addresses.WETH,
       wbtc: addresses.WBTC,
       usdc: addresses.USDC,
-      usdt: addresses.USDT,
       sGlp: GMX_ECOSYSTEM_ADDRESSES.StakedGlp,
     },
     addresses.AAVE_POOL_ADDRESS_PROVIDER, // _poolAddressesProvider
