@@ -57,7 +57,7 @@
       "type": "t_array(t_uint256)49_storage"
     },
     {
-      "astId": 15681,
+      "astId": 15697,
       "contract": "contracts/vaults/LeveragePool.sol:LeveragePool",
       "label": "usdc",
       "offset": 0,
@@ -65,39 +65,39 @@
       "type": "t_address"
     },
     {
-      "astId": 15687,
+      "astId": 15703,
       "contract": "contracts/vaults/LeveragePool.sol:LeveragePool",
       "label": "dnGmxSeniorVault",
       "offset": 0,
       "slot": "152",
-      "type": "t_contract(IDnGmxSeniorVault)7400"
+      "type": "t_contract(IDnGmxSeniorVault)7404"
     },
     {
-      "astId": 15690,
+      "astId": 15706,
       "contract": "contracts/vaults/LeveragePool.sol:LeveragePool",
       "label": "rUsdc",
       "offset": 0,
       "slot": "153",
-      "type": "t_contract(IDebtToken)7062"
+      "type": "t_contract(IDebtToken)7066"
     },
     {
-      "astId": 15693,
+      "astId": 15709,
       "contract": "contracts/vaults/LeveragePool.sol:LeveragePool",
       "label": "dnGmxJuniorVault",
       "offset": 0,
       "slot": "154",
-      "type": "t_contract(IDnGmxJuniorVault)7332"
+      "type": "t_contract(IDnGmxJuniorVault)7336"
     },
     {
-      "astId": 15696,
+      "astId": 15712,
       "contract": "contracts/vaults/LeveragePool.sol:LeveragePool",
       "label": "batchingManager",
       "offset": 0,
       "slot": "155",
-      "type": "t_contract(IGMXBatchingManager)7770"
+      "type": "t_contract(IGMXBatchingManager)7774"
     },
     {
-      "astId": 15698,
+      "astId": 15714,
       "contract": "contracts/vaults/LeveragePool.sol:LeveragePool",
       "label": "lastUpdateTs",
       "offset": 20,
@@ -105,7 +105,7 @@
       "type": "t_uint96"
     },
     {
-      "astId": 15700,
+      "astId": 15716,
       "contract": "contracts/vaults/LeveragePool.sol:LeveragePool",
       "label": "borrowIndex",
       "offset": 0,
@@ -113,7 +113,7 @@
       "type": "t_uint128"
     },
     {
-      "astId": 15702,
+      "astId": 15718,
       "contract": "contracts/vaults/LeveragePool.sol:LeveragePool",
       "label": "borrowRateBps",
       "offset": 16,
@@ -121,7 +121,7 @@
       "type": "t_uint32"
     },
     {
-      "astId": 15704,
+      "astId": 15720,
       "contract": "contracts/vaults/LeveragePool.sol:LeveragePool",
       "label": "initialCfBps",
       "offset": 20,
@@ -129,7 +129,7 @@
       "type": "t_uint16"
     },
     {
-      "astId": 15706,
+      "astId": 15722,
       "contract": "contracts/vaults/LeveragePool.sol:LeveragePool",
       "label": "maintainanceCfBps",
       "offset": 22,
@@ -137,12 +137,20 @@
       "type": "t_uint16"
     },
     {
-      "astId": 15711,
+      "astId": 15727,
       "contract": "contracts/vaults/LeveragePool.sol:LeveragePool",
       "label": "userDeposits",
       "offset": 0,
       "slot": "157",
-      "type": "t_mapping(t_address,t_struct(UserDeposit)15679_storage)"
+      "type": "t_mapping(t_address,t_struct(UserDeposit)15695_storage)"
+    },
+    {
+      "astId": 15731,
+      "contract": "contracts/vaults/LeveragePool.sol:LeveragePool",
+      "label": "__gaps",
+      "offset": 0,
+      "slot": "158",
+      "type": "t_array(t_uint256)50_storage"
     }
   ],
   "types": {
@@ -168,39 +176,39 @@
       "label": "bool",
       "numberOfBytes": "1"
     },
-    "t_contract(IDebtToken)7062": {
+    "t_contract(IDebtToken)7066": {
       "encoding": "inplace",
       "label": "contract IDebtToken",
       "numberOfBytes": "20"
     },
-    "t_contract(IDnGmxJuniorVault)7332": {
+    "t_contract(IDnGmxJuniorVault)7336": {
       "encoding": "inplace",
       "label": "contract IDnGmxJuniorVault",
       "numberOfBytes": "20"
     },
-    "t_contract(IDnGmxSeniorVault)7400": {
+    "t_contract(IDnGmxSeniorVault)7404": {
       "encoding": "inplace",
       "label": "contract IDnGmxSeniorVault",
       "numberOfBytes": "20"
     },
-    "t_contract(IGMXBatchingManager)7770": {
+    "t_contract(IGMXBatchingManager)7774": {
       "encoding": "inplace",
       "label": "contract IGMXBatchingManager",
       "numberOfBytes": "20"
     },
-    "t_mapping(t_address,t_struct(UserDeposit)15679_storage)": {
+    "t_mapping(t_address,t_struct(UserDeposit)15695_storage)": {
       "encoding": "mapping",
       "key": "t_address",
       "label": "mapping(address => struct LeveragePool.UserDeposit)",
       "numberOfBytes": "32",
-      "value": "t_struct(UserDeposit)15679_storage"
+      "value": "t_struct(UserDeposit)15695_storage"
     },
-    "t_struct(UserDeposit)15679_storage": {
+    "t_struct(UserDeposit)15695_storage": {
       "encoding": "inplace",
       "label": "struct LeveragePool.UserDeposit",
       "members": [
         {
-          "astId": 15674,
+          "astId": 15690,
           "contract": "contracts/vaults/LeveragePool.sol:LeveragePool",
           "label": "round",
           "offset": 0,
@@ -208,7 +216,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 15676,
+          "astId": 15692,
           "contract": "contracts/vaults/LeveragePool.sol:LeveragePool",
           "label": "glpBalance",
           "offset": 0,
@@ -216,7 +224,7 @@
           "type": "t_uint128"
         },
         {
-          "astId": 15678,
+          "astId": 15694,
           "contract": "contracts/vaults/LeveragePool.sol:LeveragePool",
           "label": "depositedShares",
           "offset": 16,

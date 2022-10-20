@@ -123,6 +123,10 @@ export default {
   contractSizer: {
     strict: true,
   },
+  storageLayoutChanges: {
+    contracts: ['DnGmxJuniorVault', 'DnGmxSeniorVault', 'DnGmxBatchingManager', 'LeveragePool'],
+    fullPath: false,
+  },
   namedAccounts: {
     deployer: LEDGER_ADDRESS
       ? `ledger://${LEDGER_ADDRESS}`
