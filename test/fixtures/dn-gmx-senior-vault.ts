@@ -1,6 +1,6 @@
-import addresses from './addresses';
-import { deployments } from 'hardhat';
 import { parseUnits } from 'ethers/lib/utils';
+import { deployments } from 'hardhat';
+import addresses from './addresses';
 
 export const dnGmxSeniorVaultFixture = deployments.createFixture(async hre => {
   const dnGmxSeniorVault = await (await hre.ethers.getContractFactory('DnGmxSeniorVaultMock')).deploy();

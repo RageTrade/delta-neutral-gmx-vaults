@@ -1,18 +1,18 @@
-import { deployments, ethers } from 'hardhat';
-import { increaseBlockTimestamp } from '../utils/shared';
-import { generateErc20Balance } from '../utils/generator';
+import { BigNumber } from 'ethers';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
-import { dnGmxSeniorVaultFixture } from './dn-gmx-senior-vault';
-import addresses, { GMX_ECOSYSTEM_ADDRESSES } from './addresses';
-import { glpBatchingStakingManagerFixture } from './glp-batching-staking-manager';
+import { deployments, ethers } from 'hardhat';
 import {
-  IPool__factory,
-  IVault__factory,
+  IBalancerVault__factory,
   IGlpManager__factory,
   IPoolAddressesProvider__factory,
-  IBalancerVault__factory,
+  IPool__factory,
+  IVault__factory,
 } from '../../typechain-types';
-import { BigNumber } from 'ethers';
+import { generateErc20Balance } from '../utils/generator';
+import { increaseBlockTimestamp } from '../utils/shared';
+import addresses, { GMX_ECOSYSTEM_ADDRESSES } from './addresses';
+import { dnGmxSeniorVaultFixture } from './dn-gmx-senior-vault';
+import { glpBatchingStakingManagerFixture } from './glp-batching-staking-manager';
 
 export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   const [admin, feeRecipient, ...users] = await hre.ethers.getSigners();

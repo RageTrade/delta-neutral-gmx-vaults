@@ -1,28 +1,20 @@
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 import { hexlify, parseUnits, randomBytes } from 'ethers/lib/utils';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import {
-  DnGmxBatchingManager,
-  DnGmxJuniorVaultMock,
-  DnGmxSeniorVault,
-  ERC20Upgradeable,
-  GMXBatchingManager,
-  IAToken,
-} from '../typechain-types';
+import { DnGmxJuniorVaultMock, DnGmxSeniorVault, ERC20Upgradeable, IAToken } from '../typechain-types';
+import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 
 describe('DnGmx Senior Vault', () => {
-  let dnGmxJuniorVault: DnGmxJuniorVaultMock;
-  let glpBatchingManager: DnGmxBatchingManager;
-  let users: SignerWithAddress[];
   let aUSDC: IAToken;
   let usdc: ERC20Upgradeable;
+  let users: SignerWithAddress[];
 
   let dnGmxSeniorVault: DnGmxSeniorVault;
+  let dnGmxJuniorVault: DnGmxJuniorVaultMock;
 
   beforeEach(async () => {
-    ({ dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC, usdc } = await dnGmxJuniorVaultFixture());
+    ({ dnGmxJuniorVault, dnGmxSeniorVault, users, aUSDC, usdc } = await dnGmxJuniorVaultFixture());
   });
 
   describe('Setters', () => {

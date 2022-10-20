@@ -7,7 +7,6 @@ import {
   DnGmxJuniorVaultMock,
   DnGmxSeniorVault,
   ERC20Upgradeable,
-  IAToken,
   IVault,
 } from '../typechain-types';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';

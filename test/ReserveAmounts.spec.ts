@@ -1,8 +1,7 @@
 import { expect } from 'chai';
-import hre, { ethers } from 'hardhat';
+import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
-import { BigNumber } from 'ethers';
 
 describe('Reserves & Optimal Amounts', () => {
   it('getTokenReservesInGlp', async () => {

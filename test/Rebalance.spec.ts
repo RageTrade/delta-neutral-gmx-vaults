@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { formatUnits, parseEther, parseUnits } from 'ethers/lib/utils';
+import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 import { Changer } from './utils/changer';

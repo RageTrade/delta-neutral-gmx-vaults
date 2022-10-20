@@ -1,8 +1,8 @@
 import { expect } from 'chai';
-import { BigNumber, ethers } from 'ethers';
-import { generateErc20Balance } from './utils/generator';
-import { formatEther, formatUnits, parseEther, parseUnits } from 'ethers/lib/utils';
+import { BigNumber } from 'ethers';
+import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
+import { generateErc20Balance } from './utils/generator';
 
 describe('Swaps', () => {
   it('Swap Token To USDC', async () => {
