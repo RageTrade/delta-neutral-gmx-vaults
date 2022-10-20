@@ -175,6 +175,8 @@ describe('Swaps', () => {
       12_000, //hfThreshold
       10n ** 15n, //wethConversionThreshold
       parseUnits('1', 6), //hedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
     );
 
     await sGlp.connect(users[0]).transfer(dnGmxJuniorVault.address, assets);
@@ -251,6 +253,8 @@ describe('Swaps', () => {
       12_000, //hfThreshold
       10n ** 15n, //wethConversionThreshold
       parseUnits('1', 6), //hedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
     );
 
     await dnGmxJuniorVault.executeBorrowFromDnGmxSeniorVault(aUSDCAmount);

@@ -102,6 +102,8 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     12_000, //_hfThreshold
     10n ** 15n, //_wethConversionThreshold
     parseUnits('1', 6), //_hedgeUsdcAmountThreshold
+    parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
+    parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
   );
 
   await dnGmxJuniorVault.setRebalanceParams(
