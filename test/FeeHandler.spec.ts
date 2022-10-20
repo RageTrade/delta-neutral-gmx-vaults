@@ -1,10 +1,8 @@
 import { expect } from 'chai';
-import { BigNumber } from 'ethers';
-import { Changer } from './utils/changer';
-import { increaseBlockTimestamp } from './utils/shared';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
-import { activateMainnetFork, deactivateMainnetFork } from './utils/mainnet-fork';
+import { activateMainnetFork } from './utils/mainnet-fork';
+import { increaseBlockTimestamp } from './utils/shared';
 
 describe('Fee Handlers', () => {
   before(async () => {

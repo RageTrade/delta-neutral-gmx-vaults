@@ -1,5 +1,5 @@
-import hre from 'hardhat';
 import { BigNumber, BigNumberish, ethers } from 'ethers';
+import hre from 'hardhat';
 import { IERC20 as ERC20 } from '../../typechain-types/@openzeppelin/contracts/token/ERC20';
 
 export const generateErc20Balance = async (contract: ERC20, amount: BigNumberish, to?: string) => {

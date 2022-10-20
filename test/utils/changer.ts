@@ -1,7 +1,6 @@
 import hre, { ethers } from 'hardhat';
-import { increaseBlockTimestamp } from './shared';
 import { dnGmxJuniorVaultFixture } from '../fixtures/dn-gmx-junior-vault';
-import { parseUnits } from 'ethers/lib/utils';
+import { increaseBlockTimestamp } from './shared';
 
 type Asset = 'WETH' | 'WBTC';
 

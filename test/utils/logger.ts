@@ -1,4 +1,4 @@
-import { BigNumber, ContractTransaction } from 'ethers';
+import { ContractTransaction } from 'ethers';
 import { dnGmxJuniorVaultFixture } from '../fixtures/dn-gmx-junior-vault';
 
 export class Logger {
