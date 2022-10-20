@@ -60,49 +60,69 @@ library DnGmxJuniorVaultManager {
         IERC20Metadata usdc;
     }
 
+    // prettier-ignore
     struct State {
+        // fees
         uint256 feeBps;
-        address keeper;
-        IDnGmxSeniorVault dnGmxSeniorVault;
-        address feeRecipient;
         uint256 withdrawFeeBps;
+
+        // core protocol roles
+        address keeper;
+        address feeRecipient;
+
+        // accounting
+        int256 dnUsdcDeposited;
+        uint256 unhedgedGlpInUsdc;
+        uint256 targetHealthFactor;
+
+        // accumulators
         uint256 protocolFee;
         uint256 protocolEsGmx;
-        uint256 unhedgedGlpInUsdc;
         uint256 seniorVaultWethRewards;
-        uint256 wethConversionThreshold;
-        uint256 hedgeUsdcAmountThreshold;
-        uint256 hfThreshold;
-        uint256 depositCap;
-        int256 dnUsdcDeposited;
+
+        // locks
         bool hasFlashloaned;
-        uint64 lastRebalanceTS;
-        uint32 rebalanceTimeThreshold;
-        uint16 rebalanceDeltaThreshold;
-        ///@dev storage for hedge strategy
-        IPool pool;
-        IPriceOracle oracle;
-        IPoolAddressesProvider poolAddressProvider;
-        IAToken aUsdc;
-        IDebtToken vWbtc;
-        IDebtToken vWeth;
-        ISwapRouter swapRouter;
-        IBalancerVault balancerVault;
-        uint256 targetHealthFactor;
-        IRewardsController aaveRewardsController;
-        ///@dev storage for yield strategy
-        uint16 slippageThresholdGmx;
-        uint16 slippageThresholdSwap;
-        uint208 usdcConversionThreshold;
+        uint256 lastRebalanceTS;
+
+        // thresholds
+        uint256 depositCap;
+        uint256 hfThreshold;
+        uint256 slippageThresholdGmx;
+        uint256 slippageThresholdSwap;
+        uint256 rebalanceTimeThreshold;
+        uint256 rebalanceDeltaThreshold;
+        uint256 wethConversionThreshold;
+        uint256 usdcConversionThreshold;
+        uint256 hedgeUsdcAmountThreshold;
+
+        // token addrs
         IERC20 fsGlp;
-        IRewardTracker sGmx;
         IERC20Metadata glp;
         IERC20Metadata usdc;
         IERC20Metadata weth;
         IERC20Metadata wbtc;
+
+        // aave protocol addrs
+        IPool pool;
+        IAToken aUsdc;
+        IDebtToken vWbtc;
+        IDebtToken vWeth;
+        IPriceOracle oracle;
+        IRewardsController aaveRewardsController;
+        IPoolAddressesProvider poolAddressProvider;
+
+        // gmx protocol addrs
         IVault gmxVault;
+        IRewardTracker sGmx;
         IGlpManager glpManager;
         IRewardRouterV2 rewardRouter;
+
+        // other external protocols
+        ISwapRouter swapRouter;
+        IBalancerVault balancerVault;
+
+        // core protocol addrs
+        IDnGmxSeniorVault dnGmxSeniorVault;
         IDnGmxBatchingManager batchingManager;
     }
 
