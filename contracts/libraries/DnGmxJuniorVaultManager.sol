@@ -36,13 +36,11 @@ library DnGmxJuniorVaultManager {
     using FixedPointMathLib for uint256;
     using SafeCast for uint256;
 
-    uint16 constant MAX_BPS = 10_000;
+    uint256 internal constant MAX_BPS = 10_000;
+    uint256 internal constant USDG_DECIMALS = 18;
 
-    uint256 constant USDG_DECIMALS = 18;
-    uint256 constant WETH_DECIMALS = 18;
-
-    uint256 constant PRICE_PRECISION = 1e30;
-    uint256 constant VARIABLE_INTEREST_MODE = 2;
+    uint256 internal constant PRICE_PRECISION = 1e30;
+    uint256 internal constant VARIABLE_INTEREST_MODE = 2;
 
     address internal constant wbtc = 0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f;
     address internal constant weth = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
@@ -54,8 +52,15 @@ library DnGmxJuniorVaultManager {
     bytes internal constant WETH_TO_USDC = abi.encodePacked(weth, uint24(500), usdc);
     bytes internal constant WBTC_TO_USDC = abi.encodePacked(wbtc, uint24(3000), weth, uint24(500), usdc);
 
+    struct Tokens {
+        IERC20Metadata weth;
+        IERC20Metadata wbtc;
+        IERC20Metadata sGlp;
+        IERC20Metadata usdc;
+    }
+
     struct State {
-        uint256 feeBps; // = 1000;
+        uint256 feeBps;
         address keeper;
         IDnGmxSeniorVault dnGmxSeniorVault;
         address feeRecipient;
@@ -92,7 +97,6 @@ library DnGmxJuniorVaultManager {
         IRewardTracker sGmx;
         IERC20Metadata glp;
         IERC20Metadata usdc;
-        IERC20Metadata usdt;
         IERC20Metadata weth;
         IERC20Metadata wbtc;
         IVault gmxVault;
@@ -560,47 +564,24 @@ library DnGmxJuniorVaultManager {
         return aum.mulDivDown(PRICE_PRECISION, totalSupply * 1e24);
     }
 
-    function getTokenPriceInUsdc(
-        State storage state,
-        IERC20Metadata token,
-        bool isUsdc
-    ) external view returns (uint256 scaledPrice) {
-        return _getTokenPriceInUsdc(state, token, isUsdc);
+    function getTokenPriceInUsdc(State storage state, IERC20Metadata token)
+        external
+        view
+        returns (uint256 scaledPrice)
+    {
+        return _getTokenPriceInUsdc(state, token);
     }
 
-    function _getTokenPriceInUsdc(
-        State storage state,
-        IERC20Metadata token,
-        bool isUsdc
-    ) private view returns (uint256 scaledPrice) {
+    function _getTokenPriceInUsdc(State storage state, IERC20Metadata token)
+        private
+        view
+        returns (uint256 scaledPrice)
+    {
         uint256 decimals = token.decimals();
         uint256 price = state.oracle.getAssetPrice(address(token));
 
         // @dev aave returns from same source as chainlink (which is 8 decimals)
-        uint256 quotePrice;
-
-        isUsdc ? quotePrice = state.oracle.getAssetPrice(address(state.usdc)) : quotePrice = state.oracle.getAssetPrice(
-            address(state.usdt)
-        );
-
-        scaledPrice = price.mulDivDown(PRICE_PRECISION, quotePrice * 10**(decimals - 6));
-    }
-
-    // @dev returns price in terms of usdc
-    function getTokenPrice(
-        State storage state,
-        IERC20Metadata token,
-        bool isUsdc
-    ) external view returns (uint256 scaledPrice) {
-        uint256 decimals = token.decimals();
-        uint256 price = state.oracle.getAssetPrice(address(token));
-
-        // @dev aave returns from same source as chainlink (which is 8 decimals)
-        uint256 quotePrice;
-
-        isUsdc ? quotePrice = state.oracle.getAssetPrice(address(state.usdc)) : quotePrice = state.oracle.getAssetPrice(
-            address(state.usdt)
-        );
+        uint256 quotePrice = state.oracle.getAssetPrice(address(state.usdc));
 
         scaledPrice = price.mulDivDown(PRICE_PRECISION, quotePrice * 10**(decimals - 6));
     }
@@ -662,7 +643,7 @@ library DnGmxJuniorVaultManager {
         if (optimalBorrow > currentBorrow) {
             tokenAmount = optimalBorrow - currentBorrow;
             // To swap with the amount in specified hence usdcAmount should be the min amount out
-            usdcAmount = _getTokenPriceInUsdc(state, IERC20Metadata(token), true).mulDivDown(
+            usdcAmount = _getTokenPriceInUsdc(state, IERC20Metadata(token)).mulDivDown(
                 tokenAmount * (MAX_BPS - state.slippageThresholdSwap),
                 MAX_BPS * PRICE_PRECISION
             );
@@ -674,7 +655,7 @@ library DnGmxJuniorVaultManager {
             // To Decrease
             tokenAmount = (currentBorrow - optimalBorrow);
             // To swap with amount out specified hence usdcAmount should be the max amount in
-            usdcAmount = _getTokenPriceInUsdc(state, IERC20Metadata(token), true).mulDivDown(
+            usdcAmount = _getTokenPriceInUsdc(state, IERC20Metadata(token)).mulDivDown(
                 tokenAmount * (MAX_BPS + state.slippageThresholdSwap),
                 MAX_BPS * PRICE_PRECISION
             );
