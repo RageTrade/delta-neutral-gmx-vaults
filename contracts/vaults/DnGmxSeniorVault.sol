@@ -74,6 +74,10 @@ contract DnGmxSeniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         IERC20Metadata(asset).approve(address(pool), type(uint256).max);
     }
 
+    function decimals() public view override returns (uint8) {
+        return 6;
+    }
+
     function setDnGmxJuniorVault(address _dnGmxJuniorVault) external onlyOwner {
         dnGmxJuniorVault = IDnGmxJuniorVault(_dnGmxJuniorVault);
     }
@@ -208,7 +212,7 @@ contract DnGmxSeniorVault is ERC4626Upgradeable, OwnableUpgradeable, PausableUpg
         uint256 price = oracle.getAssetPrice(address(asset));
 
         // @dev aave returns from same source as chainlink (which is 8 decimals)
-        return price.mulDiv(1 << 128, 1e20); // usdc decimals - (chainlink decimals + asset decimals) = 6-8-18 = 20
+        return price.mulDiv(1 << 128, 1e8); // usdc decimals - (chainlink decimals + asset decimals) = 6-8-6 = 8
     }
 
     function getVaultMarketValue() public view returns (uint256) {
