@@ -74,7 +74,7 @@ library DnGmxJuniorVaultManager {
         uint256 hfThreshold;
         uint256 depositCap;
         int256 dnUsdcDeposited;
-        bool _hasFlashloaned;
+        bool hasFlashloaned;
         uint64 lastRebalanceTS;
         uint32 rebalanceTimeThreshold;
         uint16 rebalanceDeltaThreshold;
@@ -479,7 +479,7 @@ library DnGmxJuniorVaultManager {
     ) private {
         if (assets.length != amounts.length) revert IDnGmxJuniorVault.ArraysLengthMismatch();
 
-        state._hasFlashloaned = true;
+        state.hasFlashloaned = true;
 
         state.balancerVault.flashLoan(
             address(this),
@@ -488,7 +488,7 @@ library DnGmxJuniorVaultManager {
             abi.encode(_btcTokenAmount, _btcUsdcAmount, _ethTokenAmount, _ethUsdcAmount, _repayDebtBtc, _repayDebtEth)
         );
 
-        state._hasFlashloaned = false;
+        state.hasFlashloaned = false;
     }
 
     /* ##################################################################
