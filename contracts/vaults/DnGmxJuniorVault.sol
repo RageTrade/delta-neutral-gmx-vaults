@@ -52,10 +52,8 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using DnGmxJuniorVaultManager for DnGmxJuniorVaultManager.State;
 
-    uint16 internal constant MAX_BPS = 10_000;
-
+    uint256 internal constant MAX_BPS = 10_000;
     uint256 internal constant USDG_DECIMALS = 18;
-    uint256 internal constant WETH_DECIMALS = 18;
 
     uint256 internal constant PRICE_PRECISION = 1e30;
     uint256 internal constant VARIABLE_INTEREST_MODE = 2;
@@ -86,20 +84,12 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
                                 SYSTEM FUNCTIONS
     ################################################################## */
 
-    struct Tokens {
-        IERC20Metadata weth;
-        IERC20Metadata wbtc;
-        IERC20Metadata sGlp;
-        IERC20Metadata usdc;
-        IERC20Metadata usdt;
-    }
-
     function initialize(
         string calldata _name,
         string calldata _symbol,
         address _swapRouter,
         address _rewardRouter,
-        Tokens calldata _tokens,
+        DnGmxJuniorVaultManager.Tokens calldata _tokens,
         IPoolAddressesProvider _poolAddressesProvider
     ) external initializer {
         __Ownable_init();
@@ -109,7 +99,6 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         state.weth = _tokens.weth;
         state.wbtc = _tokens.wbtc;
         state.usdc = _tokens.usdc;
-        state.usdt = _tokens.usdt;
 
         state.swapRouter = ISwapRouter(_swapRouter);
         state.rewardRouter = IRewardRouterV2(_rewardRouter);
@@ -304,14 +293,12 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
                 PRICE_PRECISION * MAX_BPS
             );
 
-            usdgAmount = usdgAmount.mulDivDown(10**USDG_DECIMALS, 10**WETH_DECIMALS);
-
             uint256 glpReceived = state.batchingManager.depositToken(address(state.weth), dnGmxWethShare, usdgAmount);
 
             // console.log('_seniorVaultWethRewards', _seniorVaultWethRewards);
             if (_seniorVaultWethRewards > state.wethConversionThreshold) {
                 // Deposit aave vault share to AAVE in usdc
-                uint256 minUsdcAmount = state.getTokenPriceInUsdc(state.weth, true).mulDivDown(
+                uint256 minUsdcAmount = state.getTokenPriceInUsdc(state.weth).mulDivDown(
                     _seniorVaultWethRewards * (MAX_BPS - state.slippageThresholdSwap),
                     MAX_BPS * PRICE_PRECISION
                 );

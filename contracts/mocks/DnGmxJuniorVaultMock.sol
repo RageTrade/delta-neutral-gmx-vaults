@@ -174,8 +174,8 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         return state.getTokenPrice(token);
     }
 
-    function getPrice(IERC20Metadata token, bool isUsdc) external view returns (uint256) {
-        return state.getTokenPriceInUsdc(token, isUsdc);
+    function getPrice(IERC20Metadata token, bool) external view returns (uint256) {
+        return state.getTokenPriceInUsdc(token);
     }
 
     function getOptimalCappedBorrows(uint256 availableBorrowAmount, uint256 usdcLiquidationThreshold)
