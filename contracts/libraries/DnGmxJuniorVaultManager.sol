@@ -24,11 +24,12 @@ import { IERC20Metadata } from '@openzeppelin/contracts/interfaces/IERC20Metadat
 import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
 import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
 import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
-
 import { SafeCast } from '../libraries/SafeCast.sol';
 import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMathLib.sol';
 
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
+
+// import 'hardhat/console.sol';
 
 library DnGmxJuniorVaultManager {
     using DnGmxJuniorVaultManager for State;
@@ -84,6 +85,8 @@ library DnGmxJuniorVaultManager {
         uint256 wethConversionThreshold;
         uint256 usdcConversionThreshold;
         uint256 hedgeUsdcAmountThreshold;
+        uint256 partialBtcHedgeUsdcAmountThreshold;
+        uint256 partialEthHedgeUsdcAmountThreshold;
 
         // token addrs
         IERC20 fsGlp;
@@ -269,6 +272,33 @@ library DnGmxJuniorVaultManager {
         );
     }
 
+    function _getOptimalPartialBorrows(
+        State storage state,
+        IERC20Metadata token,
+        uint256 optimalTokenBorrow,
+        uint256 currentTokenBorrow
+    ) internal view returns (uint256 optimalPartialTokenBorrow, bool isPartialTokenHedge) {
+        bool isOptimalHigher = optimalTokenBorrow > currentTokenBorrow;
+        uint256 diff = isOptimalHigher
+            ? optimalTokenBorrow - currentTokenBorrow
+            : currentTokenBorrow - optimalTokenBorrow;
+
+        uint256 threshold = address(token) == address(state.wbtc)
+            ? state.partialBtcHedgeUsdcAmountThreshold
+            : state.partialEthHedgeUsdcAmountThreshold;
+        uint256 tokenThreshold = threshold.mulDivDown(PRICE_PRECISION, _getTokenPriceInUsdc(state, token, true));
+        if (diff > tokenThreshold) {
+            // console.log('threshold',threshold);
+            // console.log('diff',diff,'tokenThreshold',tokenThreshold);
+            optimalPartialTokenBorrow = isOptimalHigher
+                ? currentTokenBorrow + tokenThreshold
+                : currentTokenBorrow - tokenThreshold;
+            isPartialTokenHedge = true;
+        } else {
+            optimalPartialTokenBorrow = optimalTokenBorrow;
+        }
+    }
+
     /// @notice settles collateral for the vault
     /// @dev to be called after settle profits only (since vaultMarketValue if after settlement of profits)
     /// @param currentBtcBorrow The amount of USDC collateral token deposited to LB Protocol
@@ -277,12 +307,41 @@ library DnGmxJuniorVaultManager {
         State storage state,
         uint256 currentBtcBorrow,
         uint256 currentEthBorrow,
-        uint256 glpDeposited
-    ) external {
+        uint256 glpDeposited,
+        bool isPartialAllowed
+    ) external returns (bool isPartialHedge) {
         // console.log('totalAssets()', totalAssets());
         (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrows(state, glpDeposited);
+        // console.log('currentBtcBorrow', currentBtcBorrow);
+        // console.log('currentEthBorrow', currentEthBorrow);
         // console.log('optimalBtcBorrow', optimalBtcBorrow);
         // console.log('optimalEthBorrow', optimalEthBorrow);
+        if (isPartialAllowed) {
+            bool isPartialBtcHedge;
+            bool isPartialEthHedge;
+            (optimalBtcBorrow, isPartialBtcHedge) = _getOptimalPartialBorrows(
+                state,
+                state.wbtc,
+                optimalBtcBorrow,
+                currentBtcBorrow
+            );
+            (optimalEthBorrow, isPartialEthHedge) = _getOptimalPartialBorrows(
+                state,
+                state.weth,
+                optimalEthBorrow,
+                currentEthBorrow
+            );
+            isPartialHedge = isPartialBtcHedge || isPartialEthHedge;
+            // console.log('isPartialBtcHedge');
+            // console.log(isPartialBtcHedge);
+            // console.log('isPartialEthHedge');
+            // console.log(isPartialEthHedge);
+            // console.log('isPartialHedge');
+            // console.log(isPartialHedge);
+        }
+
+        // console.log('optimalBtcBorrow after partial check', optimalBtcBorrow);
+        // console.log('optimalEthBorrow after partial check', optimalEthBorrow);
 
         uint256 optimalBorrowValue = _getBorrowValue(state, optimalBtcBorrow, optimalEthBorrow);
         // console.log('optimalBorrowValue', optimalBorrowValue);
@@ -303,27 +362,29 @@ library DnGmxJuniorVaultManager {
         // console.log(optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
 
         if (targetDnGmxSeniorVaultAmount > currentDnGmxSeniorVaultAmount) {
-            // console.log('IF');
-            uint256 amountToBorrow = targetDnGmxSeniorVaultAmount - currentDnGmxSeniorVaultAmount;
-            uint256 availableBorrow = state.dnGmxSeniorVault.availableBorrow(address(this));
-            if (amountToBorrow > availableBorrow) {
-                uint256 optimalUncappedEthBorrow = optimalEthBorrow;
-                (optimalBtcBorrow, optimalEthBorrow) = _getOptimalCappedBorrows(
-                    state,
-                    currentDnGmxSeniorVaultAmount + availableBorrow,
-                    usdcLiquidationThreshold
-                );
-                _rebalanceUnhedgedGlp(state, optimalUncappedEthBorrow, optimalEthBorrow);
-                // console.log("Optimal token amounts 1",optimalBtcBorrow, optimalEthBorrow);
-                if (availableBorrow > 0) {
-                    state.dnGmxSeniorVault.borrow(availableBorrow);
-                }
-            } else {
-                //No unhedged glp remaining so just pass same value in capped and uncapped (should convert back any ausdc back to sglp)
-                _rebalanceUnhedgedGlp(state, optimalEthBorrow, optimalEthBorrow);
+            {
+                // console.log('IF');
+                uint256 amountToBorrow = targetDnGmxSeniorVaultAmount - currentDnGmxSeniorVaultAmount;
+                uint256 availableBorrow = state.dnGmxSeniorVault.availableBorrow(address(this));
+                if (amountToBorrow > availableBorrow) {
+                    uint256 optimalUncappedEthBorrow = optimalEthBorrow;
+                    (optimalBtcBorrow, optimalEthBorrow) = _getOptimalCappedBorrows(
+                        state,
+                        currentDnGmxSeniorVaultAmount + availableBorrow,
+                        usdcLiquidationThreshold
+                    );
+                    _rebalanceUnhedgedGlp(state, optimalUncappedEthBorrow, optimalEthBorrow);
+                    // console.log("Optimal token amounts 1",optimalBtcBorrow, optimalEthBorrow);
+                    if (availableBorrow > 0) {
+                        state.dnGmxSeniorVault.borrow(availableBorrow);
+                    }
+                } else {
+                    //No unhedged glp remaining so just pass same value in capped and uncapped (should convert back any ausdc back to sglp)
+                    _rebalanceUnhedgedGlp(state, optimalEthBorrow, optimalEthBorrow);
 
-                // Take from LB Vault
-                state.dnGmxSeniorVault.borrow(targetDnGmxSeniorVaultAmount - currentDnGmxSeniorVaultAmount);
+                    // Take from LB Vault
+                    state.dnGmxSeniorVault.borrow(targetDnGmxSeniorVaultAmount - currentDnGmxSeniorVaultAmount);
+                }
             }
 
             // console.log("Optimal token amounts 2",optimalBtcBorrow, optimalEthBorrow);

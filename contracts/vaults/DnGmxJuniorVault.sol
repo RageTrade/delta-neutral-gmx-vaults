@@ -161,7 +161,9 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         uint208 _usdcConversionThreshold,
         uint256 _hfThreshold,
         uint256 _wethConversionThreshold,
-        uint256 _hedgeUsdcAmountThreshold
+        uint256 _hedgeUsdcAmountThreshold,
+        uint256 _partialBtcHedgeUsdcAmountThreshold,
+        uint256 _partialEthHedgeUsdcAmountThreshold
     ) external onlyOwner {
         state.slippageThresholdSwap = _slippageThresholdSwap;
         state.slippageThresholdGmx = _slippageThresholdGmx;
@@ -169,6 +171,8 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         state.wethConversionThreshold = _wethConversionThreshold;
         state.hedgeUsdcAmountThreshold = _hedgeUsdcAmountThreshold;
         state.hfThreshold = _hfThreshold;
+        state.partialBtcHedgeUsdcAmountThreshold = _partialBtcHedgeUsdcAmountThreshold;
+        state.partialEthHedgeUsdcAmountThreshold = _partialEthHedgeUsdcAmountThreshold;
     }
 
     function setRebalanceParams(uint32 _rebalanceTimeThreshold, uint16 _rebalanceDeltaThreshold) external onlyOwner {
@@ -360,9 +364,9 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         // calculate current btc and eth positions in GLP
         // get the position value and calculate the collateral needed to borrow that
         // transfer collateral from LB vault to DN vault
-        state.rebalanceHedge(currentBtc, currentEth, totalAssets());
+        bool isPartialHedge = state.rebalanceHedge(currentBtc, currentEth, totalAssets(), true);
 
-        state.lastRebalanceTS = uint64(block.timestamp);
+        if (!isPartialHedge) state.lastRebalanceTS = uint64(block.timestamp);
         emit Rebalanced();
     }
 
@@ -630,7 +634,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
 
         //rebalance of hedge based on assets after withdraw (before withdraw assets - withdrawn assets)
-        state.rebalanceHedge(currentBtc, currentEth, totalAssets() - assets);
+        state.rebalanceHedge(currentBtc, currentEth, totalAssets() - assets, false);
     }
 
     function afterDeposit(
@@ -645,7 +649,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         // console.log('totalAssets()', totalAssets());
 
         //rebalance of hedge based on assets after deposit (after deposit assets)
-        state.rebalanceHedge(currentBtc, currentEth, totalAssets());
+        state.rebalanceHedge(currentBtc, currentEth, totalAssets(), false);
     }
 
     /*
