@@ -124,37 +124,42 @@ describe('Swaps', () => {
   it('convert asset to aUSDC', async () => {
     const { dnGmxJuniorVault, usdc, aUSDC, users, sGlp, gmxVault } = await dnGmxJuniorVaultFixture();
 
-    const assets = parseEther('1500');
+    const MAX_BPS = BigNumber.from(10_000);
+    const slippageThresholdGmx = BigNumber.from(100);
+    const PRICE_PRECISION = BigNumber.from(10).pow(30);
+
     const usdcAmount = parseUnits('100', 6);
 
     const glpPrice = await dnGmxJuniorVault.getPriceExternal();
     // console.log('glpPrice', formatUnits(glpPrice, 30))
 
-    const MAX_BPS = BigNumber.from(10_000);
-    const slippageThresholdGmx = BigNumber.from(100);
-    const PRICE_PRECISION = BigNumber.from(10).pow(30);
-
-    await sGlp.connect(users[0]).transfer(dnGmxJuniorVault.address, assets);
-
-    expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
-    expect(await dnGmxJuniorVault.totalAssets()).to.eq(assets);
-
     const usdcPrice = await gmxVault.getMaxPrice(usdc.address);
     // console.log('usdcPrice', formatUnits(usdcPrice, 30))
 
-    const minUsdcOut = usdcAmount.mul(usdcPrice).div(PRICE_PRECISION);
+    const minUsdcOut = usdcAmount
+      .mul(usdcPrice)
+      .mul(MAX_BPS.sub(slippageThresholdGmx))
+      .div(PRICE_PRECISION)
+      .div(MAX_BPS);
 
-    const glpInput = minUsdcOut.mul(PRICE_PRECISION).mul(MAX_BPS.add(slippageThresholdGmx)).div(glpPrice).div(MAX_BPS);
+    const glpInput = usdcAmount.mul(PRICE_PRECISION).div(glpPrice);
+
+    await sGlp.connect(users[0]).transfer(dnGmxJuniorVault.address, glpInput);
+
+    expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
+    expect(await dnGmxJuniorVault.totalAssets()).to.eq(glpInput);
 
     // console.log('glpInput', formatEther(glpInput))
     // console.log('totalAssets', formatEther(await dnGmxJuniorVault.totalAssets()))
     // console.log('ausdc bal', formatUnits((await aUSDC.balanceOf(dnGmxJuniorVault.address)), 6))
     // console.log('minUsdcOut', formatUnits(minUsdcOut, 6))
 
-    await dnGmxJuniorVault.convertAssetToAUsdc(usdcAmount); // slippageThresholdGmx = 1% (from fixture)
+    await dnGmxJuniorVault.convertAssetToAUsdc(usdcAmount);
 
-    expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.gt(usdcAmount);
-    expect(await dnGmxJuniorVault.totalAssets()).to.eq(assets.sub(glpInput));
+    expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.gt(minUsdcOut);
+    expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.lt(usdcAmount);
+
+    expect(await dnGmxJuniorVault.totalAssets()).to.eq(0);
   });
 
   it('convert asset to aUSDC - fail slippage', async () => {
