@@ -31,6 +31,10 @@ describe('Dn Gmx Batching Manager', () => {
   });
 
   describe('Deposit', () => {
+    it('default state - unpaused', async () => {
+      expect(await glpBatchingManager.paused()).to.be.false;
+    });
+
     it('Fails - Amount 0', async () => {
       const depositAmount = parseUnits('100', 6);
 
@@ -251,22 +255,27 @@ describe('Dn Gmx Batching Manager', () => {
   describe('Batch Deposit', () => {
     it('Single User Batch Deposit', async () => {
       await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('10000', 6), users[1].address);
+
       const depositAmount = parseUnits('100', 6);
       await usdc.connect(users[1]).approve(glpBatchingManager.address, depositAmount);
+
       await glpBatchingManager.connect(users[1]).depositUsdc(depositAmount, users[1].address);
       await glpBatchingManager.executeBatchStake();
+
       await increaseBlockTimestamp(15 * 60); //15 mins
 
       const roundUsdcBalance = await glpBatchingManager.roundUsdcBalance();
       const roundGlpStaked = await glpBatchingManager.roundGlpStaked();
-      //Check sGlp transfer and dnGmxJuniorVault share transfer
+
+      // Check sGlp transfer and dnGmxJuniorVault share transfer
       await expect(() => glpBatchingManager.executeBatchDeposit()).to.changeTokenBalance(
         fsGlp,
         glpBatchingManager,
         roundGlpStaked.mul(-1),
       );
 
-      expect(await dnGmxJuniorVault.balanceOf(glpBatchingManager.address)).to.eq(roundGlpStaked); //Since share:asset would be 1:1 initially
+      // Since share:asset would be 1:1 initially
+      expect(await dnGmxJuniorVault.balanceOf(glpBatchingManager.address)).to.eq(roundGlpStaked);
 
       const user1Deposit = await glpBatchingManager.userDeposits(users[1].address);
       const round1Deposit = await glpBatchingManager.roundDeposits(1);
@@ -553,14 +562,8 @@ describe('Dn Gmx Batching Manager', () => {
     });
   });
 
-  describe('failure cases', () => {
+  describe('Stake & Execute', () => {
     it('execute batch', async () => {
-      /**- deposit some sglp in junior vault and increase timestamp to accure rewards
-       * - deposit usdc
-       * - execute stake (will pause contract)
-       * - wait 15 mins
-       * - execute batch -> juniorVault.deposit -> harvestFees() -> batchingManager.depositToken -> revert: paused
-       */
       const amount = parseEther('10000');
       const depositAmount = parseUnits('100', 6);
 
@@ -580,12 +583,15 @@ describe('Dn Gmx Batching Manager', () => {
       await glpBatchingManager.connect(users[1]).depositUsdc(depositAmount, users[1].address);
 
       await glpBatchingManager.executeBatchStake();
-      console.log('passed');
       await increaseBlockTimestamp(15 * 60 + 1);
 
       expect(await glpBatchingManager.paused()).to.true;
 
+      const prevRound = await glpBatchingManager.currentRound();
       await glpBatchingManager.executeBatchDeposit();
+      const postRound = await glpBatchingManager.currentRound();
+
+      expect(postRound).to.eq(prevRound.add(1));
     });
   });
 });
