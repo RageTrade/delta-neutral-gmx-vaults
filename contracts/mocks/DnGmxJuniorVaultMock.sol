@@ -194,8 +194,8 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         return state.isWithinAllowedDelta(optimalBorrow, currentBorrow);
     }
 
-    function rebalanceHedge(uint256 currentBtcBorrow, uint256 currentEthBorrow) external {
-        return state.rebalanceHedge(currentBtcBorrow, currentEthBorrow, totalAssets());
+    function rebalanceHedge(uint256 currentBtcBorrow, uint256 currentEthBorrow) external returns (bool) {
+        return state.rebalanceHedge(currentBtcBorrow, currentEthBorrow, totalAssets(), false);
     }
 
     function convertAssetToAUsdc(uint256 usdcAmountDesired) external returns (uint256 usdcAmount) {

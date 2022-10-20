@@ -29,6 +29,8 @@ describe('Rebalance Scenarios', () => {
       0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
     );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
@@ -116,6 +118,8 @@ describe('Rebalance Scenarios', () => {
       0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
     );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
@@ -198,6 +202,8 @@ describe('Rebalance Scenarios', () => {
       0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
     );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
@@ -297,6 +303,8 @@ describe('Rebalance Scenarios', () => {
       0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
     );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
@@ -377,6 +385,8 @@ describe('Rebalance Scenarios', () => {
       0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
       parseUnits('12', 6), //hedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
     );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
@@ -466,6 +476,8 @@ describe('Rebalance Scenarios', () => {
       0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
       parseUnits('12', 6), //hedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
     );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
@@ -555,6 +567,8 @@ describe('Rebalance Scenarios', () => {
       0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
       parseUnits('12', 6), //hedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
     );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
@@ -645,6 +659,8 @@ describe('Rebalance Scenarios', () => {
       0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
     );
 
     console.log('--------------------Sr. Tranche Initial Deposit--------------------');
@@ -776,6 +792,8 @@ describe('Rebalance Scenarios', () => {
       0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
     );
 
     console.log('--------------------Sr. Tranche Initial Deposit--------------------');
@@ -917,6 +935,8 @@ describe('Rebalance Scenarios', () => {
       0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
     );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('800000', 6), users[1].address);
@@ -1023,6 +1043,8 @@ describe('Rebalance Scenarios', () => {
       0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
     );
 
     await sGlp.connect(users[2]).approve(dnGmxJuniorVault.address, ethers.constants.MaxUint256);
@@ -1194,5 +1216,123 @@ describe('Rebalance Scenarios', () => {
     // await checker.checkVaultMktValue(3980797n, 10n);
     // await checker.checkBorrowValue(6190998n, 100n);
     // await checker.checkUsdcBorrwed(4734292n, 100n);
+  });
+
+  it('Rebalance Partial (Excel)', async () => {
+    let tx;
+
+    const opts = await dnGmxJuniorVaultFixture();
+    const logger = new Logger(opts);
+    const changer = new Changer(opts);
+    const checker = new Checker(opts);
+
+    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, mocks, aUSDC, gmxVault, lendingPool } = opts;
+    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
+    await dnGmxJuniorVault.grantAllowances();
+
+    // becauses price are not changed on uniswap
+    await dnGmxJuniorVault.setThresholds(
+      1000, //slippageThresholdSwap
+      1000, //slippageThresholdGmx
+      parseUnits('1', 6), //usdcConversionThreshold
+      0, //hfThreshold
+      10n ** 15n, //wethConversionThreshold
+      0, //hedgeUsdcAmountThreshold
+      parseUnits('2', 6), //partialBtcHedgeUsdcAmountThreshold
+      parseUnits('2', 6), //partialEthHedgeUsdcAmountThreshold
+    );
+
+    await dnGmxJuniorVault.setRebalanceParams(
+      86400, // rebalanceTimeThreshold
+      500, // 5% in bps | rebalanceDeltaThreshold
+    );
+
+    await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
+
+    // ETH: $2787.23 BTC: $38694.59
+    await changer.changePriceToken('WBTC', 38694.59);
+    await changer.changePriceToken('WETH', 2787.23);
+    await logger.logGlpPrice();
+    await logger.logTargetWeights();
+    await logger.logAavePosition();
+    await logger.logBorrowParams();
+
+    // await changer.changeWeight('WBTC', 20_000, gmxVault);
+    // await changer.changeWeight('WETH', 20_000, gmxVault);
+
+    // await checker.checkTotalAssets(150000000n, 10n ** 15n, false);
+
+    // Deposit
+    console.log('--------------------Initial Deposit--------------------');
+    const amount = parseEther('100');
+    tx = await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
+
+    await logger.logAavePosition(tx);
+    await logger.logBorrowParams(tx);
+    await logger.logProtocolParamsAndHoldings();
+
+    // await checker.checkTotalAssets(100000000000000000000n, 0, true);
+    // await checker.checkTotalSupply(100000000000000000000n, 0, true);
+    // await checker.checkCurrentBorrowed([83259n, 12945732922165800n], [0, 6n * 10n ** 10n]);
+    // await checker.checkVaultMktValue(122037988n, 70n);
+    // await checker.checkBorrowValue(68302112, 20n);
+    // await checker.checkUsdcBorrwed(52231026n, 20n);
+
+    console.log('--------------------Time Increased--------------------');
+    await increaseBlockTimestamp(4 * 24 * 60 * 60);
+    // ETH: $3012.65 BTC: $41382.59
+    await changer.changePriceToken('WBTC', 41382.59);
+    await changer.changePriceToken('WETH', 3012.65);
+
+    await logger.logGlpPrice();
+    await logger.logTargetWeights();
+
+    await logger.logAavePosition();
+    await logger.logBorrowParams();
+    await logger.logProtocolParamsAndHoldings();
+
+    // await checker.checkTotalAssets(100000000000000000000n, 0, true);
+    // await checker.checkTotalSupply(100000000000000000000n, 0, true);
+    // await checker.checkVaultMktValue(116812897n, 4n * 10n ** 2n);
+    // await checker.checkBorrowValue(73477703n, 5n * 10n ** 2n);
+
+    console.log('-------------------- Rebalance 1 --------------------');
+    tx = await dnGmxJuniorVault.rebalance();
+    await logger.logGlpRewards(tx);
+    await logger.logAavePosition();
+    await logger.logBorrowParams();
+    await logger.logProtocolParamsAndHoldings();
+
+    console.log('-------------------- Rebalance 2 --------------------');
+    tx = await dnGmxJuniorVault.rebalance();
+    await logger.logGlpRewards(tx);
+    await logger.logAavePosition();
+    await logger.logBorrowParams();
+    await logger.logProtocolParamsAndHoldings();
+
+    console.log('-------------------- Rebalance 3 --------------------');
+    tx = await dnGmxJuniorVault.rebalance();
+    await logger.logGlpRewards(tx);
+    await logger.logAavePosition();
+    await logger.logBorrowParams();
+    await logger.logProtocolParamsAndHoldings();
+
+    console.log('-------------------- Rebalance 4 --------------------');
+    tx = await dnGmxJuniorVault.rebalance();
+    await logger.logGlpRewards(tx);
+    await logger.logAavePosition();
+    await logger.logBorrowParams();
+    await logger.logProtocolParamsAndHoldings();
+
+    console.log('-------------------- Rebalance 5 --------------------');
+    await expect(dnGmxJuniorVault.rebalance()).to.be.revertedWith('InvalidRebalance()');
+
+    // await checker.checkTotalAssets(89313883234732900000n, 4n * 10n ** 14n, true);
+    // await checker.checkTotalSupply(100000000000000000000n, 0, true);
+
+    // await checker.checkCurrentBorrowed([70568n - 2n, 10856649158435000n], [10n ** 4n, 4n * 10n ** 10n]);
+    // await checker.checkVaultMktValue(114966949n, 3n * 10n ** 3n);
+    // await checker.checkBorrowValue(61910216n, 2n * 10n ** 3n);
+    // await checker.checkUsdcBorrwed(47343106n, 2n * 10n ** 3n);
   });
 });
