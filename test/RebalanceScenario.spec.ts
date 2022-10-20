@@ -442,7 +442,7 @@ describe('Rebalance Scenarios', () => {
 
     await checker.checkCurrentBorrowed([55227n, 12948247199528500n], [0, 7n * 10n ** 9n]);
     await checker.checkBorrowValue(61865303n, 20n);
-    await checker.checkVaultMktValue(114953754n, 30n);
+    await checker.checkVaultMktValue(114953754n, 31n);
     // await checker.checkUsdcBorrwed(47343106n, 2n * 10n ** 3n);
   });
 
@@ -838,7 +838,7 @@ describe('Rebalance Scenarios', () => {
     await checker.checkTotalSupply(155139066349129000000n, 4n * 10n ** 13n, true);
     // Borrow ETH : 13760737544110385
     // Deviation : 350722378
-    await checker.checkCurrentBorrowed([89444n, 13760737193388000n + 6n], [10, 10n]);
+    await checker.checkCurrentBorrowed([89444n, 13760737193388000n + 6n], [10n, 4n * 10n ** 8n]);
     await checker.checkBorrowValue(78470527n, 4000n);
     await checker.checkUsdcBorrwed(60006873n, 300n);
 
