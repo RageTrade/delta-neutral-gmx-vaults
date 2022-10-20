@@ -71,7 +71,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     }
 
     modifier whenFlashloaned() {
-        if (!state._hasFlashloaned) revert FlashloanNotInitiated();
+        if (!state.hasFlashloaned) revert FlashloanNotInitiated();
         _;
     }
 
@@ -739,7 +739,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     ) internal {
         if (assets.length != amounts.length) revert ArraysLengthMismatch();
 
-        state._hasFlashloaned = true;
+        state.hasFlashloaned = true;
 
         state.balancerVault.flashLoan(
             address(this),
@@ -748,6 +748,6 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
             abi.encode(_btcTokenAmount, _btcUsdcAmount, _ethTokenAmount, _ethUsdcAmount, _repayDebtBtc, _repayDebtEth)
         );
 
-        state._hasFlashloaned = false;
+        state.hasFlashloaned = false;
     }
 }
