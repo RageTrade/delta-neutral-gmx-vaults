@@ -154,7 +154,7 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
     }
 
     function getLiquidationThreshold(address asset) internal view returns (uint256) {
-        return _getLiquidationThreshold(asset);
+        return state.getLiquidationThreshold(asset);
     }
 
     function rebalanceBorrow(
