@@ -10,14 +10,14 @@ import { IAToken } from '@aave/core-v3/contracts/interfaces/IAToken.sol';
 import { IPriceOracle } from '@aave/core-v3/contracts/interfaces/IPriceOracle.sol';
 import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol';
 
+import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
+import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
+
 import { IERC4626 } from '../interfaces/IERC4626.sol';
 import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
 import { ERC4626Upgradeable } from '../ERC4626/ERC4626Upgradeable.sol';
 import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import { PausableUpgradeable } from '@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol';
-
-import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
-import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
 
 contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable {
     using FullMath for uint256;

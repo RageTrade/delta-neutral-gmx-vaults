@@ -2,32 +2,33 @@
 
 pragma solidity ^0.8.0;
 
+import { IVault } from '../interfaces/gmx/IVault.sol';
+import { IGlpManager } from '../interfaces/gmx/IGlpManager.sol';
+import { IRewardTracker } from '../interfaces/gmx/IRewardTracker.sol';
+import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
+
+import { IDebtToken } from '../interfaces/IDebtToken.sol';
 import { IPool } from '@aave/core-v3/contracts/interfaces/IPool.sol';
 import { IAToken } from '@aave/core-v3/contracts/interfaces/IAToken.sol';
 import { IPriceOracle } from '@aave/core-v3/contracts/interfaces/IPriceOracle.sol';
+import { DataTypes } from '@aave/core-v3/contracts/protocol/libraries/types/DataTypes.sol';
 import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol';
 import { IRewardsController } from '@aave/periphery-v3/contracts/rewards/interfaces/IRewardsController.sol';
-import { DataTypes } from '@aave/core-v3/contracts/protocol/libraries/types/DataTypes.sol';
 import { ReserveConfiguration } from '@aave/core-v3/contracts/protocol/libraries/configuration/ReserveConfiguration.sol';
+
+import { IBalancerVault } from '../interfaces/IBalancerVault.sol';
 
 import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { IERC20Metadata } from '@openzeppelin/contracts/interfaces/IERC20Metadata.sol';
 
+import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
+import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
+import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
+
+import { SafeCast } from '../libraries/SafeCast.sol';
 import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMathLib.sol';
 
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
-
-import { IVault } from '../interfaces/gmx/IVault.sol';
-import { IGlpManager } from '../interfaces/gmx/IGlpManager.sol';
-import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
-import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
-import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
-import { IBalancerVault } from '../interfaces/IBalancerVault.sol';
-import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
-import { IDebtToken } from '../interfaces/IDebtToken.sol';
-import { IRewardTracker } from '../interfaces/gmx/IRewardTracker.sol';
-
-import { SafeCast } from '../libraries/SafeCast.sol';
 
 library DnGmxJuniorVaultManager {
     using DnGmxJuniorVaultManager for State;
