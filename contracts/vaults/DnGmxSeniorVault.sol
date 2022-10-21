@@ -216,7 +216,38 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         return totalAssets().mulDiv(price, 1e8);
     }
 
-    function decimals() public view override returns (uint8) {
+    function decimals() public pure override returns (uint8) {
         return 6;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                    ERC4626 LIMIT FUNCTIONS OVERRIDE
+    //////////////////////////////////////////////////////////////*/
+
+    function maxDeposit(address) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
+        uint256 cap = depositCap;
+        uint256 total = totalAssets();
+
+        return total < cap ? cap - total : 0;
+    }
+
+    function maxMint(address) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
+        return convertToShares(maxDeposit(address(0)));
+    }
+
+    function maxWithdraw(address owner) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
+        uint256 total = totalAssets();
+        uint256 borrowed = totalUsdcBorrowed();
+
+        uint256 maxAvailable = (total * maxUtilizationBps) / MAX_BPS;
+        maxAvailable = borrowed < maxAvailable ? maxAvailable - borrowed : 0;
+
+        uint256 maxOfUser = convertToAssets(balanceOf(owner));
+
+        return maxOfUser < maxAvailable ? maxOfUser : maxAvailable;
+    }
+
+    function maxRedeem(address owner) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
+        return convertToShares(maxWithdraw(owner));
     }
 }
