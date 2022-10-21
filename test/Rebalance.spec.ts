@@ -468,7 +468,7 @@ describe('Rebalance & its utils', () => {
 
     await checker.checkTotalAssets(amount);
     await checker.checkTotalSupply(amount);
-    await checker.checkVaultMktValue(vmv, vmv.mul(2).div(await dnGmxJuniorVault.slippageThresholdSwap()));
+    await checker.checkVaultMktValue(vmv, vmv.mul(2).div(await dnGmxJuniorVault.slippageThresholdSwapBtc()));
 
     // const borrows = await dnGmxJuniorVault.getCurrentBorrows()
     // console.log('vmv', vmv)
@@ -774,7 +774,8 @@ describe('Rebalance & its utils', () => {
     await dnGmxJuniorVault.grantAllowances();
 
     await dnGmxJuniorVault.setThresholds(
-      1000, //slippageThresholdSwap
+      1000, //_slippageThresholdSwapBtc
+      1000, //_slippageThresholdSwapEth
       1000, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
       12_000, //hfThreshold
