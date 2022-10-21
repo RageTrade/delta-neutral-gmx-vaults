@@ -82,6 +82,13 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
                                 SYSTEM FUNCTIONS
     ################################################################## */
 
+    /// @notice initializer
+    /// @param _name name of vault share token
+    /// @param _symbol symbol of vault share token
+    /// @param _swapRouter uniswap swap router address
+    /// @param _rewardRouter gmx reward router address
+    /// @param _tokens addresses of tokens used
+    /// @param _poolAddressesProvider add
     function initialize(
         string calldata _name,
         string calldata _symbol,
@@ -122,6 +129,8 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
                                 ADMIN FUNCTIONS
     ################################################################## */
 
+    /// @notice grants allowances for tokens to relevant external contracts
+    /// @dev to be called once the vault is deployed
     function grantAllowances() external onlyOwner {
         address aavePool = address(state.pool);
         address swapRouter = address(state.swapRouter);
@@ -144,6 +153,12 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         emit AllowancesGranted();
     }
 
+    /// @notice set admin paramters
+    /// @param _newKeeper keeper address
+    /// @param _dnGmxSeniorVault senior vault address
+    /// @param _newDepositCap deposit cap
+    /// @param _batchingManager batching manager (responsible for staking tokens into GMX)
+    /// @param _withdrawFeeBps fees bps on withdrawals and redeems
     function setAdminParams(
         address _newKeeper,
         address _dnGmxSeniorVault,
@@ -158,6 +173,16 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         state.withdrawFeeBps = _withdrawFeeBps;
     }
 
+    /// @notice set thresholds
+    /// @param _slippageThresholdSwapBtc (BPS) slippage threshold on btc swaps
+    /// @param _slippageThresholdSwapEth (BPS) slippage threshold on eth swaps
+    /// @param _slippageThresholdGmx (BPS) slippage threshold on sGlp mint and redeem
+    /// @param _usdcConversionThreshold (usdc amount) threshold amount for conversion of usdc into sGlp
+    /// @param _hfThreshold (BPS) threshold amount of health factor on AAVE below which a rebalance is triggered
+    /// @param _wethConversionThreshold (weth amount) threshold amount for weth fees to be compounded into sGlp
+    /// @param _hedgeUsdcAmountThreshold (usdc amount) threshold amount below which ETH/BTC hedges are not executed
+    /// @param _partialBtcHedgeUsdcAmountThreshold (usdc amount) threshold amount above which BTC hedge is not fully taken (gets executed in blocks over multiple rebalances)
+    /// @param _partialEthHedgeUsdcAmountThreshold (usdc amount) threshold amount above which ETH hedge is not fully taken (gets executed in blocks over multiple rebalances)
     function setThresholds(
         uint16 _slippageThresholdSwapBtc,
         uint16 _slippageThresholdSwapEth,
@@ -180,11 +205,20 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         state.partialEthHedgeUsdcAmountThreshold = _partialEthHedgeUsdcAmountThreshold;
     }
 
+    /// @notice set rebalance paramters
+    /// @param _rebalanceTimeThreshold minimum time difference required between two rebalance calls
+    /// @dev a partial rebalance (rebalance where partial hedge gets taken) does not count
+    /// @param _rebalanceDeltaThreshold threshold difference between optimal and current token hedges for triggering a rebalance
     function setRebalanceParams(uint32 _rebalanceTimeThreshold, uint16 _rebalanceDeltaThreshold) external onlyOwner {
         state.rebalanceTimeThreshold = _rebalanceTimeThreshold;
         state.rebalanceDeltaThreshold = _rebalanceDeltaThreshold;
     }
 
+    /// @notice set hedge parameters
+    /// @param _vault balancer vault for ETH and BTC flashloans
+    /// @param _swapRouter uniswap swap router for swapping ETH/BTC to USDC and viceversa
+    /// @param _targetHealthFactor health factor to target on AAVE after every rebalance
+    /// @param _aaveRewardsController AAVE rewards controller for handling additional reward distribution on AAVE
     function setHedgeParams(
         IBalancerVault _vault,
         ISwapRouter _swapRouter,
@@ -197,14 +231,19 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         state.aaveRewardsController = _aaveRewardsController;
     }
 
+    /// @notice pause deposit, mint, withdraw and redeem
     function pause() external onlyOwner {
         _pause();
     }
 
+    /// @notice unpause deposit, mint, withdraw and redeem
     function unpause() external onlyOwner {
         _unpause();
     }
 
+    /// @notice sets feeBps and feeRecipient
+    /// @param _feeBps the part of eth rewards earned from GMX earned deducted as protocol fees
+    /// @param _feeRecipient recipient address for protocol fees and protocol esGmx
     function setFeeParams(uint16 _feeBps, address _feeRecipient) external onlyOwner {
         if (state.feeRecipient != _feeRecipient) {
             state.feeRecipient = _feeRecipient;
@@ -224,12 +263,15 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         emit FeesWithdrawn(amount);
     }
 
+    /// @notice unstakes and vest protocol esGmx to convert it to Gmx
     function unstakeAndVestEsGmx() external onlyOwner {
         state.rewardRouter.unstakeEsGmx(state.protocolEsGmx);
         IVester(state.rewardRouter.glpVester()).deposit(state.protocolEsGmx);
         state.protocolEsGmx = 0;
     }
 
+    /// @notice claims vested gmx tokens (i.e. stops vesting esGmx so that the relevant glp amount is unlocked)
+    /// @dev when esGmx is vested some GlP tokens are locked on a pro-rata basis, in case that leads to issue in withdrawal this function can be called
     function stopVestAndStakeEsGmx() external onlyOwner {
         IVester(state.rewardRouter.glpVester()).withdraw();
         uint256 esGmxWithdrawn = IERC20(state.rewardRouter.esGmx()).balanceOf(address(this));
@@ -237,6 +279,8 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         state.protocolEsGmx += esGmxWithdrawn;
     }
 
+    /// @notice claims vested gmx tokens to feeRecipient
+    /// @dev vested esGmx gets converted to GMX every second, so whatever amount is vested gets claimed
     function claimVestedGmx() external onlyOwner {
         uint256 gmxClaimed = IVester(state.rewardRouter.glpVester()).claim();
 
@@ -245,6 +289,8 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     }
 
     /// @notice stakes the rewards from the staked Glp and claims WETH to buy glp
+    /// @notice also update protocolEsGmx fees which can be vested and claimed
+    /// @notice divides the fees between senior and junior tranches based on senior tranche util
     function harvestFees() public {
         address esGmx = state.rewardRouter.esGmx();
         IRewardTracker sGmx = IRewardTracker(state.rewardRouter.stakedGmxTracker());
@@ -341,7 +387,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /* ##################################################################
                                 KEEPER FUNCTIONS
     ################################################################## */
-
+    /// @notice checks if the rebalance can be run (3 thresholds - time, hedge deviation and AAVE HF )
     function isValidRebalance() public view returns (bool) {
         // console.log('_isValidRebalanceTime', _isValidRebalanceTime());
         // console.log('_isValidRebalanceDeviation', _isValidRebalanceDeviation());
@@ -349,6 +395,8 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     }
 
     /* solhint-disable not-rely-on-time */
+    /// @notice harvests glp rewards & rebalances the hedge positions, profits on AAVE and Gmx.
+    /// @notice run only if valid rebalance is true
     function rebalance() external onlyKeeper {
         if (!isValidRebalance()) revert InvalidRebalance();
 
@@ -378,7 +426,10 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /* ################################################################## 
                                 USER FUNCTIONS
     ################################################################## */
-
+    /// @notice deposits sGlp token and returns vault shares
+    /// @param amount amount of sGlp (asset) tokens to deposit
+    /// @param to receiver address for share allocation
+    /// @return shares amount of shares allocated for deposit
     function deposit(uint256 amount, address to)
         public
         virtual
@@ -390,6 +441,10 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         shares = super.deposit(amount, to);
     }
 
+    /// @notice mints "shares" amount of vault shares and pull relevant amount of sGlp tokens
+    /// @param shares amount of vault shares to mint
+    /// @param to receiver address for share allocation
+    /// @return amount amount of sGlp tokens required for given number of shares
     function mint(uint256 shares, address to)
         public
         virtual
@@ -401,6 +456,12 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         amount = super.mint(shares, to);
     }
 
+    ///@notice withdraws "assets" amount of sGlp tokens and burns relevant amount of vault shares
+    ///@notice deducts some assets for the remaining shareholders to cover the cost of opening and closing of hedge
+    ///@param assets amount of assets to withdraw
+    ///@param receiver receiver address for the assets
+    ///@param owner owner address of the shares to be burnt
+    ///@return shares number of shares burnt
     function withdraw(
         uint256 assets,
         address receiver,
@@ -425,6 +486,12 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         IERC20Metadata(asset).safeTransfer(receiver, assetsAfterFees);
     }
 
+    ///@notice burns "shares" amount of vault shares and withdraws relevant amount of sGlp tokens
+    ///@notice deducts some assets for the remaining shareholders to cover the cost of opening and closing of hedge
+    ///@param shares amount of shares to redeem
+    ///@param receiver receiver address for the assets
+    ///@param owner owner address of the shares to be burnt
+    ///@return assets number of assets sent
     function redeem(
         uint256 shares,
         address receiver,
@@ -462,6 +529,15 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /* ##################################################################
                             FLASHLOAN RECEIVER
     ################################################################## */
+
+    ///@notice flashloan receiver for balance vault
+    ///@notice receives flashloaned tokens(WETH or WBTC or USDC) from balancer, swaps on uniswap and borrows/repays on AAVE
+    ///@dev only allows balancer vault to call this
+    ///@dev only runs when _hasFlashloaned is set to true (prevents someone else from initiating flashloan to vault)
+    ///@param tokens list of tokens flashloaned
+    ///@param amounts amounts of token flashloans in same order
+    ///@param feeAmounts amounts of fee/premium charged for flashloan
+    ///@param userData data passed to balancer for flashloan (includes token amounts, token usdc value and swap direction)
     function receiveFlashLoan(
         IERC20[] memory tokens,
         uint256[] memory amounts,
@@ -520,10 +596,15 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
                                 VIEW FUNCTIONS
     ################################################################## */
 
+    ///@notice gives total asset tokens available in vault
+    ///@dev some unhedged part of glp might be converted to USDC (its value in GLP is added to total glp assets)
     function totalAssets() public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
         return state.totalAssets();
     }
 
+    ///@notice returns price of glp token
+    ///@param maximize specifies aum used is minimum(false) or maximum(true)
+    ///@return price of glp token in PRICE_PRECISION
     function getPrice(bool maximize) public view returns (uint256) {
         uint256 aum = state.glpManager.getAum(maximize);
         uint256 totalSupply = state.glp.totalSupply();
@@ -531,6 +612,8 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         return aum.mulDivDown(PRICE_PRECISION, totalSupply * 1e24);
     }
 
+    ///@notice returns price of glp token
+    ///@return price of glp token in X128
     function getPriceX128() public view returns (uint256) {
         uint256 aum = state.glpManager.getAum(false);
         uint256 totalSupply = state.glp.totalSupply();
@@ -538,10 +621,19 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         return aum.mulDivDown(1 << 128, totalSupply * 1e24);
     }
 
+    ///@notice returns the minimum market value of "assetAmount" of asset (sGlp) tokens
+    ///@dev uses minimum price i.e. minimum AUM of glp tokens
+    ///@param assetAmount amount of sGlp tokens
+    ///@return marketValue of given amount of glp assets
     function getMarketValue(uint256 assetAmount) public view returns (uint256 marketValue) {
         marketValue = assetAmount.mulDivDown(getPrice(false), PRICE_PRECISION);
     }
 
+    ///@notice returns vault market value (USD terms & 6 decimals) basis glp and usdc tokens in vault
+    ///@dev Part 1. adds value of glp tokens basis minimum glp aum from gmx
+    ///@dev Part 2. adds value of junior vault usdc deposit in AAVE (swap outputs + unhedged GLP)
+    ///@dev Part 3. subtracts value of WETH & WBTC borrows from AAVE
+    ///@return vaultMarketValue : market value of vault assets
     function getVaultMarketValue() public view returns (int256 vaultMarketValue) {
         (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
         uint256 totalCurrentBorrowValue = state.getBorrowValue(currentBtc, currentEth);
@@ -551,6 +643,10 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
             state.unhedgedGlpInUsdc.toInt256()) - totalCurrentBorrowValue.toInt256());
     }
 
+    /// @notice returns total amount of usdc borrowed from senior vault
+    /// @dev all aUSDC yield from AAVE goes to the senior vault
+    /// @dev deducts junior vault usdc (swapped + unhedged glp) from overall balance
+    /// @return usdcAmount borrowed from senior tranche
     function getUsdcBorrowed() public view returns (uint256 usdcAmount) {
         return
             uint256(
@@ -560,46 +656,71 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
             );
     }
 
+    /// @notice returns maximum amount of shares that a user can deposit
+    /// @return maximum asset amount
     function maxDeposit(address) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
         return state.depositCap - state.totalAssets(true);
     }
 
+    /// @notice returns maximum amount of shares that can be minted for a given user
+    /// @param receiver address of the user
+    /// @return maximum share amount
     function maxMint(address receiver) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
         return convertToShares(maxDeposit(receiver));
     }
 
+    /// @notice converts asset amount to share amount
+    /// @param assets asset amount to convert to shares
+    /// @return share amount corresponding to given asset amount
     function convertToShares(uint256 assets) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
         uint256 supply = totalSupply(); // Saves an extra SLOAD if totalSupply is non-zero.
 
         return supply == 0 ? assets : assets.mulDivDown(supply, state.totalAssets(true));
     }
 
+    /// @notice converts share amount to asset amount
+    /// @param shares asset amount to convert to assets
+    /// @return asset amount corresponding to given share amount
     function convertToAssets(uint256 shares) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
         uint256 supply = totalSupply(); // Saves an extra SLOAD if totalSupply is non-zero.
 
         return supply == 0 ? shares : shares.mulDivDown(state.totalAssets(false), supply);
     }
 
+    /// @notice preview function for minting of shares
+    /// @param shares number of shares to mint
+    /// @return assets that would be taken from the user
     function previewMint(uint256 shares) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
         uint256 supply = totalSupply(); // Saves an extra SLOAD if totalSupply is non-zero.
 
         return supply == 0 ? shares : shares.mulDivUp(state.totalAssets(true), supply);
     }
 
+    /// @notice preview function for withdrawal of assets
+    /// @param assets that would be given to the user
+    /// @return shares that would be burnt
     function previewWithdraw(uint256 assets) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
         uint256 supply = totalSupply(); // Saves an extra SLOAD if totalSupply is non-zero.
 
         return supply == 0 ? assets : assets.mulDivUp(supply, state.totalAssets(false));
     }
 
+    /// @notice returns deposit cap in terms of asset tokens
     function depositCap() external view returns (uint256) {
         return state.depositCap;
     }
 
+    /// @notice returns current borrows for BTC and ETH respectively
+    /// @return currentBtcBorrow amount of btc borrowed from AAVE
+    /// @return currentEthBorrow amount of eth borrowed from AAVE
     function getCurrentBorrows() external view returns (uint256 currentBtcBorrow, uint256 currentEthBorrow) {
         return state.getCurrentBorrows();
     }
 
+    /// @notice returns optimal borrows for BTC and ETH respectively basis glpDeposited amount
+    /// @param glpDeposited amount of glp for which optimal borrow needs to be calculated
+    /// @return optimalBtcBorrow optimal amount of btc borrowed from AAVE
+    /// @return optimalEthBorrow optimal amount of eth borrowed from AAVE
     function getOptimalBorrows(uint256 glpDeposited)
         external
         view
@@ -608,6 +729,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         return state.getOptimalBorrows(glpDeposited);
     }
 
+    /// @notice returns junior vault share of usdc deposited to AAVE
     function dnUsdcDeposited() external view returns (int256) {
         return state.dnUsdcDeposited;
     }
@@ -620,6 +742,8 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         DEPOSIT/WITHDRAW HELPERS
     */
 
+    /// @notice harvests fees and rebalances profits before deposits and withdrawals
+    /// @dev called first on any deposit/withdrawals
     function _rebalanceBeforeShareAllocation() internal {
         // harvest fees
         harvestFees();
@@ -660,19 +784,31 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /*
         AAVE HELPERS
     */
-
+    ///@notice executes borrow of "token" of "amount" quantity to AAVE at variable interest rate
+    ///@param token address of token to borrow
+    ///@param amount amount of token to borrow
     function _executeBorrow(address token, uint256 amount) internal {
         state.pool.borrow(token, amount, VARIABLE_INTEREST_MODE, 0, address(this));
     }
 
+    ///@notice executes repay of "token" of "amount" quantity to AAVE at variable interest rate
+    ///@param token address of token to borrow
+    ///@param amount amount of token to borrow
     function _executeRepay(address token, uint256 amount) internal {
         state.pool.repay(token, amount, VARIABLE_INTEREST_MODE, address(this));
     }
 
+    ///@notice executes supply of "token" of "amount" quantity to AAVE
+    ///@param token address of token to borrow
+    ///@param amount amount of token to borrow
     function _executeSupply(address token, uint256 amount) internal {
         state.pool.supply(token, amount, address(this), 0);
     }
 
+    ///@notice executes withdraw of "token" of "amount" quantity to AAVE
+    ///@param token address of token to borrow
+    ///@param amount amount of token to borrow
+    ///@param receiver address to which withdrawn tokens should be sent
     function _executeWithdraw(
         address token,
         uint256 amount,
@@ -685,6 +821,14 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         BALANCER HELPERS
     */
 
+    ///@notice executes relevant token hedge update on receiving the flashloan from Balancer
+    ///@dev if "repayDebt = true" then usdc flashloaned, swapped for token, repay token debt, withdraw usdc from AAVE and pay back usdc with premium
+    ///@dev if "repayDebt = false" then token flashloaned, swapped for usdc, supply usdc, borrow tokens from AAVE and pay back tokens with premium
+    ///@param token address of token to increase/decrease hedge by
+    ///@param tokenAmount amount of tokens to swap
+    ///@param usdcAmount if "repayDebt = false" then = minimum amount of usdc | if "repayDebt = true" then = maximum amount of usdc
+    ///@param premium additional tokens/usdc to be repaid to balancer to cover flashloan fees
+    ///@param repayDebt true if token hedge needs to be reduced
     function _executeOperationToken(
         address token,
         uint256 tokenAmount,
@@ -716,6 +860,16 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         }
     }
 
+    ///@notice executes flashloan from balancer
+    ///@dev assets should be ordered in ascending order of addresses
+    ///@param assets list of token addresses
+    ///@param amounts amount of tokens to be flashloaned in same order as assets
+    ///@param _btcTokenAmount token amount of btc token by which hedge amount should be increased (if repayDebt false) or decreased (if repayDebt true)
+    ///@param _btcUsdcAmount usdc value of btc token considering swap slippage. Minimum amount (if repayDebt false) or maximum amount (if repayDebt true)
+    ///@param _ethTokenAmount token amount of eth token by which hedge amount should be increased (if repayDebt false) or decreased (if repayDebt true)
+    ///@param _ethUsdcAmount usdc value of eth token considering swap slippage. Minimum amount (if repayDebt false) or maximum amount (if repayDebt true)
+    ///@param _repayDebtBtc repay debt for btc token
+    ///@param _repayDebtEth repay debt for eth token
     function _executeFlashloan(
         address[] memory assets,
         uint256[] memory amounts,
