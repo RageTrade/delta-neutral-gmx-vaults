@@ -121,7 +121,7 @@
       "type": "t_array(t_uint256)49_storage"
     },
     {
-      "astId": 14892,
+      "astId": 15189,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "depositCap",
       "offset": 0,
@@ -129,7 +129,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 14894,
+      "astId": 15191,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "maxUtilizationBps",
       "offset": 0,
@@ -137,7 +137,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 14897,
+      "astId": 15194,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "leveragePool",
       "offset": 0,
@@ -145,7 +145,7 @@
       "type": "t_contract(IBorrower)7047"
     },
     {
-      "astId": 14900,
+      "astId": 15197,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "dnGmxJuniorVault",
       "offset": 0,
@@ -153,15 +153,15 @@
       "type": "t_contract(IBorrower)7047"
     },
     {
-      "astId": 14903,
+      "astId": 15200,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "feeStrategy",
       "offset": 0,
       "slot": "256",
-      "type": "t_struct(Info)11316_storage"
+      "type": "t_struct(Info)11517_storage"
     },
     {
-      "astId": 14906,
+      "astId": 15203,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "pool",
       "offset": 0,
@@ -169,7 +169,7 @@
       "type": "t_contract(IPool)1121"
     },
     {
-      "astId": 14909,
+      "astId": 15206,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "aUsdc",
       "offset": 0,
@@ -177,7 +177,7 @@
       "type": "t_contract(IAToken)218"
     },
     {
-      "astId": 14912,
+      "astId": 15209,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "oracle",
       "offset": 0,
@@ -185,7 +185,7 @@
       "type": "t_contract(IPriceOracle)1350"
     },
     {
-      "astId": 14915,
+      "astId": 15212,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "poolAddressProvider",
       "offset": 0,
@@ -193,7 +193,7 @@
       "type": "t_contract(IPoolAddressesProvider)1330"
     },
     {
-      "astId": 14919,
+      "astId": 15216,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "borrowCaps",
       "offset": 0,
@@ -201,7 +201,7 @@
       "type": "t_mapping(t_address,t_uint256)"
     },
     {
-      "astId": 14923,
+      "astId": 15220,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "__gaps",
       "offset": 0,
@@ -282,12 +282,12 @@
       "label": "string",
       "numberOfBytes": "32"
     },
-    "t_struct(Info)11316_storage": {
+    "t_struct(Info)11517_storage": {
       "encoding": "inplace",
       "label": "struct FeeSplitStrategy.Info",
       "members": [
         {
-          "astId": 11309,
+          "astId": 11510,
           "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
           "label": "optimalUtilizationRate",
           "offset": 0,
@@ -295,7 +295,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 11311,
+          "astId": 11512,
           "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
           "label": "baseVariableBorrowRate",
           "offset": 0,
@@ -303,7 +303,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 11313,
+          "astId": 11514,
           "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
           "label": "variableRateSlope1",
           "offset": 0,
@@ -311,7 +311,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 11315,
+          "astId": 11516,
           "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
           "label": "variableRateSlope2",
           "offset": 0,
