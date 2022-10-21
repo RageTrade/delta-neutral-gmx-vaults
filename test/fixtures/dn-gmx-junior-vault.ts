@@ -96,7 +96,8 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   );
 
   await dnGmxJuniorVault.setThresholds(
-    100, //_slippageThresholdSwap
+    100, //_slippageThresholdSwapBtc
+    100, //_slippageThresholdSwapEth
     100, //_slippageThresholdGmx
     parseUnits('1', 6), //_usdcConversionThreshold
     12_000, //_hfThreshold

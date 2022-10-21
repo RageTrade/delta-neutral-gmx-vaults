@@ -169,7 +169,8 @@ describe('Swaps', () => {
     const usdcAmount = parseUnits('100', 6);
 
     await dnGmxJuniorVault.setThresholds(
-      100, //slippageThresholdSwap
+      100, //_slippageThresholdSwapBtc
+      100, //_slippageThresholdSwapEth
       10, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
       12_000, //hfThreshold
@@ -247,7 +248,8 @@ describe('Swaps', () => {
     const aUSDCAmount = parseUnits('100', 6);
 
     await dnGmxJuniorVault.setThresholds(
-      100, //slippageThresholdSwap
+      100, //_slippageThresholdSwapBtc
+      100, //_slippageThresholdSwapEth
       10, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
       12_000, //hfThreshold
