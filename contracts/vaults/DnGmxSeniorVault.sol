@@ -200,25 +200,9 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         pool.supply(address(asset), assets, address(this), 0);
     }
 
-    function getEthRewardsSplitRate() public view returns (uint256 feeSplitRate) {
-        feeSplitRate = feeStrategy.calculateFeeSplit(aUsdc.balanceOf(address(this)), totalUsdcBorrowed());
-    }
-
-    function availableBorrow(address borrower) public view returns (uint256 availableAUsdc) {
-        uint256 availableBasisCap = borrowCaps[borrower] - IBorrower(borrower).getUsdcBorrowed();
-        uint256 availableBasisBalance = aUsdc.balanceOf(address(this));
-
-        availableAUsdc = availableBasisCap < availableBasisBalance ? availableBasisCap : availableBasisBalance;
-    }
-
     /*//////////////////////////////////////////////////////////////
                                 GETTERS
     //////////////////////////////////////////////////////////////*/
-
-    function totalUsdcBorrowed() public view returns (uint256 usdcBorrowed) {
-        if (address(leveragePool) != address(0)) usdcBorrowed += leveragePool.getUsdcBorrowed();
-        if (address(dnGmxJuniorVault) != address(0)) usdcBorrowed += dnGmxJuniorVault.getUsdcBorrowed();
-    }
 
     function getPriceX128() public view returns (uint256) {
         uint256 price = oracle.getAssetPrice(address(asset));
@@ -232,6 +216,22 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         uint256 price = oracle.getAssetPrice(address(asset));
 
         return totalAssets().mulDiv(price, 1e8);
+    }
+
+    function totalUsdcBorrowed() public view returns (uint256 usdcBorrowed) {
+        if (address(leveragePool) != address(0)) usdcBorrowed += leveragePool.getUsdcBorrowed();
+        if (address(dnGmxJuniorVault) != address(0)) usdcBorrowed += dnGmxJuniorVault.getUsdcBorrowed();
+    }
+
+    function getEthRewardsSplitRate() public view returns (uint256 feeSplitRate) {
+        feeSplitRate = feeStrategy.calculateFeeSplit(aUsdc.balanceOf(address(this)), totalUsdcBorrowed());
+    }
+
+    function availableBorrow(address borrower) public view returns (uint256 availableAUsdc) {
+        uint256 availableBasisCap = borrowCaps[borrower] - IBorrower(borrower).getUsdcBorrowed();
+        uint256 availableBasisBalance = aUsdc.balanceOf(address(this));
+
+        availableAUsdc = availableBasisCap < availableBasisBalance ? availableBasisCap : availableBasisBalance;
     }
 
     /*//////////////////////////////////////////////////////////////
