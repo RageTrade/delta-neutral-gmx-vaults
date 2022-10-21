@@ -149,7 +149,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         address _dnGmxSeniorVault,
         uint256 _newDepositCap,
         address _batchingManager,
-        uint256 _withdrawFeeBps
+        uint16 _withdrawFeeBps
     ) external onlyOwner {
         state.keeper = _newKeeper;
         state.dnGmxSeniorVault = IDnGmxSeniorVault(_dnGmxSeniorVault);
@@ -162,12 +162,12 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         uint16 _slippageThresholdSwapBtc,
         uint16 _slippageThresholdSwapEth,
         uint16 _slippageThresholdGmx,
-        uint208 _usdcConversionThreshold,
-        uint256 _hfThreshold,
-        uint256 _wethConversionThreshold,
-        uint256 _hedgeUsdcAmountThreshold,
-        uint256 _partialBtcHedgeUsdcAmountThreshold,
-        uint256 _partialEthHedgeUsdcAmountThreshold
+        uint128 _usdcConversionThreshold,
+        uint16 _hfThreshold,
+        uint128 _wethConversionThreshold,
+        uint128 _hedgeUsdcAmountThreshold,
+        uint128 _partialBtcHedgeUsdcAmountThreshold,
+        uint128 _partialEthHedgeUsdcAmountThreshold
     ) external onlyOwner {
         state.slippageThresholdSwapBtc = _slippageThresholdSwapBtc;
         state.slippageThresholdSwapEth = _slippageThresholdSwapEth;
@@ -205,7 +205,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         _unpause();
     }
 
-    function setFeeParams(uint256 _feeBps, address _feeRecipient) external onlyOwner {
+    function setFeeParams(uint16 _feeBps, address _feeRecipient) external onlyOwner {
         if (state.feeRecipient != _feeRecipient) {
             state.feeRecipient = _feeRecipient;
         } else revert InvalidFeeRecipient();
@@ -371,11 +371,11 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         // transfer collateral from LB vault to DN vault
         bool isPartialHedge = state.rebalanceHedge(currentBtc, currentEth, totalAssets(), true);
 
-        if (!isPartialHedge) state.lastRebalanceTS = uint64(block.timestamp);
+        if (!isPartialHedge) state.lastRebalanceTS = uint48(block.timestamp);
         emit Rebalanced();
     }
 
-    /* ##################################################################
+    /* ################################################################## 
                                 USER FUNCTIONS
     ################################################################## */
 

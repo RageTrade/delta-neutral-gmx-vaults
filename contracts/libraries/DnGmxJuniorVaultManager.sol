@@ -53,10 +53,6 @@ library DnGmxJuniorVaultManager {
 
     // prettier-ignore
     struct State {
-        // fees
-        uint256 feeBps;
-        uint256 withdrawFeeBps;
-
         // core protocol roles
         address keeper;
         address feeRecipient;
@@ -73,21 +69,28 @@ library DnGmxJuniorVaultManager {
 
         // locks
         bool hasFlashloaned;
-        uint256 lastRebalanceTS;
+        uint48 lastRebalanceTS;
+
+        // fees
+        uint16 feeBps;
+        uint16 withdrawFeeBps;
 
         // thresholds
         uint256 depositCap;
-        uint256 hfThreshold;
-        uint256 slippageThresholdGmx;
-        uint256 slippageThresholdSwapBtc;
-        uint256 slippageThresholdSwapEth;
-        uint256 rebalanceTimeThreshold;
-        uint256 rebalanceDeltaThreshold;
-        uint256 wethConversionThreshold;
-        uint256 usdcConversionThreshold;
-        uint256 hedgeUsdcAmountThreshold;
-        uint256 partialBtcHedgeUsdcAmountThreshold;
-        uint256 partialEthHedgeUsdcAmountThreshold;
+
+        uint16 hfThreshold; // bps
+        uint16 slippageThresholdGmx; // bps
+        uint16 slippageThresholdSwapBtc; // bps
+        uint16 slippageThresholdSwapEth; // bps
+        uint32 rebalanceTimeThreshold; // seconds between rebalance
+        uint16 rebalanceDeltaThreshold; // bps
+        uint128 wethConversionThreshold; // eth amount
+
+        uint128 usdcConversionThreshold; // usdc amount
+        uint128 hedgeUsdcAmountThreshold; // usdc amount
+
+        uint128 partialBtcHedgeUsdcAmountThreshold; // usdc amount
+        uint128 partialEthHedgeUsdcAmountThreshold; // usdc amount
 
         // token addrs
         IERC20 fsGlp;
@@ -119,7 +122,7 @@ library DnGmxJuniorVaultManager {
         IDnGmxSeniorVault dnGmxSeniorVault;
         IDnGmxBatchingManager batchingManager;
 
-         uint256[50]  __gaps;
+        uint256[50] __gaps;
     }
 
     /* ##################################################################
