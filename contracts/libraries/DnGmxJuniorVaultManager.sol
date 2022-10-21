@@ -286,7 +286,7 @@ library DnGmxJuniorVaultManager {
         uint256 threshold = address(token) == address(state.wbtc)
             ? state.partialBtcHedgeUsdcAmountThreshold
             : state.partialEthHedgeUsdcAmountThreshold;
-        uint256 tokenThreshold = threshold.mulDivDown(PRICE_PRECISION, _getTokenPriceInUsdc(state, token, true));
+        uint256 tokenThreshold = threshold.mulDivDown(PRICE_PRECISION, _getTokenPriceInUsdc(state, token));
         if (diff > tokenThreshold) {
             // console.log('threshold',threshold);
             // console.log('diff',diff,'tokenThreshold',tokenThreshold);
