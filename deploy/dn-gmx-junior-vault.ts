@@ -42,7 +42,6 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
           wbtc: WBTC_ADDRESS,
           sGlp: GMX_SGLP_ADDRESS,
           usdc: USDC_ADDRESS,
-          usdt: USDC_ADDRESS,
         },
         AAVE_POOL_ADDRESS_PROVIDER,
       ]),
