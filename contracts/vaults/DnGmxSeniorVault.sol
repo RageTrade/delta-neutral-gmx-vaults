@@ -45,6 +45,10 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         _;
     }
 
+    /*//////////////////////////////////////////////////////////////
+                            INIT FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
     function initialize(
         address _usdc,
         string calldata _name,
@@ -65,6 +69,19 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         IERC20(asset).approve(address(pool), type(uint256).max);
     }
 
+    function grantAllowances() external onlyOwner {
+        address aavePool = address(pool);
+
+        IERC20(asset).approve(aavePool, type(uint256).max);
+        aUsdc.approve(aavePool, type(uint256).max);
+
+        emit AllowancesGranted();
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                             ADMIN SETTERS
+    //////////////////////////////////////////////////////////////*/
+
     function setDepositCap(uint256 _newDepositCap) external onlyOwner {
         depositCap = _newDepositCap;
         emit DepositCapUpdated(_newDepositCap);
@@ -82,14 +99,9 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         maxUtilizationBps = _maxUtilizationBps;
     }
 
-    function grantAllowances() external onlyOwner {
-        address aavePool = address(pool);
-
-        IERC20(asset).approve(aavePool, type(uint256).max);
-        aUsdc.approve(aavePool, type(uint256).max);
-
-        emit AllowancesGranted();
-    }
+    /*//////////////////////////////////////////////////////////////
+                      STRATEGY PARAMETERS SETTERS
+    //////////////////////////////////////////////////////////////*/
 
     function updateBorrowCap(address borrowerAddress, uint256 cap) external onlyOwner {
         if (borrowerAddress != address(dnGmxJuniorVault) && borrowerAddress != address(leveragePool))
@@ -107,16 +119,9 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         feeStrategy = _feeStrategy;
     }
 
-    function getEthRewardsSplitRate() public view returns (uint256 feeSplitRate) {
-        feeSplitRate = feeStrategy.calculateFeeSplit(aUsdc.balanceOf(address(this)), totalUsdcBorrowed());
-    }
-
-    function availableBorrow(address borrower) public view returns (uint256 availableAUsdc) {
-        uint256 availableBasisCap = borrowCaps[borrower] - IBorrower(borrower).getUsdcBorrowed();
-        uint256 availableBasisBalance = aUsdc.balanceOf(address(this));
-
-        availableAUsdc = availableBasisCap < availableBasisBalance ? availableBasisCap : availableBasisBalance;
-    }
+    /*//////////////////////////////////////////////////////////////
+                            PROTOCOL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     function borrow(uint256 amount) external onlyBorrower {
         if (amount == 0 || amount > availableBorrow(msg.sender)) revert InvalidBorrowAmount();
@@ -170,13 +175,16 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         assets = super.redeem(shares, receiver, owner);
     }
 
-    /// @dev withdrawal will fail if the utilization goes above maxUtilization value due to a withdrawal
+    /*//////////////////////////////////////////////////////////////
+                         ERC4626 HOOKS OVERRIDE
+    //////////////////////////////////////////////////////////////*/
+
     function beforeWithdraw(
         uint256 assets,
         uint256,
         address
     ) internal override {
-        // check if the utilization goes above limit due to this withdrawal
+        /// @dev withdrawal will fail if the utilization goes above maxUtilization value due to a withdrawal
         if (totalUsdcBorrowed() > ((totalAssets() - assets) * maxUtilizationBps) / MAX_BPS)
             revert MaxUtilizationBreached();
         pool.withdraw(address(asset), assets, address(this));
@@ -192,10 +200,20 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         pool.supply(address(asset), assets, address(this), 0);
     }
 
-    function totalAssets() public view override(IERC4626, ERC4626Upgradeable) returns (uint256 amount) {
-        amount = aUsdc.balanceOf(address(this));
-        amount += totalUsdcBorrowed();
+    function getEthRewardsSplitRate() public view returns (uint256 feeSplitRate) {
+        feeSplitRate = feeStrategy.calculateFeeSplit(aUsdc.balanceOf(address(this)), totalUsdcBorrowed());
     }
+
+    function availableBorrow(address borrower) public view returns (uint256 availableAUsdc) {
+        uint256 availableBasisCap = borrowCaps[borrower] - IBorrower(borrower).getUsdcBorrowed();
+        uint256 availableBasisBalance = aUsdc.balanceOf(address(this));
+
+        availableAUsdc = availableBasisCap < availableBasisBalance ? availableBasisCap : availableBasisBalance;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                GETTERS
+    //////////////////////////////////////////////////////////////*/
 
     function totalUsdcBorrowed() public view returns (uint256 usdcBorrowed) {
         if (address(leveragePool) != address(0)) usdcBorrowed += leveragePool.getUsdcBorrowed();
@@ -216,13 +234,18 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         return totalAssets().mulDiv(price, 1e8);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                       ERC4626 GETTERS OVERRIDES
+    //////////////////////////////////////////////////////////////*/
+
     function decimals() public pure override returns (uint8) {
         return 6;
     }
 
-    /*//////////////////////////////////////////////////////////////
-                    ERC4626 LIMIT FUNCTIONS OVERRIDE
-    //////////////////////////////////////////////////////////////*/
+    function totalAssets() public view override(IERC4626, ERC4626Upgradeable) returns (uint256 amount) {
+        amount = aUsdc.balanceOf(address(this));
+        amount += totalUsdcBorrowed();
+    }
 
     function maxDeposit(address) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
         uint256 cap = depositCap;
