@@ -79,7 +79,8 @@ library DnGmxJuniorVaultManager {
         uint256 depositCap;
         uint256 hfThreshold;
         uint256 slippageThresholdGmx;
-        uint256 slippageThresholdSwap;
+        uint256 slippageThresholdSwapBtc;
+        uint256 slippageThresholdSwapEth;
         uint256 rebalanceTimeThreshold;
         uint256 rebalanceDeltaThreshold;
         uint256 wethConversionThreshold;
@@ -713,6 +714,9 @@ library DnGmxJuniorVaultManager {
             bool repayDebt
         )
     {
+        uint256 slippageThresholdSwap = token == address(state.wbtc)
+            ? state.slippageThresholdSwapBtc
+            : state.slippageThresholdSwapEth;
         // check the delta between optimal position and actual position in token terms
         // take that position using swap
         // To Increase
@@ -720,7 +724,7 @@ library DnGmxJuniorVaultManager {
             tokenAmount = optimalBorrow - currentBorrow;
             // To swap with the amount in specified hence usdcAmount should be the min amount out
             usdcAmount = _getTokenPriceInUsdc(state, IERC20Metadata(token)).mulDivDown(
-                tokenAmount * (MAX_BPS - state.slippageThresholdSwap),
+                tokenAmount * (MAX_BPS - slippageThresholdSwap),
                 MAX_BPS * PRICE_PRECISION
             );
 
@@ -732,7 +736,7 @@ library DnGmxJuniorVaultManager {
             tokenAmount = (currentBorrow - optimalBorrow);
             // To swap with amount out specified hence usdcAmount should be the max amount in
             usdcAmount = _getTokenPriceInUsdc(state, IERC20Metadata(token)).mulDivDown(
-                tokenAmount * (MAX_BPS + state.slippageThresholdSwap),
+                tokenAmount * (MAX_BPS + slippageThresholdSwap),
                 MAX_BPS * PRICE_PRECISION
             );
             // console.log('currentBorrow', currentBorrow);

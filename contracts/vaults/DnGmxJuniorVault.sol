@@ -156,7 +156,8 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     }
 
     function setThresholds(
-        uint16 _slippageThresholdSwap,
+        uint16 _slippageThresholdSwapBtc,
+        uint16 _slippageThresholdSwapEth,
         uint16 _slippageThresholdGmx,
         uint208 _usdcConversionThreshold,
         uint256 _hfThreshold,
@@ -165,7 +166,8 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         uint256 _partialBtcHedgeUsdcAmountThreshold,
         uint256 _partialEthHedgeUsdcAmountThreshold
     ) external onlyOwner {
-        state.slippageThresholdSwap = _slippageThresholdSwap;
+        state.slippageThresholdSwapBtc = _slippageThresholdSwapBtc;
+        state.slippageThresholdSwapEth = _slippageThresholdSwapEth;
         state.slippageThresholdGmx = _slippageThresholdGmx;
         state.usdcConversionThreshold = _usdcConversionThreshold;
         state.wethConversionThreshold = _wethConversionThreshold;
@@ -288,7 +290,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
             uint256 price = state.gmxVault.getMinPrice(address(state.weth));
 
             uint256 usdgAmount = dnGmxWethShare.mulDivDown(
-                price * (MAX_BPS - state.slippageThresholdSwap),
+                price * (MAX_BPS - state.slippageThresholdGmx),
                 PRICE_PRECISION * MAX_BPS
             );
 
@@ -298,7 +300,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
             if (_seniorVaultWethRewards > state.wethConversionThreshold) {
                 // Deposit aave vault share to AAVE in usdc
                 uint256 minUsdcAmount = state.getTokenPriceInUsdc(state.weth).mulDivDown(
-                    _seniorVaultWethRewards * (MAX_BPS - state.slippageThresholdSwap),
+                    _seniorVaultWethRewards * (MAX_BPS - state.slippageThresholdSwapEth),
                     MAX_BPS * PRICE_PRECISION
                 );
                 (uint256 aaveUsdcAmount, uint256 tokensUsed) = state.swapToken(
