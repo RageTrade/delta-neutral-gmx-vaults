@@ -11,6 +11,7 @@ import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullM
  * @author Rage
  **/
 library FeeSplitStrategy {
+    using FullMath for uint128;
     using FullMath for uint256;
 
     uint256 internal constant RATE_PRECISION = 1e30;
@@ -20,13 +21,13 @@ library FeeSplitStrategy {
          * @dev this constant represents the utilization rate at which the pool aims to obtain most competitive borrow rates.
          * Expressed in ray
          **/
-        uint256 optimalUtilizationRate;
+        uint128 optimalUtilizationRate;
         // Base variable borrow rate when Utilization rate = 0. Expressed in ray
-        uint256 baseVariableBorrowRate;
+        uint128 baseVariableBorrowRate;
         // Slope of the variable interest curve when utilization rate > 0 and <= OPTIMAL_UTILIZATION_RATE. Expressed in ray
-        uint256 variableRateSlope1;
+        uint128 variableRateSlope1;
         // Slope of the variable interest curve when utilization rate > OPTIMAL_UTILIZATION_RATE. Expressed in ray
-        uint256 variableRateSlope2;
+        uint128 variableRateSlope2;
     }
 
     function getMaxVariableBorrowRate(Info storage feeStrategyInfo) internal view returns (uint256) {
