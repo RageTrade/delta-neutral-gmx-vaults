@@ -121,7 +121,7 @@
       "type": "t_array(t_uint256)49_storage"
     },
     {
-      "astId": 15189,
+      "astId": 15192,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "depositCap",
       "offset": 0,
@@ -129,7 +129,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 15191,
+      "astId": 15194,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "maxUtilizationBps",
       "offset": 0,
@@ -137,7 +137,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 15194,
+      "astId": 15197,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "leveragePool",
       "offset": 0,
@@ -145,7 +145,7 @@
       "type": "t_contract(IBorrower)7047"
     },
     {
-      "astId": 15197,
+      "astId": 15200,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "dnGmxJuniorVault",
       "offset": 0,
@@ -153,59 +153,59 @@
       "type": "t_contract(IBorrower)7047"
     },
     {
-      "astId": 15200,
+      "astId": 15203,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "feeStrategy",
       "offset": 0,
       "slot": "256",
-      "type": "t_struct(Info)11517_storage"
-    },
-    {
-      "astId": 15203,
-      "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
-      "label": "pool",
-      "offset": 0,
-      "slot": "260",
-      "type": "t_contract(IPool)1121"
+      "type": "t_struct(Info)11520_storage"
     },
     {
       "astId": 15206,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
-      "label": "aUsdc",
+      "label": "pool",
       "offset": 0,
-      "slot": "261",
-      "type": "t_contract(IAToken)218"
+      "slot": "258",
+      "type": "t_contract(IPool)1121"
     },
     {
       "astId": 15209,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
-      "label": "oracle",
+      "label": "aUsdc",
       "offset": 0,
-      "slot": "262",
-      "type": "t_contract(IPriceOracle)1350"
+      "slot": "259",
+      "type": "t_contract(IAToken)218"
     },
     {
       "astId": 15212,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
+      "label": "oracle",
+      "offset": 0,
+      "slot": "260",
+      "type": "t_contract(IPriceOracle)1350"
+    },
+    {
+      "astId": 15215,
+      "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "poolAddressProvider",
       "offset": 0,
-      "slot": "263",
+      "slot": "261",
       "type": "t_contract(IPoolAddressesProvider)1330"
     },
     {
-      "astId": 15216,
+      "astId": 15219,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "borrowCaps",
       "offset": 0,
-      "slot": "264",
+      "slot": "262",
       "type": "t_mapping(t_address,t_uint256)"
     },
     {
-      "astId": 15220,
+      "astId": 15223,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "__gaps",
       "offset": 0,
-      "slot": "265",
+      "slot": "263",
       "type": "t_array(t_uint256)50_storage"
     }
   ],
@@ -282,44 +282,49 @@
       "label": "string",
       "numberOfBytes": "32"
     },
-    "t_struct(Info)11517_storage": {
+    "t_struct(Info)11520_storage": {
       "encoding": "inplace",
       "label": "struct FeeSplitStrategy.Info",
       "members": [
         {
-          "astId": 11510,
+          "astId": 11513,
           "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
           "label": "optimalUtilizationRate",
           "offset": 0,
           "slot": "0",
-          "type": "t_uint256"
+          "type": "t_uint128"
         },
         {
-          "astId": 11512,
+          "astId": 11515,
           "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
           "label": "baseVariableBorrowRate",
-          "offset": 0,
-          "slot": "1",
-          "type": "t_uint256"
+          "offset": 16,
+          "slot": "0",
+          "type": "t_uint128"
         },
         {
-          "astId": 11514,
+          "astId": 11517,
           "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
           "label": "variableRateSlope1",
           "offset": 0,
-          "slot": "2",
-          "type": "t_uint256"
+          "slot": "1",
+          "type": "t_uint128"
         },
         {
-          "astId": 11516,
+          "astId": 11519,
           "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
           "label": "variableRateSlope2",
-          "offset": 0,
-          "slot": "3",
-          "type": "t_uint256"
+          "offset": 16,
+          "slot": "1",
+          "type": "t_uint128"
         }
       ],
-      "numberOfBytes": "128"
+      "numberOfBytes": "64"
+    },
+    "t_uint128": {
+      "encoding": "inplace",
+      "label": "uint128",
+      "numberOfBytes": "16"
     },
     "t_uint256": {
       "encoding": "inplace",
