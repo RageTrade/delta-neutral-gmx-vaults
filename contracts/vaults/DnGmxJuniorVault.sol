@@ -854,38 +854,4 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
             state.usdc.transfer(address(state.balancerVault), usdcAmount + premium);
         }
     }
-
-    ///@notice executes flashloan from balancer
-    ///@dev assets should be ordered in ascending order of addresses
-    ///@param assets list of token addresses
-    ///@param amounts amount of tokens to be flashloaned in same order as assets
-    ///@param _btcTokenAmount token amount of btc token by which hedge amount should be increased (if repayDebt false) or decreased (if repayDebt true)
-    ///@param _btcUsdcAmount usdc value of btc token considering swap slippage. Minimum amount (if repayDebt false) or maximum amount (if repayDebt true)
-    ///@param _ethTokenAmount token amount of eth token by which hedge amount should be increased (if repayDebt false) or decreased (if repayDebt true)
-    ///@param _ethUsdcAmount usdc value of eth token considering swap slippage. Minimum amount (if repayDebt false) or maximum amount (if repayDebt true)
-    ///@param _repayDebtBtc repay debt for btc token
-    ///@param _repayDebtEth repay debt for eth token
-    function _executeFlashloan(
-        address[] memory assets,
-        uint256[] memory amounts,
-        uint256 _btcTokenAmount,
-        uint256 _btcUsdcAmount,
-        uint256 _ethTokenAmount,
-        uint256 _ethUsdcAmount,
-        bool _repayDebtBtc,
-        bool _repayDebtEth
-    ) internal {
-        if (assets.length != amounts.length) revert ArraysLengthMismatch();
-
-        state.hasFlashloaned = true;
-
-        state.balancerVault.flashLoan(
-            address(this),
-            assets,
-            amounts,
-            abi.encode(_btcTokenAmount, _btcUsdcAmount, _ethTokenAmount, _ethUsdcAmount, _repayDebtBtc, _repayDebtEth)
-        );
-
-        state.hasFlashloaned = false;
-    }
 }

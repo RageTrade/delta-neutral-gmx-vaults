@@ -554,7 +554,7 @@ library DnGmxJuniorVaultManager {
         uint256 _ethUsdcAmount,
         bool _repayDebtBtc,
         bool _repayDebtEth
-    ) private {
+    ) internal {
         if (assets.length != amounts.length) revert IDnGmxJuniorVault.ArraysLengthMismatch();
 
         state.hasFlashloaned = true;
