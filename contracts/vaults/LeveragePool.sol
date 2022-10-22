@@ -12,7 +12,7 @@ import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/O
 import { PausableUpgradeable } from '@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol';
 import { IGMXBatchingManager } from '../interfaces/gmx/IGMXBatchingManager.sol';
 import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
-import { ISGLPExtended } from '../interfaces/gmx/ISGLPExtended.sol';
+import { ISglpExtended } from '../interfaces/gmx/ISglpExtended.sol';
 import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
 import { IGlpStakingManager } from '../interfaces/gmx/IGlpStakingManager.sol';
 import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
