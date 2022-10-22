@@ -606,7 +606,7 @@ library DnGmxJuniorVaultManager {
         // console.log('healthFactor', healthFactor);
         // console.log('hfThreshold', hfThreshold);
 
-        return healthFactor < (state.hfThreshold * 1e14);
+        return healthFactor < (uint256(state.hfThreshold) * 1e14);
     }
 
     function isValidRebalanceDeviation(State storage state) external view returns (bool) {
