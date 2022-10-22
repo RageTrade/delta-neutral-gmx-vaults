@@ -91,7 +91,7 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         bool _repayDebtEth
     ) external {
         return
-            _executeFlashloan(
+            state._executeFlashloan(
                 assets,
                 amounts,
                 _btcTokenAmount,
