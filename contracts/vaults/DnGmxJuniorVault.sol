@@ -63,11 +63,6 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         _;
     }
 
-    modifier onlyDnGmxSeniorVault() {
-        if (msg.sender != address(state.dnGmxSeniorVault)) revert NotDnGmxSeniorVault();
-        _;
-    }
-
     modifier whenFlashloaned() {
         if (!state.hasFlashloaned) revert FlashloanNotInitiated();
         _;
