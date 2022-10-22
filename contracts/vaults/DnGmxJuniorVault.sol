@@ -10,7 +10,7 @@ import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMat
 import { IVault } from '../interfaces/gmx/IVault.sol';
 import { IVester } from '../interfaces/gmx/IVester.sol';
 import { IGlpManager } from '../interfaces/gmx/IGlpManager.sol';
-import { ISGLPExtended } from '../interfaces/gmx/ISGLPExtended.sol';
+import { ISglpExtended } from '../interfaces/gmx/ISglpExtended.sol';
 import { IRewardTracker } from '../interfaces/gmx/IRewardTracker.sol';
 import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
 
@@ -103,9 +103,9 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
 
         state.poolAddressProvider = _poolAddressesProvider;
 
-        state.glp = IERC20Metadata(ISGLPExtended(asset).glp());
-        state.glpManager = IGlpManager(ISGLPExtended(asset).glpManager());
-        state.fsGlp = IERC20(ISGLPExtended(asset).stakedGlpTracker());
+        state.glp = IERC20Metadata(ISglpExtended(asset).glp());
+        state.glpManager = IGlpManager(ISglpExtended(asset).glpManager());
+        state.fsGlp = IERC20(ISglpExtended(asset).stakedGlpTracker());
 
         state.gmxVault = IVault(state.glpManager.vault());
 
