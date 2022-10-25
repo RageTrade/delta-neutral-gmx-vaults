@@ -57,7 +57,7 @@
       "type": "t_array(t_uint256)49_storage"
     },
     {
-      "astId": 5959,
+      "astId": 6626,
       "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
       "label": "_gaps",
       "offset": 0,
@@ -65,7 +65,7 @@
       "type": "t_array(t_uint256)100_storage"
     },
     {
-      "astId": 5961,
+      "astId": 6628,
       "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
       "label": "keeper",
       "offset": 0,
@@ -73,15 +73,15 @@
       "type": "t_address"
     },
     {
-      "astId": 5964,
+      "astId": 6631,
       "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
       "label": "dnGmxJuniorVault",
       "offset": 0,
       "slot": "252",
-      "type": "t_contract(IDnGmxJuniorVault)3834"
+      "type": "t_contract(IDnGmxJuniorVault)3933"
     },
     {
-      "astId": 5966,
+      "astId": 6633,
       "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
       "label": "slippageThresholdGmx",
       "offset": 0,
@@ -89,7 +89,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 5968,
+      "astId": 6635,
       "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
       "label": "dnGmxJuniorVaultGlpBalance",
       "offset": 0,
@@ -97,55 +97,55 @@
       "type": "t_uint256"
     },
     {
-      "astId": 5971,
+      "astId": 6638,
       "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
       "label": "sGlp",
       "offset": 0,
       "slot": "255",
-      "type": "t_contract(IERC20)1952"
+      "type": "t_contract(IERC20)2068"
     },
     {
-      "astId": 5974,
+      "astId": 6641,
       "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
       "label": "usdc",
       "offset": 0,
       "slot": "256",
-      "type": "t_contract(IERC20)1952"
+      "type": "t_contract(IERC20)2068"
     },
     {
-      "astId": 5977,
+      "astId": 6644,
       "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
       "label": "glpManager",
       "offset": 0,
       "slot": "257",
-      "type": "t_contract(IGlpManager)4440"
+      "type": "t_contract(IGlpManager)4586"
     },
     {
-      "astId": 5980,
+      "astId": 6647,
       "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
       "label": "gmxUnderlyingVault",
       "offset": 0,
       "slot": "258",
-      "type": "t_contract(IVault)5304"
+      "type": "t_contract(IVault)5454"
     },
     {
-      "astId": 5983,
+      "astId": 6650,
       "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
       "label": "rewardRouter",
       "offset": 0,
       "slot": "259",
-      "type": "t_contract(IRewardRouterV2)4642"
+      "type": "t_contract(IRewardRouterV2)4788"
     },
     {
-      "astId": 5986,
+      "astId": 6653,
       "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
       "label": "vaultBatchingState",
       "offset": 0,
       "slot": "260",
-      "type": "t_struct(VaultBatchingState)5952_storage"
+      "type": "t_struct(VaultBatchingState)6619_storage"
     },
     {
-      "astId": 5990,
+      "astId": 6657,
       "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
       "label": "__gaps2",
       "offset": 0,
@@ -182,51 +182,51 @@
       "label": "bool",
       "numberOfBytes": "1"
     },
-    "t_contract(IDnGmxJuniorVault)3834": {
+    "t_contract(IDnGmxJuniorVault)3933": {
       "encoding": "inplace",
       "label": "contract IDnGmxJuniorVault",
       "numberOfBytes": "20"
     },
-    "t_contract(IERC20)1952": {
+    "t_contract(IERC20)2068": {
       "encoding": "inplace",
       "label": "contract IERC20",
       "numberOfBytes": "20"
     },
-    "t_contract(IGlpManager)4440": {
+    "t_contract(IGlpManager)4586": {
       "encoding": "inplace",
       "label": "contract IGlpManager",
       "numberOfBytes": "20"
     },
-    "t_contract(IRewardRouterV2)4642": {
+    "t_contract(IRewardRouterV2)4788": {
       "encoding": "inplace",
       "label": "contract IRewardRouterV2",
       "numberOfBytes": "20"
     },
-    "t_contract(IVault)5304": {
+    "t_contract(IVault)5454": {
       "encoding": "inplace",
       "label": "contract IVault",
       "numberOfBytes": "20"
     },
-    "t_mapping(t_address,t_struct(UserDeposit)3639_storage)": {
+    "t_mapping(t_address,t_struct(UserDeposit)3738_storage)": {
       "encoding": "mapping",
       "key": "t_address",
       "label": "mapping(address => struct IDnGmxBatchingManager.UserDeposit)",
       "numberOfBytes": "32",
-      "value": "t_struct(UserDeposit)3639_storage"
+      "value": "t_struct(UserDeposit)3738_storage"
     },
-    "t_mapping(t_uint256,t_struct(RoundDeposit)3644_storage)": {
+    "t_mapping(t_uint256,t_struct(RoundDeposit)3743_storage)": {
       "encoding": "mapping",
       "key": "t_uint256",
       "label": "mapping(uint256 => struct IDnGmxBatchingManager.RoundDeposit)",
       "numberOfBytes": "32",
-      "value": "t_struct(RoundDeposit)3644_storage"
+      "value": "t_struct(RoundDeposit)3743_storage"
     },
-    "t_struct(RoundDeposit)3644_storage": {
+    "t_struct(RoundDeposit)3743_storage": {
       "encoding": "inplace",
       "label": "struct IDnGmxBatchingManager.RoundDeposit",
       "members": [
         {
-          "astId": 3641,
+          "astId": 3740,
           "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
           "label": "totalUsdc",
           "offset": 0,
@@ -234,7 +234,7 @@
           "type": "t_uint128"
         },
         {
-          "astId": 3643,
+          "astId": 3742,
           "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
           "label": "totalShares",
           "offset": 16,
@@ -244,12 +244,12 @@
       ],
       "numberOfBytes": "32"
     },
-    "t_struct(UserDeposit)3639_storage": {
+    "t_struct(UserDeposit)3738_storage": {
       "encoding": "inplace",
       "label": "struct IDnGmxBatchingManager.UserDeposit",
       "members": [
         {
-          "astId": 3634,
+          "astId": 3733,
           "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
           "label": "round",
           "offset": 0,
@@ -257,7 +257,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 3636,
+          "astId": 3735,
           "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
           "label": "usdcBalance",
           "offset": 0,
@@ -265,7 +265,7 @@
           "type": "t_uint128"
         },
         {
-          "astId": 3638,
+          "astId": 3737,
           "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
           "label": "unclaimedShares",
           "offset": 16,
@@ -275,12 +275,12 @@
       ],
       "numberOfBytes": "64"
     },
-    "t_struct(VaultBatchingState)5952_storage": {
+    "t_struct(VaultBatchingState)6619_storage": {
       "encoding": "inplace",
       "label": "struct DnGmxBatchingManager.VaultBatchingState",
       "members": [
         {
-          "astId": 5937,
+          "astId": 6604,
           "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
           "label": "currentRound",
           "offset": 0,
@@ -288,7 +288,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 5939,
+          "astId": 6606,
           "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
           "label": "roundGlpStaked",
           "offset": 0,
@@ -296,7 +296,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 5941,
+          "astId": 6608,
           "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
           "label": "roundUsdcBalance",
           "offset": 0,
@@ -304,20 +304,20 @@
           "type": "t_uint256"
         },
         {
-          "astId": 5946,
+          "astId": 6613,
           "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
           "label": "userDeposits",
           "offset": 0,
           "slot": "3",
-          "type": "t_mapping(t_address,t_struct(UserDeposit)3639_storage)"
+          "type": "t_mapping(t_address,t_struct(UserDeposit)3738_storage)"
         },
         {
-          "astId": 5951,
+          "astId": 6618,
           "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
           "label": "roundDeposits",
           "offset": 0,
           "slot": "4",
-          "type": "t_mapping(t_uint256,t_struct(RoundDeposit)3644_storage)"
+          "type": "t_mapping(t_uint256,t_struct(RoundDeposit)3743_storage)"
         }
       ],
       "numberOfBytes": "160"
