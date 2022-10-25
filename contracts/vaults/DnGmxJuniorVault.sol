@@ -221,12 +221,16 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         IBalancerVault _vault,
         ISwapRouter _swapRouter,
         uint256 _targetHealthFactor,
-        IRewardsController _aaveRewardsController
+        IRewardsController _aaveRewardsController,
+        IPoolAddressesProvider _poolAddressProvider
     ) external onlyOwner {
         state.balancerVault = _vault;
         state.swapRouter = _swapRouter;
         state.targetHealthFactor = _targetHealthFactor;
         state.aaveRewardsController = _aaveRewardsController;
+        state.poolAddressProvider = _poolAddressProvider;
+        state.pool = IPool(_poolAddressProvider.getPool());
+        state.oracle = IPriceOracle(_poolAddressProvider.getPriceOracle());
     }
 
     /// @notice pause deposit, mint, withdraw and redeem
