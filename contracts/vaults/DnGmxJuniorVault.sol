@@ -2,42 +2,40 @@
 
 pragma solidity ^0.8.9;
 
-import { SafeCast } from '../libraries/SafeCast.sol';
-import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
-import { DnGmxJuniorVaultManager } from '../libraries/DnGmxJuniorVaultManager.sol';
-import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMathLib.sol';
-
-import { IVault } from '../interfaces/gmx/IVault.sol';
-import { IVester } from '../interfaces/gmx/IVester.sol';
-import { IGlpManager } from '../interfaces/gmx/IGlpManager.sol';
-import { ISglpExtended } from '../interfaces/gmx/ISglpExtended.sol';
-import { IRewardTracker } from '../interfaces/gmx/IRewardTracker.sol';
-import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
-
-import { IDebtToken } from '../interfaces/IDebtToken.sol';
-import { IPool } from '@aave/core-v3/contracts/interfaces/IPool.sol';
 import { IAToken } from '@aave/core-v3/contracts/interfaces/IAToken.sol';
-import { IPriceOracle } from '@aave/core-v3/contracts/interfaces/IPriceOracle.sol';
-import { WadRayMath } from '@aave/core-v3/contracts/protocol/libraries/math/WadRayMath.sol';
+import { IPool } from '@aave/core-v3/contracts/interfaces/IPool.sol';
 import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol';
+import { IPriceOracle } from '@aave/core-v3/contracts/interfaces/IPriceOracle.sol';
 import { IRewardsController } from '@aave/periphery-v3/contracts/rewards/interfaces/IRewardsController.sol';
-
-import { IBalancerVault } from '../interfaces/balancer/IBalancerVault.sol';
-
-import { ERC4626Upgradeable } from '../ERC4626/ERC4626Upgradeable.sol';
-
-import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
-import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
-import { IDnGmxJuniorVault, IERC4626 } from '../interfaces/IDnGmxJuniorVault.sol';
+import { WadRayMath } from '@aave/core-v3/contracts/protocol/libraries/math/WadRayMath.sol';
 
 import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
+import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import { PausableUpgradeable } from '@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol';
+import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+
+import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMathLib.sol';
 
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 
-import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
-import { PausableUpgradeable } from '@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol';
+import { IBalancerVault } from '../interfaces/balancer/IBalancerVault.sol';
+import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
+import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
+import { IDnGmxJuniorVault, IERC4626 } from '../interfaces/IDnGmxJuniorVault.sol';
+import { IDebtToken } from '../interfaces/IDebtToken.sol';
+import { IGlpManager } from '../interfaces/gmx/IGlpManager.sol';
+import { ISglpExtended } from '../interfaces/gmx/ISglpExtended.sol';
+import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
+import { IRewardTracker } from '../interfaces/gmx/IRewardTracker.sol';
+import { IVault } from '../interfaces/gmx/IVault.sol';
+import { IVester } from '../interfaces/gmx/IVester.sol';
+
+import { DnGmxJuniorVaultManager } from '../libraries/DnGmxJuniorVaultManager.sol';
+import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
+import { SafeCast } from '../libraries/SafeCast.sol';
+
+import { ERC4626Upgradeable } from '../ERC4626/ERC4626Upgradeable.sol';
 
 contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable {
     using SafeCast for uint256;
