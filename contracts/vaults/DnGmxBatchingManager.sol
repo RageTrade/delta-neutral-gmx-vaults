@@ -60,6 +60,10 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         _;
     }
 
+    /*//////////////////////////////////////////////////////////////
+                            INIT FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
     function initialize(
         IERC20 _sGlp,
         IERC20 _usdc,
@@ -102,6 +106,10 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         sGlp.approve(address(dnGmxJuniorVault), type(uint256).max);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                             ADMIN SETTERS
+    //////////////////////////////////////////////////////////////*/
+
     /// @notice sets the keeper address (to pause & unpause deposits)
     /// @param _keeper address of keeper
     function setKeeper(address _keeper) external onlyOwner {
@@ -125,6 +133,10 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     function unpauseDeposit() external onlyKeeper {
         _unpause();
     }
+
+    /*//////////////////////////////////////////////////////////////
+                            PROTOCOL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice convert the token into glp and obtain staked glp
     /// @dev this function should be only called by junior vault
@@ -204,6 +216,77 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         _executeVaultUserBatchDeposit();
     }
 
+    /// @notice claim the shares received from depositing batch
+    /// @param receiver address of receiver
+    /// @param amount amount of shares
+    function claim(address receiver, uint256 amount) external {
+        _claim(msg.sender, receiver, amount);
+    }
+
+    function claimAndWithdraw(address receiver) external returns (uint256 glpReceived) {
+        _claim(msg.sender, receiver, unclaimedShares(msg.sender));
+
+        uint256 shares = dnGmxJuniorVault.balanceOf(msg.sender);
+        if (shares == 0) return 0;
+
+        // withdraw all shares from user
+        // user should have given approval to batching manager to spend dnGmxJuniorVault shares
+        glpReceived = dnGmxJuniorVault.withdraw(shares, receiver, msg.sender);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                GETTERS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice gets the current active round
+    function currentRound() external view returns (uint256) {
+        return vaultBatchingState.currentRound;
+    }
+
+    /// @notice get the glp balance for a given vault and account address
+    /// @param account address of user
+    function usdcBalance(address account) public view returns (uint256 balance) {
+        balance = vaultBatchingState.userDeposits[account].usdcBalance;
+    }
+
+    /// @notice get the unclaimed shares for a given vault and account address
+    /// @param account address of user
+    function unclaimedShares(address account) public view returns (uint256 shares) {
+        UserDeposit memory userDeposit = vaultBatchingState.userDeposits[account];
+        shares = userDeposit.unclaimedShares;
+
+        if (userDeposit.round < vaultBatchingState.currentRound && userDeposit.usdcBalance > 0) {
+            RoundDeposit memory roundDeposit = vaultBatchingState.roundDeposits[userDeposit.round];
+            shares += userDeposit.usdcBalance.mulDiv(roundDeposit.totalShares, roundDeposit.totalUsdc).toUint128();
+        }
+    }
+
+    /// @notice get the glp balance for current active round
+    function roundUsdcBalance() external view returns (uint256) {
+        return vaultBatchingState.roundUsdcBalance;
+    }
+
+    /// @notice get the glp balance for current active round
+    function roundGlpStaked() external view returns (uint256) {
+        return vaultBatchingState.roundGlpStaked;
+    }
+
+    /// @notice get the vaultBatchingState of user deposits
+    /// @param account address of user
+    function userDeposits(address account) external view returns (UserDeposit memory) {
+        return vaultBatchingState.userDeposits[account];
+    }
+
+    /// @notice get the info for given vault and round
+    /// @param round address of user
+    function roundDeposits(uint256 round) external view returns (RoundDeposit memory) {
+        return vaultBatchingState.roundDeposits[round];
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                             INTERNAL LOGIC
+    //////////////////////////////////////////////////////////////*/
+
     function _stakeGlp(
         address token,
         uint256 amount,
@@ -252,32 +335,15 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         ++vaultBatchingState.currentRound;
     }
 
-    /// @notice get the glp balance for a given vault and account address
-    /// @param account address of user
-    function usdcBalance(address account) public view returns (uint256 balance) {
-        balance = vaultBatchingState.userDeposits[account].usdcBalance;
-    }
-
-    /// @notice get the unclaimed shares for a given vault and account address
-    /// @param account address of user
-    function unclaimedShares(address account) external view returns (uint256 shares) {
-        UserDeposit memory userDeposit = vaultBatchingState.userDeposits[account];
-        shares = userDeposit.unclaimedShares;
-
-        if (userDeposit.round < vaultBatchingState.currentRound && userDeposit.usdcBalance > 0) {
-            RoundDeposit memory roundDeposit = vaultBatchingState.roundDeposits[userDeposit.round];
-            shares += userDeposit.usdcBalance.mulDiv(roundDeposit.totalShares, roundDeposit.totalUsdc).toUint128();
-        }
-    }
-
-    /// @notice claim the shares received from depositing batch
-    /// @param receiver address of receiver
-    /// @param amount amount of shares
-    function claim(address receiver, uint256 amount) external {
+    function _claim(
+        address claimer,
+        address receiver,
+        uint256 amount
+    ) internal {
         if (receiver == address(0)) revert InvalidInput(0x10);
         if (amount == 0) revert InvalidInput(0x11);
 
-        UserDeposit storage userDeposit = vaultBatchingState.userDeposits[msg.sender];
+        UserDeposit storage userDeposit = vaultBatchingState.userDeposits[claimer];
 
         uint128 userUsdcBalance = userDeposit.usdcBalance;
         uint128 userUnclaimedShares = userDeposit.unclaimedShares;
@@ -298,33 +364,6 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         userDeposit.unclaimedShares = userUnclaimedShares - amount.toUint128();
         dnGmxJuniorVault.transfer(receiver, amount);
 
-        emit SharesClaimed(msg.sender, receiver, amount);
-    }
-
-    /// @notice gets the current active round
-    function currentRound() external view returns (uint256) {
-        return vaultBatchingState.currentRound;
-    }
-
-    /// @notice get the glp balance for current active round
-    function roundUsdcBalance() external view returns (uint256) {
-        return vaultBatchingState.roundUsdcBalance;
-    }
-
-    /// @notice get the glp balance for current active round
-    function roundGlpStaked() external view returns (uint256) {
-        return vaultBatchingState.roundGlpStaked;
-    }
-
-    /// @notice get the vaultBatchingState of user deposits
-    /// @param account address of user
-    function userDeposits(address account) external view returns (UserDeposit memory) {
-        return vaultBatchingState.userDeposits[account];
-    }
-
-    /// @notice get the info for given vault and round
-    /// @param round address of user
-    function roundDeposits(uint256 round) external view returns (RoundDeposit memory) {
-        return vaultBatchingState.roundDeposits[round];
+        emit SharesClaimed(claimer, receiver, amount);
     }
 }
