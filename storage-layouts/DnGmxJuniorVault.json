@@ -381,7 +381,7 @@
         {
           "astId": 8991,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
-          "label": "slippageThresholdGmx",
+          "label": "slippageThresholdGmxBps",
           "offset": 0,
           "slot": "10",
           "type": "t_uint16"
@@ -389,7 +389,7 @@
         {
           "astId": 8993,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
-          "label": "slippageThresholdSwapBtc",
+          "label": "slippageThresholdSwapBtcBps",
           "offset": 2,
           "slot": "10",
           "type": "t_uint16"
@@ -397,7 +397,7 @@
         {
           "astId": 8995,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
-          "label": "slippageThresholdSwapEth",
+          "label": "slippageThresholdSwapEthBps",
           "offset": 4,
           "slot": "10",
           "type": "t_uint16"
@@ -405,7 +405,7 @@
         {
           "astId": 8997,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
-          "label": "rebalanceHfThreshold",
+          "label": "rebalanceHfThresholdBps",
           "offset": 6,
           "slot": "10",
           "type": "t_uint16"
@@ -421,7 +421,7 @@
         {
           "astId": 9001,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
-          "label": "rebalanceDeltaThreshold",
+          "label": "rebalanceDeltaThresholdBps",
           "offset": 12,
           "slot": "10",
           "type": "t_uint16"

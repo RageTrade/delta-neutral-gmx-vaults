@@ -297,9 +297,9 @@ describe('Rebalance & its utils', () => {
     expect(unhedgedGlpInUsdc).eq(0);
     expect(unhedgedGlpUsdcAmount).gt(unhedgedGlpInUsdc);
 
-    // usdcAmountDesired.mulDiv(MAX_BPS - slippageThresholdGmx, MAX_BPS)
+    // usdcAmountDesired.mulDiv(MAX_BPS - slippageThresholdGmxBps, MAX_BPS)
 
-    const slippageThresholdGmx = BigNumber.from(100); // 1%
+    const slippageThresholdGmxBps = BigNumber.from(100); // 1%
     const MAX_BPS = BigNumber.from(10_000);
 
     const priceOfUsdc = await gmxVault.getMinPrice(usdc.address);
@@ -310,7 +310,7 @@ describe('Rebalance & its utils', () => {
 
     let minUsdgOut = unhedgedGlpUsdcAmount
       .mul(priceOfUsdc)
-      .mul(MAX_BPS.sub(slippageThresholdGmx))
+      .mul(MAX_BPS.sub(slippageThresholdGmxBps))
       .div(MAX_BPS)
       .div(PRICE_PRECISION);
 
@@ -407,7 +407,7 @@ describe('Rebalance & its utils', () => {
 
     await dnGmxJuniorVault.setRebalanceParams(
       86400, //rebalanceTimeThreshold:
-      500, // 5% in bps rebalanceDeltaThreshold:
+      500, // 5% in bps rebalanceDeltaThresholdBps:
       0,
     );
 
@@ -469,7 +469,7 @@ describe('Rebalance & its utils', () => {
 
     await checker.checkTotalAssets(amount);
     await checker.checkTotalSupply(amount);
-    await checker.checkVaultMktValue(vmv, vmv.mul(2).div(await dnGmxJuniorVault.slippageThresholdSwapBtc()));
+    await checker.checkVaultMktValue(vmv, vmv.mul(2).div(await dnGmxJuniorVault.slippageThresholdSwapBtcBps()));
 
     // const borrows = await dnGmxJuniorVault.getCurrentBorrows()
     // console.log('vmv', vmv)
@@ -777,9 +777,9 @@ describe('Rebalance & its utils', () => {
     await dnGmxJuniorVault.setRebalanceParams(86400, 500, 12_000);
 
     await dnGmxJuniorVault.setThresholds(
-      1000, //_slippageThresholdSwapBtc
-      1000, //_slippageThresholdSwapEth
-      1000, //slippageThresholdGmx
+      1000, //_slippageThresholdSwapBtcBps
+      1000, //_slippageThresholdSwapEthBps
+      1000, //slippageThresholdGmxBps
       parseUnits('1', 6), //usdcConversionThreshold
       10n ** 15n, //wethConversionThreshold
       parseUnits('1', 6), //hedgeUsdcAmountThreshold

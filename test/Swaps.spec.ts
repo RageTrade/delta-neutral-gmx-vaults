@@ -125,7 +125,7 @@ describe('Swaps', () => {
     const { dnGmxJuniorVault, usdc, aUSDC, users, sGlp, gmxVault } = await dnGmxJuniorVaultFixture();
 
     const MAX_BPS = BigNumber.from(10_000);
-    const slippageThresholdGmx = BigNumber.from(100);
+    const slippageThresholdGmxBps = BigNumber.from(100);
     const PRICE_PRECISION = BigNumber.from(10).pow(30);
 
     const usdcAmount = parseUnits('100', 6);
@@ -138,7 +138,7 @@ describe('Swaps', () => {
 
     const minUsdcOut = usdcAmount
       .mul(usdcPrice)
-      .mul(MAX_BPS.sub(slippageThresholdGmx))
+      .mul(MAX_BPS.sub(slippageThresholdGmxBps))
       .div(PRICE_PRECISION)
       .div(MAX_BPS);
 
@@ -169,9 +169,9 @@ describe('Swaps', () => {
     const usdcAmount = parseUnits('100', 6);
 
     await dnGmxJuniorVault.setThresholds(
-      100, //_slippageThresholdSwapBtc
-      100, //_slippageThresholdSwapEth
-      10, //slippageThresholdGmx
+      100, //_slippageThresholdSwapBtcBps
+      100, //_slippageThresholdSwapEthBps
+      10, //slippageThresholdGmxBps
       parseUnits('1', 6), //usdcConversionThreshold
       10n ** 15n, //wethConversionThreshold
       parseUnits('1', 6), //hedgeUsdcAmountThreshold
@@ -181,7 +181,7 @@ describe('Swaps', () => {
 
     await dnGmxJuniorVault.setRebalanceParams(
       86400, //rebalanceTimeThreshold:
-      500, // 5% in bps rebalanceDeltaThreshold:
+      500, // 5% in bps rebalanceDeltaThresholdBps:
       12_000,
     );
 
@@ -190,7 +190,7 @@ describe('Swaps', () => {
     expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
     expect(await dnGmxJuniorVault.totalAssets()).to.eq(assets);
 
-    // slippageThresholdGmx = 0.1%
+    // slippageThresholdGmxBps = 0.1%
     expect(dnGmxJuniorVault.convertAssetToAUsdc(usdcAmount)).to.be.revertedWith(
       `VM Exception while processing transaction: reverted with reason string 'GlpManager: insufficient output'`,
     );
@@ -202,7 +202,7 @@ describe('Swaps', () => {
 
     const aUSDCAmount = parseUnits('100', 6);
 
-    const slippageThresholdGmx = BigNumber.from(100); // 1%
+    const slippageThresholdGmxBps = BigNumber.from(100); // 1%
     const MAX_BPS = BigNumber.from(10_000);
     const PRICE_PRECISION = BigNumber.from(10).pow(30);
 
@@ -214,7 +214,7 @@ describe('Swaps', () => {
 
     let minUsdgOut = aUSDCAmount
       .mul(priceOfUsdc)
-      .mul(MAX_BPS.sub(slippageThresholdGmx))
+      .mul(MAX_BPS.sub(slippageThresholdGmxBps))
       .div(MAX_BPS)
       .div(PRICE_PRECISION);
 
@@ -234,7 +234,7 @@ describe('Swaps', () => {
     expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.eq(aUSDCAmount);
     expect(await dnGmxJuniorVault.totalAssets()).to.eq(0);
 
-    await dnGmxJuniorVault.convertAUsdcToAsset(aUSDCAmount); // slippageThresholdGmx = 1% (from fixture)
+    await dnGmxJuniorVault.convertAUsdcToAsset(aUSDCAmount); // slippageThresholdGmxBps = 1% (from fixture)
 
     // console.log('min glp out', formatEther(minGlpOut));
 
@@ -253,9 +253,9 @@ describe('Swaps', () => {
     const aUSDCAmount = parseUnits('100', 6);
 
     await dnGmxJuniorVault.setThresholds(
-      100, //_slippageThresholdSwapBtc
-      100, //_slippageThresholdSwapEth
-      10, //slippageThresholdGmx
+      100, //_slippageThresholdSwapBtcBps
+      100, //_slippageThresholdSwapEthBps
+      10, //slippageThresholdGmxBps
       parseUnits('1', 6), //usdcConversionThreshold
       10n ** 15n, //wethConversionThreshold
       parseUnits('1', 6), //hedgeUsdcAmountThreshold
@@ -265,7 +265,7 @@ describe('Swaps', () => {
 
     await dnGmxJuniorVault.setRebalanceParams(
       86400, //rebalanceTimeThreshold:
-      500, // 5% in bps rebalanceDeltaThreshold:
+      500, // 5% in bps rebalanceDeltaThresholdBps:
       12_000,
     );
 
@@ -274,7 +274,7 @@ describe('Swaps', () => {
     expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.eq(aUSDCAmount);
     expect(await dnGmxJuniorVault.totalAssets()).to.eq(0);
 
-    // slippageThresholdGmx = 0.1%
+    // slippageThresholdGmxBps = 0.1%
     expect(dnGmxJuniorVault.convertAssetToAUsdc(aUSDCAmount)).to.be.revertedWith(
       `VM Exception while processing transaction: reverted with reason string 'GlpManager: insufficient output'`,
     );

@@ -35,7 +35,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     address public keeper;
     IDnGmxJuniorVault public dnGmxJuniorVault;
 
-    uint256 public slippageThresholdGmx;
+    uint256 public slippageThresholdGmxBps;
     uint256 public dnGmxJuniorVaultGlpBalance;
 
     IERC20 private sGlp;
@@ -118,10 +118,10 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     }
 
     /// @notice sets the slippage (in bps) to use while staking on gmx
-    /// @param _slippageThresholdGmx slippage (in bps)
-    function setThresholds(uint256 _slippageThresholdGmx) external onlyOwner {
-        slippageThresholdGmx = _slippageThresholdGmx;
-        emit ThresholdsUpdated(_slippageThresholdGmx);
+    /// @param _slippageThresholdGmxBps slippage (in bps)
+    function setThresholds(uint256 _slippageThresholdGmxBps) external onlyOwner {
+        slippageThresholdGmxBps = _slippageThresholdGmxBps;
+        emit ThresholdsUpdated(_slippageThresholdGmxBps);
     }
 
     /// @notice pauses deposits (to prevent DOS due to GMX 15 min cooldown)
@@ -304,7 +304,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
 
         uint256 price = gmxUnderlyingVault.getMinPrice(address(usdc));
 
-        uint256 minUsdg = _roundUsdcBalance.mulDiv(price * 1e12 * (MAX_BPS - slippageThresholdGmx), 1e30 * MAX_BPS);
+        uint256 minUsdg = _roundUsdcBalance.mulDiv(price * 1e12 * (MAX_BPS - slippageThresholdGmxBps), 1e30 * MAX_BPS);
 
         vaultBatchingState.roundGlpStaked = _stakeGlp(address(usdc), _roundUsdcBalance, minUsdg);
 

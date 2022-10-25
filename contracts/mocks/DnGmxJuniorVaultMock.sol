@@ -32,12 +32,12 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         return state.feeBps;
     }
 
-    function slippageThresholdSwapBtc() external view returns (uint256) {
-        return state.slippageThresholdSwapBtc;
+    function slippageThresholdSwapBtcBps() external view returns (uint256) {
+        return state.slippageThresholdSwapBtcBps;
     }
 
-    function slippageThresholdSwapEth() external view returns (uint256) {
-        return state.slippageThresholdSwapEth;
+    function slippageThresholdSwapEthBps() external view returns (uint256) {
+        return state.slippageThresholdSwapEthBps;
     }
 
     function unhedgedGlpInUsdc() external view returns (uint256) {
