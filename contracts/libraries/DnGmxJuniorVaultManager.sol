@@ -78,10 +78,10 @@ library DnGmxJuniorVaultManager {
         // thresholds
         uint256 depositCap;
 
-        uint16 rebalanceHfThreshold; // bps
         uint16 slippageThresholdGmx; // bps
         uint16 slippageThresholdSwapBtc; // bps
         uint16 slippageThresholdSwapEth; // bps
+        uint16 rebalanceHfThreshold; // bps
         uint32 rebalanceTimeThreshold; // seconds between rebalance
         uint16 rebalanceDeltaThreshold; // bps
         uint128 wethConversionThreshold; // eth amount
