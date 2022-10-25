@@ -173,11 +173,16 @@ describe('Swaps', () => {
       100, //_slippageThresholdSwapEth
       10, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-      12_000, //rebalanceHfThreshold
       10n ** 15n, //wethConversionThreshold
       parseUnits('1', 6), //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
+    );
+
+    await dnGmxJuniorVault.setRebalanceParams(
+      86400, //rebalanceTimeThreshold:
+      500, // 5% in bps rebalanceDeltaThreshold:
+      12_000,
     );
 
     await sGlp.connect(users[0]).transfer(dnGmxJuniorVault.address, assets);
@@ -252,11 +257,16 @@ describe('Swaps', () => {
       100, //_slippageThresholdSwapEth
       10, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-      12_000, //rebalanceHfThreshold
       10n ** 15n, //wethConversionThreshold
       parseUnits('1', 6), //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
+    );
+
+    await dnGmxJuniorVault.setRebalanceParams(
+      86400, //rebalanceTimeThreshold:
+      500, // 5% in bps rebalanceDeltaThreshold:
+      12_000,
     );
 
     await dnGmxJuniorVault.executeBorrowFromDnGmxSeniorVault(aUSDCAmount);
