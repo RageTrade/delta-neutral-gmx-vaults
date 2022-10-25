@@ -78,7 +78,7 @@ library DnGmxJuniorVaultManager {
         // thresholds
         uint256 depositCap;
 
-        uint16 hfThreshold; // bps
+        uint16 rebalanceHfThreshold; // bps
         uint16 slippageThresholdGmx; // bps
         uint16 slippageThresholdSwapBtc; // bps
         uint16 slippageThresholdSwapEth; // bps
@@ -604,9 +604,9 @@ library DnGmxJuniorVaultManager {
     function isValidRebalanceHF(State storage state) external view returns (bool) {
         (, , , , , uint256 healthFactor) = state.pool.getUserAccountData(address(this));
         // console.log('healthFactor', healthFactor);
-        // console.log('hfThreshold', hfThreshold);
+        // console.log('rebalanceHfThreshold', rebalanceHfThreshold);
 
-        return healthFactor < (uint256(state.hfThreshold) * 1e14);
+        return healthFactor < (uint256(state.rebalanceHfThreshold) * 1e14);
     }
 
     function isValidRebalanceDeviation(State storage state) external view returns (bool) {

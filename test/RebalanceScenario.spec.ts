@@ -27,7 +27,7 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-      0, //hfThreshold
+
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -117,7 +117,7 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-      0, //hfThreshold
+
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -203,7 +203,7 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-      0, //hfThreshold
+
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -306,7 +306,7 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-      0, //hfThreshold
+
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -389,7 +389,7 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-      0, //hfThreshold
+
       10n ** 15n, //wethConversionThreshold
       parseUnits('4', 6), //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -481,7 +481,7 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-      0, //hfThreshold
+
       10n ** 15n, //wethConversionThreshold
       parseUnits('12', 6), //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -573,7 +573,7 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-      0, //hfThreshold
+
       10n ** 15n, //wethConversionThreshold
       parseUnits('12', 6), //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -666,7 +666,7 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-      0, //hfThreshold
+
       10n ** 15n, //wethConversionThreshold
       parseUnits('12', 6), //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -756,7 +756,7 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-      0, //hfThreshold
+
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -893,7 +893,7 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-      0, //hfThreshold
+
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -1022,7 +1022,7 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('15', 6), //usdcConversionThreshold
-      0, //hfThreshold
+
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -1126,7 +1126,7 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-      0, //hfThreshold
+
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -1219,7 +1219,6 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-      0, //hfThreshold
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
       parseUnits('5', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -1229,6 +1228,7 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.setRebalanceParams(
       86400, // rebalanceTimeThreshold
       500, // 5% in bps | rebalanceDeltaThreshold
+      0,
     );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
@@ -1364,7 +1364,7 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-      0, //hfThreshold
+
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
