@@ -2,8 +2,15 @@
 
 pragma solidity ^0.8.9;
 
+import { IRewardsController } from '@aave/periphery-v3/contracts/rewards/interfaces/IRewardsController.sol';
+import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol';
+import { IPool } from '@aave/core-v3/contracts/interfaces/IPool.sol';
+import { IPriceOracle } from '@aave/core-v3/contracts/interfaces/IPriceOracle.sol';
+import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
+
 import { IERC4626 } from './IERC4626.sol';
 import { IBorrower } from './IBorrower.sol';
+import { IBalancerVault } from './balancer/IBalancerVault.sol';
 
 interface IDnGmxJuniorVault is IERC4626, IBorrower {
     error InvalidRebalance();
@@ -38,14 +45,38 @@ interface IDnGmxJuniorVault is IERC4626, IBorrower {
     event DepositCapUpdated(uint256 _newDepositCap);
     event BatchingManagerUpdated(address _batchingManager);
 
-    event YieldParamsUpdated(
-        uint16 slippageThresholdGmxBps,
-        uint240 usdcConversionThreshold,
-        uint256 wethConversionThreshold,
-        uint256 hedgeUsdcAmountThreshold,
-        uint256 rebalanceHfThresholdBps
+    event AdminParamsUpdated(
+        address newKeeper,
+        address dnGmxSeniorVault,
+        uint256 newDepositCap,
+        address batchingManager,
+        uint16 withdrawFeeBps
     );
-    event RebalanceParamsUpdated(uint32 indexed rebalanceTimeThreshold, uint16 indexed rebalanceDeltaThresholdBps);
+    event ThresholdsUpdated(
+        uint16 slippageThresholdSwapBtcBps,
+        uint16 slippageThresholdSwapEthBps,
+        uint16 slippageThresholdGmxBps,
+        uint128 usdcConversionThreshold,
+        uint128 wethConversionThreshold,
+        uint128 hedgeUsdcAmountThreshold,
+        uint128 partialBtcHedgeUsdcAmountThreshold,
+        uint128 partialEthHedgeUsdcAmountThreshold
+    );
+    event RebalanceParamsUpdated(
+        uint32 rebalanceTimeThreshold,
+        uint16 rebalanceDeltaThresholdBps,
+        uint16 rebalanceHfThresholdBps
+    );
+
+    event HedgeParamsUpdated(
+        IBalancerVault vault,
+        ISwapRouter swapRouter,
+        uint256 targetHealthFactor,
+        IRewardsController aaveRewardsController,
+        IPoolAddressesProvider poolAddressProvider,
+        IPool pool,
+        IPriceOracle oracle
+    );
 
     function harvestFees() external;
 

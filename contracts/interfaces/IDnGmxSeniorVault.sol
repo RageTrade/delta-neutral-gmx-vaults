@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.0;
 
+import { IBorrower } from './IBorrower.sol';
 import { IERC4626 } from './IERC4626.sol';
 
 interface IDnGmxSeniorVault is IERC4626 {
@@ -17,6 +18,10 @@ interface IDnGmxSeniorVault is IERC4626 {
     event AllowancesGranted();
     event DepositCapUpdated(uint256 _newDepositCap);
     event BorrowCapUpdated(address vault, uint256 newCap);
+
+    event LeveragePoolUpdated(IBorrower leveragePool);
+    event DnGmxJuniorVaultUpdated(IBorrower dnGmxJuniorVault);
+    event MaxUtilizationBpsUpdated(uint256 maxUtilizationBps);
 
     function borrow(uint256 amount) external;
 

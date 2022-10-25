@@ -92,14 +92,17 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
 
     function setLeveragePool(IBorrower _leveragePool) external onlyOwner {
         leveragePool = _leveragePool;
+        emit LeveragePoolUpdated(_leveragePool);
     }
 
     function setDnGmxJuniorVault(IBorrower _dnGmxJuniorVault) external onlyOwner {
         dnGmxJuniorVault = _dnGmxJuniorVault;
+        emit DnGmxJuniorVaultUpdated(_dnGmxJuniorVault);
     }
 
     function setMaxUtilizationBps(uint256 _maxUtilizationBps) external onlyOwner {
         maxUtilizationBps = _maxUtilizationBps;
+        emit MaxUtilizationBpsUpdated(_maxUtilizationBps);
     }
 
     /*//////////////////////////////////////////////////////////////

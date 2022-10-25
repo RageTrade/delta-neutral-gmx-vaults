@@ -149,88 +149,115 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     }
 
     /// @notice set admin paramters
-    /// @param _newKeeper keeper address
-    /// @param _dnGmxSeniorVault senior vault address
-    /// @param _newDepositCap deposit cap
-    /// @param _batchingManager batching manager (responsible for staking tokens into GMX)
-    /// @param _withdrawFeeBps fees bps on withdrawals and redeems
+    /// @param newKeeper keeper address
+    /// @param dnGmxSeniorVault senior vault address
+    /// @param newDepositCap deposit cap
+    /// @param batchingManager batching manager (responsible for staking tokens into GMX)
+    /// @param withdrawFeeBps fees bps on withdrawals and redeems
     function setAdminParams(
-        address _newKeeper,
-        address _dnGmxSeniorVault,
-        uint256 _newDepositCap,
-        address _batchingManager,
-        uint16 _withdrawFeeBps
+        address newKeeper,
+        address dnGmxSeniorVault,
+        uint256 newDepositCap,
+        address batchingManager,
+        uint16 withdrawFeeBps
     ) external onlyOwner {
-        state.keeper = _newKeeper;
-        state.dnGmxSeniorVault = IDnGmxSeniorVault(_dnGmxSeniorVault);
-        state.depositCap = _newDepositCap;
-        state.batchingManager = IDnGmxBatchingManager(_batchingManager);
-        state.withdrawFeeBps = _withdrawFeeBps;
+        state.keeper = newKeeper;
+        state.dnGmxSeniorVault = IDnGmxSeniorVault(dnGmxSeniorVault);
+        state.depositCap = newDepositCap;
+        state.batchingManager = IDnGmxBatchingManager(batchingManager);
+        state.withdrawFeeBps = withdrawFeeBps;
+        emit AdminParamsUpdated(newKeeper, dnGmxSeniorVault, newDepositCap, batchingManager, withdrawFeeBps);
     }
 
     /// @notice set thresholds
-    /// @param _slippageThresholdSwapBtcBps (BPS) slippage threshold on btc swaps
-    /// @param _slippageThresholdSwapEthBps (BPS) slippage threshold on eth swaps
-    /// @param _slippageThresholdGmxBps (BPS) slippage threshold on sGlp mint and redeem
-    /// @param _usdcConversionThreshold (usdc amount) threshold amount for conversion of usdc into sGlp
-    /// @param _wethConversionThreshold (weth amount) threshold amount for weth fees to be compounded into sGlp
-    /// @param _hedgeUsdcAmountThreshold (usdc amount) threshold amount below which ETH/BTC hedges are not executed
-    /// @param _partialBtcHedgeUsdcAmountThreshold (usdc amount) threshold amount above which BTC hedge is not fully taken (gets executed in blocks over multiple rebalances)
-    /// @param _partialEthHedgeUsdcAmountThreshold (usdc amount) threshold amount above which ETH hedge is not fully taken (gets executed in blocks over multiple rebalances)
+    /// @param slippageThresholdSwapBtcBps (BPS) slippage threshold on btc swaps
+    /// @param slippageThresholdSwapEthBps (BPS) slippage threshold on eth swaps
+    /// @param slippageThresholdGmxBps (BPS) slippage threshold on sGlp mint and redeem
+    /// @param usdcConversionThreshold (usdc amount) threshold amount for conversion of usdc into sGlp
+    /// @param wethConversionThreshold (weth amount) threshold amount for weth fees to be compounded into sGlp
+    /// @param hedgeUsdcAmountThreshold (usdc amount) threshold amount below which ETH/BTC hedges are not executed
+    /// @param partialBtcHedgeUsdcAmountThreshold (usdc amount) threshold amount above which BTC hedge is not fully taken (gets executed in blocks over multiple rebalances)
+    /// @param partialEthHedgeUsdcAmountThreshold (usdc amount) threshold amount above which ETH hedge is not fully taken (gets executed in blocks over multiple rebalances)
     function setThresholds(
-        uint16 _slippageThresholdSwapBtcBps,
-        uint16 _slippageThresholdSwapEthBps,
-        uint16 _slippageThresholdGmxBps,
-        uint128 _usdcConversionThreshold,
-        uint128 _wethConversionThreshold,
-        uint128 _hedgeUsdcAmountThreshold,
-        uint128 _partialBtcHedgeUsdcAmountThreshold,
-        uint128 _partialEthHedgeUsdcAmountThreshold
+        uint16 slippageThresholdSwapBtcBps,
+        uint16 slippageThresholdSwapEthBps,
+        uint16 slippageThresholdGmxBps,
+        uint128 usdcConversionThreshold,
+        uint128 wethConversionThreshold,
+        uint128 hedgeUsdcAmountThreshold,
+        uint128 partialBtcHedgeUsdcAmountThreshold,
+        uint128 partialEthHedgeUsdcAmountThreshold
     ) external onlyOwner {
-        state.slippageThresholdSwapBtcBps = _slippageThresholdSwapBtcBps;
-        state.slippageThresholdSwapEthBps = _slippageThresholdSwapEthBps;
-        state.slippageThresholdGmxBps = _slippageThresholdGmxBps;
-        state.usdcConversionThreshold = _usdcConversionThreshold;
-        state.wethConversionThreshold = _wethConversionThreshold;
-        state.hedgeUsdcAmountThreshold = _hedgeUsdcAmountThreshold;
-        state.partialBtcHedgeUsdcAmountThreshold = _partialBtcHedgeUsdcAmountThreshold;
-        state.partialEthHedgeUsdcAmountThreshold = _partialEthHedgeUsdcAmountThreshold;
+        state.slippageThresholdSwapBtcBps = slippageThresholdSwapBtcBps;
+        state.slippageThresholdSwapEthBps = slippageThresholdSwapEthBps;
+        state.slippageThresholdGmxBps = slippageThresholdGmxBps;
+        state.usdcConversionThreshold = usdcConversionThreshold;
+        state.wethConversionThreshold = wethConversionThreshold;
+        state.hedgeUsdcAmountThreshold = hedgeUsdcAmountThreshold;
+        state.partialBtcHedgeUsdcAmountThreshold = partialBtcHedgeUsdcAmountThreshold;
+        state.partialEthHedgeUsdcAmountThreshold = partialEthHedgeUsdcAmountThreshold;
+
+        emit ThresholdsUpdated(
+            slippageThresholdSwapBtcBps,
+            slippageThresholdSwapEthBps,
+            slippageThresholdGmxBps,
+            usdcConversionThreshold,
+            wethConversionThreshold,
+            hedgeUsdcAmountThreshold,
+            partialBtcHedgeUsdcAmountThreshold,
+            partialEthHedgeUsdcAmountThreshold
+        );
     }
 
     /// @notice set rebalance paramters
-    /// @param _rebalanceTimeThreshold (seconds) minimum time difference required between two rebalance calls
+    /// @param rebalanceTimeThreshold (seconds) minimum time difference required between two rebalance calls
     /// @dev a partial rebalance (rebalance where partial hedge gets taken) does not count
-    /// @param _rebalanceDeltaThresholdBps (BPS) threshold difference between optimal and current token hedges for triggering a rebalance
-    /// @param _rebalanceHfThresholdBps (BPS) threshold amount of health factor on AAVE below which a rebalance is triggered
+    /// @param rebalanceDeltaThresholdBps (BPS) threshold difference between optimal and current token hedges for triggering a rebalance
+    /// @param rebalanceHfThresholdBps (BPS) threshold amount of health factor on AAVE below which a rebalance is triggered
     function setRebalanceParams(
-        uint32 _rebalanceTimeThreshold,
-        uint16 _rebalanceDeltaThresholdBps,
-        uint16 _rebalanceHfThresholdBps
+        uint32 rebalanceTimeThreshold,
+        uint16 rebalanceDeltaThresholdBps,
+        uint16 rebalanceHfThresholdBps
     ) external onlyOwner {
-        state.rebalanceTimeThreshold = _rebalanceTimeThreshold;
-        state.rebalanceDeltaThresholdBps = _rebalanceDeltaThresholdBps;
-        state.rebalanceHfThresholdBps = _rebalanceHfThresholdBps;
+        state.rebalanceTimeThreshold = rebalanceTimeThreshold;
+        state.rebalanceDeltaThresholdBps = rebalanceDeltaThresholdBps;
+        state.rebalanceHfThresholdBps = rebalanceHfThresholdBps;
+
+        emit RebalanceParamsUpdated(rebalanceTimeThreshold, rebalanceDeltaThresholdBps, rebalanceHfThresholdBps);
     }
 
     /// @notice set hedge parameters
-    /// @param _vault balancer vault for ETH and BTC flashloans
-    /// @param _swapRouter uniswap swap router for swapping ETH/BTC to USDC and viceversa
-    /// @param _targetHealthFactor health factor to target on AAVE after every rebalance
-    /// @param _aaveRewardsController AAVE rewards controller for handling additional reward distribution on AAVE
+    /// @param vault balancer vault for ETH and BTC flashloans
+    /// @param swapRouter uniswap swap router for swapping ETH/BTC to USDC and viceversa
+    /// @param targetHealthFactor health factor to target on AAVE after every rebalance
+    /// @param aaveRewardsController AAVE rewards controller for handling additional reward distribution on AAVE
     function setHedgeParams(
-        IBalancerVault _vault,
-        ISwapRouter _swapRouter,
-        uint256 _targetHealthFactor,
-        IRewardsController _aaveRewardsController
+        IBalancerVault vault,
+        ISwapRouter swapRouter,
+        uint256 targetHealthFactor,
+        IRewardsController aaveRewardsController
     ) external onlyOwner {
-        state.balancerVault = _vault;
-        state.swapRouter = _swapRouter;
-        state.targetHealthFactor = _targetHealthFactor;
-        state.aaveRewardsController = _aaveRewardsController;
+        state.balancerVault = vault;
+        state.swapRouter = swapRouter;
+        state.targetHealthFactor = targetHealthFactor;
+        state.aaveRewardsController = aaveRewardsController;
 
-        //update aave pool and oracle if their addresses have updated
-        state.pool = IPool(state.poolAddressProvider.getPool());
-        state.oracle = IPriceOracle(state.poolAddressProvider.getPriceOracle());
+        // update aave pool and oracle if their addresses have updated
+        IPoolAddressesProvider poolAddressProvider = state.poolAddressProvider;
+        IPool pool = IPool(poolAddressProvider.getPool());
+        state.pool = pool;
+        IPriceOracle oracle = IPriceOracle(poolAddressProvider.getPriceOracle());
+        state.oracle = oracle;
+
+        emit HedgeParamsUpdated(
+            vault,
+            swapRouter,
+            targetHealthFactor,
+            aaveRewardsController,
+            poolAddressProvider,
+            pool,
+            oracle
+        );
     }
 
     /// @notice pause deposit, mint, withdraw and redeem
