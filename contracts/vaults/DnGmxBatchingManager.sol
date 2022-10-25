@@ -2,18 +2,19 @@
 
 pragma solidity ^0.8.9;
 
-import { SafeCast } from '../libraries/SafeCast.sol';
-import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
-
-import { IVault } from '../interfaces/gmx/IVault.sol';
-import { IGlpManager } from '../interfaces/gmx/IGlpManager.sol';
 import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
-import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
-import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
-
 import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import { PausableUpgradeable } from '@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol';
+
+import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
+
+import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
+import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
+import { IGlpManager } from '../interfaces/gmx/IGlpManager.sol';
+import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
+import { IVault } from '../interfaces/gmx/IVault.sol';
+
+import { SafeCast } from '../libraries/SafeCast.sol';
 
 contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, PausableUpgradeable {
     using FullMath for uint256;

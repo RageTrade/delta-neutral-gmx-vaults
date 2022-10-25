@@ -3,21 +3,16 @@
 pragma solidity ^0.8.9;
 
 import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
-import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
-import { IAToken } from '@aave/core-v3/contracts/interfaces/IAToken.sol';
-import { IVariableDebtToken } from '@aave/core-v3/contracts/interfaces/IVariableDebtToken.sol';
-import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
+
 import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import { PausableUpgradeable } from '@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol';
-import { IGMXBatchingManager } from '../interfaces/gmx/IGMXBatchingManager.sol';
-import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
-import { ISglpExtended } from '../interfaces/gmx/ISglpExtended.sol';
-import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
-import { IGlpStakingManager } from '../interfaces/gmx/IGlpStakingManager.sol';
-import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
-import { SafeCast } from '../libraries/SafeCast.sol';
+
 import { IDebtToken } from '../interfaces/IDebtToken.sol';
+import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
+import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
+import { IGMXBatchingManager } from '../interfaces/gmx/IGMXBatchingManager.sol';
+
+import { SafeCast } from '../libraries/SafeCast.sol';
 
 contract LeveragePool is OwnableUpgradeable, PausableUpgradeable {
     using FullMath for uint256;

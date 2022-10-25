@@ -2,22 +2,23 @@
 
 pragma solidity ^0.8.9;
 
-import { IBorrower } from '../interfaces/IBorrower.sol';
-
-import { IPool } from '@aave/core-v3/contracts/interfaces/IPool.sol';
-import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { IAToken } from '@aave/core-v3/contracts/interfaces/IAToken.sol';
-import { IPriceOracle } from '@aave/core-v3/contracts/interfaces/IPriceOracle.sol';
+import { IPool } from '@aave/core-v3/contracts/interfaces/IPool.sol';
 import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol';
+import { IPriceOracle } from '@aave/core-v3/contracts/interfaces/IPriceOracle.sol';
 
-import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
-import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
-
-import { IERC4626 } from '../interfaces/IERC4626.sol';
-import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
-import { ERC4626Upgradeable } from '../ERC4626/ERC4626Upgradeable.sol';
+import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import { PausableUpgradeable } from '@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol';
+
+import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
+
+import { IBorrower } from '../interfaces/IBorrower.sol';
+import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
+import { IERC4626 } from '../interfaces/IERC4626.sol';
+
+import { ERC4626Upgradeable } from '../ERC4626/ERC4626Upgradeable.sol';
+import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
 
 contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable {
     using FullMath for uint256;
