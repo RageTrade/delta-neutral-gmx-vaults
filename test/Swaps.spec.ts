@@ -173,7 +173,7 @@ describe('Swaps', () => {
       100, //_slippageThresholdSwapEth
       10, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-      12_000, //hfThreshold
+      12_000, //rebalanceHfThreshold
       10n ** 15n, //wethConversionThreshold
       parseUnits('1', 6), //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -252,7 +252,7 @@ describe('Swaps', () => {
       100, //_slippageThresholdSwapEth
       10, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-      12_000, //hfThreshold
+      12_000, //rebalanceHfThreshold
       10n ** 15n, //wethConversionThreshold
       parseUnits('1', 6), //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold

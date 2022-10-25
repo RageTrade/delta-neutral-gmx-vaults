@@ -408,6 +408,7 @@ describe('Rebalance & its utils', () => {
     await dnGmxJuniorVault.setRebalanceParams(
       86400, //rebalanceTimeThreshold:
       500, // 5% in bps rebalanceDeltaThreshold:
+      0,
     );
 
     expect(await dnGmxJuniorVault.isValidRebalanceTime()).to.be.true;
@@ -773,12 +774,13 @@ describe('Rebalance & its utils', () => {
     await dnGmxJuniorVault.setMocks(opts.mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
+    await dnGmxJuniorVault.setRebalanceParams(86400, 500, 12_000);
+
     await dnGmxJuniorVault.setThresholds(
       1000, //_slippageThresholdSwapBtc
       1000, //_slippageThresholdSwapEth
       1000, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-      12_000, //hfThreshold
       10n ** 15n, //wethConversionThreshold
       parseUnits('1', 6), //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold

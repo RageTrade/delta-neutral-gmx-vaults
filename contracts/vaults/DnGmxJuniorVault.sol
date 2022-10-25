@@ -173,7 +173,6 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @param _slippageThresholdSwapEth (BPS) slippage threshold on eth swaps
     /// @param _slippageThresholdGmx (BPS) slippage threshold on sGlp mint and redeem
     /// @param _usdcConversionThreshold (usdc amount) threshold amount for conversion of usdc into sGlp
-    /// @param _hfThreshold (BPS) threshold amount of health factor on AAVE below which a rebalance is triggered
     /// @param _wethConversionThreshold (weth amount) threshold amount for weth fees to be compounded into sGlp
     /// @param _hedgeUsdcAmountThreshold (usdc amount) threshold amount below which ETH/BTC hedges are not executed
     /// @param _partialBtcHedgeUsdcAmountThreshold (usdc amount) threshold amount above which BTC hedge is not fully taken (gets executed in blocks over multiple rebalances)
@@ -183,7 +182,6 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         uint16 _slippageThresholdSwapEth,
         uint16 _slippageThresholdGmx,
         uint128 _usdcConversionThreshold,
-        uint16 _hfThreshold,
         uint128 _wethConversionThreshold,
         uint128 _hedgeUsdcAmountThreshold,
         uint128 _partialBtcHedgeUsdcAmountThreshold,
@@ -195,7 +193,6 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         state.usdcConversionThreshold = _usdcConversionThreshold;
         state.wethConversionThreshold = _wethConversionThreshold;
         state.hedgeUsdcAmountThreshold = _hedgeUsdcAmountThreshold;
-        state.hfThreshold = _hfThreshold;
         state.partialBtcHedgeUsdcAmountThreshold = _partialBtcHedgeUsdcAmountThreshold;
         state.partialEthHedgeUsdcAmountThreshold = _partialEthHedgeUsdcAmountThreshold;
     }
@@ -203,10 +200,16 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @notice set rebalance paramters
     /// @param _rebalanceTimeThreshold minimum time difference required between two rebalance calls
     /// @dev a partial rebalance (rebalance where partial hedge gets taken) does not count
+    /// @param _rebalanceHfThreshold (BPS) threshold amount of health factor on AAVE below which a rebalance is triggered
     /// @param _rebalanceDeltaThreshold threshold difference between optimal and current token hedges for triggering a rebalance
-    function setRebalanceParams(uint32 _rebalanceTimeThreshold, uint16 _rebalanceDeltaThreshold) external onlyOwner {
+    function setRebalanceParams(
+        uint32 _rebalanceTimeThreshold,
+        uint16 _rebalanceDeltaThreshold,
+        uint16 _rebalanceHfThreshold
+    ) external onlyOwner {
         state.rebalanceTimeThreshold = _rebalanceTimeThreshold;
         state.rebalanceDeltaThreshold = _rebalanceDeltaThreshold;
+        state.rebalanceHfThreshold = _rebalanceHfThreshold;
     }
 
     /// @notice set hedge parameters
