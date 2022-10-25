@@ -27,7 +27,6 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -117,7 +116,6 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -203,7 +201,6 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -306,7 +303,6 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -389,7 +385,6 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-
       10n ** 15n, //wethConversionThreshold
       parseUnits('4', 6), //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -481,7 +476,6 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-
       10n ** 15n, //wethConversionThreshold
       parseUnits('12', 6), //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -573,7 +567,6 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-
       10n ** 15n, //wethConversionThreshold
       parseUnits('12', 6), //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -666,7 +659,6 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-
       10n ** 15n, //wethConversionThreshold
       parseUnits('12', 6), //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -756,7 +748,6 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -841,7 +832,7 @@ describe('Rebalance Scenarios', () => {
     await logger.logBorrowParams();
     await logger.logProtocolParamsAndHoldings();
 
-    await checker.checkTotalAssets(143005773689692000000n, 5n * 10n ** 11n, true);
+    await checker.checkTotalAssets(143005773689692000000n, 10n ** 12n, true);
     await checker.checkTotalSupply(152340033443598000000n, 7n * 10n ** 11n, true);
     await checker.checkBorrowValue(78474001n, 300n);
 
@@ -893,7 +884,6 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -977,7 +967,7 @@ describe('Rebalance Scenarios', () => {
     await logger.logBorrowParams();
     await logger.logProtocolParamsAndHoldings();
 
-    await checker.checkTotalAssets(143005773689692000000n, 5n * 10n ** 11n, true);
+    await checker.checkTotalAssets(143005773689692000000n, 10n ** 12n, true);
     await checker.checkTotalSupply(152340033443598000000n, 7n * 10n ** 11n, true);
     await checker.checkBorrowValue(78474001n, 300n);
 
@@ -1022,7 +1012,6 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('15', 6), //usdcConversionThreshold
-
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -1126,7 +1115,6 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
@@ -1196,7 +1184,7 @@ describe('Rebalance Scenarios', () => {
     await checker.checkTotalSupply(1000000000000000000000000n, 0, true);
 
     await checker.checkCurrentBorrowed([757509992n, 116540097481776000000n], [3n * 10n ** 5n, 4n * 10n ** 16n]);
-    await checker.checkVaultMktValue(1253426285911n, 5n * 10n ** 5n);
+    await checker.checkVaultMktValue(1253426285911n, 10n ** 6n);
     await checker.checkBorrowValue(664597565240n, 3n * 10n ** 8n);
     await checker.checkUsdcBorrwed(508221667536n, 2n * 10n ** 8n);
   });
@@ -1364,7 +1352,6 @@ describe('Rebalance Scenarios', () => {
       100, //slippageThresholdSwapEth
       100, //slippageThresholdGmx
       parseUnits('1', 6), //usdcConversionThreshold
-
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
