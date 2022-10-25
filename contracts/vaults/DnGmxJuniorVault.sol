@@ -249,15 +249,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         IPriceOracle oracle = IPriceOracle(poolAddressProvider.getPriceOracle());
         state.oracle = oracle;
 
-        emit HedgeParamsUpdated(
-            vault,
-            swapRouter,
-            targetHealthFactor,
-            aaveRewardsController,
-            poolAddressProvider,
-            pool,
-            oracle
-        );
+        emit HedgeParamsUpdated(vault, swapRouter, targetHealthFactor, aaveRewardsController, pool, oracle);
     }
 
     /// @notice pause deposit, mint, withdraw and redeem

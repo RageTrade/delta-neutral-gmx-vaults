@@ -73,7 +73,6 @@ interface IDnGmxJuniorVault is IERC4626, IBorrower {
         ISwapRouter swapRouter,
         uint256 targetHealthFactor,
         IRewardsController aaveRewardsController,
-        IPoolAddressesProvider poolAddressProvider,
         IPool pool,
         IPriceOracle oracle
     );
