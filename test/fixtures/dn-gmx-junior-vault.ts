@@ -120,7 +120,6 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     addresses.UNI_V3_SWAP_ROUTER, //swapRouter:
     targetHealthFactor, // 150%
     ethers.constants.AddressZero, //aaveRewardsController:
-    addresses.AAVE_POOL_ADDRESS_PROVIDER, // _poolAddressesProvider
   );
 
   await dnGmxJuniorVault.grantAllowances();

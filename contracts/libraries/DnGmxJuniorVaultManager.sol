@@ -491,10 +491,6 @@ library DnGmxJuniorVaultManager {
     /* ##################################################################
                             AAVE HELPERS
     ################################################################## */
-    /*
-        AAVE HELPERS
-    */
-
     ///@notice executes borrow of "token" of "amount" quantity to AAVE at variable interest rate
     ///@param token address of token to borrow
     ///@param amount amount of token to borrow
