@@ -23,9 +23,9 @@ describe('Rebalance Scenarios', () => {
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds(
-      100, //slippageThresholdSwapBtc
-      100, //slippageThresholdSwapEth
-      100, //slippageThresholdGmx
+      100, //slippageThresholdSwapBtcBps
+      100, //slippageThresholdSwapEthBps
+      100, //slippageThresholdGmxBps
       parseUnits('1', 6), //usdcConversionThreshold
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
@@ -112,9 +112,9 @@ describe('Rebalance Scenarios', () => {
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds(
-      100, //slippageThresholdSwapBtc
-      100, //slippageThresholdSwapEth
-      100, //slippageThresholdGmx
+      100, //slippageThresholdSwapBtcBps
+      100, //slippageThresholdSwapEthBps
+      100, //slippageThresholdGmxBps
       parseUnits('1', 6), //usdcConversionThreshold
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
@@ -197,9 +197,9 @@ describe('Rebalance Scenarios', () => {
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds(
-      100, //slippageThresholdSwapBtc
-      100, //slippageThresholdSwapEth
-      100, //slippageThresholdGmx
+      100, //slippageThresholdSwapBtcBps
+      100, //slippageThresholdSwapEthBps
+      100, //slippageThresholdGmxBps
       parseUnits('1', 6), //usdcConversionThreshold
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
@@ -299,9 +299,9 @@ describe('Rebalance Scenarios', () => {
     );
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds(
-      100, //slippageThresholdSwapBtc
-      100, //slippageThresholdSwapEth
-      100, //slippageThresholdGmx
+      100, //slippageThresholdSwapBtcBps
+      100, //slippageThresholdSwapEthBps
+      100, //slippageThresholdGmxBps
       parseUnits('1', 6), //usdcConversionThreshold
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
@@ -381,9 +381,9 @@ describe('Rebalance Scenarios', () => {
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds(
-      100, //slippageThresholdSwapBtc
-      100, //slippageThresholdSwapEth
-      100, //slippageThresholdGmx
+      100, //slippageThresholdSwapBtcBps
+      100, //slippageThresholdSwapEthBps
+      100, //slippageThresholdGmxBps
       parseUnits('1', 6), //usdcConversionThreshold
       10n ** 15n, //wethConversionThreshold
       parseUnits('4', 6), //hedgeUsdcAmountThreshold
@@ -472,9 +472,9 @@ describe('Rebalance Scenarios', () => {
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds(
-      100, //slippageThresholdSwapBtc
-      100, //slippageThresholdSwapEth
-      100, //slippageThresholdGmx
+      100, //slippageThresholdSwapBtcBps
+      100, //slippageThresholdSwapEthBps
+      100, //slippageThresholdGmxBps
       parseUnits('1', 6), //usdcConversionThreshold
       10n ** 15n, //wethConversionThreshold
       parseUnits('12', 6), //hedgeUsdcAmountThreshold
@@ -563,9 +563,9 @@ describe('Rebalance Scenarios', () => {
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds(
-      100, //slippageThresholdSwapBtc
-      100, //slippageThresholdSwapEth
-      100, //slippageThresholdGmx
+      100, //slippageThresholdSwapBtcBps
+      100, //slippageThresholdSwapEthBps
+      100, //slippageThresholdGmxBps
       parseUnits('1', 6), //usdcConversionThreshold
       10n ** 15n, //wethConversionThreshold
       parseUnits('12', 6), //hedgeUsdcAmountThreshold
@@ -655,9 +655,9 @@ describe('Rebalance Scenarios', () => {
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds(
-      100, //slippageThresholdSwapBtc
-      100, //slippageThresholdSwapEth
-      100, //slippageThresholdGmx
+      100, //slippageThresholdSwapBtcBps
+      100, //slippageThresholdSwapEthBps
+      100, //slippageThresholdGmxBps
       parseUnits('1', 6), //usdcConversionThreshold
       10n ** 15n, //wethConversionThreshold
       parseUnits('12', 6), //hedgeUsdcAmountThreshold
@@ -744,9 +744,9 @@ describe('Rebalance Scenarios', () => {
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds(
-      100, //slippageThresholdSwapBtc
-      100, //slippageThresholdSwapEth
-      100, //slippageThresholdGmx
+      100, //slippageThresholdSwapBtcBps
+      100, //slippageThresholdSwapEthBps
+      100, //slippageThresholdGmxBps
       parseUnits('1', 6), //usdcConversionThreshold
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
@@ -880,9 +880,9 @@ describe('Rebalance Scenarios', () => {
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds(
-      100, //slippageThresholdSwapBtc
-      100, //slippageThresholdSwapEth
-      100, //slippageThresholdGmx
+      100, //slippageThresholdSwapBtcBps
+      100, //slippageThresholdSwapEthBps
+      100, //slippageThresholdGmxBps
       parseUnits('1', 6), //usdcConversionThreshold
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
@@ -1008,9 +1008,9 @@ describe('Rebalance Scenarios', () => {
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds(
-      100, //slippageThresholdSwapBtc
-      100, //slippageThresholdSwapEth
-      100, //slippageThresholdGmx
+      100, //slippageThresholdSwapBtcBps
+      100, //slippageThresholdSwapEthBps
+      100, //slippageThresholdGmxBps
       parseUnits('15', 6), //usdcConversionThreshold
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
@@ -1111,9 +1111,9 @@ describe('Rebalance Scenarios', () => {
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds(
-      100, //slippageThresholdSwapBtc
-      100, //slippageThresholdSwapEth
-      100, //slippageThresholdGmx
+      100, //slippageThresholdSwapBtcBps
+      100, //slippageThresholdSwapEthBps
+      100, //slippageThresholdGmxBps
       parseUnits('1', 6), //usdcConversionThreshold
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
@@ -1203,9 +1203,9 @@ describe('Rebalance Scenarios', () => {
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds(
-      100, //slippageThresholdSwapBtc
-      100, //slippageThresholdSwapEth
-      100, //slippageThresholdGmx
+      100, //slippageThresholdSwapBtcBps
+      100, //slippageThresholdSwapEthBps
+      100, //slippageThresholdGmxBps
       parseUnits('1', 6), //usdcConversionThreshold
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold
@@ -1215,7 +1215,7 @@ describe('Rebalance Scenarios', () => {
 
     await dnGmxJuniorVault.setRebalanceParams(
       86400, // rebalanceTimeThreshold
-      500, // 5% in bps | rebalanceDeltaThreshold
+      500, // 5% in bps | rebalanceDeltaThresholdBps
       0,
     );
 
@@ -1348,9 +1348,9 @@ describe('Rebalance Scenarios', () => {
     );
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds(
-      100, //slippageThresholdSwapBtc
-      100, //slippageThresholdSwapEth
-      100, //slippageThresholdGmx
+      100, //slippageThresholdSwapBtcBps
+      100, //slippageThresholdSwapEthBps
+      100, //slippageThresholdGmxBps
       parseUnits('1', 6), //usdcConversionThreshold
       10n ** 15n, //wethConversionThreshold
       0, //hedgeUsdcAmountThreshold

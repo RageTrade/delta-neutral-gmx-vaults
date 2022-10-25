@@ -83,7 +83,7 @@
     {
       "astId": 6633,
       "contract": "contracts/vaults/DnGmxBatchingManager.sol:DnGmxBatchingManager",
-      "label": "slippageThresholdGmx",
+      "label": "slippageThresholdGmxBps",
       "offset": 0,
       "slot": "253",
       "type": "t_uint256"

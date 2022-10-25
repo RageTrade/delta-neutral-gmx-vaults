@@ -39,13 +39,13 @@ interface IDnGmxJuniorVault is IERC4626, IBorrower {
     event BatchingManagerUpdated(address _batchingManager);
 
     event YieldParamsUpdated(
-        uint16 slippageThresholdGmx,
+        uint16 slippageThresholdGmxBps,
         uint240 usdcConversionThreshold,
         uint256 wethConversionThreshold,
         uint256 hedgeUsdcAmountThreshold,
-        uint256 rebalanceHfThreshold
+        uint256 rebalanceHfThresholdBps
     );
-    event RebalanceParamsUpdated(uint32 indexed rebalanceTimeThreshold, uint16 indexed rebalanceDeltaThreshold);
+    event RebalanceParamsUpdated(uint32 indexed rebalanceTimeThreshold, uint16 indexed rebalanceDeltaThresholdBps);
 
     function harvestFees() external;
 

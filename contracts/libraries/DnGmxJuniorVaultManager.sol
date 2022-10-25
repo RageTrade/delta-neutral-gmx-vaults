@@ -78,12 +78,12 @@ library DnGmxJuniorVaultManager {
         // thresholds
         uint256 depositCap;
 
-        uint16 slippageThresholdGmx; // bps
-        uint16 slippageThresholdSwapBtc; // bps
-        uint16 slippageThresholdSwapEth; // bps
-        uint16 rebalanceHfThreshold; // bps
+        uint16 slippageThresholdGmxBps; // bps
+        uint16 slippageThresholdSwapBtcBps; // bps
+        uint16 slippageThresholdSwapEthBps; // bps
+        uint16 rebalanceHfThresholdBps; // bps
         uint32 rebalanceTimeThreshold; // seconds between rebalance
-        uint16 rebalanceDeltaThreshold; // bps
+        uint16 rebalanceDeltaThresholdBps; // bps
         uint128 wethConversionThreshold; // eth amount
 
         uint128 usdcConversionThreshold; // usdc amount
@@ -429,7 +429,7 @@ library DnGmxJuniorVaultManager {
         uint256 usdcPrice = state.gmxVault.getMaxPrice(_usdc);
 
         uint256 minUsdcOut = usdcAmountDesired.mulDivDown(
-            usdcPrice * (MAX_BPS - state.slippageThresholdGmx),
+            usdcPrice * (MAX_BPS - state.slippageThresholdGmxBps),
             PRICE_PRECISION * MAX_BPS
         );
 
@@ -453,7 +453,7 @@ library DnGmxJuniorVaultManager {
         // USDG has 18 decimals and usdc has 6 decimals => 18-6 = 12
         uint256 price = state.gmxVault.getMinPrice(address(state.usdc));
         uint256 usdgAmount = amount.mulDivDown(
-            price * (MAX_BPS - state.slippageThresholdGmx),
+            price * (MAX_BPS - state.slippageThresholdGmxBps),
             PRICE_PRECISION * MAX_BPS
         );
 
@@ -608,7 +608,7 @@ library DnGmxJuniorVaultManager {
 
     function _totalAssets(State storage state, bool maximize) private view returns (uint256) {
         uint256 unhedgedGlp = state.unhedgedGlpInUsdc.mulDivDown(PRICE_PRECISION, _getGlpPrice(state, !maximize));
-        if (!maximize) unhedgedGlp = unhedgedGlp.mulDivDown(MAX_BPS - state.slippageThresholdGmx, MAX_BPS);
+        if (!maximize) unhedgedGlp = unhedgedGlp.mulDivDown(MAX_BPS - state.slippageThresholdGmxBps, MAX_BPS);
         return state.fsGlp.balanceOf(address(this)) + state.batchingManager.dnGmxJuniorVaultGlpBalance() + unhedgedGlp;
     }
 
@@ -620,9 +620,9 @@ library DnGmxJuniorVaultManager {
     function isValidRebalanceHF(State storage state) external view returns (bool) {
         (, , , , , uint256 healthFactor) = state.pool.getUserAccountData(address(this));
         // console.log('healthFactor', healthFactor);
-        // console.log('rebalanceHfThreshold', rebalanceHfThreshold);
+        // console.log('rebalanceHfThresholdBps', rebalanceHfThresholdBps);
 
-        return healthFactor < (uint256(state.rebalanceHfThreshold) * 1e14);
+        return healthFactor < (uint256(state.rebalanceHfThresholdBps) * 1e14);
     }
 
     function isValidRebalanceDeviation(State storage state) external view returns (bool) {
@@ -736,8 +736,8 @@ library DnGmxJuniorVaultManager {
         )
     {
         uint256 slippageThresholdSwap = token == address(state.wbtc)
-            ? state.slippageThresholdSwapBtc
-            : state.slippageThresholdSwapEth;
+            ? state.slippageThresholdSwapBtcBps
+            : state.slippageThresholdSwapEthBps;
         // check the delta between optimal position and actual position in token terms
         // take that position using swap
         // To Increase
@@ -881,8 +881,8 @@ library DnGmxJuniorVaultManager {
 
         uint256 diff = optimalBorrow > currentBorrow ? optimalBorrow - currentBorrow : currentBorrow - optimalBorrow;
         // console.log('diff', diff);
-        // console.log('RHS', uint256(rebalanceDeltaThreshold).mulDivDown(currentBorrow, MAX_BPS));
-        return diff <= uint256(state.rebalanceDeltaThreshold).mulDivDown(currentBorrow, MAX_BPS);
+        // console.log('RHS', uint256(rebalanceDeltaThresholdBps).mulDivDown(currentBorrow, MAX_BPS));
+        return diff <= uint256(state.rebalanceDeltaThresholdBps).mulDivDown(currentBorrow, MAX_BPS);
     }
 
     function _getOptimalCappedBorrow(

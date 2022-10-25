@@ -169,27 +169,27 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     }
 
     /// @notice set thresholds
-    /// @param _slippageThresholdSwapBtc (BPS) slippage threshold on btc swaps
-    /// @param _slippageThresholdSwapEth (BPS) slippage threshold on eth swaps
-    /// @param _slippageThresholdGmx (BPS) slippage threshold on sGlp mint and redeem
+    /// @param _slippageThresholdSwapBtcBps (BPS) slippage threshold on btc swaps
+    /// @param _slippageThresholdSwapEthBps (BPS) slippage threshold on eth swaps
+    /// @param _slippageThresholdGmxBps (BPS) slippage threshold on sGlp mint and redeem
     /// @param _usdcConversionThreshold (usdc amount) threshold amount for conversion of usdc into sGlp
     /// @param _wethConversionThreshold (weth amount) threshold amount for weth fees to be compounded into sGlp
     /// @param _hedgeUsdcAmountThreshold (usdc amount) threshold amount below which ETH/BTC hedges are not executed
     /// @param _partialBtcHedgeUsdcAmountThreshold (usdc amount) threshold amount above which BTC hedge is not fully taken (gets executed in blocks over multiple rebalances)
     /// @param _partialEthHedgeUsdcAmountThreshold (usdc amount) threshold amount above which ETH hedge is not fully taken (gets executed in blocks over multiple rebalances)
     function setThresholds(
-        uint16 _slippageThresholdSwapBtc,
-        uint16 _slippageThresholdSwapEth,
-        uint16 _slippageThresholdGmx,
+        uint16 _slippageThresholdSwapBtcBps,
+        uint16 _slippageThresholdSwapEthBps,
+        uint16 _slippageThresholdGmxBps,
         uint128 _usdcConversionThreshold,
         uint128 _wethConversionThreshold,
         uint128 _hedgeUsdcAmountThreshold,
         uint128 _partialBtcHedgeUsdcAmountThreshold,
         uint128 _partialEthHedgeUsdcAmountThreshold
     ) external onlyOwner {
-        state.slippageThresholdSwapBtc = _slippageThresholdSwapBtc;
-        state.slippageThresholdSwapEth = _slippageThresholdSwapEth;
-        state.slippageThresholdGmx = _slippageThresholdGmx;
+        state.slippageThresholdSwapBtcBps = _slippageThresholdSwapBtcBps;
+        state.slippageThresholdSwapEthBps = _slippageThresholdSwapEthBps;
+        state.slippageThresholdGmxBps = _slippageThresholdGmxBps;
         state.usdcConversionThreshold = _usdcConversionThreshold;
         state.wethConversionThreshold = _wethConversionThreshold;
         state.hedgeUsdcAmountThreshold = _hedgeUsdcAmountThreshold;
@@ -198,18 +198,18 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     }
 
     /// @notice set rebalance paramters
-    /// @param _rebalanceTimeThreshold minimum time difference required between two rebalance calls
+    /// @param _rebalanceTimeThreshold (seconds) minimum time difference required between two rebalance calls
     /// @dev a partial rebalance (rebalance where partial hedge gets taken) does not count
-    /// @param _rebalanceHfThreshold (BPS) threshold amount of health factor on AAVE below which a rebalance is triggered
-    /// @param _rebalanceDeltaThreshold threshold difference between optimal and current token hedges for triggering a rebalance
+    /// @param _rebalanceDeltaThresholdBps (BPS) threshold difference between optimal and current token hedges for triggering a rebalance
+    /// @param _rebalanceHfThresholdBps (BPS) threshold amount of health factor on AAVE below which a rebalance is triggered
     function setRebalanceParams(
         uint32 _rebalanceTimeThreshold,
-        uint16 _rebalanceDeltaThreshold,
-        uint16 _rebalanceHfThreshold
+        uint16 _rebalanceDeltaThresholdBps,
+        uint16 _rebalanceHfThresholdBps
     ) external onlyOwner {
         state.rebalanceTimeThreshold = _rebalanceTimeThreshold;
-        state.rebalanceDeltaThreshold = _rebalanceDeltaThreshold;
-        state.rebalanceHfThreshold = _rebalanceHfThreshold;
+        state.rebalanceDeltaThresholdBps = _rebalanceDeltaThresholdBps;
+        state.rebalanceHfThresholdBps = _rebalanceHfThresholdBps;
     }
 
     /// @notice set hedge parameters
@@ -341,7 +341,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
             uint256 price = state.gmxVault.getMinPrice(address(state.weth));
 
             uint256 usdgAmount = dnGmxWethShare.mulDivDown(
-                price * (MAX_BPS - state.slippageThresholdGmx),
+                price * (MAX_BPS - state.slippageThresholdGmxBps),
                 PRICE_PRECISION * MAX_BPS
             );
 
@@ -351,7 +351,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
             if (_seniorVaultWethRewards > state.wethConversionThreshold) {
                 // Deposit aave vault share to AAVE in usdc
                 uint256 minUsdcAmount = state.getTokenPriceInUsdc(state.weth).mulDivDown(
-                    _seniorVaultWethRewards * (MAX_BPS - state.slippageThresholdSwapEth),
+                    _seniorVaultWethRewards * (MAX_BPS - state.slippageThresholdSwapEthBps),
                     MAX_BPS * PRICE_PRECISION
                 );
                 (uint256 aaveUsdcAmount, uint256 tokensUsed) = state.swapToken(
