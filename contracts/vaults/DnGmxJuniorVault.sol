@@ -356,7 +356,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
                     minUsdcAmount
                 );
                 tokensUsed; // silence warning
-                _executeSupply(address(state.usdc), aaveUsdcAmount);
+                state._executeSupply(address(state.usdc), aaveUsdcAmount);
                 state.seniorVaultWethRewards = 0;
                 emit RewardsHarvested(
                     wethHarvested,
@@ -780,42 +780,6 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     }
 
     /*
-        AAVE HELPERS
-    */
-    ///@notice executes borrow of "token" of "amount" quantity to AAVE at variable interest rate
-    ///@param token address of token to borrow
-    ///@param amount amount of token to borrow
-    function _executeBorrow(address token, uint256 amount) internal {
-        state.pool.borrow(token, amount, VARIABLE_INTEREST_MODE, 0, address(this));
-    }
-
-    ///@notice executes repay of "token" of "amount" quantity to AAVE at variable interest rate
-    ///@param token address of token to borrow
-    ///@param amount amount of token to borrow
-    function _executeRepay(address token, uint256 amount) internal {
-        state.pool.repay(token, amount, VARIABLE_INTEREST_MODE, address(this));
-    }
-
-    ///@notice executes supply of "token" of "amount" quantity to AAVE
-    ///@param token address of token to borrow
-    ///@param amount amount of token to borrow
-    function _executeSupply(address token, uint256 amount) internal {
-        state.pool.supply(token, amount, address(this), 0);
-    }
-
-    ///@notice executes withdraw of "token" of "amount" quantity to AAVE
-    ///@param token address of token to borrow
-    ///@param amount amount of token to borrow
-    ///@param receiver address to which withdrawn tokens should be sent
-    function _executeWithdraw(
-        address token,
-        uint256 amount,
-        address receiver
-    ) internal {
-        state.pool.withdraw(token, amount, receiver);
-    }
-
-    /*
         BALANCER HELPERS
     */
 
@@ -840,8 +804,8 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
             // console.log('amountWithPremium borrow', amountWithPremium, token);
             (uint256 usdcReceived, uint256 tokensUsed) = state.swapToken(token, tokenAmount, usdcAmount);
             tokensUsed; // silence warning
-            _executeSupply(address(state.usdc), usdcReceived);
-            _executeBorrow(token, amountWithPremium);
+            state._executeSupply(address(state.usdc), usdcReceived);
+            state._executeBorrow(token, amountWithPremium);
             IERC20(token).transfer(address(state.balancerVault), amountWithPremium);
             state.dnUsdcDeposited += usdcReceived.toInt256();
         } else {
@@ -851,9 +815,9 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
             // console.log('amountWithPremium', amountWithPremium, token);
             state.dnUsdcDeposited -= amountWithPremium.toInt256();
             // console.log('tokensReceived', tokensReceived);
-            _executeRepay(token, tokensReceived);
+            state._executeRepay(token, tokensReceived);
             //withdraws to balancerVault
-            _executeWithdraw(address(state.usdc), amountWithPremium, address(this));
+            state._executeWithdraw(address(state.usdc), amountWithPremium, address(this));
             state.usdc.transfer(address(state.balancerVault), usdcAmount + premium);
         }
     }

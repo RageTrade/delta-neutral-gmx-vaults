@@ -491,37 +491,53 @@ library DnGmxJuniorVaultManager {
     /* ##################################################################
                             AAVE HELPERS
     ################################################################## */
+    /*
+        AAVE HELPERS
+    */
 
+    ///@notice executes borrow of "token" of "amount" quantity to AAVE at variable interest rate
+    ///@param token address of token to borrow
+    ///@param amount amount of token to borrow
     function _executeBorrow(
         State storage state,
         address token,
         uint256 amount
-    ) private {
+    ) internal {
         state.pool.borrow(token, amount, VARIABLE_INTEREST_MODE, 0, address(this));
     }
 
+    ///@notice executes repay of "token" of "amount" quantity to AAVE at variable interest rate
+    ///@param token address of token to borrow
+    ///@param amount amount of token to borrow
     function _executeRepay(
         State storage state,
         address token,
         uint256 amount
-    ) private {
+    ) internal {
         state.pool.repay(token, amount, VARIABLE_INTEREST_MODE, address(this));
     }
 
+    ///@notice executes supply of "token" of "amount" quantity to AAVE
+    ///@param token address of token to borrow
+    ///@param amount amount of token to borrow
     function _executeSupply(
         State storage state,
         address token,
         uint256 amount
-    ) private {
+    ) internal {
         state.pool.supply(token, amount, address(this), 0);
     }
 
+    ///@notice executes withdraw of "token" of "amount" quantity to AAVE
+    ///@param token address of token to borrow
+    ///@param amount amount of token to borrow
+    ///@param receiver address to which withdrawn tokens should be sent
     function _executeWithdraw(
         State storage state,
         address token,
         uint256 amount,
         address receiver
-    ) private {
+    ) internal {
         state.pool.withdraw(token, amount, receiver);
     }
 
