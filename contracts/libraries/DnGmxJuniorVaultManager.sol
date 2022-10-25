@@ -828,8 +828,8 @@ library DnGmxJuniorVaultManager {
         // console.log("btcWeight",btcWeight);
         // console.log("ethWeight",ethWeight);
 
-        uint256 btcPrice = _getTokenPrice(state, state.wbtc);
-        uint256 ethPrice = _getTokenPrice(state, state.weth);
+        uint256 btcPrice = _getTokenPriceInUsdc(state, state.wbtc);
+        uint256 ethPrice = _getTokenPriceInUsdc(state, state.weth);
 
         optimalBtcBorrow = maxBorrowValue.mulDivDown(btcWeight * PRICE_PRECISION, (btcWeight + ethWeight) * btcPrice);
         optimalEthBorrow = maxBorrowValue.mulDivDown(ethWeight * PRICE_PRECISION, (btcWeight + ethWeight) * ethPrice);
