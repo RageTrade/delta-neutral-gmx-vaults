@@ -763,6 +763,71 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         return state.dnUsdcDeposited;
     }
 
+    function getAdminParams()
+        external
+        view
+        returns (
+            address keeper,
+            IDnGmxSeniorVault dnGmxSeniorVault,
+            uint256 depositCap,
+            IDnGmxBatchingManager batchingManager,
+            uint16 withdrawFeeBps
+        )
+    {
+        return (state.keeper, state.dnGmxSeniorVault, state.depositCap, state.batchingManager, state.withdrawFeeBps);
+    }
+
+    function getThresholds()
+        external
+        view
+        returns (
+            uint16 slippageThresholdSwapBtcBps,
+            uint16 slippageThresholdSwapEthBps,
+            uint16 slippageThresholdGmxBps,
+            uint128 usdcConversionThreshold,
+            uint128 wethConversionThreshold,
+            uint128 hedgeUsdcAmountThreshold,
+            uint128 partialBtcHedgeUsdcAmountThreshold,
+            uint128 partialEthHedgeUsdcAmountThreshold
+        )
+    {
+        return (
+            state.slippageThresholdSwapBtcBps,
+            state.slippageThresholdSwapEthBps,
+            state.slippageThresholdGmxBps,
+            state.usdcConversionThreshold,
+            state.wethConversionThreshold,
+            state.hedgeUsdcAmountThreshold,
+            state.partialBtcHedgeUsdcAmountThreshold,
+            state.partialEthHedgeUsdcAmountThreshold
+        );
+    }
+
+    function getRebalanceParams()
+        external
+        view
+        returns (
+            uint32 rebalanceTimeThreshold,
+            uint16 rebalanceDeltaThresholdBps,
+            uint16 rebalanceHfThresholdBps
+        )
+    {
+        return (state.rebalanceTimeThreshold, state.rebalanceDeltaThresholdBps, state.rebalanceHfThresholdBps);
+    }
+
+    function getHedgeParams()
+        external
+        view
+        returns (
+            IBalancerVault balancerVault,
+            ISwapRouter swapRouter,
+            uint256 targetHealthFactor,
+            IRewardsController aaveRewardsController
+        )
+    {
+        return (state.balancerVault, state.swapRouter, state.targetHealthFactor, state.aaveRewardsController);
+    }
+
     /* ##################################################################
                             INTERNAL FUNCTIONS
     ################################################################## */
