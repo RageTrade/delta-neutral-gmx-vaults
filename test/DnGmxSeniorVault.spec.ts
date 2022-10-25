@@ -1,23 +1,33 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
-import { BigNumber } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { hexlify, parseUnits, randomBytes } from 'ethers/lib/utils';
-import { DnGmxJuniorVaultMock, DnGmxSeniorVault, ERC20Upgradeable, IAToken } from '../typechain-types';
+import {
+  DnGmxBatchingManager,
+  DnGmxJuniorVaultMock,
+  DnGmxSeniorVault,
+  ERC20Upgradeable,
+  IAToken,
+} from '../typechain-types';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
+import addresses from './fixtures/addresses';
 
 describe('DnGmx Senior Vault', () => {
   let aUSDC: IAToken;
   let usdc: ERC20Upgradeable;
   let users: SignerWithAddress[];
+  let admin: SignerWithAddress;
 
   let dnGmxSeniorVault: DnGmxSeniorVault;
+  let glpBatchingManager: DnGmxBatchingManager;
   let dnGmxJuniorVault: DnGmxJuniorVaultMock;
 
   beforeEach(async () => {
-    ({ dnGmxJuniorVault, dnGmxSeniorVault, users, aUSDC, usdc } = await dnGmxJuniorVaultFixture());
+    ({ dnGmxJuniorVault, dnGmxSeniorVault, users, aUSDC, usdc, admin, glpBatchingManager } =
+      await dnGmxJuniorVaultFixture());
   });
 
-  describe('Setters', () => {
+  describe('Setters senior vault', () => {
     it('dnGmxSeniorVault', async () => {
       const address = hexlify(randomBytes(20));
       await dnGmxSeniorVault.setDnGmxJuniorVault(address);
@@ -49,6 +59,77 @@ describe('DnGmx Senior Vault', () => {
       const borrowCap = parseUnits('50', 6n);
       await dnGmxSeniorVault.updateBorrowCap(dnGmxJuniorVault.address, borrowCap);
       expect(await dnGmxSeniorVault.borrowCaps(dnGmxJuniorVault.address)).to.eq(borrowCap);
+    });
+  });
+
+  describe('Setters junior vault', () => {
+    it('setAdminParams', async () => {
+      await dnGmxJuniorVault.setAdminParams(
+        admin.address,
+        dnGmxSeniorVault.address,
+        ethers.constants.MaxUint256,
+        glpBatchingManager.address,
+        100,
+      );
+
+      const adminParams = await dnGmxJuniorVault.getAdminParams();
+      expect(adminParams.keeper).to.eq(admin.address);
+      expect(adminParams.dnGmxSeniorVault).to.eq(dnGmxSeniorVault.address);
+      expect(adminParams.depositCap).to.eq(ethers.constants.MaxUint256);
+      expect(adminParams.batchingManager).to.eq(glpBatchingManager.address);
+      expect(adminParams.withdrawFeeBps).to.eq(100);
+    });
+
+    it('setThresholds', async () => {
+      await dnGmxJuniorVault.setThresholds(
+        100, //slippageThresholdSwapBtc
+        100, //slippageThresholdSwapEth
+        100, //slippageThresholdGmx
+        parseUnits('1', 6), //usdcConversionThreshold
+        10n ** 15n, //wethConversionThreshold
+        parseUnits('12', 6), //hedgeUsdcAmountThreshold
+        parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
+        parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
+      );
+
+      const thresholds = await dnGmxJuniorVault.getThresholds();
+      expect(thresholds.slippageThresholdSwapBtcBps).to.eq(100);
+      expect(thresholds.slippageThresholdSwapEthBps).to.eq(100);
+      expect(thresholds.slippageThresholdGmxBps).to.eq(100);
+      expect(thresholds.usdcConversionThreshold).to.eq(parseUnits('1', 6));
+      expect(thresholds.wethConversionThreshold).to.eq(10n ** 15n);
+      expect(thresholds.hedgeUsdcAmountThreshold).to.eq(parseUnits('12', 6));
+      expect(thresholds.partialBtcHedgeUsdcAmountThreshold).to.eq(parseUnits('1000000', 6));
+      expect(thresholds.partialEthHedgeUsdcAmountThreshold).to.eq(parseUnits('1000000', 6));
+    });
+
+    it('setRebalanceParams', async () => {
+      await dnGmxJuniorVault.setRebalanceParams(
+        86400, // rebalanceTimeThreshold
+        500, // 5% in bps | rebalanceDeltaThreshold
+        0,
+      );
+
+      const rebalanceParams = await dnGmxJuniorVault.getRebalanceParams();
+      expect(rebalanceParams.rebalanceTimeThreshold).to.eq(86400);
+      expect(rebalanceParams.rebalanceDeltaThresholdBps).to.eq(500);
+      expect(rebalanceParams.rebalanceHfThresholdBps).to.eq(0);
+    });
+
+    it('setHedgeParams', async () => {
+      const targetHealthFactor = 15_000;
+      await dnGmxJuniorVault.setHedgeParams(
+        addresses.BALANCER_VAULT, //vault:
+        addresses.UNI_V3_SWAP_ROUTER, //swapRouter:
+        targetHealthFactor, // 150%
+        ethers.constants.AddressZero,
+      );
+
+      const hedgeParams = await dnGmxJuniorVault.getHedgeParams();
+      expect(hedgeParams.balancerVault).to.eq(addresses.BALANCER_VAULT);
+      expect(hedgeParams.swapRouter).to.eq(addresses.UNI_V3_SWAP_ROUTER);
+      expect(hedgeParams.targetHealthFactor).to.eq(targetHealthFactor);
+      expect(hedgeParams.aaveRewardsController).to.eq(ethers.constants.AddressZero);
     });
   });
 
