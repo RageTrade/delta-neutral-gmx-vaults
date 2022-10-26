@@ -894,11 +894,23 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@param maximize true for maximizing the total assets value and false to minimize
     function _totalAssets(State storage state, bool maximize) private view returns (uint256) {
-        uint256 unhedgedGlp = (state.unhedgedGlpInUsdc + state.dnUsdcDeposited).mulDivDown(
+        int256 dnUsdcDeposited = state.dnUsdcDeposited;
+
+        uint256 dnUsdcDepositedPos = dnUsdcDeposited > int256(0) ? uint256(dnUsdcDeposited) : 0;
+        uint256 dnUsdcDepositedNeg = dnUsdcDeposited < int256(0) ? uint256(-dnUsdcDeposited) : 0;
+
+        uint256 unhedgedGlp = (state.unhedgedGlpInUsdc + dnUsdcDepositedPos).mulDivDown(
             PRICE_PRECISION,
             _getGlpPrice(state, !maximize)
         );
-        uint256 borrowValueGlp = totalCurrentBorrowValue.mulDivDown(PRICE_PRECISION, _getGlpPrice(state, !maximize));
+
+        (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows(state);
+        uint256 totalCurrentBorrowValue = _getBorrowValue(state, currentBtc, currentEth);
+
+        uint256 borrowValueGlp = (totalCurrentBorrowValue + dnUsdcDepositedNeg).mulDivDown(
+            PRICE_PRECISION,
+            _getGlpPrice(state, !maximize)
+        );
 
         if (!maximize) unhedgedGlp = unhedgedGlp.mulDivDown(MAX_BPS - state.slippageThresholdGmxBps, MAX_BPS);
         if (!maximize) borrowValueGlp = borrowValueGlp.mulDivDown(MAX_BPS - state.slippageThresholdGmxBps, MAX_BPS);
