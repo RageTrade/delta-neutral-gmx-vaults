@@ -894,9 +894,20 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@param maximize true for maximizing the total assets value and false to minimize
     function _totalAssets(State storage state, bool maximize) private view returns (uint256) {
-        uint256 unhedgedGlp = state.unhedgedGlpInUsdc.mulDivDown(PRICE_PRECISION, _getGlpPrice(state, !maximize));
+        uint256 unhedgedGlp = (state.unhedgedGlpInUsdc + state.dnUsdcDeposited).mulDivDown(
+            PRICE_PRECISION,
+            _getGlpPrice(state, !maximize)
+        );
+        uint256 borrowValueGlp = totalCurrentBorrowValue.mulDivDown(PRICE_PRECISION, _getGlpPrice(state, !maximize));
+
         if (!maximize) unhedgedGlp = unhedgedGlp.mulDivDown(MAX_BPS - state.slippageThresholdGmxBps, MAX_BPS);
-        return state.fsGlp.balanceOf(address(this)) + state.batchingManager.dnGmxJuniorVaultGlpBalance() + unhedgedGlp;
+        if (!maximize) borrowValueGlp = borrowValueGlp.mulDivDown(MAX_BPS - state.slippageThresholdGmxBps, MAX_BPS);
+
+        return
+            state.fsGlp.balanceOf(address(this)) +
+            state.batchingManager.dnGmxJuniorVaultGlpBalance() +
+            unhedgedGlp -
+            borrowValueGlp;
     }
 
     ///@notice returns if the rebalance is valid basis last rebalance time and rebalanceTimeThreshold
