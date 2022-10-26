@@ -63,9 +63,10 @@ export default {
       {
         version: '0.8.17',
         settings: {
+          viaIR: true,
           optimizer: {
             enabled: true,
-            runs: 340,
+            runs: 256,
           },
           metadata: {
             // do not include the metadata hash, since this is machine dependent
