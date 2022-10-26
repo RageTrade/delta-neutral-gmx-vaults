@@ -543,7 +543,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         return
             supply == 0
                 ? assets
-                : assets.mulDivDown(supply * MAX_BPS, state.totalAssets(false) * (MAX_BPS - state.withdrawFeeBps));
+                : assets.mulDivUp(supply * MAX_BPS, state.totalAssets(false) * (MAX_BPS - state.withdrawFeeBps));
     }
 
     /// @notice preview function for redeeming shares
