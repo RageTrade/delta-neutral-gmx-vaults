@@ -312,8 +312,6 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     ################################################################## */
     /// @notice checks if the rebalance can be run (3 thresholds - time, hedge deviation and AAVE HF )
     function isValidRebalance() public view returns (bool) {
-        // console.log('_isValidRebalanceTime', _isValidRebalanceTime());
-        // console.log('_isValidRebalanceDeviation', _isValidRebalanceDeviation());
         return state.isValidRebalanceTime() || state.isValidRebalanceDeviation() || state.isValidRebalanceHF();
     }
 
@@ -331,11 +329,6 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
 
         // rebalance profit
         state.rebalanceProfit(totalCurrentBorrowValue);
-
-        // console.log('currentBtc', currentBtc);
-        // console.log('currentEth', currentEth);
-        // console.log('totalAssets()', totalAssets());
-        // console.log('totalCurrentBorrowValue', totalCurrentBorrowValue);
 
         // calculate current btc and eth positions in GLP
         // get the position value and calculate the collateral needed to borrow that
@@ -691,9 +684,6 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     ) internal override {
         if (totalAssets() > state.depositCap) revert DepositCapExceeded();
         (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
-        // console.log('currentBtc', currentBtc);
-        // console.log('currentEth', currentEth);
-        // console.log('totalAssets()', totalAssets());
 
         //rebalance of hedge based on assets after deposit (after deposit assets)
         state.rebalanceHedge(currentBtc, currentEth, totalAssets(), false);
