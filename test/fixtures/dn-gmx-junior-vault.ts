@@ -7,6 +7,7 @@ import {
   IPoolAddressesProvider__factory,
   IPool__factory,
   IVault__factory,
+  DnGmxJuniorVaultManager,
 } from '../../typechain-types';
 import { generateErc20Balance } from '../utils/generator';
 import { increaseBlockTimestamp } from '../utils/shared';
@@ -34,9 +35,9 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   const gmx = await hre.ethers.getContractAt('ERC20Upgradeable', await rewardRouter.gmx());
   const esGmx = await hre.ethers.getContractAt('ERC20Upgradeable', await rewardRouter.esGmx());
 
-  const dnGmxJuniorVaultManager = await (
+  const dnGmxJuniorVaultManager = (await (
     await hre.ethers.getContractFactory('contracts/libraries/DnGmxJuniorVaultManager.sol:DnGmxJuniorVaultManager')
-  ).deploy();
+  ).deploy()) as DnGmxJuniorVaultManager;
 
   const dnGmxJuniorVault = await (
     await hre.ethers.getContractFactory('DnGmxJuniorVaultMock', {
@@ -221,6 +222,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     lendingPool,
     dnGmxSeniorVault,
     dnGmxJuniorVault,
+    dnGmxJuniorVaultManager,
     rewardRouter,
     targetHealthFactor,
     dnGmxJuniorVaultSigner,

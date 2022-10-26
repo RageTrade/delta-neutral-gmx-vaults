@@ -165,8 +165,8 @@ export class Logger {
     const confirmed = await tx.wait();
 
     for (const log of confirmed.logs) {
-      if (log.topics[0] === this.opts.dnGmxJuniorVault.interface.getEventTopic('RewardsHarvested')) {
-        const args = this.opts.dnGmxJuniorVault.interface.parseLog(log).args;
+      if (log.topics[0] === this.opts.dnGmxJuniorVaultManager.interface.getEventTopic('RewardsHarvested')) {
+        const args = this.opts.dnGmxJuniorVaultManager.interface.parseLog(log).args;
 
         console.log('total eth harvested (including fees): ', args.wethHarvested);
         console.log('junior vault eth share: ', args.juniorVaultWeth);
