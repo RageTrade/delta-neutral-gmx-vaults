@@ -32,7 +32,6 @@ import { IVault } from '../interfaces/gmx/IVault.sol';
 import { IVester } from '../interfaces/gmx/IVester.sol';
 
 import { DnGmxJuniorVaultManager } from '../libraries/DnGmxJuniorVaultManager.sol';
-import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
 import { SafeCast } from '../libraries/SafeCast.sol';
 
 import { ERC4626Upgradeable } from '../ERC4626/ERC4626Upgradeable.sol';
@@ -307,100 +306,8 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         IERC20Metadata(state.rewardRouter.gmx()).safeTransfer(state.feeRecipient, gmxClaimed);
     }
 
-    /// @notice stakes the rewards from the staked Glp and claims WETH to buy glp
-    /// @notice also update protocolEsGmx fees which can be vested and claimed
-    /// @notice divides the fees between senior and junior tranches based on senior tranche util
-    function harvestFees() public {
-        address esGmx = state.rewardRouter.esGmx();
-        IRewardTracker sGmx = IRewardTracker(state.rewardRouter.stakedGmxTracker());
-
-        uint256 sGmxPrevBalance = sGmx.depositBalances(address(this), esGmx);
-
-        state.rewardRouter.handleRewards({
-            shouldClaimGmx: false,
-            shouldStakeGmx: false,
-            shouldClaimEsGmx: true,
-            shouldStakeEsGmx: true,
-            shouldStakeMultiplierPoints: true,
-            shouldClaimWeth: true,
-            shouldConvertWethToEth: false
-        });
-
-        uint256 sGmxHarvested = sGmx.depositBalances(address(this), esGmx) - sGmxPrevBalance;
-        state.protocolEsGmx += sGmxHarvested.mulDivDown(state.feeBps, MAX_BPS);
-        // console.log('feeBps', state.feeBps);
-        // console.log('sGmxHarvested', sGmxHarvested);
-        // console.log('protocolEsGmx state', state.protocolEsGmx);
-
-        // console.log('gmx balance', sGmx.depositBalances(address(this), rewardRouter.gmx()));
-        uint256 wethHarvested = state.weth.balanceOf(address(this)) - state.protocolFee - state.seniorVaultWethRewards;
-        // console.log('wethHarvested', wethHarvested);
-
-        if (wethHarvested > state.wethConversionThreshold) {
-            uint256 protocolFeeHarvested = (wethHarvested * state.feeBps) / MAX_BPS;
-            state.protocolFee += protocolFeeHarvested;
-
-            uint256 wethToCompound = wethHarvested - protocolFeeHarvested;
-
-            uint256 dnGmxSeniorVaultWethShare = state.dnGmxSeniorVault.getEthRewardsSplitRate().mulDivDown(
-                wethToCompound,
-                FeeSplitStrategy.RATE_PRECISION
-            );
-            uint256 dnGmxWethShare = wethToCompound - dnGmxSeniorVaultWethShare;
-
-            uint256 _seniorVaultWethRewards = state.seniorVaultWethRewards + dnGmxSeniorVaultWethShare;
-
-            // console.log('ethRewardsSplitRate', dnGmxSeniorVault.getEthRewardsSplitRate());
-            // console.log('wethToCompound', wethToCompound);
-            // console.log('dnGmxWethShare', dnGmxWethShare);
-            // console.log('dnGmxSeniorVaultWethShare', dnGmxSeniorVaultWethShare);
-
-            uint256 price = state.gmxVault.getMinPrice(address(state.weth));
-
-            uint256 usdgAmount = dnGmxWethShare.mulDivDown(
-                price * (MAX_BPS - state.slippageThresholdGmxBps),
-                PRICE_PRECISION * MAX_BPS
-            );
-
-            uint256 glpReceived = state.batchingManager.depositToken(address(state.weth), dnGmxWethShare, usdgAmount);
-
-            // console.log('_seniorVaultWethRewards', _seniorVaultWethRewards);
-            if (_seniorVaultWethRewards > state.wethConversionThreshold) {
-                // Deposit aave vault share to AAVE in usdc
-                uint256 minUsdcAmount = state.getTokenPriceInUsdc(state.weth).mulDivDown(
-                    _seniorVaultWethRewards * (MAX_BPS - state.slippageThresholdSwapEthBps),
-                    MAX_BPS * PRICE_PRECISION
-                );
-                (uint256 aaveUsdcAmount, uint256 tokensUsed) = state.swapToken(
-                    address(state.weth),
-                    _seniorVaultWethRewards,
-                    minUsdcAmount
-                );
-                tokensUsed; // silence warning
-                state._executeSupply(address(state.usdc), aaveUsdcAmount);
-                state.seniorVaultWethRewards = 0;
-                emit RewardsHarvested(
-                    wethHarvested,
-                    sGmxHarvested,
-                    dnGmxWethShare,
-                    dnGmxSeniorVaultWethShare,
-                    glpReceived,
-                    aaveUsdcAmount
-                );
-            } else {
-                state.seniorVaultWethRewards = _seniorVaultWethRewards;
-                emit RewardsHarvested(
-                    wethHarvested,
-                    sGmxHarvested,
-                    dnGmxWethShare,
-                    dnGmxSeniorVaultWethShare,
-                    glpReceived,
-                    0
-                );
-            }
-        } else {
-            emit RewardsHarvested(wethHarvested, sGmxHarvested, 0, 0, 0, 0);
-        }
+    function harvestFees() external {
+        state.harvestFees();
     }
 
     /* ##################################################################
@@ -420,7 +327,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         if (!isValidRebalance()) revert InvalidRebalance();
 
         // harvest fees
-        harvestFees();
+        state.harvestFees();
 
         (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
         uint256 totalCurrentBorrowValue = state.getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
@@ -563,52 +470,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         uint256[] memory feeAmounts,
         bytes memory userData
     ) external onlyBalancerVault whenFlashloaned {
-        (
-            uint256 btcTokenAmount,
-            uint256 btcUsdcAmount,
-            uint256 ethTokenAmount,
-            uint256 ethUsdcAmount,
-            bool repayDebtBtc,
-            bool repayDebtEth
-        ) = abi.decode(userData, (uint256, uint256, uint256, uint256, bool, bool));
-
-        // console.log('### RECEIVE FLASHLOAN ###');
-        // console.log('btcTokenAmount', btcTokenAmount);
-        // console.log('ethTokenAmount', ethTokenAmount);
-        // console.log('btcUsdcAmount', btcUsdcAmount);
-        // console.log('ethUsdcAmount', ethUsdcAmount);
-        // console.log('repayDebtBtc', repayDebtBtc);
-        // console.log('repayDebtEth', repayDebtEth);
-
-        uint256 btcAssetPremium;
-        uint256 ethAssetPremium;
-        // adjust asset amounts for premiums (zero for balancer at the time of dev)
-        if (repayDebtBtc && repayDebtEth) {
-            // console.log('CASE 1');
-            // Here amounts[0] should be equal to btcTokenAmount+ethTokenAmount
-            btcAssetPremium = feeAmounts[0].mulDivDown(btcUsdcAmount, amounts[0]);
-            // console.log('btcAssetPremium', btcAssetPremium);
-            ethAssetPremium = (feeAmounts[0] - btcAssetPremium);
-            // console.log('ethAssetPremium', ethAssetPremium);
-        } else if (btcTokenAmount != 0 && ethTokenAmount != 0) {
-            // console.log('CASE 2');
-
-            // Here amounts[0] should be equal to btcTokenAmount and amounts[1] should be equal to ethTokenAmount
-            bool btcFirst = false;
-            if (repayDebtBtc ? tokens[0] == state.usdc : tokens[0] == state.wbtc) btcFirst = true;
-            btcAssetPremium = feeAmounts[btcFirst ? 0 : 1];
-            ethAssetPremium = feeAmounts[btcFirst ? 1 : 0];
-        } else {
-            // console.log('CASE 3');
-
-            if (btcTokenAmount != 0) btcAssetPremium = feeAmounts[0];
-            else ethAssetPremium = feeAmounts[0];
-        }
-
-        if (btcTokenAmount > 0)
-            _executeOperationToken(address(state.wbtc), btcTokenAmount, btcUsdcAmount, btcAssetPremium, repayDebtBtc);
-        if (ethTokenAmount > 0)
-            _executeOperationToken(address(state.weth), ethTokenAmount, ethUsdcAmount, ethAssetPremium, repayDebtEth);
+        state.receiveFlashLoan(tokens, amounts, feeAmounts, userData);
     }
 
     /* ##################################################################
@@ -830,7 +692,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @dev called first on any deposit/withdrawals
     function _rebalanceBeforeShareAllocation() internal {
         // harvest fees
-        harvestFees();
+        state.harvestFees();
 
         (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
         uint256 totalCurrentBorrowValue = state.getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
@@ -863,48 +725,5 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
 
         //rebalance of hedge based on assets after deposit (after deposit assets)
         state.rebalanceHedge(currentBtc, currentEth, totalAssets(), false);
-    }
-
-    /*
-        BALANCER HELPERS
-    */
-
-    ///@notice executes relevant token hedge update on receiving the flashloan from Balancer
-    ///@dev if "repayDebt = true" then usdc flashloaned, swapped for token, repay token debt, withdraw usdc from AAVE and pay back usdc with premium
-    ///@dev if "repayDebt = false" then token flashloaned, swapped for usdc, supply usdc, borrow tokens from AAVE and pay back tokens with premium
-    ///@param token address of token to increase/decrease hedge by
-    ///@param tokenAmount amount of tokens to swap
-    ///@param usdcAmount if "repayDebt = false" then = minimum amount of usdc | if "repayDebt = true" then = maximum amount of usdc
-    ///@param premium additional tokens/usdc to be repaid to balancer to cover flashloan fees
-    ///@param repayDebt true if token hedge needs to be reduced
-    function _executeOperationToken(
-        address token,
-        uint256 tokenAmount,
-        uint256 usdcAmount,
-        uint256 premium,
-        bool repayDebt
-    ) internal {
-        if (!repayDebt) {
-            // console.log('swapTokenToUSD');
-            uint256 amountWithPremium = tokenAmount + premium;
-            // console.log('amountWithPremium borrow', amountWithPremium, token);
-            (uint256 usdcReceived, uint256 tokensUsed) = state.swapToken(token, tokenAmount, usdcAmount);
-            tokensUsed; // silence warning
-            state._executeSupply(address(state.usdc), usdcReceived);
-            state._executeBorrow(token, amountWithPremium);
-            IERC20(token).transfer(address(state.balancerVault), amountWithPremium);
-            state.dnUsdcDeposited += usdcReceived.toInt256();
-        } else {
-            // console.log('swapUSDCToToken');
-            (uint256 usdcPaid, uint256 tokensReceived) = state.swapUSDC(token, tokenAmount, usdcAmount);
-            uint256 amountWithPremium = usdcPaid + premium;
-            // console.log('amountWithPremium', amountWithPremium, token);
-            state.dnUsdcDeposited -= amountWithPremium.toInt256();
-            // console.log('tokensReceived', tokensReceived);
-            state._executeRepay(token, tokensReceived);
-            //withdraws to balancerVault
-            state._executeWithdraw(address(state.usdc), amountWithPremium, address(this));
-            state.usdc.transfer(address(state.balancerVault), usdcAmount + premium);
-        }
     }
 }
