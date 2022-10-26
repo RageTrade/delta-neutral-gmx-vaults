@@ -165,16 +165,8 @@ describe('Rebalance & its utils', () => {
 
     let tx;
     const opts = await dnGmxJuniorVaultFixture();
-    const {
-      dnGmxJuniorVault,
-      dnGmxJuniorVaultSigner,
-      dnGmxSeniorVault,
-      users,
-      sGlp,
-      aUSDC,
-      targetHealthFactor,
-      usdcLiquidationThreshold,
-    } = opts;
+    const { dnGmxJuniorVault, dnGmxSeniorVault, users, sGlp, aUSDC, targetHealthFactor, usdcLiquidationThreshold } =
+      opts;
     const checker = new Checker(opts);
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('100', 6), users[1].address);
@@ -342,7 +334,6 @@ describe('Rebalance & its utils', () => {
      * - target < current
      */
 
-    let tx;
     const opts = await dnGmxJuniorVaultFixture();
     const {
       dnGmxJuniorVault,
@@ -354,7 +345,6 @@ describe('Rebalance & its utils', () => {
       targetHealthFactor,
       usdcLiquidationThreshold,
     } = opts;
-    const checker = new Checker(opts);
 
     await dnGmxSeniorVault.updateBorrowCap(dnGmxJuniorVault.address, parseUnits('100', 6));
 
@@ -364,10 +354,13 @@ describe('Rebalance & its utils', () => {
     await dnGmxSeniorVault.connect(users[2]).deposit(parseUnits('100', 6), users[2].address);
 
     const amount = parseEther('100');
-    // such that remaining totalAssets = 50 @ 0.5% withdrawFeeBps
-    const amountWithdraw = parseEther('50').mul(1000).div(995);
 
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
+
+    const totalAssets = await dnGmxJuniorVault.totalAssets();
+    // withdraw amount such that assets remaining after withdraw is 50 sglp
+    const amountWithdraw = totalAssets.sub(parseEther('50'));
+    console.log('amountWithdraw', amountWithdraw);
 
     // values based on state after withdraw
 
@@ -381,6 +374,7 @@ describe('Rebalance & its utils', () => {
     console.log('targetDnGmxSeniorVaultAmount (expected: after withdraw)', targetDnGmxSeniorVaultAmount);
 
     await dnGmxJuniorVault.connect(users[0]).withdraw(amountWithdraw, users[0].address, users[0].address);
+    console.log('real total assets after: ', await dnGmxJuniorVault.totalAssets());
 
     const dnUsdcDepositedAfter = await dnGmxJuniorVault.dnUsdcDepositedExternal();
     console.log('dnUsdcDepositedAfter (after withdraw)', dnUsdcDepositedAfter);
@@ -393,7 +387,7 @@ describe('Rebalance & its utils', () => {
     console.log('available borrow', await dnGmxSeniorVault.availableBorrow(dnGmxJuniorVault.address));
     console.log('borrow caps', await dnGmxSeniorVault.borrowCaps(dnGmxJuniorVault.address));
 
-    expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.closeTo(targetDnGmxSeniorVaultAmount, BigNumber.from(1));
+    expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.eq(targetDnGmxSeniorVaultAmount);
 
     const diff = (await dnGmxSeniorVault.borrowCaps(dnGmxJuniorVault.address)).sub(
       await dnGmxSeniorVault.availableBorrow(dnGmxJuniorVault.address),
@@ -453,23 +447,44 @@ describe('Rebalance & its utils', () => {
   });
 
   it('Deposit', async () => {
-    let tx;
     const opts = await dnGmxJuniorVaultFixture();
     const { dnGmxJuniorVault, dnGmxSeniorVault, vdWBTC, vdWETH, aUSDC, fsGlp, users } = opts;
     const checker = new Checker(opts);
-    const logger = new Logger(opts);
+
+    const withdrawFeeBps = await dnGmxJuniorVault.withdrawFeeBps();
+
+    const MAX_BPS = BigNumber.from(10_000);
+    const PRICE_PRECISION = BigNumber.from(10).pow(30);
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('100', 6), users[1].address);
 
     const amount = parseEther('100');
+    const preview = await dnGmxJuniorVault.previewDeposit(amount);
 
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
 
-    const vmv = (await dnGmxJuniorVault.getPriceExternal()).mul(amount).div(BigNumber.from(10).pow(30));
+    const glpPrice = await dnGmxJuniorVault.getPriceExternal();
+    const glpBalance = await fsGlp.balanceOf(dnGmxJuniorVault.address);
 
-    await checker.checkTotalAssets(amount);
+    const dnUsdcDeposited = await dnGmxJuniorVault.dnUsdcDeposited();
+
+    let vmv;
+    const borrowValues = await dnGmxJuniorVault.getCurrentBorrows();
+
+    // glp notional value
+    vmv = glpBalance.mul(glpPrice).div(PRICE_PRECISION);
+    // dn usdc deposited
+    vmv = vmv.add(dnUsdcDeposited);
+    // borrowed notional from aave
+    vmv = vmv.sub(await dnGmxJuniorVault.getBorrowValue(borrowValues[0], borrowValues[1]));
+    // batching manager glp & unHedgedGlp components are 0
+
     await checker.checkTotalSupply(amount);
-    await checker.checkVaultMktValue(vmv, vmv.mul(2).div(await dnGmxJuniorVault.slippageThresholdSwapBtcBps()));
+
+    expect(preview).to.eq(amount);
+    expect(await dnGmxJuniorVault.unhedgedGlpInUsdc()).to.eq(0);
+    expect(await dnGmxJuniorVault.getVaultMarketValue()).to.eq(vmv);
+    expect(await dnGmxJuniorVault.totalAssets()).to.gt(amount.mul(MAX_BPS.sub(withdrawFeeBps).div(MAX_BPS)));
 
     // const borrows = await dnGmxJuniorVault.getCurrentBorrows()
     // console.log('vmv', vmv)
@@ -539,8 +554,7 @@ describe('Rebalance & its utils', () => {
 
   it('Full Withdraw', async () => {
     const opts = await dnGmxJuniorVaultFixture();
-    const logger = new Logger(opts);
-    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, admin, users } = opts;
+    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, admin, users, fsGlp } = opts;
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     await dnGmxJuniorVault.setAdminParams(
@@ -557,6 +571,16 @@ describe('Rebalance & its utils', () => {
     expect(await dnGmxJuniorVault.balanceOf(users[0].address)).to.eq(amount);
 
     const totalAssetsBeforeRedeem = await dnGmxJuniorVault.totalAssets();
+    const preview = await dnGmxJuniorVault.previewRedeem(dnGmxJuniorVault.balanceOf(users[0].address));
+
+    const withdrawFeeBps = await dnGmxJuniorVault.withdrawFeeBps();
+    const MAX_BPS = BigNumber.from(10_000);
+
+    const givenToUser = totalAssetsBeforeRedeem.mul(MAX_BPS.sub(withdrawFeeBps)).div(MAX_BPS);
+
+    console.log('givenToUser', givenToUser);
+    console.log('totalAssetsBeforeRedeem', totalAssetsBeforeRedeem);
+    console.log('preview', preview);
 
     await dnGmxJuniorVault
       .connect(users[0])
@@ -564,17 +588,14 @@ describe('Rebalance & its utils', () => {
 
     expect(await dnGmxJuniorVault.balanceOf(users[0].address)).to.eq(0);
 
-    // expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
-    expect(await dnGmxJuniorVault.totalAssets()).to.eq(
-      totalAssetsBeforeRedeem.mul(await dnGmxJuniorVault.withdrawFeeBps()).div(10_000),
-    );
+    expect(givenToUser).to.eq(preview);
     expect(await dnGmxJuniorVault.totalSupply()).to.eq(0);
+    expect(await dnGmxJuniorVault.totalAssets()).to.eq(totalAssetsBeforeRedeem.sub(givenToUser));
   });
 
-  it('Partial Withdraw & withdrawFeeBps', async () => {
+  it.only('Partial Withdraw & withdrawFeeBps', async () => {
     const opts = await dnGmxJuniorVaultFixture();
-    const logger = new Logger(opts);
-    const { gmxVault, dnGmxJuniorVault, dnGmxSeniorVault, users, wbtc, weth } = opts;
+    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, fsGlp, rewardRouter, wbtc, weth } = opts;
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     const amount = parseEther('100');
@@ -583,12 +604,48 @@ describe('Rebalance & its utils', () => {
 
     expect(await dnGmxJuniorVault.balanceOf(users[0].address)).to.eq(amount);
 
-    await dnGmxJuniorVault.connect(users[0]).withdraw(amount.div(2), users[0].address, users[0].address);
+    const totalAssetsBefore = await dnGmxJuniorVault.totalAssets();
+    const dnUsdcDepositedBefore = await dnGmxJuniorVault.dnUsdcDeposited();
 
-    expect(await dnGmxJuniorVault.balanceOf(users[0].address)).to.eq(amount.div(2));
+    // all components except dn usdc deposit & glp should be zero
+    expect(dnUsdcDepositedBefore).to.not.eq(0);
+    expect(await dnGmxJuniorVault.unhedgedGlpInUsdc()).to.eq(0);
+    expect(await glpBatchingManager.dnGmxJuniorVaultGlpBalance()).to.eq(0);
 
-    expect(await dnGmxJuniorVault.totalAssets()).to.eq(amount.div(2).add(amount.mul(5).div(2).div(1000)));
-    expect(await dnGmxJuniorVault.totalSupply()).to.eq(amount.div(2));
+    const sharesUsed = await dnGmxJuniorVault.previewWithdraw(amount.div(2));
+
+    // withdrawing to user[5]
+    const tx = await dnGmxJuniorVault.connect(users[0]).withdraw(amount.div(2), users[5].address, users[0].address);
+    const receipt = await tx.wait();
+
+    let shares, assets;
+
+    for (const log of receipt.logs) {
+      if (log.topics[0] === dnGmxJuniorVault.interface.getEventTopic('Withdraw')) {
+        const args = dnGmxJuniorVault.interface.parseLog(log).args;
+        shares = args.shares;
+        assets = args.assets;
+      }
+    }
+
+    for (const log of receipt.logs) {
+      if (log.topics[0] === rewardRouter.interface.getEventTopic('UnstakeGlp')) {
+        const args = rewardRouter.interface.parseLog(log).args;
+        console.log('unstake glp', args);
+      }
+    }
+
+    // expect(shares).to.eq(sharesUsed);
+    expect(assets).to.eq(amount.div(2));
+
+    // should have recevied exact glp
+    expect(await fsGlp.balanceOf(users[5].address)).to.eq(amount.div(2));
+
+    // user should have shares left
+    expect(await dnGmxJuniorVault.totalSupply()).to.eq(await dnGmxJuniorVault.balanceOf(users[0].address));
+
+    expect(await dnGmxJuniorVault.totalSupply()).to.eq(amount.sub(shares));
+    expect(await dnGmxJuniorVault.totalAssets()).to.gt(totalAssetsBefore.sub(assets));
   });
 
   it('Change Price', async () => {
