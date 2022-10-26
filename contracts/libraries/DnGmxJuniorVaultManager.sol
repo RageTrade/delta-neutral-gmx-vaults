@@ -50,7 +50,6 @@ library DnGmxJuniorVaultManager {
     using SafeCast for uint256;
 
     uint256 internal constant MAX_BPS = 10_000;
-    uint256 internal constant USDG_DECIMALS = 18;
 
     uint256 internal constant PRICE_PRECISION = 1e30;
     uint256 internal constant VARIABLE_INTEREST_MODE = 2;
@@ -590,14 +589,14 @@ library DnGmxJuniorVaultManager {
     ///@param amount amount of usdc
     function _convertAUsdcToAsset(State storage state, uint256 amount) internal {
         _executeWithdraw(state, address(state.usdc), amount, address(this));
-        // USDG has 18 decimals and usdc has 6 decimals => 18-6 = 12
+
         uint256 price = state.gmxVault.getMinPrice(address(state.usdc));
+
+        // USDG has 18 decimals and usdc has 6 decimals => 18-6 = 12
         uint256 usdgAmount = amount.mulDivDown(
-            price * (MAX_BPS - state.slippageThresholdGmxBps),
+            price * (MAX_BPS - state.slippageThresholdGmxBps) * 1e12,
             PRICE_PRECISION * MAX_BPS
         );
-
-        usdgAmount = usdgAmount.mulDivDown(10**USDG_DECIMALS, 10**IERC20Metadata(address(state.usdc)).decimals());
 
         state.batchingManager.depositToken(address(state.usdc), amount, usdgAmount);
     }

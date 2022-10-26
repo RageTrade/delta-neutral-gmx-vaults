@@ -10,6 +10,8 @@ import { DnGmxJuniorVaultManager } from '../libraries/DnGmxJuniorVaultManager.so
 import { DnGmxJuniorVault } from '../vaults/DnGmxJuniorVault.sol';
 
 contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
+    uint256 internal constant VARIABLE_INTEREST_MODE = 2;
+
     using DnGmxJuniorVaultManager for DnGmxJuniorVaultManager.State;
 
     function dnUsdcDepositedExternal() external view returns (int256) {
