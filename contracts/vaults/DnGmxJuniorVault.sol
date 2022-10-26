@@ -391,22 +391,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         address owner
     ) public override(IERC4626, ERC4626Upgradeable) whenNotPaused returns (uint256 shares) {
         _rebalanceBeforeShareAllocation();
-        shares = previewWithdraw(assets); // No need to check for rounding error, previewWithdraw rounds up.
-
-        if (msg.sender != owner) {
-            uint256 allowed = allowance(owner, msg.sender); // Saves gas for limited approvals.
-
-            if (allowed != type(uint256).max) _approve(owner, msg.sender, allowed - shares);
-        }
-        uint256 assetsAfterFees = assets.mulDivDown(MAX_BPS - state.withdrawFeeBps, MAX_BPS);
-
-        beforeWithdraw(assetsAfterFees, shares, receiver);
-
-        _burn(owner, shares);
-
-        emit Withdraw(msg.sender, receiver, owner, assetsAfterFees, shares);
-
-        IERC20Metadata(asset).safeTransfer(receiver, assetsAfterFees);
+        shares = super.withdraw(assets, receiver, owner);
     }
 
     ///@notice burns "shares" amount of vault shares and withdraws relevant amount of sGlp tokens
@@ -421,30 +406,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         address owner
     ) public override(IERC4626, ERC4626Upgradeable) whenNotPaused returns (uint256 assets) {
         _rebalanceBeforeShareAllocation();
-
-        if (msg.sender != owner) {
-            uint256 allowed = allowance(owner, msg.sender); // Saves gas for limited approvals.
-
-            if (allowed != type(uint256).max) _approve(owner, msg.sender, allowed - shares);
-        }
-
-        // Check for rounding error since we round down in previewRedeem.
-        require((assets = previewRedeem(shares)) != 0, 'ZERO_ASSETS');
-
-        uint256 assetsAfterFees = assets.mulDivDown(MAX_BPS - state.withdrawFeeBps, MAX_BPS);
-
-        beforeWithdraw(assetsAfterFees, shares, receiver);
-
-        _burn(owner, shares);
-
-        emit Withdraw(msg.sender, receiver, owner, assetsAfterFees, shares);
-
-        // console.log('assets bal', fsGlp.balanceOf(address(this)));
-        // console.log('withdrawing', assets);
-        // console.log('assetsAfterFees', assetsAfterFees);
-        // console.log('batchingManager.dnGmxJuniorVaultGlpBalance()', batchingManager.dnGmxJuniorVaultGlpBalance());
-
-        IERC20Metadata(asset).safeTransfer(receiver, assetsAfterFees);
+        assets = super.redeem(shares, receiver, owner);
     }
 
     /* ##################################################################
@@ -578,7 +540,22 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     function previewWithdraw(uint256 assets) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
         uint256 supply = totalSupply(); // Saves an extra SLOAD if totalSupply is non-zero.
 
-        return supply == 0 ? assets : assets.mulDivUp(supply, state.totalAssets(false));
+        return
+            supply == 0
+                ? assets
+                : assets.mulDivDown(supply * MAX_BPS, state.totalAssets(false) * (MAX_BPS - state.withdrawFeeBps));
+    }
+
+    /// @notice preview function for redeeming shares
+    /// @param shares that would be taken from the user
+    /// @return assets that user would get
+    function previewRedeem(uint256 shares) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
+        uint256 supply = totalSupply(); // Saves an extra SLOAD if totalSupply is non-zero.
+
+        return
+            supply == 0
+                ? shares
+                : shares.mulDivDown(state.totalAssets(false) * (MAX_BPS - state.withdrawFeeBps), supply * MAX_BPS);
     }
 
     /// @notice returns deposit cap in terms of asset tokens
