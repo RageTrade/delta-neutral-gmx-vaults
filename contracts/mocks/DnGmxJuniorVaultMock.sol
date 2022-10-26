@@ -69,7 +69,7 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         uint256 tokenAmount,
         uint256 minUsdcAmount
     ) external returns (uint256 usdcReceived, uint256 tokensUsed) {
-        return state.swapToken(token, tokenAmount, minUsdcAmount);
+        return state._swapToken(token, tokenAmount, minUsdcAmount);
     }
 
     function swapUSDC(
@@ -77,7 +77,7 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         uint256 tokenAmount,
         uint256 maxUsdcAmount
     ) external returns (uint256 usdcPaid, uint256 tokensReceived) {
-        return state.swapUSDC(token, tokenAmount, maxUsdcAmount);
+        return state._swapUSDC(token, tokenAmount, maxUsdcAmount);
     }
 
     function executeFlashloan(
@@ -134,7 +134,7 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         uint256 premium,
         bool repayDebt
     ) external {
-        return _executeOperationToken(token, tokenAmount, usdcAmount, premium, repayDebt);
+        return state._executeOperationToken(token, tokenAmount, usdcAmount, premium, repayDebt);
     }
 
     function flashloanAmounts(

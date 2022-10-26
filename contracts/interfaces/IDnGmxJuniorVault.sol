@@ -34,14 +34,7 @@ interface IDnGmxJuniorVault is IERC4626, IBorrower {
     event FeeParamsUpdated(uint256 feeBps, address _newFeeRecipient);
     event WithdrawFeeUpdated(uint256 _withdrawFeeBps);
     event FeesWithdrawn(uint256 feeAmount);
-    event RewardsHarvested(
-        uint256 wethHarvested,
-        uint256 esGmxStaked,
-        uint256 juniorVaultWeth,
-        uint256 seniorVaultWeth,
-        uint256 juniorVaultGlp,
-        uint256 seniorVaultAUsdc
-    );
+
     event DepositCapUpdated(uint256 _newDepositCap);
     event BatchingManagerUpdated(address _batchingManager);
 

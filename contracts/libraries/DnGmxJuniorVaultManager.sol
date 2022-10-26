@@ -25,6 +25,8 @@ import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
 import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
 import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
 import { SafeCast } from '../libraries/SafeCast.sol';
+import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
+
 import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMathLib.sol';
 
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
@@ -32,6 +34,15 @@ import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRou
 // import 'hardhat/console.sol';
 
 library DnGmxJuniorVaultManager {
+    event RewardsHarvested(
+        uint256 wethHarvested,
+        uint256 esGmxStaked,
+        uint256 juniorVaultWeth,
+        uint256 seniorVaultWeth,
+        uint256 juniorVaultGlp,
+        uint256 seniorVaultAUsdc
+    );
+
     using DnGmxJuniorVaultManager for State;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
@@ -123,6 +134,106 @@ library DnGmxJuniorVaultManager {
         IDnGmxBatchingManager batchingManager;
 
         uint256[50] __gaps;
+    }
+
+    /// @notice stakes the rewards from the staked Glp and claims WETH to buy glp
+    /// @notice also update protocolEsGmx fees which can be vested and claimed
+    /// @notice divides the fees between senior and junior tranches based on senior tranche util
+    function harvestFees(State storage state) public {
+        uint256 sGmxHarvested;
+        {
+            address esGmx = state.rewardRouter.esGmx();
+            IRewardTracker sGmx = IRewardTracker(state.rewardRouter.stakedGmxTracker());
+
+            uint256 sGmxPrevBalance = sGmx.depositBalances(address(this), esGmx);
+
+            state.rewardRouter.handleRewards({
+                shouldClaimGmx: false,
+                shouldStakeGmx: false,
+                shouldClaimEsGmx: true,
+                shouldStakeEsGmx: true,
+                shouldStakeMultiplierPoints: true,
+                shouldClaimWeth: true,
+                shouldConvertWethToEth: false
+            });
+
+            sGmxHarvested = sGmx.depositBalances(address(this), esGmx) - sGmxPrevBalance;
+        }
+        state.protocolEsGmx += sGmxHarvested.mulDivDown(state.feeBps, MAX_BPS);
+        // console.log('feeBps', state.feeBps);
+        // console.log('sGmxHarvested', sGmxHarvested);
+        // console.log('protocolEsGmx state', state.protocolEsGmx);
+
+        // console.log('gmx balance', sGmx.depositBalances(address(this), rewardRouter.gmx()));
+        uint256 wethHarvested = state.weth.balanceOf(address(this)) - state.protocolFee - state.seniorVaultWethRewards;
+        // console.log('wethHarvested', wethHarvested);
+
+        if (wethHarvested > state.wethConversionThreshold) {
+            uint256 protocolFeeHarvested = (wethHarvested * state.feeBps) / MAX_BPS;
+            state.protocolFee += protocolFeeHarvested;
+
+            uint256 wethToCompound = wethHarvested - protocolFeeHarvested;
+
+            uint256 dnGmxSeniorVaultWethShare = state.dnGmxSeniorVault.getEthRewardsSplitRate().mulDivDown(
+                wethToCompound,
+                FeeSplitStrategy.RATE_PRECISION
+            );
+            uint256 dnGmxWethShare = wethToCompound - dnGmxSeniorVaultWethShare;
+
+            uint256 _seniorVaultWethRewards = state.seniorVaultWethRewards + dnGmxSeniorVaultWethShare;
+
+            // console.log('ethRewardsSplitRate', dnGmxSeniorVault.getEthRewardsSplitRate());
+            // console.log('wethToCompound', wethToCompound);
+            // console.log('dnGmxWethShare', dnGmxWethShare);
+            // console.log('dnGmxSeniorVaultWethShare', dnGmxSeniorVaultWethShare);
+            uint256 glpReceived;
+            {
+                uint256 price = state.gmxVault.getMinPrice(address(state.weth));
+
+                uint256 usdgAmount = dnGmxWethShare.mulDivDown(
+                    price * (MAX_BPS - state.slippageThresholdGmxBps),
+                    PRICE_PRECISION * MAX_BPS
+                );
+
+                glpReceived = state.batchingManager.depositToken(address(state.weth), dnGmxWethShare, usdgAmount);
+            }
+            // console.log('_seniorVaultWethRewards', _seniorVaultWethRewards);
+            if (_seniorVaultWethRewards > state.wethConversionThreshold) {
+                // Deposit aave vault share to AAVE in usdc
+                uint256 minUsdcAmount = _getTokenPriceInUsdc(state, state.weth).mulDivDown(
+                    _seniorVaultWethRewards * (MAX_BPS - state.slippageThresholdSwapEthBps),
+                    MAX_BPS * PRICE_PRECISION
+                );
+                (uint256 aaveUsdcAmount, uint256 tokensUsed) = state._swapToken(
+                    address(state.weth),
+                    _seniorVaultWethRewards,
+                    minUsdcAmount
+                );
+                tokensUsed; // silence warning
+                state._executeSupply(address(state.usdc), aaveUsdcAmount);
+                state.seniorVaultWethRewards = 0;
+                emit RewardsHarvested(
+                    wethHarvested,
+                    sGmxHarvested,
+                    dnGmxWethShare,
+                    dnGmxSeniorVaultWethShare,
+                    glpReceived,
+                    aaveUsdcAmount
+                );
+            } else {
+                state.seniorVaultWethRewards = _seniorVaultWethRewards;
+                emit RewardsHarvested(
+                    wethHarvested,
+                    sGmxHarvested,
+                    dnGmxWethShare,
+                    dnGmxSeniorVaultWethShare,
+                    glpReceived,
+                    0
+                );
+            }
+        } else {
+            emit RewardsHarvested(wethHarvested, sGmxHarvested, 0, 0, 0, 0);
+        }
     }
 
     /* ##################################################################
@@ -522,6 +633,87 @@ library DnGmxJuniorVaultManager {
     }
 
     /* ##################################################################
+                            FLASHLOAN RECEIVER
+    ################################################################## */
+
+    ///@notice flashloan receiver for balance vault
+    ///@notice receives flashloaned tokens(WETH or WBTC or USDC) from balancer, swaps on uniswap and borrows/repays on AAVE
+    ///@dev only allows balancer vault to call this
+    ///@dev only runs when _hasFlashloaned is set to true (prevents someone else from initiating flashloan to vault)
+    ///@param tokens list of tokens flashloaned
+    ///@param amounts amounts of token flashloans in same order
+    ///@param feeAmounts amounts of fee/premium charged for flashloan
+    ///@param userData data passed to balancer for flashloan (includes token amounts, token usdc value and swap direction)
+    function receiveFlashLoan(
+        State storage state,
+        IERC20[] memory tokens,
+        uint256[] memory amounts,
+        uint256[] memory feeAmounts,
+        bytes memory userData
+    ) external {
+        (
+            uint256 btcTokenAmount,
+            uint256 btcUsdcAmount,
+            uint256 ethTokenAmount,
+            uint256 ethUsdcAmount,
+            bool repayDebtBtc,
+            bool repayDebtEth
+        ) = abi.decode(userData, (uint256, uint256, uint256, uint256, bool, bool));
+
+        // console.log('### RECEIVE FLASHLOAN ###');
+        // console.log('btcTokenAmount', btcTokenAmount);
+        // console.log('ethTokenAmount', ethTokenAmount);
+        // console.log('btcUsdcAmount', btcUsdcAmount);
+        // console.log('ethUsdcAmount', ethUsdcAmount);
+        // console.log('repayDebtBtc', repayDebtBtc);
+        // console.log('repayDebtEth', repayDebtEth);
+
+        uint256 btcAssetPremium;
+        uint256 ethAssetPremium;
+        // adjust asset amounts for premiums (zero for balancer at the time of dev)
+        if (repayDebtBtc && repayDebtEth) {
+            // console.log('CASE 1');
+            // Here amounts[0] should be equal to btcTokenAmount+ethTokenAmount
+            btcAssetPremium = feeAmounts[0].mulDivDown(btcUsdcAmount, amounts[0]);
+            // console.log('btcAssetPremium', btcAssetPremium);
+            ethAssetPremium = (feeAmounts[0] - btcAssetPremium);
+            // console.log('ethAssetPremium', ethAssetPremium);
+        } else if (btcTokenAmount != 0 && ethTokenAmount != 0) {
+            // console.log('CASE 2');
+
+            // Here amounts[0] should be equal to btcTokenAmount and amounts[1] should be equal to ethTokenAmount
+            bool btcFirst = false;
+            if (repayDebtBtc ? tokens[0] == state.usdc : tokens[0] == state.wbtc) btcFirst = true;
+            btcAssetPremium = feeAmounts[btcFirst ? 0 : 1];
+            ethAssetPremium = feeAmounts[btcFirst ? 1 : 0];
+        } else {
+            // console.log('CASE 3');
+
+            if (btcTokenAmount != 0) btcAssetPremium = feeAmounts[0];
+            else ethAssetPremium = feeAmounts[0];
+        }
+
+        if (btcTokenAmount > 0)
+            _executeOperationToken(
+                state,
+                address(state.wbtc),
+                btcTokenAmount,
+                btcUsdcAmount,
+                btcAssetPremium,
+                repayDebtBtc
+            );
+        if (ethTokenAmount > 0)
+            _executeOperationToken(
+                state,
+                address(state.weth),
+                ethTokenAmount,
+                ethUsdcAmount,
+                ethAssetPremium,
+                repayDebtEth
+            );
+    }
+
+    /* ##################################################################
                             AAVE HELPERS
     ################################################################## */
     ///@notice executes borrow of "token" of "amount" quantity to AAVE at variable interest rate
@@ -629,6 +821,46 @@ library DnGmxJuniorVaultManager {
         );
 
         state.hasFlashloaned = false;
+    }
+
+    ///@notice executes relevant token hedge update on receiving the flashloan from Balancer
+    ///@dev if "repayDebt = true" then usdc flashloaned, swapped for token, repay token debt, withdraw usdc from AAVE and pay back usdc with premium
+    ///@dev if "repayDebt = false" then token flashloaned, swapped for usdc, supply usdc, borrow tokens from AAVE and pay back tokens with premium
+    ///@param token address of token to increase/decrease hedge by
+    ///@param tokenAmount amount of tokens to swap
+    ///@param usdcAmount if "repayDebt = false" then = minimum amount of usdc | if "repayDebt = true" then = maximum amount of usdc
+    ///@param premium additional tokens/usdc to be repaid to balancer to cover flashloan fees
+    ///@param repayDebt true if token hedge needs to be reduced
+    function _executeOperationToken(
+        State storage state,
+        address token,
+        uint256 tokenAmount,
+        uint256 usdcAmount,
+        uint256 premium,
+        bool repayDebt
+    ) internal {
+        if (!repayDebt) {
+            // console.log('swapTokenToUSD');
+            uint256 amountWithPremium = tokenAmount + premium;
+            // console.log('amountWithPremium borrow', amountWithPremium, token);
+            (uint256 usdcReceived, uint256 tokensUsed) = state._swapToken(token, tokenAmount, usdcAmount);
+            tokensUsed; // silence warning
+            state._executeSupply(address(state.usdc), usdcReceived);
+            state._executeBorrow(token, amountWithPremium);
+            IERC20(token).transfer(address(state.balancerVault), amountWithPremium);
+            state.dnUsdcDeposited += usdcReceived.toInt256();
+        } else {
+            // console.log('swapUSDCToToken');
+            (uint256 usdcPaid, uint256 tokensReceived) = state._swapUSDC(token, tokenAmount, usdcAmount);
+            uint256 amountWithPremium = usdcPaid + premium;
+            // console.log('amountWithPremium', amountWithPremium, token);
+            state.dnUsdcDeposited -= amountWithPremium.toInt256();
+            // console.log('tokensReceived', tokensReceived);
+            state._executeRepay(token, tokensReceived);
+            //withdraws to balancerVault
+            state._executeWithdraw(address(state.usdc), amountWithPremium, address(this));
+            state.usdc.transfer(address(state.balancerVault), usdcAmount + premium);
+        }
     }
 
     /* ##################################################################
@@ -1034,12 +1266,12 @@ library DnGmxJuniorVaultManager {
     ///@param token address of token
     ///@param tokenAmount token amount to be sold
     ///@param minUsdcAmount minimum amount of usdc required
-    function swapToken(
+    function _swapToken(
         State storage state,
         address token,
         uint256 tokenAmount,
         uint256 minUsdcAmount
-    ) external returns (uint256 usdcReceived, uint256 tokensUsed) {
+    ) internal returns (uint256 usdcReceived, uint256 tokensUsed) {
         ISwapRouter swapRouter = state.swapRouter;
 
         bytes memory path = token == address(state.weth) ? WETH_TO_USDC(state) : WBTC_TO_USDC(state);
@@ -1061,12 +1293,12 @@ library DnGmxJuniorVaultManager {
     ///@param token address of token
     ///@param tokenAmount token amount to be bought
     ///@param maxUsdcAmount maximum amount of usdc that can be sold
-    function swapUSDC(
+    function _swapUSDC(
         State storage state,
         address token,
         uint256 tokenAmount,
         uint256 maxUsdcAmount
-    ) external returns (uint256 usdcPaid, uint256 tokensReceived) {
+    ) internal returns (uint256 usdcPaid, uint256 tokensReceived) {
         ISwapRouter swapRouter = state.swapRouter;
 
         bytes memory path = token == address(state.weth) ? USDC_TO_WETH(state) : USDC_TO_WBTC(state);
@@ -1083,6 +1315,7 @@ library DnGmxJuniorVaultManager {
         usdcPaid = swapRouter.exactOutput(params);
     }
 
+    /* solhint-disable func-name-mixedcase */
     function USDC_TO_WETH(State storage state) internal view returns (bytes memory) {
         return abi.encodePacked(state.weth, uint24(500), state.usdc);
     }
