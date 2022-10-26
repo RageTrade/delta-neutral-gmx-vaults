@@ -45,10 +45,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     using DnGmxJuniorVaultManager for DnGmxJuniorVaultManager.State;
 
     uint256 internal constant MAX_BPS = 10_000;
-    uint256 internal constant USDG_DECIMALS = 18;
-
     uint256 internal constant PRICE_PRECISION = 1e30;
-    uint256 internal constant VARIABLE_INTEREST_MODE = 2;
 
     DnGmxJuniorVaultManager.State internal state;
 
@@ -449,8 +446,6 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
 
         IERC20Metadata(asset).safeTransfer(receiver, assetsAfterFees);
     }
-
-    //TODO: add withdrawToken and redeemToken functions
 
     /* ##################################################################
                             FLASHLOAN RECEIVER
