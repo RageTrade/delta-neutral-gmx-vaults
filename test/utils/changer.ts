@@ -62,4 +62,17 @@ export class Changer {
     console.log(`${asset} weight changed to ${weight}`);
     console.log(Changer.seperator);
   };
+
+  changeUsdcPrice = async (price: number) => {
+    await hre.network.provider.send('hardhat_setStorageAt', [
+      '0x2946220288dbbf77df0030fcecc2a8348cbbe32c', // address
+      '0x770facd49fd568a52044bd338eae1804cdf861291a3184eb31c009f1ba6181cb', // slot
+      ethers.utils.hexZeroPad(ethers.utils.parseUnits(price.toString(), 8).toHexString(), 32), // new value
+    ]);
+
+    await increaseBlockTimestamp(310);
+
+    console.log(`USDC price changed to ${price}`);
+    console.log(Changer.seperator);
+  };
 }
