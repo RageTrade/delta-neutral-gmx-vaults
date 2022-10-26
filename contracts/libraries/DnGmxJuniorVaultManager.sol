@@ -159,13 +159,8 @@ library DnGmxJuniorVaultManager {
             sGmxHarvested = sGmx.depositBalances(address(this), esGmx) - sGmxPrevBalance;
         }
         state.protocolEsGmx += sGmxHarvested.mulDivDown(state.feeBps, MAX_BPS);
-        // console.log('feeBps', state.feeBps);
-        // console.log('sGmxHarvested', sGmxHarvested);
-        // console.log('protocolEsGmx state', state.protocolEsGmx);
 
-        // console.log('gmx balance', sGmx.depositBalances(address(this), rewardRouter.gmx()));
         uint256 wethHarvested = state.weth.balanceOf(address(this)) - state.protocolFee - state.seniorVaultWethRewards;
-        // console.log('wethHarvested', wethHarvested);
 
         if (wethHarvested > state.wethConversionThreshold) {
             uint256 protocolFeeHarvested = (wethHarvested * state.feeBps) / MAX_BPS;
@@ -181,10 +176,6 @@ library DnGmxJuniorVaultManager {
 
             uint256 _seniorVaultWethRewards = state.seniorVaultWethRewards + dnGmxSeniorVaultWethShare;
 
-            // console.log('ethRewardsSplitRate', dnGmxSeniorVault.getEthRewardsSplitRate());
-            // console.log('wethToCompound', wethToCompound);
-            // console.log('dnGmxWethShare', dnGmxWethShare);
-            // console.log('dnGmxSeniorVaultWethShare', dnGmxSeniorVaultWethShare);
             uint256 glpReceived;
             {
                 uint256 price = state.gmxVault.getMinPrice(address(state.weth));
@@ -196,7 +187,7 @@ library DnGmxJuniorVaultManager {
 
                 glpReceived = state.batchingManager.depositToken(address(state.weth), dnGmxWethShare, usdgAmount);
             }
-            // console.log('_seniorVaultWethRewards', _seniorVaultWethRewards);
+
             if (_seniorVaultWethRewards > state.wethConversionThreshold) {
                 // Deposit aave vault share to AAVE in usdc
                 uint256 minUsdcAmount = _getTokenPriceInUsdc(state, state.weth).mulDivDown(
@@ -250,11 +241,6 @@ library DnGmxJuniorVaultManager {
     ///@param borrowValue value of the borrowed assests(ETH + BTC) from AAVE in USDC
     function _rebalanceProfit(State storage state, uint256 borrowValue) private {
         int256 borrowVal = borrowValue.toInt256();
-
-        // console.log('borrowVal');
-        // console.logInt(borrowVal);
-        // console.log('dnUsdcDeposited');
-        // console.logInt(dnUsdcDeposited);
 
         if (borrowVal > state.dnUsdcDeposited) {
             // If glp goes up - there is profit on GMX and loss on AAVE
@@ -313,28 +299,14 @@ library DnGmxJuniorVaultManager {
             currentEthBorrow
         );
 
-        // console.log('repayDebtBtc', repayDebtBtc);
-        // console.log('repayDebtEth', repayDebtEth);
-
-        // console.log('btcTokenAmount', btcTokenAmount);
-        // console.log('btcUsdcAmount', btcUsdcAmount);
-        // console.log('ethTokenAmount', ethTokenAmount);
-        // console.log('ethUsdcAmount', ethUsdcAmount);
-        // console.log('hedgeUsdcAmountThreshold', hedgeUsdcAmountThreshold);
-
         if (btcUsdcAmount < state.hedgeUsdcAmountThreshold) {
-            // console.log('BTC Below Threshold');
             btcTokenAmount = 0;
             btcUsdcAmount = 0;
         }
         if (ethUsdcAmount < state.hedgeUsdcAmountThreshold) {
-            // console.log('ETH Below Threshold');
             ethTokenAmount = 0;
             ethUsdcAmount = 0;
         }
-
-        // console.log('btcBeyondThreshold', btcBeyondThreshold);
-        // console.log('ethBeyondThreshold', ethBeyondThreshold);
 
         uint256 btcAssetAmount = repayDebtBtc ? btcUsdcAmount : btcTokenAmount;
         uint256 ethAssetAmount = repayDebtEth ? ethUsdcAmount : ethTokenAmount;
@@ -343,17 +315,14 @@ library DnGmxJuniorVaultManager {
         if (btcAssetAmount == 0 && ethAssetAmount == 0) return;
 
         if (repayDebtBtc && repayDebtEth) {
-            // console.log('### BOTH REPAY CASE ###');
             assets = new address[](1);
             amounts = new uint256[](1);
 
             assets[0] = address(state.usdc);
             amounts[0] = (btcAssetAmount + ethAssetAmount);
-            // console.log('asset[0] from if', assets[0]);
-            // console.log('amounts[0] from if', amounts[0]);
         } else if (btcAssetAmount == 0 || ethAssetAmount == 0) {
             // Exactly one would be true since case-1 excluded (both false) | case-2
-            // console.log('### CASE-2 ###');
+
             assets = new address[](1);
             amounts = new uint256[](1);
 
@@ -365,15 +334,13 @@ library DnGmxJuniorVaultManager {
                 amounts[0] = ethAssetAmount;
             }
         } else {
-            // console.log('### CASE-3 ###');
             // Both are true | case-3
             assets = new address[](2);
             amounts = new uint256[](2);
 
             assets[0] = repayDebtBtc ? address(state.usdc) : address(state.wbtc);
-            // console.log('assets[0]', assets[0]);
+
             assets[1] = repayDebtEth ? address(state.usdc) : address(state.weth);
-            // console.log('assets[1]', assets[1]);
 
             // ensure that assets and amount tuples are in sorted order of addresses
             if (assets[0] > assets[1]) {
@@ -382,14 +349,12 @@ library DnGmxJuniorVaultManager {
                 assets[1] = tempAsset;
 
                 amounts[0] = ethAssetAmount;
-                // console.log('amounts[0]', amounts[0]);
+
                 amounts[1] = btcAssetAmount;
-                // console.log('amounts[1]', amounts[1]);
             } else {
                 amounts[0] = btcAssetAmount;
-                // console.log('amounts[0]*', amounts[0]);
+
                 amounts[1] = ethAssetAmount;
-                // console.log('amounts[1]*', amounts[1]);
             }
         }
         _executeFlashloan(
@@ -428,8 +393,6 @@ library DnGmxJuniorVaultManager {
             : state.partialEthHedgeUsdcAmountThreshold;
         uint256 tokenThreshold = threshold.mulDivDown(PRICE_PRECISION, _getTokenPriceInUsdc(state, token));
         if (diff > tokenThreshold) {
-            // console.log('threshold',threshold);
-            // console.log('diff',diff,'tokenThreshold',tokenThreshold);
             optimalPartialTokenBorrow = isOptimalHigher
                 ? currentTokenBorrow + tokenThreshold
                 : currentTokenBorrow - tokenThreshold;
@@ -453,12 +416,8 @@ library DnGmxJuniorVaultManager {
         uint256 glpDeposited,
         bool isPartialAllowed
     ) external returns (bool isPartialHedge) {
-        // console.log('totalAssets()', totalAssets());
         (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrows(state, glpDeposited);
-        // console.log('currentBtcBorrow', currentBtcBorrow);
-        // console.log('currentEthBorrow', currentEthBorrow);
-        // console.log('optimalBtcBorrow', optimalBtcBorrow);
-        // console.log('optimalEthBorrow', optimalEthBorrow);
+
         if (isPartialAllowed) {
             bool isPartialBtcHedge;
             bool isPartialEthHedge;
@@ -475,19 +434,9 @@ library DnGmxJuniorVaultManager {
                 currentEthBorrow
             );
             isPartialHedge = isPartialBtcHedge || isPartialEthHedge;
-            // console.log('isPartialBtcHedge');
-            // console.log(isPartialBtcHedge);
-            // console.log('isPartialEthHedge');
-            // console.log(isPartialEthHedge);
-            // console.log('isPartialHedge');
-            // console.log(isPartialHedge);
         }
 
-        // console.log('optimalBtcBorrow after partial check', optimalBtcBorrow);
-        // console.log('optimalEthBorrow after partial check', optimalEthBorrow);
-
         uint256 optimalBorrowValue = _getBorrowValue(state, optimalBtcBorrow, optimalEthBorrow);
-        // console.log('optimalBorrowValue', optimalBorrowValue);
 
         uint256 usdcLiquidationThreshold = _getLiquidationThreshold(state, address(state.usdc));
 
@@ -500,13 +449,8 @@ library DnGmxJuniorVaultManager {
 
         uint256 currentDnGmxSeniorVaultAmount = _getUsdcBorrowed(state);
 
-        // console.log('targetDnGmxSeniorVaultAmount', targetDnGmxSeniorVaultAmount);
-        // console.log('currentDnGmxSeniorVaultAmount', currentDnGmxSeniorVaultAmount);
-        // console.log(optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
-
         if (targetDnGmxSeniorVaultAmount > currentDnGmxSeniorVaultAmount) {
             {
-                // console.log('IF');
                 uint256 amountToBorrow = targetDnGmxSeniorVaultAmount - currentDnGmxSeniorVaultAmount;
                 uint256 availableBorrow = state.dnGmxSeniorVault.availableBorrow(address(this));
                 if (amountToBorrow > availableBorrow) {
@@ -517,7 +461,7 @@ library DnGmxJuniorVaultManager {
                         usdcLiquidationThreshold
                     );
                     _rebalanceUnhedgedGlp(state, optimalUncappedEthBorrow, optimalEthBorrow);
-                    // console.log("Optimal token amounts 1",optimalBtcBorrow, optimalEthBorrow);
+
                     if (availableBorrow > 0) {
                         state.dnGmxSeniorVault.borrow(availableBorrow);
                     }
@@ -530,11 +474,9 @@ library DnGmxJuniorVaultManager {
                 }
             }
 
-            // console.log("Optimal token amounts 2",optimalBtcBorrow, optimalEthBorrow);
             // Rebalance Position
             _rebalanceBorrow(state, optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
         } else {
-            // console.log('ELSE');
             // Rebalance Position
             _rebalanceBorrow(state, optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
             uint256 totalCurrentBorrowValue;
@@ -544,9 +486,7 @@ library DnGmxJuniorVaultManager {
             }
             _rebalanceProfit(state, totalCurrentBorrowValue);
             // Deposit to LB Vault
-            // console.log('dnUsdcDeposited');
-            // console.logInt(dnUsdcDeposited);
-            // console.log('ausdc bal', aUsdc.balanceOf(address(this)));
+
             state.dnGmxSeniorVault.repay(currentDnGmxSeniorVaultAmount - targetDnGmxSeniorVaultAmount);
         }
     }
@@ -572,12 +512,6 @@ library DnGmxJuniorVaultManager {
         );
 
         uint256 glpAmountInput = usdcAmountDesired.mulDivDown(PRICE_PRECISION, _getGlpPrice(state, false));
-
-        // console.log('usdcAmountDesired', usdcAmountDesired);
-        // console.log('usdcPrice', usdcPrice);
-        // console.log('minUsdcOut', minUsdcOut);
-        // console.log('priceOfGlp', _getGlpPrice(state, false));
-        // console.log('glpAmountInput', glpAmountInput);
 
         usdcAmountOut = state.rewardRouter.unstakeAndRedeemGlp(_usdc, glpAmountInput, minUsdcOut, address(this));
 
@@ -610,17 +544,12 @@ library DnGmxJuniorVaultManager {
         uint256 uncappedTokenHedge,
         uint256 cappedTokenHedge
     ) private {
-        // console.log('uncappedTokenHedge', uncappedTokenHedge);
-        // console.log('cappedTokenHedge', cappedTokenHedge);
-        // console.log('totalAssets', IERC4626(address(this)).totalAssets());
-
         uint256 unhedgedGlp = _totalAssets(state, false).mulDivDown(
             uncappedTokenHedge - cappedTokenHedge,
             uncappedTokenHedge
         );
         uint256 unhedgedGlpUsdcAmount = unhedgedGlp.mulDivDown(_getGlpPrice(state, false), PRICE_PRECISION);
-        // console.log('unhedgedGlp',unhedgedGlp);
-        // console.log('unhedgedGlpUsdcAmount',unhedgedGlpUsdcAmount);
+
         if (unhedgedGlpUsdcAmount > state.unhedgedGlpInUsdc) {
             uint256 glpToUsdcAmount = unhedgedGlpUsdcAmount - state.unhedgedGlpInUsdc;
             state.unhedgedGlpInUsdc += _convertAssetToAUsdc(state, glpToUsdcAmount);
@@ -659,35 +588,21 @@ library DnGmxJuniorVaultManager {
             bool repayDebtEth
         ) = abi.decode(userData, (uint256, uint256, uint256, uint256, bool, bool));
 
-        // console.log('### RECEIVE FLASHLOAN ###');
-        // console.log('btcTokenAmount', btcTokenAmount);
-        // console.log('ethTokenAmount', ethTokenAmount);
-        // console.log('btcUsdcAmount', btcUsdcAmount);
-        // console.log('ethUsdcAmount', ethUsdcAmount);
-        // console.log('repayDebtBtc', repayDebtBtc);
-        // console.log('repayDebtEth', repayDebtEth);
-
         uint256 btcAssetPremium;
         uint256 ethAssetPremium;
         // adjust asset amounts for premiums (zero for balancer at the time of dev)
         if (repayDebtBtc && repayDebtEth) {
-            // console.log('CASE 1');
             // Here amounts[0] should be equal to btcTokenAmount+ethTokenAmount
             btcAssetPremium = feeAmounts[0].mulDivDown(btcUsdcAmount, amounts[0]);
-            // console.log('btcAssetPremium', btcAssetPremium);
-            ethAssetPremium = (feeAmounts[0] - btcAssetPremium);
-            // console.log('ethAssetPremium', ethAssetPremium);
-        } else if (btcTokenAmount != 0 && ethTokenAmount != 0) {
-            // console.log('CASE 2');
 
+            ethAssetPremium = (feeAmounts[0] - btcAssetPremium);
+        } else if (btcTokenAmount != 0 && ethTokenAmount != 0) {
             // Here amounts[0] should be equal to btcTokenAmount and amounts[1] should be equal to ethTokenAmount
             bool btcFirst = false;
             if (repayDebtBtc ? tokens[0] == state.usdc : tokens[0] == state.wbtc) btcFirst = true;
             btcAssetPremium = feeAmounts[btcFirst ? 0 : 1];
             ethAssetPremium = feeAmounts[btcFirst ? 1 : 0];
         } else {
-            // console.log('CASE 3');
-
             if (btcTokenAmount != 0) btcAssetPremium = feeAmounts[0];
             else ethAssetPremium = feeAmounts[0];
         }
@@ -839,9 +754,8 @@ library DnGmxJuniorVaultManager {
         bool repayDebt
     ) internal {
         if (!repayDebt) {
-            // console.log('swapTokenToUSD');
             uint256 amountWithPremium = tokenAmount + premium;
-            // console.log('amountWithPremium borrow', amountWithPremium, token);
+
             (uint256 usdcReceived, uint256 tokensUsed) = state._swapToken(token, tokenAmount, usdcAmount);
             tokensUsed; // silence warning
             state._executeSupply(address(state.usdc), usdcReceived);
@@ -849,12 +763,11 @@ library DnGmxJuniorVaultManager {
             IERC20(token).transfer(address(state.balancerVault), amountWithPremium);
             state.dnUsdcDeposited += usdcReceived.toInt256();
         } else {
-            // console.log('swapUSDCToToken');
             (uint256 usdcPaid, uint256 tokensReceived) = state._swapUSDC(token, tokenAmount, usdcAmount);
             uint256 amountWithPremium = usdcPaid + premium;
-            // console.log('amountWithPremium', amountWithPremium, token);
+
             state.dnUsdcDeposited -= amountWithPremium.toInt256();
-            // console.log('tokensReceived', tokensReceived);
+
             state._executeRepay(token, tokensReceived);
             //withdraws to balancerVault
             state._executeWithdraw(address(state.usdc), amountWithPremium, address(this));
@@ -933,8 +846,6 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     function isValidRebalanceHF(State storage state) external view returns (bool) {
         (, , , , , uint256 healthFactor) = state.pool.getUserAccountData(address(this));
-        // console.log('healthFactor', healthFactor);
-        // console.log('rebalanceHfThresholdBps', rebalanceHfThresholdBps);
 
         return healthFactor < (uint256(state.rebalanceHfThresholdBps) * 1e14);
     }
@@ -1010,7 +921,6 @@ library DnGmxJuniorVaultManager {
 
         // @dev aave returns from same source as chainlink (which is 8 decimals)
         uint256 quotePrice = state.oracle.getAssetPrice(address(state.usdc));
-        // console.log('usdc price', quotePrice);
 
         scaledPrice = price.mulDivDown(PRICE_PRECISION, quotePrice * 10**(decimals - 6));
     }
@@ -1115,10 +1025,6 @@ library DnGmxJuniorVaultManager {
                 tokenAmount * (MAX_BPS + slippageThresholdSwap),
                 MAX_BPS * PRICE_PRECISION
             );
-            // console.log('currentBorrow', currentBorrow);
-            // console.log('optimalBorrow', optimalBorrow);
-            // console.log('tokenAmount __', tokenAmount);
-            // console.log('usdcAmount __', usdcAmount);
 
             repayDebt = true;
             // In callback: Swap to ETH/BTC and deposit to AAVE
@@ -1171,8 +1077,6 @@ library DnGmxJuniorVaultManager {
     {
         optimalBtcBorrow = _getTokenReservesInGlp(state, address(state.wbtc), glpDeposited);
         optimalEthBorrow = _getTokenReservesInGlp(state, address(state.weth), glpDeposited);
-        // console.log('optimalEthBorrow', optimalEthBorrow);
-        // console.log('optimalBtcBorrow', optimalBtcBorrow);
     }
 
     ///@notice returns optimal borrows for BTC and ETH respectively basis available borrow amount
@@ -1200,26 +1104,19 @@ library DnGmxJuniorVaultManager {
         uint256 availableBorrowAmount,
         uint256 usdcLiquidationThreshold
     ) private view returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) {
-        // console.log("availableBorrowAmount",availableBorrowAmount);
-
         uint256 maxBorrowValue = availableBorrowAmount.mulDivDown(
             usdcLiquidationThreshold,
             state.targetHealthFactor - usdcLiquidationThreshold
         );
-        // console.log("maxBorrowValue",maxBorrowValue);
 
         uint256 btcWeight = state.gmxVault.tokenWeights(address(state.wbtc));
         uint256 ethWeight = state.gmxVault.tokenWeights(address(state.weth));
-        // console.log("btcWeight",btcWeight);
-        // console.log("ethWeight",ethWeight);
 
         uint256 btcPrice = _getTokenPriceInUsdc(state, state.wbtc);
         uint256 ethPrice = _getTokenPriceInUsdc(state, state.weth);
 
         optimalBtcBorrow = maxBorrowValue.mulDivDown(btcWeight * PRICE_PRECISION, (btcWeight + ethWeight) * btcPrice);
         optimalEthBorrow = maxBorrowValue.mulDivDown(ethWeight * PRICE_PRECISION, (btcWeight + ethWeight) * ethPrice);
-        // console.log("optimalBtcBorrow",optimalBtcBorrow);
-        // console.log("optimalEthBorrow",optimalEthBorrow);
     }
 
     ///@notice returns token amount underlying glp amount deposited
@@ -1273,12 +1170,8 @@ library DnGmxJuniorVaultManager {
         uint256 optimalBorrow,
         uint256 currentBorrow
     ) private view returns (bool) {
-        // console.log('optimalBorrow', optimalBorrow);
-        // console.log('currentBorrow', currentBorrow);
-
         uint256 diff = optimalBorrow > currentBorrow ? optimalBorrow - currentBorrow : currentBorrow - optimalBorrow;
-        // console.log('diff', diff);
-        // console.log('RHS', uint256(rebalanceDeltaThresholdBps).mulDivDown(currentBorrow, MAX_BPS));
+
         return diff <= uint256(state.rebalanceDeltaThresholdBps).mulDivDown(currentBorrow, MAX_BPS);
     }
 
