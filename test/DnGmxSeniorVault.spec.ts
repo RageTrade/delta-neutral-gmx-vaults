@@ -33,6 +33,7 @@ describe('DnGmx Senior Vault', () => {
       await dnGmxSeniorVault.setDnGmxJuniorVault(address);
       expect((await dnGmxSeniorVault.dnGmxJuniorVault()).toLowerCase()).to.eq(address);
     });
+
     it('feeStrategy', async () => {
       const infoToSet = {
         optimalUtilizationRate: 8n * 10n ** 29n,
@@ -49,10 +50,15 @@ describe('DnGmx Senior Vault', () => {
       expect(info.variableRateSlope1).to.eq(infoToSet.variableRateSlope1);
       expect(info.variableRateSlope2).to.eq(infoToSet.variableRateSlope2);
     });
+
     it('maxUtilizationBps', async () => {
       const maxUtilizationSet = 10;
       await dnGmxSeniorVault.setMaxUtilizationBps(maxUtilizationSet);
       expect(await dnGmxSeniorVault.maxUtilizationBps()).to.eq(maxUtilizationSet);
+    });
+
+    it('maxUtilizationBps bad value', async () => {
+      expect(dnGmxSeniorVault.setMaxUtilizationBps(10_001)).to.be.revertedWith('InvalidMaxUtilizationBps()');
     });
 
     it('Borrow cap', async () => {
@@ -80,16 +86,28 @@ describe('DnGmx Senior Vault', () => {
       expect(adminParams.withdrawFeeBps).to.eq(100);
     });
 
+    it('setAdminParams bad withdrawFeeBps', async () => {
+      await expect(
+        dnGmxJuniorVault.setAdminParams(
+          admin.address,
+          dnGmxSeniorVault.address,
+          ethers.constants.MaxUint256,
+          glpBatchingManager.address,
+          10_001, // bad withdrawFeeBps
+        ),
+      ).to.be.revertedWith('InvalidWithdrawFeeBps()');
+    });
+
     it('setThresholds', async () => {
       await dnGmxJuniorVault.setThresholds(
-        100, //slippageThresholdSwapBtc
-        100, //slippageThresholdSwapEth
-        100, //slippageThresholdGmx
-        parseUnits('1', 6), //usdcConversionThreshold
-        10n ** 15n, //wethConversionThreshold
-        parseUnits('12', 6), //hedgeUsdcAmountThreshold
-        parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
-        parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
+        100, // slippageThresholdSwapBtc
+        100, // slippageThresholdSwapEth
+        100, // slippageThresholdGmx
+        parseUnits('1', 6), // usdcConversionThreshold
+        10n ** 15n, // wethConversionThreshold
+        parseUnits('12', 6), // hedgeUsdcAmountThreshold
+        parseUnits('1000000', 6), // partialBtcHedgeUsdcAmountThreshold
+        parseUnits('1000000', 6), // partialEthHedgeUsdcAmountThreshold
       );
 
       const thresholds = await dnGmxJuniorVault.getThresholds();
@@ -103,17 +121,97 @@ describe('DnGmx Senior Vault', () => {
       expect(thresholds.partialEthHedgeUsdcAmountThreshold).to.eq(parseUnits('1000000', 6));
     });
 
+    it('setThresholds bad slippageThresholdSwapBtcBps', async () => {
+      await expect(
+        dnGmxJuniorVault.setThresholds(
+          10_001, // bad slippageThresholdSwapBtc
+          100, // slippageThresholdSwapEth
+          100, // slippageThresholdGmx
+          parseUnits('1', 6), // usdcConversionThreshold
+          10n ** 15n, // wethConversionThreshold
+          parseUnits('12', 6), // hedgeUsdcAmountThreshold
+          parseUnits('1000000', 6), // partialBtcHedgeUsdcAmountThreshold
+          parseUnits('1000000', 6), // partialEthHedgeUsdcAmountThreshold
+        ),
+      ).to.be.revertedWith('InvalidSlippageThresholdSwapBtc()');
+    });
+    it('setThresholds bad slippageThresholdSwapEthBps', async () => {
+      await expect(
+        dnGmxJuniorVault.setThresholds(
+          100, // slippageThresholdSwapBtc
+          10_001, // bad slippageThresholdSwapEth
+          100, // slippageThresholdGmx
+          parseUnits('1', 6), // usdcConversionThreshold
+          10n ** 15n, // wethConversionThreshold
+          parseUnits('12', 6), // hedgeUsdcAmountThreshold
+          parseUnits('1000000', 6), // partialBtcHedgeUsdcAmountThreshold
+          parseUnits('1000000', 6), // partialEthHedgeUsdcAmountThreshold
+        ),
+      ).to.be.revertedWith('InvalidSlippageThresholdSwapEth()');
+    });
+    it('setThresholds bad slippageThresholdGmxBps', async () => {
+      await expect(
+        dnGmxJuniorVault.setThresholds(
+          100, // slippageThresholdSwapBtc
+          100, // slippageThresholdSwapEth
+          10_001, // bad slippageThresholdGmx
+          parseUnits('1', 6), // usdcConversionThreshold
+          10n ** 15n, // wethConversionThreshold
+          parseUnits('12', 6), // hedgeUsdcAmountThreshold
+          parseUnits('1000000', 6), // partialBtcHedgeUsdcAmountThreshold
+          parseUnits('1000000', 6), // partialEthHedgeUsdcAmountThreshold
+        ),
+      ).to.be.revertedWith('InvalidSlippageThresholdGmx()');
+    });
+
     it('setRebalanceParams', async () => {
       await dnGmxJuniorVault.setRebalanceParams(
         86400, // rebalanceTimeThreshold
         500, // 5% in bps | rebalanceDeltaThreshold
-        0,
+        10_000, // rebalanceHfThresholdBps
       );
 
       const rebalanceParams = await dnGmxJuniorVault.getRebalanceParams();
       expect(rebalanceParams.rebalanceTimeThreshold).to.eq(86400);
       expect(rebalanceParams.rebalanceDeltaThresholdBps).to.eq(500);
-      expect(rebalanceParams.rebalanceHfThresholdBps).to.eq(0);
+      expect(rebalanceParams.rebalanceHfThresholdBps).to.eq(10_000);
+    });
+
+    it('setRebalanceParams bad rebalanceTimeThreshold', async () => {
+      await expect(
+        dnGmxJuniorVault.setRebalanceParams(
+          3 * 86400 + 1, // bad rebalanceTimeThreshold
+          500, // 5% in bps | rebalanceDeltaThreshold
+          10_000, // rebalanceHfThresholdBps
+        ),
+      ).to.be.revertedWith('InvalidRebalanceTimeThreshold()');
+    });
+    it('setRebalanceParams bad rebalanceTimeThreshold', async () => {
+      await expect(
+        dnGmxJuniorVault.setRebalanceParams(
+          86400, // rebalanceTimeThreshold
+          10_001, // bad rebalanceDeltaThreshold
+          10_000, // rebalanceHfThresholdBps
+        ),
+      ).to.be.revertedWith('InvalidRebalanceDeltaThresholdBps()');
+    });
+    it('setRebalanceParams bad rebalanceTimeThreshold 1', async () => {
+      await expect(
+        dnGmxJuniorVault.setRebalanceParams(
+          86400, // rebalanceTimeThreshold
+          500, // rebalanceDeltaThreshold
+          9999, // bad rebalanceHfThresholdBps
+        ),
+      ).to.be.revertedWith('InvalidRebalanceHfThresholdBps()');
+    });
+    it('setRebalanceParams bad rebalanceTimeThreshold 2', async () => {
+      await expect(
+        dnGmxJuniorVault.setRebalanceParams(
+          86400, // rebalanceTimeThreshold
+          500, // rebalanceDeltaThreshold
+          20_001, // bad rebalanceHfThresholdBps
+        ),
+      ).to.be.revertedWith('InvalidRebalanceHfThresholdBps()');
     });
 
     it('setHedgeParams', async () => {
