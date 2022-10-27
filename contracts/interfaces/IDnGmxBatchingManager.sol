@@ -30,6 +30,8 @@ interface IDnGmxBatchingManager {
     event SharesClaimed(address indexed from, address indexed receiver, uint256 claimAmount);
     event BatchDeposit(uint256 indexed round, uint256 userUsdcAmount, uint256 userGlpAmount, uint256 userShareAmount);
 
+    event ClaimedAndRedeemed(address indexed claimer, address indexed receiver, uint256 shares, uint256 assetsReceived);
+
     struct UserDeposit {
         uint256 round;
         uint128 usdcBalance;
