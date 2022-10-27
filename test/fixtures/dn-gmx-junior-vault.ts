@@ -63,6 +63,11 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     addresses.AAVE_POOL_ADDRESS_PROVIDER, // _poolAddressesProvider
   );
 
+  const periphery = await (await hre.ethers.getContractFactory('WithdrawPeriphery')).deploy();
+
+  await periphery.setSlippageThreshold(100);
+  await periphery.setAddresses(dnGmxJuniorVault.address, rewardRouter.address);
+
   await dnGmxJuniorVault.setFeeParams(1000, feeRecipient.address);
 
   const dnGmxSeniorVault = await dnGmxSeniorVaultFixture();
