@@ -171,8 +171,10 @@ library DnGmxJuniorVaultManager {
             address esGmx = state.rewardRouter.esGmx();
             IRewardTracker sGmx = IRewardTracker(state.rewardRouter.stakedGmxTracker());
 
+            // existing staked gmx balance
             uint256 sGmxPrevBalance = sGmx.depositBalances(address(this), esGmx);
 
+            // handles claiming and staking of esGMX, staking of multiplier points and claim of WETH rewards on GMX
             state.rewardRouter.handleRewards({
                 shouldClaimGmx: false,
                 shouldStakeGmx: false,
@@ -183,28 +185,40 @@ library DnGmxJuniorVaultManager {
                 shouldConvertWethToEth: false
             });
 
+            // harvested staked gmx
             sGmxHarvested = sGmx.depositBalances(address(this), esGmx) - sGmxPrevBalance;
         }
+        // protocol esGMX fees
         state.protocolEsGmx += sGmxHarvested.mulDivDown(state.feeBps, MAX_BPS);
 
+        // total weth harvested which is not compounded
+        // its possible that this is accumulated value over multiple rebalance if in all of those it was below threshold
         uint256 wethHarvested = state.weth.balanceOf(address(this)) - state.protocolFee - state.seniorVaultWethRewards;
 
         if (wethHarvested > state.wethConversionThreshold) {
+            // weth harvested > conversion threshold
             uint256 protocolFeeHarvested = (wethHarvested * state.feeBps) / MAX_BPS;
+            // protocol fee incremented
             state.protocolFee += protocolFeeHarvested;
 
+            // protocol fee to be kept in weth
+            // remaining amount needs to be compounded
             uint256 wethToCompound = wethHarvested - protocolFeeHarvested;
 
+            // share of the wethToCompound that belongs to senior tranche
             uint256 dnGmxSeniorVaultWethShare = state.dnGmxSeniorVault.getEthRewardsSplitRate().mulDivDown(
                 wethToCompound,
                 FeeSplitStrategy.RATE_PRECISION
             );
+            // share of the wethToCompound that belongs to junior tranche
             uint256 dnGmxWethShare = wethToCompound - dnGmxSeniorVaultWethShare;
 
+            // total senior tranche weth which is not compounded
             uint256 _seniorVaultWethRewards = state.seniorVaultWethRewards + dnGmxSeniorVaultWethShare;
 
             uint256 glpReceived;
             {
+                // converts junior tranche share of weth into glp using batching manager
                 uint256 price = state.gmxVault.getMinPrice(address(state.weth));
 
                 uint256 usdgAmount = dnGmxWethShare.mulDivDown(
@@ -212,22 +226,30 @@ library DnGmxJuniorVaultManager {
                     PRICE_PRECISION * MAX_BPS
                 );
 
+                // deposits weth into batching manager which handles the conversion into glp and can be taken back through batch execution
                 glpReceived = state.batchingManager.depositToken(address(state.weth), dnGmxWethShare, usdgAmount);
             }
 
             if (_seniorVaultWethRewards > state.wethConversionThreshold) {
+                // converts senior tranche share of weth into usdc and deposit into AAVE
                 // Deposit aave vault share to AAVE in usdc
                 uint256 minUsdcAmount = _getTokenPriceInUsdc(state, state.weth).mulDivDown(
                     _seniorVaultWethRewards * (MAX_BPS - state.slippageThresholdSwapEthBps),
                     MAX_BPS * PRICE_PRECISION
                 );
+                // swaps weth into usdc
                 (uint256 aaveUsdcAmount, ) = state._swapToken(
                     address(state.weth),
                     _seniorVaultWethRewards,
                     minUsdcAmount
                 );
+
+                // supplies usdc into AAVE
                 state._executeSupply(address(state.usdc), aaveUsdcAmount);
+
+                // resets senior tranche rewards
                 state.seniorVaultWethRewards = 0;
+
                 emit RewardsHarvested(
                     wethHarvested,
                     sGmxHarvested,
@@ -312,6 +334,7 @@ library DnGmxJuniorVaultManager {
         address[] memory assets;
         uint256[] memory amounts;
 
+        // calculate the token/usdc amount to be flashloaned from balancer
         (uint256 btcTokenAmount, uint256 btcUsdcAmount, bool repayDebtBtc) = _flashloanAmounts(
             state,
             address(state.wbtc),
@@ -325,6 +348,7 @@ library DnGmxJuniorVaultManager {
             currentEthBorrow
         );
 
+        // no swap needs to happen if the amount to hedge < threshold
         if (btcUsdcAmount < state.hedgeUsdcAmountThreshold) {
             btcTokenAmount = 0;
             btcUsdcAmount = 0;
@@ -334,6 +358,7 @@ library DnGmxJuniorVaultManager {
             ethUsdcAmount = 0;
         }
 
+        // get asset amount basis increase/decrease of token amounts
         uint256 btcAssetAmount = repayDebtBtc ? btcUsdcAmount : btcTokenAmount;
         uint256 ethAssetAmount = repayDebtEth ? ethUsdcAmount : ethTokenAmount;
 
@@ -341,6 +366,8 @@ library DnGmxJuniorVaultManager {
         if (btcAssetAmount == 0 && ethAssetAmount == 0) return;
 
         if (repayDebtBtc && repayDebtEth) {
+            // case where both the token assets are USDC
+            // only one entry required which is combined asset amount for both tokens
             assets = new address[](1);
             amounts = new uint256[](1);
 
@@ -348,7 +375,8 @@ library DnGmxJuniorVaultManager {
             amounts[0] = (btcAssetAmount + ethAssetAmount);
         } else if (btcAssetAmount == 0 || ethAssetAmount == 0) {
             // Exactly one would be true since case-1 excluded (both false) | case-2
-
+            // One token amount = 0 and other token amount > 0
+            // only one entry required for the non-zero amount token
             assets = new address[](1);
             amounts = new uint256[](1);
 
@@ -368,7 +396,7 @@ library DnGmxJuniorVaultManager {
 
             assets[1] = repayDebtEth ? address(state.usdc) : address(state.weth);
 
-            // ensure that assets and amount tuples are in sorted order of addresses
+            // ensure that assets and amount tuples are in sorted order of addresses (required for balancer flashloans)
             if (assets[0] > assets[1]) {
                 address tempAsset = assets[0];
                 assets[0] = assets[1];
@@ -383,6 +411,7 @@ library DnGmxJuniorVaultManager {
                 amounts[1] = ethAssetAmount;
             }
         }
+        // execute the flashloan
         _executeFlashloan(
             state,
             assets,
@@ -409,21 +438,31 @@ library DnGmxJuniorVaultManager {
         uint256 optimalTokenBorrow,
         uint256 currentTokenBorrow
     ) internal view returns (uint256 optimalPartialTokenBorrow, bool isPartialTokenHedge) {
+        // checks if token hedge needs to be increased or decreased
         bool isOptimalHigher = optimalTokenBorrow > currentTokenBorrow;
+        // difference = amount of swap to be done for complete hedge
         uint256 diff = isOptimalHigher
             ? optimalTokenBorrow - currentTokenBorrow
             : currentTokenBorrow - optimalTokenBorrow;
 
+        // get the correct threshold basis the token
         uint256 threshold = address(token) == address(state.wbtc)
             ? state.partialBtcHedgeUsdcAmountThreshold
             : state.partialEthHedgeUsdcAmountThreshold;
+
+        // convert usdc threshold into token amount threshold
         uint256 tokenThreshold = threshold.mulDivDown(PRICE_PRECISION, _getTokenPriceInUsdc(state, token));
+
         if (diff > tokenThreshold) {
+            // amount to swap > threshold
+            // swap only the threshold amount in this rebalance (partial hedge)
             optimalPartialTokenBorrow = isOptimalHigher
                 ? currentTokenBorrow + tokenThreshold
                 : currentTokenBorrow - tokenThreshold;
             isPartialTokenHedge = true;
         } else {
+            // amount to swap < threshold
+            // swap the full amount in this rebalance (complete hedge)
             optimalPartialTokenBorrow = optimalTokenBorrow;
         }
     }
@@ -442,11 +481,14 @@ library DnGmxJuniorVaultManager {
         uint256 glpDeposited,
         bool isPartialAllowed
     ) external returns (bool isPartialHedge) {
+        // optimal btc and eth borrows
         (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrows(state, glpDeposited);
 
         if (isPartialAllowed) {
+            // if partial hedges are allowed (i.e. rebalance call and not deposit/withdraw)
             bool isPartialBtcHedge;
             bool isPartialEthHedge;
+            // get optimal borrows basis hedge thresholds
             (optimalBtcBorrow, isPartialBtcHedge) = _getOptimalPartialBorrows(
                 state,
                 state.wbtc,
@@ -459,11 +501,15 @@ library DnGmxJuniorVaultManager {
                 optimalEthBorrow,
                 currentEthBorrow
             );
+            // if some token is partially hedged then set that this rebalance is partial
+            // lastRebalanceTime not updated in this case so a rebalance can be called again
             isPartialHedge = isPartialBtcHedge || isPartialEthHedge;
         }
 
+        // calculate usdc value of optimal borrows
         uint256 optimalBorrowValue = _getBorrowValue(state, optimalBtcBorrow, optimalEthBorrow);
 
+        // get liquidation threshold of usdc on AAVE
         uint256 usdcLiquidationThreshold = _getLiquidationThreshold(state, address(state.usdc));
 
         // Settle net change in market value and deposit/withdraw collateral tokens
@@ -473,22 +519,32 @@ library DnGmxJuniorVaultManager {
             usdcLiquidationThreshold
         );
 
+        // current usdc borrowed from senior tranche
         uint256 currentDnGmxSeniorVaultAmount = _getUsdcBorrowed(state);
 
         if (targetDnGmxSeniorVaultAmount > currentDnGmxSeniorVaultAmount) {
+            // case where we need to borrow more usdc
             {
                 uint256 amountToBorrow = targetDnGmxSeniorVaultAmount - currentDnGmxSeniorVaultAmount;
                 uint256 availableBorrow = state.dnGmxSeniorVault.availableBorrow(address(this));
                 if (amountToBorrow > availableBorrow) {
+                    // if amount to borrow > available borrow amount
+                    // we won't be able to hedge glp completely
+                    // convert some glp into usdc to keep the vault delta neutral and hedge the btc/eth of remaining amount
                     uint256 optimalUncappedEthBorrow = optimalEthBorrow;
+
+                    // optimal btc and eth borrows basis the hedged part of glp
                     (optimalBtcBorrow, optimalEthBorrow) = _getOptimalCappedBorrows(
                         state,
                         currentDnGmxSeniorVaultAmount + availableBorrow,
                         usdcLiquidationThreshold
                     );
+
+                    // rebalance the unhedged glp (increase/decrease basis the capped optimal token hedges)
                     _rebalanceUnhedgedGlp(state, optimalUncappedEthBorrow, optimalEthBorrow);
 
                     if (availableBorrow > 0) {
+                        // borrow whatever is available since required > available
                         state.dnGmxSeniorVault.borrow(availableBorrow);
                     }
                 } else {
@@ -574,16 +630,23 @@ library DnGmxJuniorVaultManager {
         uint256 uncappedTokenHedge,
         uint256 cappedTokenHedge
     ) private {
+        // part of glp assets to be kept unhedged
         uint256 unhedgedGlp = _totalAssets(state, false).mulDivDown(
             uncappedTokenHedge - cappedTokenHedge,
             uncappedTokenHedge
         );
+
+        // usdc value of unhedged glp assets
         uint256 unhedgedGlpUsdcAmount = unhedgedGlp.mulDivDown(_getGlpPrice(state, false), PRICE_PRECISION);
 
         if (unhedgedGlpUsdcAmount > state.unhedgedGlpInUsdc) {
+            // if target unhedged amount > current unhedged amount
+            // convert glp to aUSDC
             uint256 glpToUsdcAmount = unhedgedGlpUsdcAmount - state.unhedgedGlpInUsdc;
             state.unhedgedGlpInUsdc += _convertAssetToAUsdc(state, glpToUsdcAmount);
         } else if (unhedgedGlpUsdcAmount < state.unhedgedGlpInUsdc) {
+            // if target unhedged amount < current unhedged amount
+            // convert aUSDC to glp
             uint256 usdcToGlpAmount = state.unhedgedGlpInUsdc - unhedgedGlpUsdcAmount;
             state.unhedgedGlpInUsdc -= usdcToGlpAmount;
             _convertAUsdcToAsset(state, usdcToGlpAmount);

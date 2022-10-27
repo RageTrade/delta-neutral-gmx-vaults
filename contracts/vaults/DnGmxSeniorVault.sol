@@ -20,6 +20,12 @@ import { IERC4626 } from '../interfaces/IERC4626.sol';
 import { ERC4626Upgradeable } from '../ERC4626/ERC4626Upgradeable.sol';
 import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
 
+/**
+ * @title Delta Neutral GMX Senior Tranche contract
+ * @notice Implements the handling of senior tranche which acts as a lender of aUSDC for junior tranche to
+ * borrow and hedge tokens using AAVE
+ * @author Rage
+ **/
 contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable {
     using FullMath for uint256;
     using FeeSplitStrategy for FeeSplitStrategy.Info;
