@@ -140,9 +140,6 @@ describe('Withdraw Periphery', () => {
       .mul(BigNumber.from(10).pow(12)) // 18 decimals & 6 decimals
       .div(PRICE_PRECISION);
 
-    console.log('minWethOut', formatEther(minWethOut));
-    console.log('wethOutWithoutSlippage', formatEther(wethOutWithoutSlippage));
-
     expect(wethBalAfter.sub(wethBalBefore)).to.gt(minWethOut);
     expect(wethBalAfter.sub(wethBalBefore)).to.lt(wethOutWithoutSlippage);
   });
