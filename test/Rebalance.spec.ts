@@ -132,21 +132,21 @@ describe('Rebalance & its utils', () => {
     const [currentBtc_, currentEth_] = await dnGmxJuniorVault.getCurrentBorrows();
     const [optimalBtc_, optimalEth_] = await dnGmxJuniorVault.getOptimalBorrows(amount);
 
-    console.log('current borrows', currentBtc_, currentEth_);
-    console.log('optimal borrows', optimalBtc_, optimalEth_);
+    // console.log('current borrows', currentBtc_, currentEth_);
+    // console.log('optimal borrows', optimalBtc_, optimalEth_);
 
     const currentBorrowValue = await dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_);
     const optimalBorrowValue = await dnGmxJuniorVault.getBorrowValue(optimalBtc_, optimalEth_);
 
-    console.log('currentBorrowValue', currentBorrowValue);
-    console.log('optimalBorrowValue', optimalBorrowValue);
+    // console.log('currentBorrowValue', currentBorrowValue);
+    // console.log('optimalBorrowValue', optimalBorrowValue);
 
     expect(currentBtc_).gt(optimalBtc_);
     expect(currentEth_).gt(optimalEth_);
 
     tx = await dnGmxJuniorVault.rebalanceBorrow(optimalBtc_, currentBtc_, optimalEth_, currentEth_);
 
-    console.log('current borrows (after rebalance hedge):', await dnGmxJuniorVault.getCurrentBorrows());
+    // console.log('current borrows (after rebalance hedge):', await dnGmxJuniorVault.getCurrentBorrows());
 
     await checker.checkCurrentBorrowed([optimalBtc_, optimalEth_], [optimalBtc_.div(100), optimalEth_.div(100)]);
     await checker.checkFlashloanedAmounts(
@@ -317,8 +317,8 @@ describe('Rebalance & its utils', () => {
 
     const dnUsdcDepositedAfter = await dnGmxJuniorVault.dnUsdcDepositedExternal();
 
-    console.log('minGlpOut', minGlpOut);
-    console.log('totalAssets', await dnGmxJuniorVault.totalAssets());
+    // console.log('minGlpOut', minGlpOut);
+    // console.log('totalAssets', await dnGmxJuniorVault.totalAssets());
 
     // availableBorrow = max(borrowCap, balanceOf)
     expect(availableBorrow).to.closeTo(parseUnits('100', 6), BigNumber.from(1));
@@ -360,7 +360,7 @@ describe('Rebalance & its utils', () => {
     const totalAssets = await dnGmxJuniorVault.totalAssets();
     // withdraw amount such that assets remaining after withdraw is 50 sglp
     const amountWithdraw = totalAssets.sub(parseEther('50'));
-    console.log('amountWithdraw', amountWithdraw);
+    // console.log('amountWithdraw', amountWithdraw);
 
     // values based on state after withdraw
 
@@ -371,21 +371,21 @@ describe('Rebalance & its utils', () => {
     let targetDnGmxSeniorVaultAmount = BigNumber.from(targetHealthFactor - usdcLiquidationThreshold)
       .mul(borrowValue)
       .div(BigNumber.from(usdcLiquidationThreshold));
-    console.log('targetDnGmxSeniorVaultAmount (expected: after withdraw)', targetDnGmxSeniorVaultAmount);
+    // console.log('targetDnGmxSeniorVaultAmount (expected: after withdraw)', targetDnGmxSeniorVaultAmount);
 
     await dnGmxJuniorVault.connect(users[0]).withdraw(amountWithdraw, users[0].address, users[0].address);
-    console.log('real total assets after: ', await dnGmxJuniorVault.totalAssets());
+    // console.log('real total assets after: ', await dnGmxJuniorVault.totalAssets());
 
     const dnUsdcDepositedAfter = await dnGmxJuniorVault.dnUsdcDepositedExternal();
-    console.log('dnUsdcDepositedAfter (after withdraw)', dnUsdcDepositedAfter);
+    // console.log('dnUsdcDepositedAfter (after withdraw)', dnUsdcDepositedAfter);
 
     const currentDnGmxSeniorVaultAmountAfter = (await aUSDC.balanceOf(dnGmxJuniorVault.address)).sub(
       dnUsdcDepositedAfter,
     );
-    console.log('currentDnGmxSeniorVaultAmountAfter (after withdraw)', currentDnGmxSeniorVaultAmountAfter);
+    // console.log('currentDnGmxSeniorVaultAmountAfter (after withdraw)', currentDnGmxSeniorVaultAmountAfter);
 
-    console.log('available borrow', await dnGmxSeniorVault.availableBorrow(dnGmxJuniorVault.address));
-    console.log('borrow caps', await dnGmxSeniorVault.borrowCaps(dnGmxJuniorVault.address));
+    // console.log('available borrow', await dnGmxSeniorVault.availableBorrow(dnGmxJuniorVault.address));
+    // console.log('borrow caps', await dnGmxSeniorVault.borrowCaps(dnGmxJuniorVault.address));
 
     // closeTo with delta of "1" because interest accrued can change depending upon order in which test file is run
     expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.closeTo(targetDnGmxSeniorVaultAmount, 1n);
@@ -488,12 +488,12 @@ describe('Rebalance & its utils', () => {
     expect(await dnGmxJuniorVault.totalAssets()).to.gt(amount.mul(MAX_BPS.sub(withdrawFeeBps).div(MAX_BPS)));
 
     // const borrows = await dnGmxJuniorVault.getCurrentBorrows()
-    // console.log('vmv', vmv)
-    // console.log('vault market value', await dnGmxJuniorVault.getVaultMarketValue())
-    // console.log('vault glp balance', await fsGlp.balanceOf(dnGmxJuniorVault.address));
-    // console.log('dnUsdcDeposited', await dnGmxJuniorVault.dnUsdcDepositedExternal())
-    // console.log('unhedgedGlpInUsdc', await dnGmxJuniorVault.unhedgedGlpInUsdc())
-    // console.log('total current borrow value', await dnGmxJuniorVault.getBorrowValue(borrows[0], borrows[1]))
+    // // console.log('vmv', vmv)
+    // // console.log('vault market value', await dnGmxJuniorVault.getVaultMarketValue())
+    // // console.log('vault glp balance', await fsGlp.balanceOf(dnGmxJuniorVault.address));
+    // // console.log('dnUsdcDeposited', await dnGmxJuniorVault.dnUsdcDepositedExternal())
+    // // console.log('unhedgedGlpInUsdc', await dnGmxJuniorVault.unhedgedGlpInUsdc())
+    // // console.log('total current borrow value', await dnGmxJuniorVault.getBorrowValue(borrows[0], borrows[1]))
 
     // await logger.logAavePosition();
   });
@@ -505,52 +505,52 @@ describe('Rebalance & its utils', () => {
 
     const amount = parseEther('100');
 
-    console.log('1st Deposit');
+    // console.log('1st Deposit');
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
 
-    console.log('dnUsdcDeposited', await dnGmxJuniorVault.dnUsdcDepositedExternal());
-    console.log('usdc borrowed', await dnGmxJuniorVault.getUsdcBorrowed());
-    console.log('ausdc balance senior', await aUSDC.balanceOf(dnGmxSeniorVault.address));
+    // console.log('dnUsdcDeposited', await dnGmxJuniorVault.dnUsdcDepositedExternal());
+    // console.log('usdc borrowed', await dnGmxJuniorVault.getUsdcBorrowed());
+    // console.log('ausdc balance senior', await aUSDC.balanceOf(dnGmxSeniorVault.address));
 
     let btcAmount = await vdWBTC.balanceOf(dnGmxJuniorVault.address);
     let ethAmount = await vdWETH.balanceOf(dnGmxJuniorVault.address);
 
-    console.log('btc borrowed', btcAmount);
-    console.log('eth borrowed', ethAmount);
-    console.log('unhedgedGlpInUsdc', await dnGmxJuniorVault.unhedgedGlpInUsdc());
-    console.log('final borrow value', await dnGmxJuniorVault.getBorrowValue(btcAmount, ethAmount));
-    console.log(await lendingPool.getUserAccountData(dnGmxJuniorVault.address));
+    // console.log('btc borrowed', btcAmount);
+    // console.log('eth borrowed', ethAmount);
+    // console.log('unhedgedGlpInUsdc', await dnGmxJuniorVault.unhedgedGlpInUsdc());
+    // console.log('final borrow value', await dnGmxJuniorVault.getBorrowValue(btcAmount, ethAmount));
+    // console.log(await lendingPool.getUserAccountData(dnGmxJuniorVault.address));
 
-    console.log('2nd Deposit');
+    // console.log('2nd Deposit');
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
-    console.log('dnUsdcDeposited', await dnGmxJuniorVault.dnUsdcDepositedExternal());
-    console.log('usdc borrowed', await dnGmxJuniorVault.getUsdcBorrowed());
-    console.log('ausdc balance senior', await aUSDC.balanceOf(dnGmxSeniorVault.address));
+    // console.log('dnUsdcDeposited', await dnGmxJuniorVault.dnUsdcDepositedExternal());
+    // console.log('usdc borrowed', await dnGmxJuniorVault.getUsdcBorrowed());
+    // console.log('ausdc balance senior', await aUSDC.balanceOf(dnGmxSeniorVault.address));
 
     btcAmount = await vdWBTC.balanceOf(dnGmxJuniorVault.address);
     ethAmount = await vdWETH.balanceOf(dnGmxJuniorVault.address);
 
-    console.log('btc borrowed', btcAmount);
-    console.log('eth borrowed', ethAmount);
-    console.log('unhedgedGlpInUsdc', await dnGmxJuniorVault.unhedgedGlpInUsdc());
-    console.log('final borrow value', await dnGmxJuniorVault.getBorrowValue(btcAmount, ethAmount));
-    console.log(await lendingPool.getUserAccountData(dnGmxJuniorVault.address));
+    // console.log('btc borrowed', btcAmount);
+    // console.log('eth borrowed', ethAmount);
+    // console.log('unhedgedGlpInUsdc', await dnGmxJuniorVault.unhedgedGlpInUsdc());
+    // console.log('final borrow value', await dnGmxJuniorVault.getBorrowValue(btcAmount, ethAmount));
+    // console.log(await lendingPool.getUserAccountData(dnGmxJuniorVault.address));
 
-    console.log('3rd Deposit');
+    // console.log('3rd Deposit');
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
-    console.log('dnUsdcDeposited', await dnGmxJuniorVault.dnUsdcDepositedExternal());
-    console.log('usdc borrowed', await dnGmxJuniorVault.getUsdcBorrowed());
-    console.log('ausdc balance senior', await aUSDC.balanceOf(dnGmxSeniorVault.address));
+    // console.log('dnUsdcDeposited', await dnGmxJuniorVault.dnUsdcDepositedExternal());
+    // console.log('usdc borrowed', await dnGmxJuniorVault.getUsdcBorrowed());
+    // console.log('ausdc balance senior', await aUSDC.balanceOf(dnGmxSeniorVault.address));
 
     btcAmount = await vdWBTC.balanceOf(dnGmxJuniorVault.address);
     ethAmount = await vdWETH.balanceOf(dnGmxJuniorVault.address);
 
-    console.log('btc borrowed', btcAmount);
-    console.log('eth borrowed', ethAmount);
-    console.log('unhedgedGlpInUsdc', await dnGmxJuniorVault.unhedgedGlpInUsdc());
-    console.log('final borrow value', await dnGmxJuniorVault.getBorrowValue(btcAmount, ethAmount));
-    console.log(await lendingPool.getUserAccountData(dnGmxJuniorVault.address));
+    // console.log('btc borrowed', btcAmount);
+    // console.log('eth borrowed', ethAmount);
+    // console.log('unhedgedGlpInUsdc', await dnGmxJuniorVault.unhedgedGlpInUsdc());
+    // console.log('final borrow value', await dnGmxJuniorVault.getBorrowValue(btcAmount, ethAmount));
+    // console.log(await lendingPool.getUserAccountData(dnGmxJuniorVault.address));
   });
 
   it('Full Withdraw', async () => {
@@ -593,9 +593,9 @@ describe('Rebalance & its utils', () => {
 
     const givenToUser = totalAssetsBeforeRedeem.mul(MAX_BPS.sub(withdrawFeeBps)).div(MAX_BPS);
 
-    console.log('givenToUser', givenToUser);
-    console.log('totalAssetsBeforeRedeem', totalAssetsBeforeRedeem);
-    console.log('preview', preview);
+    // console.log('givenToUser', givenToUser);
+    // console.log('totalAssetsBeforeRedeem', totalAssetsBeforeRedeem);
+    // console.log('preview', preview);
 
     const tx = await dnGmxJuniorVault
       .connect(users[0])
@@ -616,8 +616,8 @@ describe('Rebalance & its utils', () => {
       }
     }
 
-    console.log('shares', shares);
-    console.log('assets', assets);
+    // console.log('shares', shares);
+    // console.log('assets', assets);
 
     for (const log of receipt.logs) {
       if (log.topics[0] === dnGmxJuniorVaultManager.interface.getEventTopic('TokenSwapped')) {
@@ -645,7 +645,7 @@ describe('Rebalance & its utils', () => {
 
     // total slippage in terms of asset
     const totalSlippage = wbtcUsdcSlippage.add(wethUsdcSlippage).mul(PRICE_PRECISION).div(glpPrice);
-    console.log('totalSlippage', totalSlippage);
+    // console.log('totalSlippage', totalSlippage);
 
     expect(await dnGmxJuniorVault.balanceOf(users[0].address)).to.eq(0);
 
@@ -693,8 +693,8 @@ describe('Rebalance & its utils', () => {
 
     const borrowsBefore = await dnGmxJuniorVault.getCurrentBorrows();
 
-    console.log('borrowsBefore', borrowsBefore);
-    console.log('borrowValueBefore', await dnGmxJuniorVault.getBorrowValue(borrowsBefore[0], borrowsBefore[1]));
+    // console.log('borrowsBefore', borrowsBefore);
+    // console.log('borrowValueBefore', await dnGmxJuniorVault.getBorrowValue(borrowsBefore[0], borrowsBefore[1]));
 
     // withdrawing to user[5]
     const tx = await dnGmxJuniorVault.connect(users[0]).withdraw(amount.div(2), users[5].address, users[0].address);
@@ -739,23 +739,23 @@ describe('Rebalance & its utils', () => {
 
     // total slippage in terms of asset
     const totalSlippage = wbtcUsdcSlippage.add(wethUsdcSlippage).mul(PRICE_PRECISION).div(glpPrice);
-    // console.log('totalSlippage', totalSlippage)
+    // // console.log('totalSlippage', totalSlippage)
 
-    // console.log('totalAssetsBefore', totalAssetsBefore);
-    // console.log('totalAssetsAfter', await dnGmxJuniorVault.totalAssets());
+    // // console.log('totalAssetsBefore', totalAssetsBefore);
+    // // console.log('totalAssetsAfter', await dnGmxJuniorVault.totalAssets());
 
-    // console.log('shares', shares);
-    // console.log('assets', assets);
-    // console.log('sharesUsed', sharesUsed);
+    // // console.log('shares', shares);
+    // // console.log('assets', assets);
+    // // console.log('sharesUsed', sharesUsed);
 
-    // console.log('unhedgedGlpInUsdc', await dnGmxJuniorVault.unhedgedGlpInUsdc());
-    // console.log('dnGmxJuniorVaultGlpBalance', await glpBatchingManager.dnGmxJuniorVaultGlpBalance());
-    // console.log('dnUsdcDeposited', await dnGmxJuniorVault.dnUsdcDeposited());
+    // // console.log('unhedgedGlpInUsdc', await dnGmxJuniorVault.unhedgedGlpInUsdc());
+    // // console.log('dnGmxJuniorVaultGlpBalance', await glpBatchingManager.dnGmxJuniorVaultGlpBalance());
+    // // console.log('dnUsdcDeposited', await dnGmxJuniorVault.dnUsdcDeposited());
 
     // const borrowsAfter = await dnGmxJuniorVault.getCurrentBorrows();
 
-    // console.log('borrowsAfter', borrowsAfter);
-    // console.log('borrowValueAfter', await dnGmxJuniorVault.getBorrowValue(borrowsAfter[0], borrowsAfter[1]));
+    // // console.log('borrowsAfter', borrowsAfter);
+    // // console.log('borrowValueAfter', await dnGmxJuniorVault.getBorrowValue(borrowsAfter[0], borrowsAfter[1]));
 
     expect(assets).to.eq(amount.div(2));
 
@@ -848,9 +848,9 @@ describe('Rebalance & its utils', () => {
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
     await dnGmxJuniorVault.rebalance();
 
-    // console.log('aave position', await aUSDC.balanceOf(dnGmxJuniorVault.address))
-    // console.log('glp balance', await fsGlp.balanceOf(dnGmxJuniorVault.address))
-    // console.log('batching manager bal', await glpBatchingManager.dnGmxJuniorVaultGlpBalance())
+    // // console.log('aave position', await aUSDC.balanceOf(dnGmxJuniorVault.address))
+    // // console.log('glp balance', await fsGlp.balanceOf(dnGmxJuniorVault.address))
+    // // console.log('batching manager bal', await glpBatchingManager.dnGmxJuniorVaultGlpBalance())
 
     // increase price => loss on aave => borrowVal > dnUsdcDeposited
     await changer.changePriceToken('WETH', 1700);
@@ -859,9 +859,9 @@ describe('Rebalance & its utils', () => {
     const [currentBtc, currentEth] = await dnGmxJuniorVault.getCurrentBorrows();
     const borrowValue = dnGmxJuniorVault.getBorrowValue(currentBtc, currentEth);
 
-    // console.log('aave position', await aUSDC.balanceOf(dnGmxJuniorVault.address))
-    // console.log('glp balance', await fsGlp.balanceOf(dnGmxJuniorVault.address))
-    // console.log('batching manager bal', await glpBatchingManager.dnGmxJuniorVaultGlpBalance())
+    // // console.log('aave position', await aUSDC.balanceOf(dnGmxJuniorVault.address))
+    // // console.log('glp balance', await fsGlp.balanceOf(dnGmxJuniorVault.address))
+    // // console.log('batching manager bal', await glpBatchingManager.dnGmxJuniorVaultGlpBalance())
 
     await dnGmxJuniorVault.rebalanceProfit(borrowValue);
 
@@ -869,18 +869,18 @@ describe('Rebalance & its utils', () => {
     await changer.changePriceToken('WBTC', 1400);
     await changer.changePriceToken('WETH', 18000);
 
-    // console.log('aave position', await aUSDC.balanceOf(dnGmxJuniorVault.address));
-    // console.log('glp balance', await fsGlp.balanceOf(dnGmxJuniorVault.address));
-    // console.log('batching manager bal', await glpBatchingManager.dnGmxJuniorVaultGlpBalance());
+    // // console.log('aave position', await aUSDC.balanceOf(dnGmxJuniorVault.address));
+    // // console.log('glp balance', await fsGlp.balanceOf(dnGmxJuniorVault.address));
+    // // console.log('batching manager bal', await glpBatchingManager.dnGmxJuniorVaultGlpBalance());
 
     const [currentBtc_, currentEth_] = await dnGmxJuniorVault.getCurrentBorrows();
     const borrowValue_ = dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_);
 
     await dnGmxJuniorVault.rebalanceProfit(borrowValue_);
 
-    // console.log('aave position', await aUSDC.balanceOf(dnGmxJuniorVault.address))
-    // console.log('glp balance', await fsGlp.balanceOf(dnGmxJuniorVault.address))
-    // console.log('batching manager bal', await glpBatchingManager.dnGmxJuniorVaultGlpBalance())
+    // // console.log('aave position', await aUSDC.balanceOf(dnGmxJuniorVault.address))
+    // // console.log('glp balance', await fsGlp.balanceOf(dnGmxJuniorVault.address))
+    // // console.log('batching manager bal', await glpBatchingManager.dnGmxJuniorVaultGlpBalance())
   });
 
   it('Rebalance Profit - borrowVal < dnUsdcDeposited', async () => {
@@ -907,7 +907,7 @@ describe('Rebalance & its utils', () => {
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
 
     let [currentBtc_, currentEth_] = await dnGmxJuniorVault.getCurrentBorrows();
-    console.log('borrow value after deposit', await dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_));
+    // console.log('borrow value after deposit', await dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_));
 
     await increaseBlockTimestamp(15 * 60);
     await glpBatchingManager.executeBatchDeposit();
@@ -922,7 +922,7 @@ describe('Rebalance & its utils', () => {
 
     await dnGmxJuniorVault.rebalanceProfit(borrowValue);
 
-    console.log('PASSED');
+    // console.log('PASSED');
 
     // ETH: 1,350$ BTC: 18,000$
     await changer.changePriceToken('WBTC', 18000);
@@ -937,7 +937,7 @@ describe('Rebalance & its utils', () => {
 
     await dnGmxJuniorVault.rebalanceProfit(borrowValue);
 
-    console.log('PASSED x2');
+    // console.log('PASSED x2');
 
     await dnGmxJuniorVault.connect(users[0]).withdraw(amount.div(2), users[0].address, users[0].address);
   });
@@ -980,7 +980,7 @@ describe('Rebalance & its utils', () => {
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
 
     let [currentBtc_, currentEth_] = await dnGmxJuniorVault.getCurrentBorrows();
-    console.log('borrow value after deposit', await dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_));
+    // console.log('borrow value after deposit', await dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_));
 
     // ETH: 2,000$ BTC: 25,000$
     await changer.changePriceToken('WBTC', 25000);
@@ -990,7 +990,7 @@ describe('Rebalance & its utils', () => {
 
     await dnGmxJuniorVault.rebalance();
 
-    console.log('PASSED');
+    // console.log('PASSED');
 
     // ETH: 1,350$ BTC: 18,000$
     await changer.changePriceToken('WBTC', 18000);
@@ -1008,20 +1008,20 @@ describe('Rebalance & its utils', () => {
     await glpBatchingManager.executeBatchDeposit();
     await increaseBlockTimestamp(15 * 60);
 
-    console.log('PASSED x2');
+    // console.log('PASSED x2');
 
-    console.log('shares', await dnGmxJuniorVault.balanceOf(users[0].address));
-    console.log('totalAssets', await dnGmxJuniorVault.totalAssets());
-    console.log('totalSupply', await dnGmxJuniorVault.totalSupply());
+    // console.log('shares', await dnGmxJuniorVault.balanceOf(users[0].address));
+    // console.log('totalAssets', await dnGmxJuniorVault.totalAssets());
+    // console.log('totalSupply', await dnGmxJuniorVault.totalSupply());
 
-    console.log('aUSDC bal', await aUSDC.balanceOf(dnGmxJuniorVault.address));
+    // console.log('aUSDC bal', await aUSDC.balanceOf(dnGmxJuniorVault.address));
 
     await dnGmxJuniorVault
       .connect(users[0])
       .redeem(dnGmxJuniorVault.balanceOf(users[0].address), users[0].address, users[0].address);
 
-    console.log('shares', await dnGmxJuniorVault.balanceOf(users[0].address));
-    console.log('totalAssets', await dnGmxJuniorVault.totalAssets());
-    console.log('totalSupply', await dnGmxJuniorVault.totalSupply());
+    // console.log('shares', await dnGmxJuniorVault.balanceOf(users[0].address));
+    // console.log('totalAssets', await dnGmxJuniorVault.totalAssets());
+    // console.log('totalSupply', await dnGmxJuniorVault.totalSupply());
   });
 });
