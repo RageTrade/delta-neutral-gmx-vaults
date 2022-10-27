@@ -231,6 +231,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     gmxVault,
     glpManager,
     lendingPool,
+    periphery,
     dnGmxSeniorVault,
     dnGmxJuniorVault,
     dnGmxJuniorVaultManager,
