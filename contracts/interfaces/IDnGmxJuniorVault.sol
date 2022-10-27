@@ -13,6 +13,15 @@ import { IBorrower } from './IBorrower.sol';
 import { IBalancerVault } from './balancer/IBalancerVault.sol';
 
 interface IDnGmxJuniorVault is IERC4626, IBorrower {
+    error InvalidWithdrawFeeBps();
+    error InvalidSlippageThresholdSwapBtc();
+    error InvalidSlippageThresholdSwapEth();
+    error InvalidSlippageThresholdGmx();
+    error InvalidRebalanceTimeThreshold();
+    error InvalidRebalanceDeltaThresholdBps();
+    error InvalidRebalanceHfThresholdBps();
+    error InvalidTargetHealthFactor();
+
     error InvalidRebalance();
     error DepositCapExceeded();
     error OnlyKeeperAllowed(address msgSender, address authorisedKeeperAddress);
