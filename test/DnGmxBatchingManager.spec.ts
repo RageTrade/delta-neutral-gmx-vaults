@@ -7,6 +7,7 @@ import {
   DnGmxJuniorVaultMock,
   DnGmxSeniorVault,
   ERC20Upgradeable,
+  IRewardRouterV2,
   IVault,
 } from '../typechain-types';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
@@ -16,6 +17,7 @@ import { increaseBlockTimestamp } from './utils/shared';
 describe('Dn Gmx Batching Manager', () => {
   let dnGmxJuniorVault: DnGmxJuniorVaultMock;
   let glpBatchingManager: DnGmxBatchingManager;
+  let rewardRouter: IRewardRouterV2;
   let users: SignerWithAddress[];
   let sGlp: ERC20Upgradeable;
   let usdc: ERC20Upgradeable;
@@ -25,7 +27,7 @@ describe('Dn Gmx Batching Manager', () => {
   let dnGmxSeniorVault: DnGmxSeniorVault;
 
   beforeEach(async () => {
-    ({ dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, fsGlp, usdc, sGlp, gmxVault } =
+    ({ dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, fsGlp, usdc, sGlp, gmxVault, rewardRouter } =
       await dnGmxJuniorVaultFixture());
   });
 
@@ -591,6 +593,142 @@ describe('Dn Gmx Batching Manager', () => {
       const postRound = await glpBatchingManager.currentRound();
 
       expect(postRound).to.eq(prevRound.add(1));
+    });
+  });
+
+  describe('Claim & Withdraw', () => {
+    it('claimAndWithdraw - when user has unclaimed shares', async () => {
+      await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('20000', 6), users[1].address);
+
+      const amount = parseEther('10000');
+      const glpAmount = parseEther('100');
+      const depositAmount = parseUnits('100', 6);
+
+      await sGlp.connect(users[0]).transfer(dnGmxJuniorVault.address, amount);
+      await increaseBlockTimestamp(60 * 60 * 480);
+
+      await generateErc20Balance(usdc, depositAmount, users[1].address);
+      await usdc.connect(users[1]).approve(glpBatchingManager.address, depositAmount);
+      await glpBatchingManager.connect(users[1]).depositUsdc(depositAmount, users[1].address);
+
+      await glpBatchingManager.executeBatchStake();
+      await increaseBlockTimestamp(15 * 60);
+      await glpBatchingManager.executeBatchDeposit();
+      await dnGmxJuniorVault.rebalance();
+
+      const unclaimedShares = await glpBatchingManager.unclaimedShares(users[1].address);
+      expect(unclaimedShares).to.gt(0);
+
+      await rewardRouter.connect(users[1]).mintAndStakeGlpETH(0, 0, {
+        value: parseEther('0.5'),
+      });
+      await increaseBlockTimestamp(15 * 60);
+
+      await sGlp.connect(users[1]).approve(dnGmxJuniorVault.address, ethers.constants.MaxUint256);
+      await dnGmxJuniorVault.connect(users[1]).approve(glpBatchingManager.address, ethers.constants.MaxUint256);
+
+      await dnGmxJuniorVault.connect(users[1]).deposit(glpAmount, users[1].address);
+      const sharesDirect = await dnGmxJuniorVault.balanceOf(users[1].address);
+
+      const glpBalBefore = await fsGlp.balanceOf(users[1].address);
+
+      const tx = await glpBatchingManager.connect(users[1]).claimAndRedeem(users[1].address);
+      const receipt = await tx.wait();
+
+      const glpBalAfter = await fsGlp.balanceOf(users[1].address);
+
+      let shares, assetsReceived;
+
+      for (const log of receipt.logs) {
+        if (log.topics[0] === glpBatchingManager.interface.getEventTopic('ClaimedAndRedeemed')) {
+          const args = glpBatchingManager.interface.parseLog(log).args;
+          shares = args.shares;
+          assetsReceived = args.assetsReceived;
+        }
+      }
+
+      expect(shares).to.eq(unclaimedShares.add(sharesDirect));
+      expect(glpBalAfter.sub(glpBalBefore)).to.eq(assetsReceived);
+
+      expect(await glpBatchingManager.unclaimedShares(users[1].address)).to.eq(0);
+      expect(await dnGmxJuniorVault.balanceOf(users[1].address)).to.eq(0);
+    });
+
+    it('claimAndWithdraw - when user does not have any unclaimed shares', async () => {
+      await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('20000', 6), users[1].address);
+
+      const glpAmount = parseEther('100');
+
+      await rewardRouter.connect(users[1]).mintAndStakeGlpETH(0, 0, {
+        value: parseEther('0.5'),
+      });
+      await increaseBlockTimestamp(15 * 60);
+
+      await sGlp.connect(users[1]).approve(dnGmxJuniorVault.address, ethers.constants.MaxUint256);
+      await dnGmxJuniorVault.connect(users[1]).approve(glpBatchingManager.address, ethers.constants.MaxUint256);
+
+      await dnGmxJuniorVault.connect(users[1]).deposit(glpAmount, users[1].address);
+
+      await expect(glpBatchingManager.connect(users[1]).claimAndRedeem(users[1].address)).to.be.revertedWith(
+        `VM Exception while processing transaction: reverted with custom error 'InvalidInput(17)'`,
+      );
+    });
+
+    it('claimAndWithdraw - receiver different than msg.sender', async () => {
+      await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('20000', 6), users[1].address);
+
+      const amount = parseEther('10000');
+      const glpAmount = parseEther('100');
+      const depositAmount = parseUnits('100', 6);
+
+      await sGlp.connect(users[0]).transfer(dnGmxJuniorVault.address, amount);
+      await increaseBlockTimestamp(60 * 60 * 480);
+
+      await generateErc20Balance(usdc, depositAmount, users[1].address);
+      await usdc.connect(users[1]).approve(glpBatchingManager.address, depositAmount);
+      await glpBatchingManager.connect(users[1]).depositUsdc(depositAmount, users[1].address);
+
+      await glpBatchingManager.executeBatchStake();
+      await increaseBlockTimestamp(15 * 60);
+      await glpBatchingManager.executeBatchDeposit();
+      await dnGmxJuniorVault.rebalance();
+
+      const unclaimedShares = await glpBatchingManager.unclaimedShares(users[1].address);
+      expect(unclaimedShares).to.gt(0);
+
+      await rewardRouter.connect(users[1]).mintAndStakeGlpETH(0, 0, {
+        value: parseEther('0.5'),
+      });
+      await increaseBlockTimestamp(15 * 60);
+
+      await sGlp.connect(users[1]).approve(dnGmxJuniorVault.address, ethers.constants.MaxUint256);
+      await dnGmxJuniorVault.connect(users[1]).approve(glpBatchingManager.address, ethers.constants.MaxUint256);
+
+      await dnGmxJuniorVault.connect(users[1]).deposit(glpAmount, users[1].address);
+      const sharesDirect = await dnGmxJuniorVault.balanceOf(users[1].address);
+
+      const glpBalBefore = await fsGlp.balanceOf(users[5].address);
+
+      const tx = await glpBatchingManager.connect(users[1]).claimAndRedeem(users[5].address);
+      const receipt = await tx.wait();
+
+      const glpBalAfter = await fsGlp.balanceOf(users[5].address);
+
+      let shares, assetsReceived;
+
+      for (const log of receipt.logs) {
+        if (log.topics[0] === glpBatchingManager.interface.getEventTopic('ClaimedAndRedeemed')) {
+          const args = glpBatchingManager.interface.parseLog(log).args;
+          shares = args.shares;
+          assetsReceived = args.assetsReceived;
+        }
+      }
+
+      expect(shares).to.eq(unclaimedShares.add(sharesDirect));
+      expect(glpBalAfter.sub(glpBalBefore)).to.eq(assetsReceived);
+
+      expect(await glpBatchingManager.unclaimedShares(users[1].address)).to.eq(0);
+      expect(await dnGmxJuniorVault.balanceOf(users[1].address)).to.eq(0);
     });
   });
 });
