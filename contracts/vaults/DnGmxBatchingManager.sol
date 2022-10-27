@@ -16,6 +16,12 @@ import { IVault } from '../interfaces/gmx/IVault.sol';
 
 import { SafeCast } from '../libraries/SafeCast.sol';
 
+/**
+ * @title Batching Manager to avoid glp transfer cooldowm
+ * @notice batches the incoming deposit token depoists after converting them to glp
+ * @author RageTrade
+ **/
+
 contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, PausableUpgradeable {
     using FullMath for uint256;
     using FullMath for uint128;

@@ -24,7 +24,7 @@ import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
  * @title Delta Neutral GMX Senior Tranche contract
  * @notice Implements the handling of senior tranche which acts as a lender of aUSDC for junior tranche to
  * borrow and hedge tokens using AAVE
- * @author Rage
+ * @author RageTrade
  **/
 contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable {
     using FullMath for uint256;

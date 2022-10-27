@@ -5,12 +5,13 @@ pragma solidity >=0.8.0;
 import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
 
 /**
- * @title FeeSplitStrategy contract
+ * @title FeeSplitStrategy library
  * @notice Implements the calculation of the eth reward split depending on the utilization of reserve
  * @dev The model of interest rate is based on 2 slopes, one before the `OPTIMAL_UTILIZATION_RATE`
  * point of utilization and another from that one to 100%
  * @author adapted from https://github.com/aave/protocol-v2/blob/6f57232358af0fd41d9dcf9309d7a8c0b9aa3912/contracts/protocol/lendingpool/DefaultReserveInterestRateStrategy.sol
  **/
+
 library FeeSplitStrategy {
     using FullMath for uint128;
     using FullMath for uint256;

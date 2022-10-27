@@ -40,7 +40,7 @@ import { ERC4626Upgradeable } from '../ERC4626/ERC4626Upgradeable.sol';
  * @title Delta Neutral GMX Junior Tranche contract
  * @notice Implements the handling of junior tranche which maintains hedges for btc and eth
  * basis the target weights on GMX
- * @author Rage
+ * @author RageTrade
  **/
 contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable {
     using SafeCast for uint256;
