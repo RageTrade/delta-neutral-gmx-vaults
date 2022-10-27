@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { BigNumber, constants } from 'ethers';
-import { formatEther, formatUnits, parseEther, parseUnits } from 'ethers/lib/utils';
+import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 
 describe('Withdraw Periphery', () => {

@@ -14,6 +14,12 @@ import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
 
 import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
 
+/**
+ * @title Periphery to convert junior vault shares to tokens
+ * @notice uses a fixed max slippage threshold
+ * @author RageTrade
+ **/
+
 contract WithdrawPeriphery is Ownable {
     using FullMath for uint256;
 
@@ -52,11 +58,16 @@ contract WithdrawPeriphery is Ownable {
 
     IDnGmxJuniorVault internal dnGmxJuniorVault;
 
+    /// @notice sets the maximum slippage threshold to be used for converting glp for asset
+    /// @param _slippageThreshold slippage threshold value in bps
     function setSlippageThreshold(uint256 _slippageThreshold) external onlyOwner {
         slippageThreshold = _slippageThreshold;
         emit SlippageThresholdUpdated(_slippageThreshold);
     }
 
+    /// @notice sets the required external contract address in order to swap glp for tokens
+    /// @param _dnGmxJuniorVault junior tranche of delta neutral vault
+    /// @param _rewardRouter reward router v2 of gmx protocol
     function setAddresses(IDnGmxJuniorVault _dnGmxJuniorVault, IRewardRouterV2 _rewardRouter) external onlyOwner {
         dnGmxJuniorVault = _dnGmxJuniorVault;
 
@@ -114,9 +125,12 @@ contract WithdrawPeriphery is Ownable {
     }
 
     function _convertToToken(address token, address receiver) internal returns (uint256 amountOut) {
+        // this value should be whatever glp is received by calling withdraw/redeem to junior vault
         uint256 outputGlp = fsGlp.balanceOf(address(this));
 
+        // using min price of glp because giving in glp
         uint256 glpPrice = _getGlpPrice(false);
+        // using max price of token because taking token out of gmx
         uint256 tokenPrice = gmxVault.getMaxPrice(token);
 
         uint256 minTokenOut = outputGlp.mulDiv(glpPrice * (MAX_BPS - slippageThreshold), tokenPrice * MAX_BPS);
@@ -128,6 +142,7 @@ contract WithdrawPeriphery is Ownable {
         uint256 aum = glpManager.getAum(maximize);
         uint256 totalSupply = glp.totalSupply();
 
+        // 1e24 because of usdc unit (30 - 6)
         return aum.mulDiv(PRICE_PRECISION, totalSupply * 1e24);
     }
 }

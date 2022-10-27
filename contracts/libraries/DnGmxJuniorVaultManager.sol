@@ -31,6 +31,12 @@ import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMat
 
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 
+/**
+ * @title Helper library for junior vault
+ * @dev junior vault delegates calls to this library for logic
+ * @author RageTrade
+ */
+
 library DnGmxJuniorVaultManager {
     event RewardsHarvested(
         uint256 wethHarvested,
@@ -133,18 +139,29 @@ library DnGmxJuniorVaultManager {
         IERC20Metadata wbtc;
 
         // aave protocol addrs
+        // lending pool for liqudity market
         IPool pool;
+        // aave interest bearing usdc
         IAToken aUsdc;
+        // variable-rate debt accruing btc
         IDebtToken vWbtc;
+        // variable-rate debt accruing eth
         IDebtToken vWeth;
+        // cannocial oracle used by aave
         IPriceOracle oracle;
+        // rewards controller to claim any emissions (for future use)
         IRewardsController aaveRewardsController;
+        // immutable address provider to obtain various addresses
         IPoolAddressesProvider poolAddressProvider;
 
         // gmx protocol addrs
+        // core gmx vault
         IVault gmxVault;
+        // staked gmx
         IRewardTracker sGmx;
+        // glp manager (for giving assets allowance and fetching AUM)
         IGlpManager glpManager;
+        // rewardRouter to stake & unstake glp
         IRewardRouterV2 rewardRouter;
 
         // other external protocols
@@ -159,6 +176,7 @@ library DnGmxJuniorVaultManager {
         // batching manager address
         IDnGmxBatchingManager batchingManager;
 
+        // gaps for extending struct (if required during upgrade)
         uint256[50] __gaps;
     }
 
@@ -277,6 +295,7 @@ library DnGmxJuniorVaultManager {
     /* ##################################################################
                             REBALANCE HELPERS
     ################################################################## */
+
     ///@notice rebalances pnl on AAVE againts the sGLP assets
     ///@param state set of all state variables of vault
     ///@param borrowValue value of the borrowed assests(ETH + BTC) from AAVE in USDC
@@ -740,6 +759,7 @@ library DnGmxJuniorVaultManager {
     /* ##################################################################
                             AAVE HELPERS
     ################################################################## */
+
     ///@notice executes borrow of "token" of "amount" quantity to AAVE at variable interest rate
     ///@param state set of all state variables of vault
     ///@param token address of token to borrow
@@ -795,15 +815,7 @@ library DnGmxJuniorVaultManager {
     ///@param asset address of asset to check liquidation threshold for
     function _getLiquidationThreshold(State storage state, address asset) private view returns (uint256) {
         DataTypes.ReserveConfigurationMap memory config = state.pool.getConfiguration(asset);
-        (
-            ,
-            /** uint256 ltv **/
-            uint256 liquidationThreshold, /** uint256 liquidationBonus */ /** uint256 decimals */ /** uint256 reserveFactor */
-            ,
-            ,
-            ,
-
-        ) = config.getParams();
+        (, uint256 liquidationThreshold, , , , ) = config.getParams();
 
         return liquidationThreshold;
     }
@@ -835,7 +847,7 @@ library DnGmxJuniorVaultManager {
     ) internal {
         if (assets.length != amounts.length) revert IDnGmxJuniorVault.ArraysLengthMismatch();
 
-        // variable to ensure that only vault originated flashloans should be able to work with receive flashloan
+        // to ensure that only vault originated flashloans should be able to work with receive flashloan
         state.hasFlashloaned = true;
 
         state.balancerVault.flashLoan(
