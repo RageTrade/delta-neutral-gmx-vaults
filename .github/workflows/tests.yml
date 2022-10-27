@@ -7,7 +7,7 @@ on:
     branches: ['*']
 
 jobs:
-  build:
+  coverage:
     runs-on: ubuntu-latest
     environment: CI
     steps:
@@ -19,7 +19,7 @@ jobs:
       - run: yarn install --frozen-lockfile
       - run: yarn patch-package
       - run: yarn compile
-      - run: yarn test
+      - run: yarn coverage
         env:
           ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
           MNEMONIC: ${{ secrets.MNEMONIC }}

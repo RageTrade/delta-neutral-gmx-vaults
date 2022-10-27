@@ -173,16 +173,22 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     method: 'hardhat_impersonateAccount',
     params: [dnGmxJuniorVault.address],
   });
+  await hre.network.provider.send('hardhat_setBalance', [dnGmxJuniorVault.address, '0x1000000000000']);
 
   await hre.network.provider.request({
     method: 'hardhat_impersonateAccount',
     params: [GMX_ECOSYSTEM_ADDRESSES.GOV],
   });
+  await hre.network.provider.send('hardhat_setBalance', [GMX_ECOSYSTEM_ADDRESSES.GOV, '0x1000000000000']);
 
   await hre.network.provider.request({
     method: 'hardhat_impersonateAccount',
     params: ['0x7b1FFdDEEc3C4797079C7ed91057e399e9D43a8B'],
   });
+  await hre.network.provider.send('hardhat_setBalance', [
+    '0x7b1FFdDEEc3C4797079C7ed91057e399e9D43a8B',
+    '0x1000000000000',
+  ]);
 
   const govSigner = await hre.ethers.getSigner('0x7b1FFdDEEc3C4797079C7ed91057e399e9D43a8B');
 
