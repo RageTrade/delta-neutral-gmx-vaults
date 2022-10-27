@@ -403,7 +403,7 @@ describe('Rebalance & its utils', () => {
     await dnGmxJuniorVault.setRebalanceParams(
       86400, //rebalanceTimeThreshold:
       500, // 5% in bps rebalanceDeltaThresholdBps:
-      0,
+      10_000,
     );
 
     expect(await dnGmxJuniorVault.isValidRebalanceTime()).to.be.true;

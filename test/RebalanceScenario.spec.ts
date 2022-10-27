@@ -1204,7 +1204,7 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.setRebalanceParams(
       86400, // rebalanceTimeThreshold
       500, // 5% in bps | rebalanceDeltaThresholdBps
-      0,
+      10_000,
     );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
