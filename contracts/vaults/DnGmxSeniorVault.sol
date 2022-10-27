@@ -129,6 +129,7 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @dev maximum utilization that vault is allowed to go upto on withdrawals (beyond this withdrawals would fail)
     /// @param _maxUtilizationBps: updated max utilization bps
     function setMaxUtilizationBps(uint256 _maxUtilizationBps) external onlyOwner {
+        if (_maxUtilizationBps > MAX_BPS) revert InvalidMaxUtilizationBps();
         maxUtilizationBps = _maxUtilizationBps;
         emit MaxUtilizationBpsUpdated(_maxUtilizationBps);
     }

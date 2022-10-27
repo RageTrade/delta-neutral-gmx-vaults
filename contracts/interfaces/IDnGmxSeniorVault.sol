@@ -6,6 +6,8 @@ import { IBorrower } from './IBorrower.sol';
 import { IERC4626 } from './IERC4626.sol';
 
 interface IDnGmxSeniorVault is IERC4626 {
+    error InvalidMaxUtilizationBps();
+
     error CallerNotBorrower();
 
     error InvalidCapUpdate();

@@ -155,11 +155,14 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         address batchingManager,
         uint16 withdrawFeeBps
     ) external onlyOwner {
+        if (withdrawFeeBps > MAX_BPS) revert InvalidWithdrawFeeBps();
+
         state.keeper = newKeeper;
         state.dnGmxSeniorVault = IDnGmxSeniorVault(dnGmxSeniorVault);
         state.depositCap = newDepositCap;
         state.batchingManager = IDnGmxBatchingManager(batchingManager);
         state.withdrawFeeBps = withdrawFeeBps;
+
         emit AdminParamsUpdated(newKeeper, dnGmxSeniorVault, newDepositCap, batchingManager, withdrawFeeBps);
     }
 
@@ -182,6 +185,10 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         uint128 partialBtcHedgeUsdcAmountThreshold,
         uint128 partialEthHedgeUsdcAmountThreshold
     ) external onlyOwner {
+        if (slippageThresholdSwapBtcBps > MAX_BPS) revert InvalidSlippageThresholdSwapBtc();
+        if (slippageThresholdSwapEthBps > MAX_BPS) revert InvalidSlippageThresholdSwapEth();
+        if (slippageThresholdGmxBps > MAX_BPS) revert InvalidSlippageThresholdGmx();
+
         state.slippageThresholdSwapBtcBps = slippageThresholdSwapBtcBps;
         state.slippageThresholdSwapEthBps = slippageThresholdSwapEthBps;
         state.slippageThresholdGmxBps = slippageThresholdGmxBps;
@@ -205,7 +212,8 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
 
     /// @notice set rebalance paramters
     /// @param rebalanceTimeThreshold (seconds) minimum time difference required between two rebalance calls
-    /// @dev a partial rebalance (rebalance where partial hedge gets taken) does not count
+    /// @dev a partial rebalance (rebalance where partial hedge gets taken) does not count.
+    /// @dev setHedgeParams should already have been called.
     /// @param rebalanceDeltaThresholdBps (BPS) threshold difference between optimal and current token hedges for triggering a rebalance
     /// @param rebalanceHfThresholdBps (BPS) threshold amount of health factor on AAVE below which a rebalance is triggered
     function setRebalanceParams(
@@ -213,6 +221,11 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         uint16 rebalanceDeltaThresholdBps,
         uint16 rebalanceHfThresholdBps
     ) external onlyOwner {
+        if (rebalanceTimeThreshold > 3 days) revert InvalidRebalanceTimeThreshold();
+        if (rebalanceDeltaThresholdBps > MAX_BPS) revert InvalidRebalanceDeltaThresholdBps();
+        if (rebalanceHfThresholdBps < MAX_BPS || rebalanceHfThresholdBps > state.targetHealthFactor)
+            revert InvalidRebalanceHfThresholdBps();
+
         state.rebalanceTimeThreshold = rebalanceTimeThreshold;
         state.rebalanceDeltaThresholdBps = rebalanceDeltaThresholdBps;
         state.rebalanceHfThresholdBps = rebalanceHfThresholdBps;
@@ -231,6 +244,8 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         uint256 targetHealthFactor,
         IRewardsController aaveRewardsController
     ) external onlyOwner {
+        if (targetHealthFactor > 20_000) revert InvalidTargetHealthFactor();
+
         state.balancerVault = vault;
         state.swapRouter = swapRouter;
         state.targetHealthFactor = targetHealthFactor;

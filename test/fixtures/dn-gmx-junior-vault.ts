@@ -112,12 +112,6 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
   );
 
-  await dnGmxJuniorVault.setRebalanceParams(
-    ethers.constants.Zero, // or 86400 | rebalanceTimeThreshold
-    500, // 5% in bps | rebalanceDeltaThresholdBps
-    12_000,
-  );
-
   const targetHealthFactor = 15_000;
   const usdcLiquidationThreshold = 8_500;
 
@@ -126,6 +120,12 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     addresses.UNI_V3_SWAP_ROUTER, //swapRouter:
     targetHealthFactor, // 150%
     ethers.constants.AddressZero, //aaveRewardsController:
+  );
+
+  await dnGmxJuniorVault.setRebalanceParams(
+    ethers.constants.Zero, // or 86400 | rebalanceTimeThreshold
+    500, // 5% in bps | rebalanceDeltaThresholdBps
+    12_000,
   );
 
   await dnGmxJuniorVault.grantAllowances();
