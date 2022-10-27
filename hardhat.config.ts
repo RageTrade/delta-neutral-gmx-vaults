@@ -127,7 +127,7 @@ export default {
     strict: true,
   },
   storageLayoutChanges: {
-    contracts: ['DnGmxJuniorVault', 'DnGmxSeniorVault', 'DnGmxBatchingManager', 'LeveragePool'],
+    contracts: ['DnGmxJuniorVault', 'DnGmxSeniorVault', 'DnGmxBatchingManager'],
     fullPath: false,
   },
   namedAccounts: {
