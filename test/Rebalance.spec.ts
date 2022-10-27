@@ -554,7 +554,17 @@ describe('Rebalance & its utils', () => {
 
   it('Full Withdraw', async () => {
     const opts = await dnGmxJuniorVaultFixture();
-    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, admin, users, fsGlp } = opts;
+    const {
+      dnGmxJuniorVault,
+      dnGmxSeniorVault,
+      glpBatchingManager,
+      dnGmxJuniorVaultManager,
+      admin,
+      users,
+      weth,
+      wbtc,
+      fsGlp,
+    } = opts;
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     await dnGmxJuniorVault.setAdminParams(
@@ -564,7 +574,11 @@ describe('Rebalance & its utils', () => {
       glpBatchingManager.address,
       100,
     );
+
+    const PRICE_PRECISION = BigNumber.from(10).pow(30);
+
     const amount = parseEther('100');
+    const glpPrice = await dnGmxJuniorVault['getPrice(bool)'](false);
 
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
 
@@ -582,23 +596,87 @@ describe('Rebalance & its utils', () => {
     console.log('totalAssetsBeforeRedeem', totalAssetsBeforeRedeem);
     console.log('preview', preview);
 
-    await dnGmxJuniorVault
+    const tx = await dnGmxJuniorVault
       .connect(users[0])
-      .redeem(dnGmxJuniorVault.balanceOf(users[0].address), users[0].address, users[0].address);
+      .redeem(dnGmxJuniorVault.balanceOf(users[0].address), users[5].address, users[0].address);
+
+    const receipt = await tx.wait();
+
+    let wbtcUsdcSlippage: BigNumber = BigNumber.from(0);
+    let wethUsdcSlippage: BigNumber = BigNumber.from(0);
+
+    let shares, assets;
+
+    for (const log of receipt.logs) {
+      if (log.topics[0] === dnGmxJuniorVault.interface.getEventTopic('Withdraw')) {
+        const args = dnGmxJuniorVault.interface.parseLog(log).args;
+        shares = args.shares;
+        assets = args.assets;
+      }
+    }
+
+    console.log('shares', shares);
+    console.log('assets', assets);
+
+    for (const log of receipt.logs) {
+      if (log.topics[0] === dnGmxJuniorVaultManager.interface.getEventTopic('TokenSwapped')) {
+        const args = dnGmxJuniorVaultManager.interface.parseLog(log).args;
+
+        if (args.toToken.toLowerCase() == wbtc.address.toLowerCase()) {
+          const btcPrice = await dnGmxJuniorVault['getPrice(address,bool)'](wbtc.address, true);
+          wbtcUsdcSlippage = BigNumber.from(args.toQuantity)
+            .mul(btcPrice)
+            .div(PRICE_PRECISION)
+            .sub(BigNumber.from(args.fromQuantity))
+            .abs();
+        }
+
+        if (args.toToken.toLowerCase() == weth.address.toLowerCase()) {
+          const ethPrice = await dnGmxJuniorVault['getPrice(address,bool)'](weth.address, true);
+          wethUsdcSlippage = BigNumber.from(args.toQuantity)
+            .mul(ethPrice)
+            .div(PRICE_PRECISION)
+            .sub(BigNumber.from(args.fromQuantity))
+            .abs();
+        }
+      }
+    }
+
+    // total slippage in terms of asset
+    const totalSlippage = wbtcUsdcSlippage.add(wethUsdcSlippage).mul(PRICE_PRECISION).div(glpPrice);
+    console.log('totalSlippage', totalSlippage);
 
     expect(await dnGmxJuniorVault.balanceOf(users[0].address)).to.eq(0);
 
+    expect(shares).to.eq(amount);
+    expect(await fsGlp.balanceOf(users[5].address)).to.eq(assets);
+
     expect(givenToUser).to.eq(preview);
     expect(await dnGmxJuniorVault.totalSupply()).to.eq(0);
-    expect(await dnGmxJuniorVault.totalAssets()).to.eq(totalAssetsBeforeRedeem.sub(givenToUser));
+    expect(await dnGmxJuniorVault.totalAssets()).to.gt(totalAssetsBeforeRedeem.sub(givenToUser).sub(totalSlippage));
   });
 
-  it.only('Partial Withdraw & withdrawFeeBps', async () => {
+  it('Partial Withdraw & withdrawFeeBps', async () => {
     const opts = await dnGmxJuniorVaultFixture();
-    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, fsGlp, rewardRouter, wbtc, weth } = opts;
-    await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
+    const {
+      dnGmxJuniorVault,
+      dnGmxSeniorVault,
+      glpBatchingManager,
+      users,
+      fsGlp,
+      dnGmxJuniorVaultManager,
+      admin,
+      usdc,
+      wbtc,
+      weth,
+    } = opts;
+
+    const PRICE_PRECISION = BigNumber.from(10).pow(30);
 
     const amount = parseEther('100');
+    const glpPrice = await dnGmxJuniorVault['getPrice(bool)'](false);
+
+    await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
 
@@ -612,7 +690,10 @@ describe('Rebalance & its utils', () => {
     expect(await dnGmxJuniorVault.unhedgedGlpInUsdc()).to.eq(0);
     expect(await glpBatchingManager.dnGmxJuniorVaultGlpBalance()).to.eq(0);
 
-    const sharesUsed = await dnGmxJuniorVault.previewWithdraw(amount.div(2));
+    const borrowsBefore = await dnGmxJuniorVault.getCurrentBorrows();
+
+    console.log('borrowsBefore', borrowsBefore);
+    console.log('borrowValueBefore', await dnGmxJuniorVault.getBorrowValue(borrowsBefore[0], borrowsBefore[1]));
 
     // withdrawing to user[5]
     const tx = await dnGmxJuniorVault.connect(users[0]).withdraw(amount.div(2), users[5].address, users[0].address);
@@ -628,14 +709,53 @@ describe('Rebalance & its utils', () => {
       }
     }
 
+    let wbtcUsdcSlippage: BigNumber = BigNumber.from(0);
+    let wethUsdcSlippage: BigNumber = BigNumber.from(0);
+
     for (const log of receipt.logs) {
-      if (log.topics[0] === rewardRouter.interface.getEventTopic('UnstakeGlp')) {
-        const args = rewardRouter.interface.parseLog(log).args;
-        console.log('unstake glp', args);
+      if (log.topics[0] === dnGmxJuniorVaultManager.interface.getEventTopic('TokenSwapped')) {
+        const args = dnGmxJuniorVaultManager.interface.parseLog(log).args;
+
+        if (args.toToken.toLowerCase() == wbtc.address.toLowerCase()) {
+          const btcPrice = await dnGmxJuniorVault['getPrice(address,bool)'](wbtc.address, true);
+          wbtcUsdcSlippage = BigNumber.from(args.toQuantity)
+            .mul(btcPrice)
+            .div(PRICE_PRECISION)
+            .sub(BigNumber.from(args.fromQuantity))
+            .abs();
+        }
+
+        if (args.toToken.toLowerCase() == weth.address.toLowerCase()) {
+          const ethPrice = await dnGmxJuniorVault['getPrice(address,bool)'](weth.address, true);
+          wethUsdcSlippage = BigNumber.from(args.toQuantity)
+            .mul(ethPrice)
+            .div(PRICE_PRECISION)
+            .sub(BigNumber.from(args.fromQuantity))
+            .abs();
+        }
       }
     }
 
-    // expect(shares).to.eq(sharesUsed);
+    // total slippage in terms of asset
+    const totalSlippage = wbtcUsdcSlippage.add(wethUsdcSlippage).mul(PRICE_PRECISION).div(glpPrice);
+    // console.log('totalSlippage', totalSlippage)
+
+    // console.log('totalAssetsBefore', totalAssetsBefore);
+    // console.log('totalAssetsAfter', await dnGmxJuniorVault.totalAssets());
+
+    // console.log('shares', shares);
+    // console.log('assets', assets);
+    // console.log('sharesUsed', sharesUsed);
+
+    // console.log('unhedgedGlpInUsdc', await dnGmxJuniorVault.unhedgedGlpInUsdc());
+    // console.log('dnGmxJuniorVaultGlpBalance', await glpBatchingManager.dnGmxJuniorVaultGlpBalance());
+    // console.log('dnUsdcDeposited', await dnGmxJuniorVault.dnUsdcDeposited());
+
+    // const borrowsAfter = await dnGmxJuniorVault.getCurrentBorrows();
+
+    // console.log('borrowsAfter', borrowsAfter);
+    // console.log('borrowValueAfter', await dnGmxJuniorVault.getBorrowValue(borrowsAfter[0], borrowsAfter[1]));
+
     expect(assets).to.eq(amount.div(2));
 
     // should have recevied exact glp
@@ -645,7 +765,7 @@ describe('Rebalance & its utils', () => {
     expect(await dnGmxJuniorVault.totalSupply()).to.eq(await dnGmxJuniorVault.balanceOf(users[0].address));
 
     expect(await dnGmxJuniorVault.totalSupply()).to.eq(amount.sub(shares));
-    expect(await dnGmxJuniorVault.totalAssets()).to.gt(totalAssetsBefore.sub(assets));
+    expect(await dnGmxJuniorVault.totalAssets()).to.gt(totalAssetsBefore.sub(assets).sub(totalSlippage));
   });
 
   it('Change Price', async () => {
