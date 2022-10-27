@@ -387,7 +387,8 @@ describe('Rebalance & its utils', () => {
     console.log('available borrow', await dnGmxSeniorVault.availableBorrow(dnGmxJuniorVault.address));
     console.log('borrow caps', await dnGmxSeniorVault.borrowCaps(dnGmxJuniorVault.address));
 
-    expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.eq(targetDnGmxSeniorVaultAmount);
+    // closeTo with delta of "1" because interest accrued can change depending upon order in which test file is run
+    expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.closeTo(targetDnGmxSeniorVaultAmount, 1n);
 
     const diff = (await dnGmxSeniorVault.borrowCaps(dnGmxJuniorVault.address)).sub(
       await dnGmxSeniorVault.availableBorrow(dnGmxJuniorVault.address),
