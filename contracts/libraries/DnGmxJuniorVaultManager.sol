@@ -762,10 +762,13 @@ library DnGmxJuniorVaultManager {
             uint256 amountWithPremium = tokenAmount + premium;
 
             (uint256 usdcReceived, ) = state._swapToken(token, tokenAmount, usdcAmount);
+
             state._executeSupply(address(state.usdc), usdcReceived);
             state._executeBorrow(token, amountWithPremium);
-            IERC20(token).transfer(address(state.balancerVault), amountWithPremium);
+
             state.dnUsdcDeposited += usdcReceived.toInt256();
+
+            IERC20(token).transfer(address(state.balancerVault), amountWithPremium);
         } else {
             (uint256 usdcPaid, uint256 tokensReceived) = state._swapUSDC(token, tokenAmount, usdcAmount);
             uint256 amountWithPremium = usdcPaid + premium;
