@@ -61,8 +61,9 @@ contract WithdrawPeriphery is Ownable {
         fsGlp = IERC20(sGlp.stakedGlpTracker());
 
         rewardRouter = _rewardRouter;
-        gmxVault = IVault(glpManager.vault());
         glpManager = IGlpManager(sGlp.glpManager());
+
+        gmxVault = IVault(glpManager.vault());
 
         sGlp.approve(address(glpManager), type(uint256).max);
     }
