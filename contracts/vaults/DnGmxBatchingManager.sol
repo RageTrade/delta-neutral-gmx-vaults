@@ -224,15 +224,18 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         _claim(msg.sender, receiver, amount);
     }
 
-    function claimAndWithdraw(address receiver) external returns (uint256 glpReceived) {
-        _claim(msg.sender, receiver, unclaimedShares(msg.sender));
+    function claimAndRedeem(address receiver) external returns (uint256 glpReceived) {
+        // claimed shares would be transfered back to msg.sender
+        _claim(msg.sender, msg.sender, unclaimedShares(msg.sender));
 
         uint256 shares = dnGmxJuniorVault.balanceOf(msg.sender);
         if (shares == 0) return 0;
 
         // withdraw all shares from user
         // user should have given approval to batching manager to spend dnGmxJuniorVault shares
-        glpReceived = dnGmxJuniorVault.withdraw(shares, receiver, msg.sender);
+        glpReceived = dnGmxJuniorVault.redeem(shares, receiver, msg.sender);
+
+        emit ClaimedAndRedeemed(msg.sender, receiver, shares, glpReceived);
     }
 
     /*//////////////////////////////////////////////////////////////
