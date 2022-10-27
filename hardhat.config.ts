@@ -63,7 +63,9 @@ export default {
       {
         version: '0.8.17',
         settings: {
-          viaIR: true,
+          // use IR for in production and development
+          // do not use IR for generating coverage report (to prevent compilation error)
+          viaIR: !process.env.COVERAGE_CHECK,
           optimizer: {
             enabled: true,
             runs: 256,
