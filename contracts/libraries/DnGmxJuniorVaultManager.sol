@@ -31,8 +31,6 @@ import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMat
 
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 
-// import 'hardhat/console.sol';
-
 library DnGmxJuniorVaultManager {
     event RewardsHarvested(
         uint256 wethHarvested,
@@ -42,6 +40,10 @@ library DnGmxJuniorVaultManager {
         uint256 juniorVaultGlp,
         uint256 seniorVaultAUsdc
     );
+
+    event GlpSwapped(uint256 glpQuantity, uint256 usdcQuantity, bool fromGlpToUsdc);
+
+    event TokenSwapped(address indexed fromToken, address indexed toToken, uint256 fromQuantity, uint256 toQuantity);
 
     using DnGmxJuniorVaultManager for State;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
@@ -515,6 +517,8 @@ library DnGmxJuniorVaultManager {
 
         usdcAmountOut = state.rewardRouter.unstakeAndRedeemGlp(_usdc, glpAmountInput, minUsdcOut, address(this));
 
+        emit GlpSwapped(glpAmountInput, usdcAmountOut, true);
+
         _executeSupply(state, _usdc, usdcAmountOut);
     }
 
@@ -532,7 +536,9 @@ library DnGmxJuniorVaultManager {
             PRICE_PRECISION * MAX_BPS
         );
 
-        state.batchingManager.depositToken(address(state.usdc), amount, usdgAmount);
+        uint256 glpReceived = state.batchingManager.depositToken(address(state.usdc), amount, usdgAmount);
+
+        emit GlpSwapped(glpReceived, amount, false);
     }
 
     ///@notice rebalances unhedged glp amount (used when there is not enough usdc available in senior tranche)
@@ -1201,6 +1207,8 @@ library DnGmxJuniorVaultManager {
 
         tokensUsed = tokenAmount;
         usdcReceived = swapRouter.exactInput(params);
+
+        emit TokenSwapped(token, address(state.usdc), tokenAmount, usdcReceived);
     }
 
     ///@notice swaps usdc into token
@@ -1228,6 +1236,8 @@ library DnGmxJuniorVaultManager {
 
         tokensReceived = tokenAmount;
         usdcPaid = swapRouter.exactOutput(params);
+
+        emit TokenSwapped(address(state.usdc), token, usdcPaid, tokensReceived);
     }
 
     /* solhint-disable func-name-mixedcase */
