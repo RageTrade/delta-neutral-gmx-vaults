@@ -196,12 +196,11 @@ library DnGmxJuniorVaultManager {
                     _seniorVaultWethRewards * (MAX_BPS - state.slippageThresholdSwapEthBps),
                     MAX_BPS * PRICE_PRECISION
                 );
-                (uint256 aaveUsdcAmount, uint256 tokensUsed) = state._swapToken(
+                (uint256 aaveUsdcAmount, ) = state._swapToken(
                     address(state.weth),
                     _seniorVaultWethRewards,
                     minUsdcAmount
                 );
-                tokensUsed; // silence warning
                 state._executeSupply(address(state.usdc), aaveUsdcAmount);
                 state.seniorVaultWethRewards = 0;
                 emit RewardsHarvested(
@@ -762,8 +761,7 @@ library DnGmxJuniorVaultManager {
         if (!repayDebt) {
             uint256 amountWithPremium = tokenAmount + premium;
 
-            (uint256 usdcReceived, uint256 tokensUsed) = state._swapToken(token, tokenAmount, usdcAmount);
-            tokensUsed; // silence warning
+            (uint256 usdcReceived, ) = state._swapToken(token, tokenAmount, usdcAmount);
             state._executeSupply(address(state.usdc), usdcReceived);
             state._executeBorrow(token, amountWithPremium);
             IERC20(token).transfer(address(state.balancerVault), amountWithPremium);
