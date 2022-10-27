@@ -70,38 +70,59 @@ library DnGmxJuniorVaultManager {
         address feeRecipient;
 
         // accounting
+        // amount of usdc deposited by junior tranche into AAVE
         int256 dnUsdcDeposited;
+        // amount of asset which is in usdc (due to borrow limits / availability issue some glp might remain unhedged)
         uint256 unhedgedGlpInUsdc;
+        // health factor to be targetted on AAVE
         uint256 targetHealthFactor;
 
         // accumulators
+        // protocol fee taken from ETH rewards
         uint256 protocolFee;
+        // protocol fee taken from esGMX rewards
         uint256 protocolEsGmx;
+        // senior tranche part of eth rewards which is not converted to usdc
         uint256 seniorVaultWethRewards;
 
         // locks
+        // true if a flashloan has been initiated by the vault
         bool hasFlashloaned;
+        // ensures that the rebalance can be run only after certain intervals
         uint48 lastRebalanceTS;
 
         // fees
+        // protocol fees charged on the eth and esGmx rewards
         uint16 feeBps;
+        // fees on the withdrawn assets
         uint16 withdrawFeeBps;
 
         // thresholds
         uint256 depositCap;
 
+        // slippage threshold on asset conversion into glp
         uint16 slippageThresholdGmxBps; // bps
+        // slippage threshold on btc swap on uniswap
         uint16 slippageThresholdSwapBtcBps; // bps
+        // slippage threshold on eth swap on uniswap
         uint16 slippageThresholdSwapEthBps; // bps
+        // health factor treshold below which rebalance can be called
         uint16 rebalanceHfThresholdBps; // bps
+        // time threshold beyond which on top of last rebalance, rebalance can be called
         uint32 rebalanceTimeThreshold; // seconds between rebalance
+        // difference between current and optimal amounts beyond which rebalance can be called
         uint16 rebalanceDeltaThresholdBps; // bps
+        // eth amount of weth rewards accrued beyond which they can be compounded
         uint128 wethConversionThreshold; // eth amount
 
+        // usdc amount beyond which usdc can be converted to assets
         uint128 usdcConversionThreshold; // usdc amount
+        // usdc value of token hedges below which hedges are not taken
         uint128 hedgeUsdcAmountThreshold; // usdc amount
 
+        // usdc amount of btc hedge beyond which partial hedges are taken over multiple rebalances
         uint128 partialBtcHedgeUsdcAmountThreshold; // usdc amount
+        // usdc amount of eth hedge beyond which partial hedges are taken over multiple rebalances
         uint128 partialEthHedgeUsdcAmountThreshold; // usdc amount
 
         // token addrs
@@ -127,11 +148,15 @@ library DnGmxJuniorVaultManager {
         IRewardRouterV2 rewardRouter;
 
         // other external protocols
+        // uniswap swap router for token swaps
         ISwapRouter swapRouter;
+        // balancer vault for flashloans
         IBalancerVault balancerVault;
 
         // core protocol addrs
+        // senior tranche address
         IDnGmxSeniorVault dnGmxSeniorVault;
+        // batching manager address
         IDnGmxBatchingManager batchingManager;
 
         uint256[50] __gaps;
@@ -584,6 +609,8 @@ library DnGmxJuniorVaultManager {
         uint256[] memory feeAmounts,
         bytes memory userData
     ) external {
+        // Decode user data containing btc/eth token & usdc amount
+        // RepayDebt true means we need to reduce token hedge else we need to increase hedge
         (
             uint256 btcTokenAmount,
             uint256 btcUsdcAmount,
@@ -593,25 +620,40 @@ library DnGmxJuniorVaultManager {
             bool repayDebtEth
         ) = abi.decode(userData, (uint256, uint256, uint256, uint256, bool, bool));
 
+        // Asset premium charged for taking the flashloan from balancer
         uint256 btcAssetPremium;
         uint256 ethAssetPremium;
+
         // adjust asset amounts for premiums (zero for balancer at the time of dev)
         if (repayDebtBtc && repayDebtEth) {
+            // Both token amounts are non zero
+            // The assets are same (usdc only)
             // Here amounts[0] should be equal to btcTokenAmount+ethTokenAmount
+            // Total premium on USDC is divided on a prorata basis for btc and eth usdc amounts
             btcAssetPremium = feeAmounts[0].mulDivDown(btcUsdcAmount, amounts[0]);
 
             ethAssetPremium = (feeAmounts[0] - btcAssetPremium);
         } else if (btcTokenAmount != 0 && ethTokenAmount != 0) {
+            // Both token amounts are non zero
+            // The assets are different (either usdc/btc, usdc/eth, btc/eth)
             // Here amounts[0] should be equal to btcTokenAmount and amounts[1] should be equal to ethTokenAmount
             bool btcFirst = false;
+
+            // Checks if btc or eth is first since they are sorted basis token address when taking flashloan
             if (repayDebtBtc ? tokens[0] == state.usdc : tokens[0] == state.wbtc) btcFirst = true;
+
+            // Premiums are assigned basis the token amount orders
             btcAssetPremium = feeAmounts[btcFirst ? 0 : 1];
             ethAssetPremium = feeAmounts[btcFirst ? 1 : 0];
         } else {
+            // One of the token amounts is zero
+            // The asset for non zero token can be both token or usdc
+            // Premium is assigned to the non-zero amount token
             if (btcTokenAmount != 0) btcAssetPremium = feeAmounts[0];
             else ethAssetPremium = feeAmounts[0];
         }
 
+        // Execute the token swap (usdc to token / token to usdc) and repay the debt
         if (btcTokenAmount > 0)
             _executeOperationToken(
                 state,
@@ -730,6 +772,7 @@ library DnGmxJuniorVaultManager {
     ) internal {
         if (assets.length != amounts.length) revert IDnGmxJuniorVault.ArraysLengthMismatch();
 
+        // variable to ensure that only vault originated flashloans should be able to work with receive flashloan
         state.hasFlashloaned = true;
 
         state.balancerVault.flashLoan(
@@ -759,25 +802,47 @@ library DnGmxJuniorVaultManager {
         bool repayDebt
     ) internal {
         if (!repayDebt) {
+            // increase token hedge amount
+            // add premium to token amount (to be paid back to balancer)
             uint256 amountWithPremium = tokenAmount + premium;
 
+            // swap token to usdc
             (uint256 usdcReceived, ) = state._swapToken(token, tokenAmount, usdcAmount);
 
+            // supply received usdc to AAVE
             state._executeSupply(address(state.usdc), usdcReceived);
+
+            // borrow amount with premium amount of tokens from AAVE
             state._executeBorrow(token, amountWithPremium);
 
+            // increase junior tranche usdc deposits by usdc received
             state.dnUsdcDeposited += usdcReceived.toInt256();
 
+            // transfer token amount borrowed with premium back to balancer pool
             IERC20(token).transfer(address(state.balancerVault), amountWithPremium);
         } else {
+            // decrease token hedge amount
+            // usdcAmount = amount flashloaned from balancer
+            // usdcPaid = amount paid for receiving given token amount
+            // usdcAmount-usdcPaid = amount of usdc remaining after the swap
+            // so we just need to withdraw usdcPaid to transfer usdcAmount
+
+            // swap usdc amount to token
             (uint256 usdcPaid, uint256 tokensReceived) = state._swapUSDC(token, tokenAmount, usdcAmount);
+
+            // amount of usdc that got charged for the token required
             uint256 amountWithPremium = usdcPaid + premium;
 
+            // reduce delta neutral usdc amount by amount with premium
             state.dnUsdcDeposited -= amountWithPremium.toInt256();
 
+            // repay token debt on AAVE
             state._executeRepay(token, tokensReceived);
-            //withdraws to balancerVault
+
+            // withdraw amount with premium supplied to AAVE
             state._executeWithdraw(address(state.usdc), amountWithPremium, address(this));
+
+            // transfer usdc amount flashloaned + premium back to balancer
             state.usdc.transfer(address(state.balancerVault), usdcAmount + premium);
         }
     }
@@ -789,6 +854,8 @@ library DnGmxJuniorVaultManager {
     ///@notice returns the usdc amount borrowed by junior tranche from senior tranche
     ///@param state set of all state variables of vault
     function _getUsdcBorrowed(State storage state) private view returns (uint256 usdcAmount) {
+        // all the aave interest goes to senior tranche
+        // so usdc borrowed total aUSDC balance - (usdc deposited by delta neutral vault into AAVE) - (unhedged amount of glp in usdc)
         return
             uint256(
                 state.aUsdc.balanceOf(address(this)).toInt256() -
@@ -814,27 +881,39 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@param maximize true for maximizing the total assets value and false to minimize
     function _totalAssets(State storage state, bool maximize) private view returns (uint256) {
+        // usdc deposited by junior tranche (can be negative)
         int256 dnUsdcDeposited = state.dnUsdcDeposited;
 
+        // convert int into two uints basis the sign
         uint256 dnUsdcDepositedPos = dnUsdcDeposited > int256(0) ? uint256(dnUsdcDeposited) : 0;
         uint256 dnUsdcDepositedNeg = dnUsdcDeposited < int256(0) ? uint256(-dnUsdcDeposited) : 0;
 
+        // add positive part to unhedgedGlp which will be added at the end
+        // convert usdc amount into glp amount
         uint256 unhedgedGlp = (state.unhedgedGlpInUsdc + dnUsdcDepositedPos).mulDivDown(
             PRICE_PRECISION,
             _getGlpPrice(state, !maximize)
         );
 
+        // calculate current borrow amounts
         (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows(state);
         uint256 totalCurrentBorrowValue = _getBorrowValue(state, currentBtc, currentEth);
 
+        // add negative part to current borrow value which will be subtracted at the end
+        // convert usdc amount into glp amount
         uint256 borrowValueGlp = (totalCurrentBorrowValue + dnUsdcDepositedNeg).mulDivDown(
             PRICE_PRECISION,
             _getGlpPrice(state, !maximize)
         );
 
+        // if we need to minimize then add additional slippage
         if (!maximize) unhedgedGlp = unhedgedGlp.mulDivDown(MAX_BPS - state.slippageThresholdGmxBps, MAX_BPS);
         if (!maximize) borrowValueGlp = borrowValueGlp.mulDivDown(MAX_BPS - state.slippageThresholdGmxBps, MAX_BPS);
 
+        // total assets considers 3 parts
+        // part1: glp balance in vault
+        // part2: glp balance in batching manager
+        // part3: pnl on AAVE (usdc deposit by junior tranche (i.e. dnUsdcDeposited) - current borrow value)
         return
             state.fsGlp.balanceOf(address(this)) +
             state.batchingManager.dnGmxJuniorVaultGlpBalance() +
@@ -846,12 +925,14 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     /* solhint-disable not-rely-on-time */
     function isValidRebalanceTime(State storage state) external view returns (bool) {
+        // check if rebalanceTimeThreshold has passed since last rebalance time
         return (block.timestamp - state.lastRebalanceTS) > state.rebalanceTimeThreshold;
     }
 
     ///@notice returns if the rebalance is valid basis health factor on AAVE
     ///@param state set of all state variables of vault
     function isValidRebalanceHF(State storage state) external view returns (bool) {
+        // check if health factor on AAVE is below rebalanceHfThreshold
         (, , , , , uint256 healthFactor) = state.pool.getUserAccountData(address(this));
 
         return healthFactor < (uint256(state.rebalanceHfThresholdBps) * 1e14);
@@ -869,18 +950,20 @@ library DnGmxJuniorVaultManager {
                 _isWithinAllowedDelta(state, optimalEthBorrow, currentEthBorrow));
     }
 
-    ///@notice returns the price of given token
+    ///@notice returns the price of given token basis AAVE oracle
     ///@param state set of all state variables of vault
     ///@param token the token for which price is expected
     function getTokenPrice(State storage state, IERC20Metadata token) external view returns (uint256) {
         return _getTokenPrice(state, token);
     }
 
-    ///@notice returns the price of given token
+    ///@notice returns the price of given token basis AAVE oracle
     ///@param state set of all state variables of vault
     ///@param token the token for which price is expected
     function _getTokenPrice(State storage state, IERC20Metadata token) private view returns (uint256) {
         uint256 decimals = token.decimals();
+
+        // AAVE oracle
         uint256 price = state.oracle.getAssetPrice(address(token));
 
         // @dev aave returns from same source as chainlink (which is 8 decimals)
@@ -901,10 +984,11 @@ library DnGmxJuniorVaultManager {
         uint256 aum = state.glpManager.getAum(maximize);
         uint256 totalSupply = state.glp.totalSupply();
 
+        // price per glp token = (total AUM / total supply)
         return aum.mulDivDown(PRICE_PRECISION, totalSupply * 1e24);
     }
 
-    ///@notice returns the price of given token in USDC
+    ///@notice returns the price of given token in USDC using AAVE oracle
     ///@param state set of all state variables of vault
     ///@param token the token for which price is expected
     function getTokenPriceInUsdc(State storage state, IERC20Metadata token)
@@ -915,7 +999,7 @@ library DnGmxJuniorVaultManager {
         return _getTokenPriceInUsdc(state, token);
     }
 
-    ///@notice returns the price of given token in USDC
+    ///@notice returns the price of given token in USDC using AAVE oracle
     ///@param state set of all state variables of vault
     ///@param token the token for which price is expected
     function _getTokenPriceInUsdc(State storage state, IERC20Metadata token)
@@ -929,6 +1013,7 @@ library DnGmxJuniorVaultManager {
         // @dev aave returns from same source as chainlink (which is 8 decimals)
         uint256 quotePrice = state.oracle.getAssetPrice(address(state.usdc));
 
+        // token price / usdc price
         scaledPrice = price.mulDivDown(PRICE_PRECISION, quotePrice * 10**(decimals - 6));
     }
 
@@ -1111,17 +1196,21 @@ library DnGmxJuniorVaultManager {
         uint256 availableBorrowAmount,
         uint256 usdcLiquidationThreshold
     ) private view returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) {
+        // The value of max possible value of ETH+BTC borrow
+        // calculated basis available borrow amount, liqudation threshold and target health factor
         uint256 maxBorrowValue = availableBorrowAmount.mulDivDown(
             usdcLiquidationThreshold,
             state.targetHealthFactor - usdcLiquidationThreshold
         );
 
+        // calculate the borrow value of eth & btc using their weights
         uint256 btcWeight = state.gmxVault.tokenWeights(address(state.wbtc));
         uint256 ethWeight = state.gmxVault.tokenWeights(address(state.weth));
 
         uint256 btcPrice = _getTokenPriceInUsdc(state, state.wbtc);
         uint256 ethPrice = _getTokenPriceInUsdc(state, state.weth);
 
+        // get token amounts from usdc amount
         optimalBtcBorrow = maxBorrowValue.mulDivDown(btcWeight * PRICE_PRECISION, (btcWeight + ethWeight) * btcPrice);
         optimalEthBorrow = maxBorrowValue.mulDivDown(ethWeight * PRICE_PRECISION, (btcWeight + ethWeight) * ethPrice);
     }
@@ -1150,9 +1239,11 @@ library DnGmxJuniorVaultManager {
         uint256 targetWeight = state.gmxVault.tokenWeights(token);
         uint256 totalTokenWeights = state.gmxVault.totalTokenWeights();
 
+        // glp price and token price are in usd
         uint256 glpPrice = _getGlpPrice(state, false);
         uint256 tokenPrice = _getTokenPrice(state, IERC20Metadata(token));
 
+        // underlying tokens in glp = (glp deposit value in usd) * targetWeight / totalTokenWeights / tokenPriceUsd
         return targetWeight.mulDivDown(glpDeposited * glpPrice, totalTokenWeights * tokenPrice);
     }
 
