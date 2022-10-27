@@ -33,6 +33,10 @@ contract WithdrawPeriphery is Ownable {
         uint256 tokensRecevied
     );
 
+    event SlippageThresholdUpdated(uint256 newSlippageThreshold);
+
+    event AddressesUpdated(address juniorVault, address rewardRouter);
+
     uint256 internal constant MAX_BPS = 1000;
     uint256 internal constant PRICE_PRECISION = 1e30;
 
@@ -50,6 +54,7 @@ contract WithdrawPeriphery is Ownable {
 
     function setSlippageThreshold(uint256 _slippageThreshold) external onlyOwner {
         slippageThreshold = _slippageThreshold;
+        emit SlippageThresholdUpdated(_slippageThreshold);
     }
 
     function setAddresses(IDnGmxJuniorVault _dnGmxJuniorVault, IRewardRouterV2 _rewardRouter) external onlyOwner {
@@ -66,6 +71,8 @@ contract WithdrawPeriphery is Ownable {
         gmxVault = IVault(glpManager.vault());
 
         sGlp.approve(address(glpManager), type(uint256).max);
+
+        emit AddressesUpdated(address(_dnGmxJuniorVault), address(_rewardRouter));
     }
 
     /// @notice allows to withdraw junior vault shares to any token available on gmx
