@@ -24,6 +24,7 @@ import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
  * @title Delta Neutral GMX Senior Tranche contract
  * @notice Implements the handling of senior tranche which acts as a lender of aUSDC for junior tranche to
  * borrow and hedge tokens using AAVE
+ * @notice It is upgradable contract (via TransparentUpgradeableProxy proxy owned by ProxyAdmin)
  * @author RageTrade
  **/
 contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable {
@@ -61,6 +62,7 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     // these gaps are added to allow adding new variables without shifting down inheritance chain
     uint256[50] private __gaps;
 
+    // ensures caller is valid borrower
     modifier onlyBorrower() {
         if (msg.sender != address(dnGmxJuniorVault) && msg.sender != address(leveragePool)) revert CallerNotBorrower();
         _;
@@ -69,6 +71,7 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     /*//////////////////////////////////////////////////////////////
                             INIT FUNCTIONS
     //////////////////////////////////////////////////////////////*/
+
     /// @notice initializer
     /// @param _name name of vault share token
     /// @param _symbol symbol of vault share token
@@ -99,7 +102,9 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     function grantAllowances() external onlyOwner {
         address aavePool = address(pool);
 
+        // allow aave lending pool to spend asset
         IERC20(asset).approve(aavePool, type(uint256).max);
+        // allow aave lending pool to spend interest bearing token
         aUsdc.approve(aavePool, type(uint256).max);
 
         emit AllowancesGranted();
@@ -155,6 +160,7 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         if (IBorrower(borrowerAddress).getUsdcBorrowed() >= cap) revert InvalidCapUpdate();
 
         borrowCaps[borrowerAddress] = cap;
+        // give allowance to borrower to pull whenever required
         aUsdc.approve(borrowerAddress, cap);
 
         emit BorrowCapUpdated(borrowerAddress, cap);
@@ -176,9 +182,14 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @dev harvests fees from junior tranche since utilization changes
     /// @param amount amount of aUSDC to transfer from senior tranche to borrower
     function borrow(uint256 amount) external onlyBorrower {
+        // revert on invalid borrow amount
         if (amount == 0 || amount > availableBorrow(msg.sender)) revert InvalidBorrowAmount();
 
+        // lazily harvest fees (harvest would return early if not enough rewards accrued)
         dnGmxJuniorVault.harvestFees();
+
+        // transfers aUsdc to borrower
+        // but doesn't reduce totalAssets of vault since borrwed amounts are factored in
         aUsdc.transfer(msg.sender, amount);
     }
 
@@ -187,6 +198,8 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @param amount amount of aUSDC to transfer from borrower to senior tranche
     function repay(uint256 amount) external onlyBorrower {
         dnGmxJuniorVault.harvestFees();
+
+        // borrower should have given allowance to spend aUsdc
         aUsdc.transferFrom(msg.sender, address(this), amount);
     }
 
@@ -194,6 +207,7 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @dev harvests fees from junior tranche since utilization changes
     /// @param amount amount of usdc to be deposited
     /// @param to receiver of shares
+    /// @return shares minted to receiver
     function deposit(uint256 amount, address to)
         public
         virtual
@@ -201,6 +215,7 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         whenNotPaused
         returns (uint256 shares)
     {
+        // harvesting fees so asset to shares conversion rate is not stale
         dnGmxJuniorVault.harvestFees();
         shares = super.deposit(amount, to);
     }
@@ -209,6 +224,7 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @dev harvests fees from junior tranche since utilization changes
     /// @param shares amount of shares to be minted
     /// @param to receiver of shares
+    /// @return amount of asset used to mint shares
     function mint(uint256 shares, address to)
         public
         virtual
@@ -216,6 +232,7 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         whenNotPaused
         returns (uint256 amount)
     {
+        // harvesting fees so asset to shares conversion rate is not stale
         dnGmxJuniorVault.harvestFees();
         amount = super.mint(shares, to);
     }
@@ -225,11 +242,13 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @param assets amount of usdc to be transferred
     /// @param receiver receiver of assets
     /// @param owner owner of the shares to be burnt
+    /// @return shares amount of shares burned
     function withdraw(
         uint256 assets,
         address receiver,
         address owner
     ) public override(IERC4626, ERC4626Upgradeable) whenNotPaused returns (uint256 shares) {
+        // harvesting fees so asset to shares conversion rate is not stale
         dnGmxJuniorVault.harvestFees();
         shares = super.withdraw(assets, receiver, owner);
     }
@@ -239,11 +258,13 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @param shares amount of shares to be burnt
     /// @param receiver receiver of assets
     /// @param owner owner of the shares to be burnt
+    /// @return assets amount of assets received by receiver
     function redeem(
         uint256 shares,
         address receiver,
         address owner
     ) public override(IERC4626, ERC4626Upgradeable) whenNotPaused returns (uint256 assets) {
+        // harvesting fees so asset to shares conversion rate is not stale
         dnGmxJuniorVault.harvestFees();
         assets = super.redeem(shares, receiver, owner);
     }
@@ -251,6 +272,7 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     /*//////////////////////////////////////////////////////////////
                          ERC4626 HOOKS OVERRIDE
     //////////////////////////////////////////////////////////////*/
+
     /// @notice converts aUSDC to USDC before assets are withdrawn to receiver
     /// @notice also check if the maxUtilization is not being breached (reverts if it does)
     function beforeWithdraw(
@@ -259,8 +281,11 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         address
     ) internal override {
         /// @dev withdrawal will fail if the utilization goes above maxUtilization value due to a withdrawal
+        // totalUsdcBorrowed will reduce when borrower (junior vault) repays
         if (totalUsdcBorrowed() > ((totalAssets() - assets) * maxUtilizationBps) / MAX_BPS)
             revert MaxUtilizationBreached();
+
+        // take out required assets from aave lending pool
         pool.withdraw(address(asset), assets, address(this));
     }
 
@@ -274,6 +299,8 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         // assets are not counted in 'totalAssets' yet because they are not supplied to aave pool
         if ((totalAssets() + assets) > depositCap) revert DepositCapExceeded();
 
+        // usdc is direclty supplied to lending pool and earns interest
+        // and hence increasing totalAssets of the vault
         pool.supply(address(asset), assets, address(this), 0);
     }
 
@@ -282,6 +309,8 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     //////////////////////////////////////////////////////////////*/
 
     /// @notice returns price of a single asset token in X128
+    /// @dev only for external / frontend use, not used within contract
+    /// @return Q128 price of asset
     function getPriceX128() public view returns (uint256) {
         uint256 price = oracle.getAssetPrice(address(asset));
 
@@ -291,25 +320,33 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     }
 
     /// @notice returns overall vault market value for the vault by valueing the underlying assets
+    /// @return Q128 price of asset
     function getVaultMarketValue() public view returns (uint256) {
+        // use aave's oracle to get price of usdc
         uint256 price = oracle.getAssetPrice(address(asset));
 
+        // chainlink returns USD denomiated oracles in 1e8
         return totalAssets().mulDiv(price, 1e8);
     }
 
-    /// @notice returns total usdc borrowed from the vault
+    /// @notice query amount of assset borrwed by all borrowers combined
+    /// @return usdcBorrowed total usdc borrowed
     function totalUsdcBorrowed() public view returns (uint256 usdcBorrowed) {
+        /// @dev only call getUsdcBorrowed if address is set
         if (address(leveragePool) != address(0)) usdcBorrowed += leveragePool.getUsdcBorrowed();
         if (address(dnGmxJuniorVault) != address(0)) usdcBorrowed += dnGmxJuniorVault.getUsdcBorrowed();
     }
 
     /// @notice returns eth reward split rate basis utilization in E30
-    /// @notice returned part should go to the senior tranche and remaining to junior tranche
+    /// @return feeSplitRate part that should go to the senior tranche and remaining to junior tranche
     function getEthRewardsSplitRate() public view returns (uint256 feeSplitRate) {
+        // feeSplitRate would adjust automatically depending upon utilization
         feeSplitRate = feeStrategy.calculateFeeSplit(aUsdc.balanceOf(address(this)), totalUsdcBorrowed());
     }
 
     /// @notice return the available borrow amount for a given borrower address
+    /// @param borrower allowed borrower address
+    /// @return availableAUsdc max aUsdc which given borrower can borrow
     function availableBorrow(address borrower) public view returns (uint256 availableAUsdc) {
         uint256 availableBasisCap = borrowCaps[borrower] - IBorrower(borrower).getUsdcBorrowed();
         uint256 availableBasisBalance = aUsdc.balanceOf(address(this));
@@ -322,31 +359,40 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     //////////////////////////////////////////////////////////////*/
 
     /// @notice decimals of vault shares (= usdc decimals)
+    /// @dev overriding because default decimals are 18
+    /// @return decimals (6)
     function decimals() public pure override returns (uint8) {
         return 6;
     }
 
-    /// @notice returns total assets in vault
+    /// @notice derive total assets managed by senior vault
+    /// @return amount total usdc under management
     function totalAssets() public view override(IERC4626, ERC4626Upgradeable) returns (uint256 amount) {
         amount = aUsdc.balanceOf(address(this));
         amount += totalUsdcBorrowed();
     }
 
-    /// @notice returns max deposit amount in assets into the vault
+    /// @notice max no. of assets which a user can deposit in single call
+    /// @return max no. of assets
     function maxDeposit(address) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
         uint256 cap = depositCap;
         uint256 total = totalAssets();
 
+        // if cap is not reached, user can deposit the difference
+        // otherwise, user can deposit 0 assets
         return total < cap ? cap - total : 0;
     }
 
-    /// @notice returns max mintable amount of shares for the vault
+    /// @notice max no. of shares which a user can mint in single call
+    /// @return max no. of shares
     function maxMint(address) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
         return convertToShares(maxDeposit(address(0)));
     }
 
-    /// @notice returns max withdrawable amount of assets for a given owner address
+    /// @notice max no. of assets which a user can withdraw in single call
     /// @dev checks the max amount basis user balance and maxUtilizationBps and gives the minimum of the two
+    /// @param owner address whose maximum withdrawable assets needs to be computed
+    /// @return max no. of assets
     function maxWithdraw(address owner) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
         uint256 total = totalAssets();
         uint256 borrowed = totalUsdcBorrowed();
@@ -358,10 +404,14 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         // checks the balance of the user
         uint256 maxOfUser = convertToAssets(balanceOf(owner));
 
+        // user can withdraw all assets (of owned shares) by if vault has enough
+        // else, user can withdraw whatever is left with vault (non-borrowed)
         return maxOfUser < maxAvailable ? maxOfUser : maxAvailable;
     }
 
-    /// @notice returns max redeemable amount of shares for a given owner address
+    /// @notice max no. of shares which a user can burn in single call
+    /// @param owner address whose maximum redeemable shares needs to be computed
+    /// @return max no. of shares
     function maxRedeem(address owner) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
         return convertToShares(maxWithdraw(owner));
     }

@@ -40,6 +40,7 @@ import { ERC4626Upgradeable } from '../ERC4626/ERC4626Upgradeable.sol';
  * @title Delta Neutral GMX Junior Tranche contract
  * @notice Implements the handling of junior tranche which maintains hedges for btc and eth
  * basis the target weights on GMX
+ * @notice It is upgradable contract (via TransparentUpgradeableProxy proxy owned by ProxyAdmin)
  * @author RageTrade
  **/
 contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable {
@@ -130,19 +131,29 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         address aavePool = address(state.pool);
         address swapRouter = address(state.swapRouter);
 
+        // allowance to aave pool for wbtc for repay and supply
         state.wbtc.approve(aavePool, type(uint256).max);
+        // allowance to uniswap swap router for wbtc for swap
         state.wbtc.approve(swapRouter, type(uint256).max);
 
+        // allowance to aave pool for weth for repay and supply
         state.weth.approve(aavePool, type(uint256).max);
+        // allowance to uniswap swap router for weth for swap
         state.weth.approve(swapRouter, type(uint256).max);
+        // allowance to batching manager for weth
         state.weth.approve(address(state.batchingManager), type(uint256).max);
 
+        // allowance to aave pool for usdc for supply
         state.usdc.approve(aavePool, type(uint256).max);
+        // allowance to swap router for usdc for swap
         state.usdc.approve(address(swapRouter), type(uint256).max);
+        // allowance to batching manager for usdc deposits when rebalancing profits
         state.usdc.approve(address(state.batchingManager), type(uint256).max);
 
+        // allowance to aave pool for aUSDC transfers to senior tranche
         state.aUsdc.approve(address(state.dnGmxSeniorVault), type(uint256).max);
 
+        // allowance for sGLP to glpManager
         IERC20Metadata(asset).approve(address(state.glpManager), type(uint256).max);
 
         emit AllowancesGranted();
@@ -301,6 +312,9 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
 
     /// @notice unstakes and vest protocol esGmx to convert it to Gmx
     function unstakeAndVestEsGmx() external onlyOwner {
+        // unstakes the protocol esGMX and starts vesting it
+        // this encumbers some glp deposits
+        // can stop vesting to enable glp withdraws
         state.rewardRouter.unstakeEsGmx(state.protocolEsGmx);
         IVester(state.rewardRouter.glpVester()).deposit(state.protocolEsGmx);
         state.protocolEsGmx = 0;
@@ -309,6 +323,8 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @notice claims vested gmx tokens (i.e. stops vesting esGmx so that the relevant glp amount is unlocked)
     /// @dev when esGmx is vested some GlP tokens are locked on a pro-rata basis, in case that leads to issue in withdrawal this function can be called
     function stopVestAndStakeEsGmx() external onlyOwner {
+        // stops vesting and stakes the remaining esGMX
+        // this enables glp withdraws
         IVester(state.rewardRouter.glpVester()).withdraw();
         uint256 esGmxWithdrawn = IERC20(state.rewardRouter.esGmx()).balanceOf(address(this));
         state.rewardRouter.stakeEsGmx(esGmxWithdrawn);
@@ -318,6 +334,8 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @notice claims vested gmx tokens to feeRecipient
     /// @dev vested esGmx gets converted to GMX every second, so whatever amount is vested gets claimed
     function claimVestedGmx() external onlyOwner {
+        // stops vesting and stakes the remaining esGMX
+        // this can be used in case glp withdraws are hampered
         uint256 gmxClaimed = IVester(state.rewardRouter.glpVester()).claim();
 
         //Transfer all of the gmx received to fee recipient
