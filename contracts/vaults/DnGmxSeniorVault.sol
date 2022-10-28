@@ -242,7 +242,7 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @param assets amount of usdc to be transferred
     /// @param receiver receiver of assets
     /// @param owner owner of the shares to be burnt
-    /// @return amount of shares burned
+    /// @return shares amount of shares burned
     function withdraw(
         uint256 assets,
         address receiver,
@@ -258,7 +258,7 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @param shares amount of shares to be burnt
     /// @param receiver receiver of assets
     /// @param owner owner of the shares to be burnt
-    /// @return amount of assets received by receiver
+    /// @return assets amount of assets received by receiver
     function redeem(
         uint256 shares,
         address receiver,
@@ -330,7 +330,7 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     }
 
     /// @notice query amount of assset borrwed by all borrowers combined
-    /// @return total usdc borrowed
+    /// @return usdcBorrowed total usdc borrowed
     function totalUsdcBorrowed() public view returns (uint256 usdcBorrowed) {
         /// @dev only call getUsdcBorrowed if address is set
         if (address(leveragePool) != address(0)) usdcBorrowed += leveragePool.getUsdcBorrowed();
@@ -338,7 +338,7 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     }
 
     /// @notice returns eth reward split rate basis utilization in E30
-    /// @return part that should go to the senior tranche and remaining to junior tranche
+    /// @return feeSplitRate part that should go to the senior tranche and remaining to junior tranche
     function getEthRewardsSplitRate() public view returns (uint256 feeSplitRate) {
         // feeSplitRate would adjust automatically depending upon utilization
         feeSplitRate = feeStrategy.calculateFeeSplit(aUsdc.balanceOf(address(this)), totalUsdcBorrowed());
@@ -366,7 +366,7 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     }
 
     /// @notice derive total assets managed by senior vault
-    /// @return total usdc under management
+    /// @return amount total usdc under management
     function totalAssets() public view override(IERC4626, ERC4626Upgradeable) returns (uint256 amount) {
         amount = aUsdc.balanceOf(address(this));
         amount += totalUsdcBorrowed();
