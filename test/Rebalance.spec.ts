@@ -646,7 +646,7 @@ describe('Rebalance & its utils', () => {
     expect(ethPriceCL).lt(ethPriceGmxMax);
   });
 
-  it.only('Rebalance Profit - borrowVal > dnUsdcDeposited', async () => {
+  it('Rebalance Profit - borrowVal > dnUsdcDeposited', async () => {
     const opts = await dnGmxJuniorVaultFixture();
     const changer = new Changer(opts);
     const { dnGmxJuniorVault, dnGmxSeniorVault, lendingPool, users, aUSDC, mocks, fsGlp } = opts;
@@ -722,7 +722,7 @@ describe('Rebalance & its utils', () => {
     expect(dnUsdcDepositedAfter).to.closeTo(borrowValue, 10n ** 5n);
   });
 
-  it.only('Rebalance Profit - borrowVal < dnUsdcDeposited', async () => {
+  it('Rebalance Profit - borrowVal < dnUsdcDeposited', async () => {
     const opts = await dnGmxJuniorVaultFixture();
     const changer = new Changer(opts);
     const { glpBatchingManager, dnGmxJuniorVault, dnGmxSeniorVault, lendingPool, users, mocks, aUSDC, fsGlp } = opts;
