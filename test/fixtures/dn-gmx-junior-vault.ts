@@ -134,7 +134,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   // await generateErc20Balance(wbtc, parseUnits('5', 8), users[0].address);
 
   await generateErc20Balance(usdc, parseUnits('10000', 6), users[0].address);
-  await generateErc20Balance(usdt, parseUnits('10000', 6), users[0].address);
+  
 
   await rewardRouter.connect(users[0]).mintAndStakeGlpETH(0, 0, {
     value: parseEther('10'),
