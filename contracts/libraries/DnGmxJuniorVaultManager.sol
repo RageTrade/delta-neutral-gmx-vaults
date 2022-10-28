@@ -930,7 +930,7 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     function _getUsdcBorrowed(State storage state) private view returns (uint256 usdcAmount) {
         // all the aave interest goes to senior tranche
-        // so, usdc borrowed from senior tranche = 
+        // so, usdc borrowed from senior tranche =
         // total aUSDC balance - (usdc deposited by delta neutral vault into AAVE) - (unhedged amount of glp in usdc)
         return
             uint256(

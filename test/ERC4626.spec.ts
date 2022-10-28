@@ -377,7 +377,7 @@ describe('Junior Vault ERC4646 functions', () => {
     );
   });
 
-  it.only('MaxDeposit & MaxMint - Senior Vault', async () => {
+  it('MaxDeposit & MaxMint - Senior Vault', async () => {
     const opts = await dnGmxJuniorVaultFixture();
     const { dnGmxSeniorVault, users, usdc } = opts;
 
