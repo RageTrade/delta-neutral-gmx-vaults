@@ -19,6 +19,7 @@ import { SafeCast } from '../libraries/SafeCast.sol';
 /**
  * @title Batching Manager to avoid glp transfer cooldowm
  * @notice batches the incoming deposit token depoists after converting them to glp
+ * @notice It is upgradable contract (via TransparentUpgradeableProxy proxy owned by ProxyAdmin)
  * @author RageTrade
  **/
 
