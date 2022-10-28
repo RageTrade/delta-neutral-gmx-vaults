@@ -464,6 +464,8 @@ library DnGmxJuniorVaultManager {
     ///@param token ETH / BTC token
     ///@param optimalTokenBorrow optimal btc amount to hedge sGLP btc underlying completely
     ///@param currentTokenBorrow current btc amount borrowed from AAVE
+    ///@return optimalPartialTokenBorrow optimal token hedge if threshold is breached
+    ///@return isPartialTokenHedge true if partial hedge needs to be executed for token
     function _getOptimalPartialBorrows(
         State storage state,
         IERC20Metadata token,
@@ -510,6 +512,7 @@ library DnGmxJuniorVaultManager {
     ///@param currentEthBorrow The market value of ETH/BTC part in sGLP
     ///@param glpDeposited amount of glp deposited into the vault
     ///@param isPartialAllowed true if partial hedge is allowed
+    ///@return isPartialHedge true if partial hedge is executed
     function rebalanceHedge(
         State storage state,
         uint256 currentBtcBorrow,
@@ -625,6 +628,7 @@ library DnGmxJuniorVaultManager {
     ///@notice withdraws LP tokens from gauge, sells LP token for usdc
     ///@param state set of all state variables of vault
     ///@param usdcAmountDesired amount of USDC desired
+    ///@return usdcAmountOut usdc amount returned by gmx
     function _convertAssetToAUsdc(State storage state, uint256 usdcAmountDesired)
         internal
         returns (uint256 usdcAmountOut)
@@ -974,6 +978,7 @@ library DnGmxJuniorVaultManager {
 
     ///@notice returns the usdc amount borrowed by junior tranche from senior tranche
     ///@param state set of all state variables of vault
+    ///@return usdcAmount amount of usdc borrowed by junior tranche
     function _getUsdcBorrowed(State storage state) private view returns (uint256 usdcAmount) {
         // all the aave interest goes to senior tranche
         // so, usdc borrowed from senior tranche =
@@ -988,6 +993,7 @@ library DnGmxJuniorVaultManager {
 
     ///@notice returns the total assets deposited to the vault (in glp amount)
     ///@param state set of all state variables of vault
+    ///@return total asset amount (glp + usdc (in glp terms))
     function totalAssets(State storage state) external view returns (uint256) {
         return _totalAssets(state, false);
     }
@@ -995,6 +1001,7 @@ library DnGmxJuniorVaultManager {
     ///@notice returns the total assets deposited to the vault (in glp amount)
     ///@param state set of all state variables of vault
     ///@param maximize true for maximizing the total assets value and false to minimize
+    ///@return total asset amount (glp + usdc (in glp terms))
     function totalAssets(State storage state, bool maximize) external view returns (uint256) {
         return _totalAssets(state, maximize);
     }
@@ -1002,6 +1009,7 @@ library DnGmxJuniorVaultManager {
     ///@notice returns the total assets deposited to the vault (in glp amount)
     ///@param state set of all state variables of vault
     ///@param maximize true for maximizing the total assets value and false to minimize
+    ///@return total asset amount (glp + usdc (in glp terms))
     function _totalAssets(State storage state, bool maximize) private view returns (uint256) {
         // usdc deposited by junior tranche (can be negative)
         int256 dnUsdcDeposited = state.dnUsdcDeposited;
@@ -1045,6 +1053,7 @@ library DnGmxJuniorVaultManager {
 
     ///@notice returns if the rebalance is valid basis last rebalance time and rebalanceTimeThreshold
     ///@param state set of all state variables of vault
+    ///@return true if the rebalance is valid basis time threshold
     /* solhint-disable not-rely-on-time */
     function isValidRebalanceTime(State storage state) external view returns (bool) {
         // check if rebalanceTimeThreshold has passed since last rebalance time
@@ -1052,7 +1061,9 @@ library DnGmxJuniorVaultManager {
     }
 
     ///@notice returns if the rebalance is valid basis health factor on AAVE
+    ///@notice retunrs true if current health factor < threshold
     ///@param state set of all state variables of vault
+    ///@return true if the rebalance is valid basis AAVE health factor
     function isValidRebalanceHF(State storage state) external view returns (bool) {
         // check if health factor on AAVE is below rebalanceHfThreshold
         (, , , , , uint256 healthFactor) = state.pool.getUserAccountData(address(this));
@@ -1062,6 +1073,7 @@ library DnGmxJuniorVaultManager {
 
     ///@notice returns if the rebalance is valid basis the difference between the current and optimal hedges of tokens(ETH/BTC)
     ///@param state set of all state variables of vault
+    ///@return true if the rebalance is valid basis diffeence (current and optimal) threshold
     function isValidRebalanceDeviation(State storage state) external view returns (bool) {
         (uint256 currentBtcBorrow, uint256 currentEthBorrow) = _getCurrentBorrows(state);
 
@@ -1075,6 +1087,7 @@ library DnGmxJuniorVaultManager {
     ///@notice returns the price of given token basis AAVE oracle
     ///@param state set of all state variables of vault
     ///@param token the token for which price is expected
+    ///@return token price in usd
     function getTokenPrice(State storage state, IERC20Metadata token) external view returns (uint256) {
         return _getTokenPrice(state, token);
     }
@@ -1082,6 +1095,7 @@ library DnGmxJuniorVaultManager {
     ///@notice returns the price of given token basis AAVE oracle
     ///@param state set of all state variables of vault
     ///@param token the token for which price is expected
+    ///@return token price in usd
     function _getTokenPrice(State storage state, IERC20Metadata token) private view returns (uint256) {
         uint256 decimals = token.decimals();
 
@@ -1095,6 +1109,7 @@ library DnGmxJuniorVaultManager {
     ///@notice returns the price of glp token
     ///@param state set of all state variables of vault
     ///@param maximize true to get maximum price and flase to get minimum
+    ///@return glp price in usd
     function getGlpPrice(State storage state, bool maximize) external view returns (uint256) {
         return _getGlpPrice(state, maximize);
     }
@@ -1102,6 +1117,7 @@ library DnGmxJuniorVaultManager {
     ///@notice returns the price of glp token
     ///@param state set of all state variables of vault
     ///@param maximize true to get maximum price and flase to get minimum
+    ///@return glp price in usd
     function _getGlpPrice(State storage state, bool maximize) private view returns (uint256) {
         uint256 aum = state.glpManager.getAum(maximize);
         uint256 totalSupply = state.glp.totalSupply();
@@ -1113,6 +1129,7 @@ library DnGmxJuniorVaultManager {
     ///@notice returns the price of given token in USDC using AAVE oracle
     ///@param state set of all state variables of vault
     ///@param token the token for which price is expected
+    ///@return scaledPrice token price in usdc
     function getTokenPriceInUsdc(State storage state, IERC20Metadata token)
         external
         view
@@ -1124,6 +1141,7 @@ library DnGmxJuniorVaultManager {
     ///@notice returns the price of given token in USDC using AAVE oracle
     ///@param state set of all state variables of vault
     ///@param token the token for which price is expected
+    ///@return scaledPrice token price in usdc
     function _getTokenPriceInUsdc(State storage state, IERC20Metadata token)
         private
         view
@@ -1142,6 +1160,7 @@ library DnGmxJuniorVaultManager {
     ///@notice returns liquidation threshold of the selected asset's AAVE pool
     ///@param state set of all state variables of vault
     ///@param asset address of asset to check liquidation threshold for
+    ///@return liquidation threshold
     function getLiquidationThreshold(State storage state, address asset) external view returns (uint256) {
         return _getLiquidationThreshold(state, asset);
     }
@@ -1150,6 +1169,7 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@param btcAmount amount of btc
     ///@param ethAmount amount of eth
+    ///@return borrowValue value of the given token amounts
     function getBorrowValue(
         State storage state,
         uint256 btcAmount,
@@ -1162,6 +1182,7 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@param btcAmount amount of btc
     ///@param ethAmount amount of eth
+    ///@return borrowValue value of the given token amounts
     function _getBorrowValue(
         State storage state,
         uint256 btcAmount,
@@ -1174,10 +1195,15 @@ library DnGmxJuniorVaultManager {
     }
 
     ///@notice returns the amount of flashloan for a given token
+    ///@notice if token amount needs to be increased then usdcAmount is minimum amount
+    ///@notice if token amount needs to be decreased then usdcAmount is maximum amount
     ///@param state set of all state variables of vault
     ///@param token address of token
     ///@param optimalBorrow optimal token borrow to completely hedge sGlp
     ///@param currentBorrow curret token borrow from AAVE
+    ///@return tokenAmount amount of tokens to be swapped
+    ///@return usdcAmount minimum/maximum amount of usdc basis swap direction
+    ///@return repayDebt true then reduce token hedge, false then increase token hedge
     function flashloanAmounts(
         State storage state,
         address token,
@@ -1196,10 +1222,15 @@ library DnGmxJuniorVaultManager {
     }
 
     ///@notice returns the amount of flashloan for a given token
+    ///@notice if token amount needs to be increased then usdcAmount is minimum amount
+    ///@notice if token amount needs to be decreased then usdcAmount is maximum amount
     ///@param state set of all state variables of vault
     ///@param token address of token
     ///@param optimalBorrow optimal token borrow to completely hedge sGlp
     ///@param currentBorrow curret token borrow from AAVE
+    ///@return tokenAmount amount of tokens to be swapped
+    ///@return usdcAmount minimum/maximum amount of usdc basis swap direction
+    ///@return repayDebt true then reduce token hedge, false then increase token hedge
     function _flashloanAmounts(
         State storage state,
         address token,
@@ -1248,6 +1279,8 @@ library DnGmxJuniorVaultManager {
 
     ///@notice returns the amount of current borrows of btc and eth token from AAVE
     ///@param state set of all state variables of vault
+    ///@return currentBtcBorrow amount of btc currently borrowed from AAVE
+    ///@return currentEthBorrow amount of eth currently borrowed from AAVE
     function getCurrentBorrows(State storage state)
         external
         view
@@ -1258,6 +1291,8 @@ library DnGmxJuniorVaultManager {
 
     ///@notice returns the amount of current borrows of btc and eth token from AAVE
     ///@param state set of all state variables of vault
+    ///@return currentBtcBorrow amount of btc currently borrowed from AAVE
+    ///@return currentEthBorrow amount of eth currently borrowed from AAVE
     function _getCurrentBorrows(State storage state)
         private
         view
@@ -1352,6 +1387,7 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@param token address of token
     ///@param glpDeposited amount of glp for which underlying token amount is being calculated
+    ///@return amount of tokens of the supplied address underlying the given amount of glp
     function getTokenReservesInGlp(
         State storage state,
         address token,
@@ -1364,6 +1400,7 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@param token address of token
     ///@param glpDeposited amount of glp for which underlying token amount is being calculated
+    ///@return amount of tokens of the supplied address underlying the given amount of glp
     function _getTokenReservesInGlp(
         State storage state,
         address token,
@@ -1387,6 +1424,7 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@param optimalBorrow optimal borrow amount basis glp deposits
     ///@param currentBorrow current borrow amount from AAVE
+    ///@return true if the difference is below allowed threshold else false
     function isWithinAllowedDelta(
         State storage state,
         uint256 optimalBorrow,
@@ -1399,6 +1437,7 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@param optimalBorrow optimal borrow amount basis glp deposits
     ///@param currentBorrow current borrow amount from AAVE
+    ///@return true if the difference is below allowed threshold else false
     function _isWithinAllowedDelta(
         State storage state,
         uint256 optimalBorrow,
@@ -1420,6 +1459,8 @@ library DnGmxJuniorVaultManager {
     ///@param token address of token
     ///@param tokenAmount token amount to be sold
     ///@param minUsdcAmount minimum amount of usdc required
+    ///@return usdcReceived amount of usdc received on swap
+    ///@return tokensUsed amount of tokens paid for swap
     function _swapToken(
         State storage state,
         address token,
@@ -1453,6 +1494,8 @@ library DnGmxJuniorVaultManager {
     ///@param token address of token
     ///@param tokenAmount token amount to be bought
     ///@param maxUsdcAmount maximum amount of usdc that can be sold
+    ///@return usdcPaid amount of usdc paid for swap
+    ///@return tokensReceived amount of tokens received on swap
     function _swapUSDC(
         State storage state,
         address token,
@@ -1480,18 +1523,30 @@ library DnGmxJuniorVaultManager {
     }
 
     /* solhint-disable func-name-mixedcase */
+    ///@notice returns usdc to weth swap path
+    ///@param state set of all state variables of vault
+    ///@return the path bytes
     function USDC_TO_WETH(State storage state) internal view returns (bytes memory) {
         return abi.encodePacked(state.weth, uint24(500), state.usdc);
     }
 
+    ///@notice returns usdc to wbtc swap path
+    ///@param state set of all state variables of vault
+    ///@return the path bytes
     function USDC_TO_WBTC(State storage state) internal view returns (bytes memory) {
         return abi.encodePacked(state.wbtc, uint24(3000), state.weth, uint24(500), state.usdc);
     }
 
+    ///@notice returns weth to usdc swap path
+    ///@param state set of all state variables of vault
+    ///@return the path bytes
     function WETH_TO_USDC(State storage state) internal view returns (bytes memory) {
         return abi.encodePacked(state.weth, uint24(500), state.usdc);
     }
 
+    ///@notice returns wbtc to usdc swap path
+    ///@param state set of all state variables of vault
+    ///@return the path bytes
     function WBTC_TO_USDC(State storage state) internal view returns (bytes memory) {
         return abi.encodePacked(state.wbtc, uint24(3000), state.weth, uint24(500), state.usdc);
     }
