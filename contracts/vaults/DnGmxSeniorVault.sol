@@ -271,7 +271,8 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         uint256,
         address
     ) internal override {
-        if (totalAssets() > depositCap) revert DepositCapExceeded();
+        // assets are not counted in 'totalAssets' yet because they are not supplied to aave pool
+        if ((totalAssets() + assets) > depositCap) revert DepositCapExceeded();
 
         pool.supply(address(asset), assets, address(this), 0);
     }
