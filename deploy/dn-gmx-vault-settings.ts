@@ -31,6 +31,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   // Senior Vault
 
+  await execute('DnGmxSeniorVault', { from: deployer, log: true }, 'setDepositCap', DEPOSIT_CAP_SENIOR_VAULT);
+
   await execute(
     'DnGmxSeniorVault',
     { from: deployer, log: true },
@@ -38,7 +40,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     DnGmxJuniorVaultDeployment.address,
   );
 
-  await execute('DnGmxSeniorVault', { from: deployer, log: true }, 'setMaxUtilizationBps', 10); // TODO confirm
+  await execute('DnGmxSeniorVault', { from: deployer, log: true }, 'setMaxUtilizationBps', 9_000);
 
   await execute(
     'DnGmxSeniorVault',
@@ -55,8 +57,6 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     variableRateSlope2: 5n * 10n ** 29n,
   };
   await execute('DnGmxSeniorVault', { from: deployer, log: true }, 'updateFeeStrategyParams', feeStrategyParams);
-
-  await execute('DnGmxSeniorVault', { from: deployer, log: true }, 'setDepositCap', DEPOSIT_CAP_SENIOR_VAULT);
 
   await execute('DnGmxSeniorVault', { from: deployer, log: true }, 'grantAllowances');
 
@@ -77,20 +77,14 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     'DnGmxJuniorVault',
     { from: deployer, log: true },
     'setThresholds',
-    100, // slippageThresholdSwap
-    100, // slippageThresholdGmx
-    12_000, // hfThreshold
+    100, // slippageThresholdSwapBtcBps
+    100, // slippageThresholdSwapEthBps
+    10, // slippageThresholdGmxBps
     parseUnits('1', 6), // usdcConversionThreshold
     10n ** 15n, // wethConversionThreshold
     parseUnits('1', 6), // hedgeUsdcAmountThreshold
-  );
-
-  await execute(
-    'DnGmxJuniorVault',
-    { from: deployer, log: true },
-    'setRebalanceParams',
-    ethers.constants.Zero, // or 86400 | rebalanceTimeThreshold
-    500, // 5% in bps | rebalanceDeltaThreshold
+    parseUnits('1000000', 6), // partialBtcHedgeUsdcAmountThreshold
+    parseUnits('1000000', 6), // partialEthHedgeUsdcAmountThreshold
   );
 
   await execute(
@@ -103,6 +97,15 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     UNI_V3_SWAP_ROUTER, // swapRouter
     15_000, // 150% // targetHealthFactor
     ethers.constants.AddressZero, // aaveRewardsController
+  );
+
+  await execute(
+    'DnGmxJuniorVault',
+    { from: deployer, log: true },
+    'setRebalanceParams',
+    86400, //rebalanceTimeThreshold:
+    500, // 5% in bps rebalanceDeltaThresholdBps:
+    12_000,
   );
 
   await execute('DnGmxJuniorVault', { from: deployer, log: true }, 'setFeeParams', FEE_BPS, FEE_RECIPIENT || deployer);
