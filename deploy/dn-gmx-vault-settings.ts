@@ -76,7 +76,14 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     'DnGmxJuniorVault',
     { from: deployer, log: true, waitConfirmations },
     'setThresholds',
-    THRESHOLDS
+    THRESHOLDS.slippageThresholdSwapBtcBps,
+    THRESHOLDS.slippageThresholdSwapEthBps,
+    THRESHOLDS.slippageThresholdGmxBps,
+    THRESHOLDS.usdcConversionThreshold,
+    THRESHOLDS.wethConversionThreshold,
+    THRESHOLDS.hedgeUsdcAmountThreshold,
+    THRESHOLDS.partialBtcHedgeUsdcAmountThreshold,
+    THRESHOLDS.partialEthHedgeUsdcAmountThreshold
   );
 
   await execute(
@@ -95,7 +102,9 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     'DnGmxJuniorVault',
     { from: deployer, log: true, waitConfirmations },
     'setRebalanceParams',
-    REBALANCE_PARAMS
+    REBALANCE_PARAMS.rebalanceTimeThreshold,
+    REBALANCE_PARAMS.rebalanceDeltaThresholdBps,
+    REBALANCE_PARAMS.rebalanceHfThresholdBps,
   );
 
   await execute('DnGmxJuniorVault', { from: deployer, log: true, waitConfirmations }, 'setFeeParams', FEE_BPS, FEE_RECIPIENT || deployer);
