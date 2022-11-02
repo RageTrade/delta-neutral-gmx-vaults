@@ -33,7 +33,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       DnGmxJuniorVaultLogicDeployment.address,
       ProxyAdminDeployment.address,
       DnGmxJuniorVault__factory.createInterface().encodeFunctionData('initialize', [
-        'Delta Netural GMX Vault', // _name
+        'Delta Netural GMX Vault (Junior)', // _name
         'DN_GMX_JUNIOR', // _symbol
         UNI_V3_SWAP_ROUTER,
         GMX_REWARD_ROUTER,
