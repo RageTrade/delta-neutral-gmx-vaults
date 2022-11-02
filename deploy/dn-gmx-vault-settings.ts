@@ -1,10 +1,6 @@
-import { parseUnits } from 'ethers/lib/utils';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
-import { DnGmxSeniorVault } from '../typechain-types';
-import { FeeSplitStrategy } from '../typechain-types/contracts/vaults/DnGmxSeniorVault';
 import { getNetworkInfo, waitConfirmations } from './network-info';
-import { ethers } from 'ethers';
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {
@@ -15,23 +11,32 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployer } = await getNamedAccounts();
 
   const {
-    KEEPER_ADDRESS,
-    DEPOSIT_CAP_JUNIOR_VAULT,
-    DEPOSIT_CAP_SENIOR_VAULT,
+    BORROW_CAP,
+    THRESHOLDS,
+    KEEPER_JR_VAULT,
+    REBALANCE_PARAMS,
+    WITHDRAW_FEE_BPS,
+    TARGET_HEALTH_FACTOR,
+    AAVE_REWARDS_CONTROLLER,
+    GMX_REWARD_ROUTER,
+    DEPOSIT_CAP_JR_VAULT,
+    DEPOSIT_CAP_SR_VAULT,
+    MAX_UTILIZATION_BPS,
     UNI_V3_SWAP_ROUTER,
+    FEE_STRATEGY_PARAMS,
     FEE_RECIPIENT,
     FEE_BPS,
+    SLIPPAGE_THRESHOLD_BATCHING_MANAGER,
+    SLIPPAGE_THRESHOLD_WITHDRAW_PERIPHERY,
   } = await getNetworkInfo();
 
   const DnGmxJuniorVaultDeployment = await get('DnGmxJuniorVault');
   const DnGmxSeniorVaultDeployment = await get('DnGmxSeniorVault');
   const DnGmxBatchingManagerDeployment = await get('DnGmxBatchingManager');
 
-  // TODO set right values
-
   // Senior Vault
 
-  await execute('DnGmxSeniorVault', { from: deployer, log: true }, 'setDepositCap', DEPOSIT_CAP_SENIOR_VAULT);
+  await execute('DnGmxSeniorVault', { from: deployer, log: true, waitConfirmations }, 'setDepositCap', DEPOSIT_CAP_SR_VAULT);
 
   await execute(
     'DnGmxSeniorVault',
@@ -40,80 +45,77 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     DnGmxJuniorVaultDeployment.address,
   );
 
-  await execute('DnGmxSeniorVault', { from: deployer, log: true }, 'setMaxUtilizationBps', 9_000);
+  await execute('DnGmxSeniorVault', { from: deployer, log: true, waitConfirmations }, 'setMaxUtilizationBps', MAX_UTILIZATION_BPS);
 
   await execute(
     'DnGmxSeniorVault',
     { from: deployer, log: true },
     'updateBorrowCap',
     DnGmxJuniorVaultDeployment.address,
-    parseUnits('1000000', 6),
+    BORROW_CAP
   );
 
-  const feeStrategyParams: FeeSplitStrategy.InfoStruct = {
-    optimalUtilizationRate: 8n * 10n ** 29n,
-    baseVariableBorrowRate: 10n ** 29n,
-    variableRateSlope1: 10n ** 29n,
-    variableRateSlope2: 5n * 10n ** 29n,
-  };
-  await execute('DnGmxSeniorVault', { from: deployer, log: true }, 'updateFeeStrategyParams', feeStrategyParams);
+  await execute('DnGmxSeniorVault', { from: deployer, log: true, waitConfirmations }, 'updateFeeStrategyParams', FEE_STRATEGY_PARAMS);
 
-  await execute('DnGmxSeniorVault', { from: deployer, log: true }, 'grantAllowances');
+  await execute('DnGmxSeniorVault', { from: deployer, log: true, waitConfirmations }, 'grantAllowances');
 
   // Junior Vault
 
   await execute(
     'DnGmxJuniorVault',
-    { from: deployer, log: true },
+    { from: deployer, log: true, waitConfirmations },
     'setAdminParams',
-    KEEPER_ADDRESS,
+    KEEPER_JR_VAULT,
     DnGmxSeniorVaultDeployment.address,
-    DEPOSIT_CAP_JUNIOR_VAULT,
+    DEPOSIT_CAP_JR_VAULT,
     DnGmxBatchingManagerDeployment.address,
-    50, // 50BPS = .5%
+    WITHDRAW_FEE_BPS
   );
 
   await execute(
     'DnGmxJuniorVault',
-    { from: deployer, log: true },
+    { from: deployer, log: true, waitConfirmations },
     'setThresholds',
-    100, // slippageThresholdSwapBtcBps
-    100, // slippageThresholdSwapEthBps
-    10, // slippageThresholdGmxBps
-    parseUnits('1', 6), // usdcConversionThreshold
-    10n ** 15n, // wethConversionThreshold
-    parseUnits('1', 6), // hedgeUsdcAmountThreshold
-    parseUnits('1000000', 6), // partialBtcHedgeUsdcAmountThreshold
-    parseUnits('1000000', 6), // partialEthHedgeUsdcAmountThreshold
+    THRESHOLDS
   );
 
   await execute(
     'DnGmxJuniorVault',
-    { from: deployer, log: true },
+    { from: deployer, log: true,waitConfirmations },
     'setHedgeParams',
     (
       await get('BalancerVault')
-    ).address, // vault
+    ).address, // balancer vault
     UNI_V3_SWAP_ROUTER, // swapRouter
-    15_000, // 150% // targetHealthFactor
-    ethers.constants.AddressZero, // aaveRewardsController
+    TARGET_HEALTH_FACTOR, // targetHealthFactor
+    AAVE_REWARDS_CONTROLLER // aaveRewardsController
   );
 
   await execute(
     'DnGmxJuniorVault',
-    { from: deployer, log: true },
+    { from: deployer, log: true, waitConfirmations },
     'setRebalanceParams',
-    86400, //rebalanceTimeThreshold:
-    500, // 5% in bps rebalanceDeltaThresholdBps:
-    12_000,
+    REBALANCE_PARAMS
   );
 
-  await execute('DnGmxJuniorVault', { from: deployer, log: true }, 'setFeeParams', FEE_BPS, FEE_RECIPIENT || deployer);
+  await execute('DnGmxJuniorVault', { from: deployer, log: true, waitConfirmations }, 'setFeeParams', FEE_BPS, FEE_RECIPIENT || deployer);
 
-  await execute('DnGmxJuniorVault', { from: deployer, log: true }, 'grantAllowances');
+  await execute('DnGmxJuniorVault', { from: deployer, log: true, waitConfirmations }, 'grantAllowances');
+
+  // batching manager
+
+  await execute('DnGmxBatchingManager', { from: deployer, log: true, waitConfirmations }, 'setThresholds', SLIPPAGE_THRESHOLD_BATCHING_MANAGER);
+
+  await execute('DnGmxBatchingManager', { from: deployer, log: true, waitConfirmations }, 'grantAllowances');
+
+  // withdraw periphery
+
+  await execute('WithdrawPeriphery', { from: deployer, log: true, waitConfirmations }, 'setAddresses', DnGmxJuniorVaultDeployment.address, GMX_REWARD_ROUTER);
+
+  await execute('WithdrawPeriphery', { from: deployer, log: true, waitConfirmations }, 'setSlippageThreshold', SLIPPAGE_THRESHOLD_WITHDRAW_PERIPHERY);
 };
 
 export default func;
 
 func.tags = ['DnGmxVaultSettings', 'DnGmxVault'];
-func.dependencies = ['DnGmxJuniorVault', 'DnGmxSeniorVault', 'DnGmxBatchingManager', 'BalancerVault'];
+func.dependencies = ['DnGmxJuniorVault', 'DnGmxSeniorVault', 'DnGmxBatchingManager', 'WithdrawPeriphery', 'BalancerVault'];

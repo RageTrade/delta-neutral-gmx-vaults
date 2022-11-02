@@ -24,8 +24,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       ProxyAdminDeployment.address,
       DnGmxSeniorVault__factory.createInterface().encodeFunctionData('initialize', [
         USDC_ADDRESS,
-        'Aave LP Vault',
-        'Aave_LP',
+        'Delta Netural GMX Vault (Senior)',
+        'DN_GMX_SENIOR',
         AAVE_POOL_ADDRESS_PROVIDER,
       ]),
     ],
