@@ -29,16 +29,18 @@ contract WithdrawPeriphery is Ownable {
         address indexed from,
         address indexed receiver,
         address token,
-        uint256 sGlpAmount,
-        uint256 tokensRecevied
+        uint256 assets,
+        uint256 shares,
+        uint256 tokensReceived
     );
 
     event TokenRedeemed(
         address indexed from,
         address indexed receiver,
         address token,
-        uint256 sharesAmount,
-        uint256 tokensRecevied
+        uint256 assets,
+        uint256 shares,
+        uint256 tokensReceived
     );
 
     event SlippageThresholdUpdated(uint256 newSlippageThreshold);
@@ -116,11 +118,11 @@ contract WithdrawPeriphery is Ownable {
         uint256 sGlpAmount
     ) external returns (uint256 amountOut) {
         // user has approved periphery to use junior vault shares
-        dnGmxJuniorVault.withdraw(sGlpAmount, address(this), msg.sender);
+        uint256 shares = dnGmxJuniorVault.withdraw(sGlpAmount, address(this), msg.sender);
 
         amountOut = _convertToToken(token, receiver);
 
-        emit TokenWithdrawn(msg.sender, receiver, token, sGlpAmount, amountOut);
+        emit TokenWithdrawn(msg.sender, receiver, token, sGlpAmount, shares, amountOut);
     }
 
     /// @notice allows to redeem junior vault shares to any token available on gmx
@@ -134,11 +136,11 @@ contract WithdrawPeriphery is Ownable {
         uint256 sharesAmount
     ) external returns (uint256 amountOut) {
         // user has approved periphery to use junior vault shares
-        dnGmxJuniorVault.redeem(sharesAmount, address(this), msg.sender);
+        uint256 assets = dnGmxJuniorVault.redeem(sharesAmount, address(this), msg.sender);
 
         amountOut = _convertToToken(token, receiver);
 
-        emit TokenRedeemed(msg.sender, receiver, token, sharesAmount, amountOut);
+        emit TokenRedeemed(msg.sender, receiver, token, assets, sharesAmount, amountOut);
     }
 
     function _convertToToken(address token, address receiver) internal returns (uint256 amountOut) {
