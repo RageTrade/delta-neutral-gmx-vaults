@@ -65,6 +65,11 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
 
   const periphery = await (await hre.ethers.getContractFactory('WithdrawPeriphery')).deploy();
 
+  const bypass = await (await hre.ethers.getContractFactory('BatchingManagerBypass')).deploy();
+
+  await bypass.setJuniorVault(dnGmxJuniorVault.address);
+  await bypass.setSglp(GMX_ECOSYSTEM_ADDRESSES.StakedGlp);
+
   await periphery.setSlippageThreshold(100);
   await periphery.setAddresses(dnGmxJuniorVault.address, rewardRouter.address);
 
@@ -92,6 +97,8 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
 
   await glpBatchingStakingManagerFixtures.gmxBatchingManager.grantAllowances();
   await glpBatchingStakingManagerFixtures.gmxBatchingManager.setThresholds(100);
+
+  await glpBatchingStakingManagerFixtures.gmxBatchingManager.setBypass(bypass.address);
 
   await dnGmxJuniorVault.setAdminParams(
     admin.address,
