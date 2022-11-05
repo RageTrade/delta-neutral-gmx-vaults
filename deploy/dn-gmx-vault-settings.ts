@@ -18,6 +18,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     WITHDRAW_FEE_BPS,
     TARGET_HEALTH_FACTOR,
     AAVE_REWARDS_CONTROLLER,
+    GMX_SGLP_ADDRESS,
     GMX_REWARD_ROUTER,
     DEPOSIT_CAP_JR_VAULT,
     DEPOSIT_CAP_SR_VAULT,
@@ -117,6 +118,12 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   await execute('DnGmxBatchingManager', { from: deployer, log: true, waitConfirmations }, 'grantAllowances');
 
+  // batching manager bypass
+
+  await execute('BatchingManagerBypass', { from: deployer, log: true, waitConfirmations }, 'setJuniorVault', DnGmxJuniorVaultDeployment.address);
+
+  await execute('BatchingManagerBypass', { from: deployer, log: true, waitConfirmations }, 'setSglp', GMX_SGLP_ADDRESS);
+
   // withdraw periphery
 
   await execute('WithdrawPeriphery', { from: deployer, log: true, waitConfirmations }, 'setAddresses', DnGmxJuniorVaultDeployment.address, GMX_REWARD_ROUTER);
@@ -127,4 +134,4 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 export default func;
 
 func.tags = ['DnGmxVaultSettings', 'DnGmxVault'];
-func.dependencies = ['DnGmxJuniorVault', 'DnGmxSeniorVault', 'DnGmxBatchingManager', 'WithdrawPeriphery', 'BalancerVault'];
+func.dependencies = ['DnGmxJuniorVault', 'DnGmxSeniorVault', 'DnGmxBatchingManager', 'WithdrawPeriphery', 'BatchingManagerBypass', 'BalancerVault'];
