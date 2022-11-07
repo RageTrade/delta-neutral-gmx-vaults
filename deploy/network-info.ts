@@ -82,7 +82,7 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
 
   const arbmainNetworkInfo: NetworkInfo = {
 
-    PROXY_ADMIN_ADDRESS: '', // TODO
+    PROXY_ADMIN_ADDRESS: '0xA335Dd9CeFBa34449c0A89FB4d247f395C5e3782',
 
     WETH_ADDRESS: tokensAddresses.wethAddress,
     WBTC_ADDRESS: tokensAddresses.wbtcAddress,
@@ -96,54 +96,54 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
     UNI_V3_SWAP_ROUTER: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
 
     AAVE_POOL_ADDRESS_PROVIDER: '0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb',
-    AAVE_REWARDS_CONTROLLER: ethers.constants.AddressZero, // TODO
+    AAVE_REWARDS_CONTROLLER: '0x929EC64c34a17401F460460D4B9390518E5B473e',
 
     // senior vault
-    BORROW_CAP: 0, // TODO
-    MAX_UTILIZATION_BPS: 0, // TODO
-    DEPOSIT_CAP_SR_VAULT: '', // TODO
+    BORROW_CAP: parseUnits('5500000', 6),
+    MAX_UTILIZATION_BPS: 9_000,
+    DEPOSIT_CAP_SR_VAULT: parseUnits('7000000', 6),
 
     // fee split strategy
     FEE_STRATEGY_PARAMS: {
-      optimalUtilizationRate: 0,
-      baseVariableBorrowRate: 0,
-      variableRateSlope1: 0,
-      variableRateSlope2: 0,
+      optimalUtilizationRate: 70n ** 29n,
+      baseVariableBorrowRate: 10n ** 29n,
+      variableRateSlope1: 20n ** 29n,
+      variableRateSlope2: 50n ** 29n,
     },
 
     // junior vault
-    FEE_BPS: 0, // TODO
-    FEE_RECIPIENT: '', // TODO
-    WITHDRAW_FEE_BPS: 0, // TODO
+    FEE_BPS: 1_500,
+    FEE_RECIPIENT: '0xee2A909e3382cdF45a0d391202Aff3fb11956Ad1',
+    WITHDRAW_FEE_BPS: 50,
 
-    TARGET_HEALTH_FACTOR: 0, // TODO
+    TARGET_HEALTH_FACTOR: 15_000,
 
     THRESHOLDS: {
-      slippageThresholdSwapBtcBps: '', // TODO
-      slippageThresholdSwapEthBps: '', // TODO
-      slippageThresholdGmxBps: '', // TODO
-      usdcConversionThreshold: '', // TODO
-      wethConversionThreshold: '', // TODO
-      hedgeUsdcAmountThreshold: '', // TODO
-      partialBtcHedgeUsdcAmountThreshold: '', // TODO
-      partialEthHedgeUsdcAmountThreshold: '', // TODO
+      slippageThresholdSwapBtcBps: 90,
+      slippageThresholdSwapEthBps: 15,
+      slippageThresholdGmxBps: 50,
+      usdcConversionThreshold: parseUnits('10', 6),
+      wethConversionThreshold: parseUnits('0.00625', 18),
+      hedgeUsdcAmountThreshold: parseUnits('10', 6),
+      partialBtcHedgeUsdcAmountThreshold: parseUnits('50000', 6),
+      partialEthHedgeUsdcAmountThreshold: parseUnits('200000', 6),
     },
   
     REBALANCE_PARAMS: {
-      rebalanceTimeThreshold: '', // TODO
-      rebalanceDeltaThresholdBps: '', // TODO
-      rebalanceHfThresholdBps: '', // TODO
+      rebalanceTimeThreshold: 10800,
+      rebalanceDeltaThresholdBps: 500,
+      rebalanceHfThresholdBps: 12_000
     },
 
-    KEEPER_JR_VAULT: '', // TODO
-    DEPOSIT_CAP_JR_VAULT: '', // TODO
+    KEEPER_JR_VAULT: '0xee2A909e3382cdF45a0d391202Aff3fb11956Ad1', // TODO: get address
+    DEPOSIT_CAP_JR_VAULT: parseEther('10640000'),
 
     // batching manager
-    KEEPER_BATCHING_MANAGER: '', // TODO
-    SLIPPAGE_THRESHOLD_BATCHING_MANAGER: '', // TODO
+    KEEPER_BATCHING_MANAGER: '0xee2A909e3382cdF45a0d391202Aff3fb11956Ad1', // TODO: get address
+    SLIPPAGE_THRESHOLD_BATCHING_MANAGER: 55,
 
     // withdraw periphery
-    SLIPPAGE_THRESHOLD_WITHDRAW_PERIPHERY: '', // TODO
+    SLIPPAGE_THRESHOLD_WITHDRAW_PERIPHERY: 40
   };
 
   const arbgoerliNetworkInfo: NetworkInfo = {
