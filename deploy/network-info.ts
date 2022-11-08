@@ -46,21 +46,21 @@ export interface NetworkInfo {
   TARGET_HEALTH_FACTOR: BigNumberish;
 
   THRESHOLDS: {
-    slippageThresholdSwapBtcBps: BigNumberish,
-    slippageThresholdSwapEthBps: BigNumberish,
-    slippageThresholdGmxBps: BigNumberish,
-    usdcConversionThreshold: BigNumberish,
-    wethConversionThreshold: BigNumberish,
-    hedgeUsdcAmountThreshold: BigNumberish,
-    partialBtcHedgeUsdcAmountThreshold: BigNumberish,
-    partialEthHedgeUsdcAmountThreshold: BigNumberish,
-  }
+    slippageThresholdSwapBtcBps: BigNumberish;
+    slippageThresholdSwapEthBps: BigNumberish;
+    slippageThresholdGmxBps: BigNumberish;
+    usdcConversionThreshold: BigNumberish;
+    wethConversionThreshold: BigNumberish;
+    hedgeUsdcAmountThreshold: BigNumberish;
+    partialBtcHedgeUsdcAmountThreshold: BigNumberish;
+    partialEthHedgeUsdcAmountThreshold: BigNumberish;
+  };
 
   REBALANCE_PARAMS: {
-    rebalanceTimeThreshold: BigNumberish,
-    rebalanceDeltaThresholdBps: BigNumberish,
-    rebalanceHfThresholdBps: BigNumberish,
-  }
+    rebalanceTimeThreshold: BigNumberish;
+    rebalanceDeltaThresholdBps: BigNumberish;
+    rebalanceHfThresholdBps: BigNumberish;
+  };
 
   KEEPER_JR_VAULT: string;
   DEPOSIT_CAP_JR_VAULT: BigNumberish;
@@ -76,13 +76,13 @@ export interface NetworkInfo {
 export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
   const chainId = (await hre.ethers.provider.getNetwork()).chainId;
   const tokensAddresses = await tokens.getAddresses(
-    // if hardhat then use addresses of arbmain, bcz hardhat is mainnet fork of arbmain
-    chainId === CHAIN_ID.hardhat ? CHAIN_ID.arbmain : chainId,
+    chainId === CHAIN_ID.hardhat
+      ? CHAIN_ID.arbmain // for yarn deploy (on hardhat mainnet fork)
+      : chainId, // for yarn deploy --network
   );
 
   const arbmainNetworkInfo: NetworkInfo = {
-
-    PROXY_ADMIN_ADDRESS: '0xA335Dd9CeFBa34449c0A89FB4d247f395C5e3782',
+    // PROXY_ADMIN_ADDRESS: '0xA335Dd9CeFBa34449c0A89FB4d247f395C5e3782', // TODO uncomment this
 
     WETH_ADDRESS: tokensAddresses.wethAddress,
     WBTC_ADDRESS: tokensAddresses.wbtcAddress,
@@ -105,15 +105,15 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
 
     // fee split strategy
     FEE_STRATEGY_PARAMS: {
-      optimalUtilizationRate: 70n ** 29n,
-      baseVariableBorrowRate: 10n ** 29n,
-      variableRateSlope1: 20n ** 29n,
-      variableRateSlope2: 50n ** 29n,
+      optimalUtilizationRate: 70n * 10n ** 28n, // 70% in D30
+      baseVariableBorrowRate: 10n * 10n ** 28n, // 10% in D30
+      variableRateSlope1: 20n * 10n ** 28n, // 20% in D30
+      variableRateSlope2: 50n * 10n ** 28n, // 50% in D30
     },
 
     // junior vault
     FEE_BPS: 1_500,
-    FEE_RECIPIENT: '0xee2A909e3382cdF45a0d391202Aff3fb11956Ad1',
+    FEE_RECIPIENT: '0x507c7777837B85EDe1e67f5A4554dDD7e58b1F87',
     WITHDRAW_FEE_BPS: 50,
 
     TARGET_HEALTH_FACTOR: 15_000,
@@ -128,22 +128,22 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
       partialBtcHedgeUsdcAmountThreshold: parseUnits('50000', 6),
       partialEthHedgeUsdcAmountThreshold: parseUnits('200000', 6),
     },
-  
+
     REBALANCE_PARAMS: {
       rebalanceTimeThreshold: 10800,
       rebalanceDeltaThresholdBps: 500,
-      rebalanceHfThresholdBps: 12_000
+      rebalanceHfThresholdBps: 12_000,
     },
 
-    KEEPER_JR_VAULT: '0xee2A909e3382cdF45a0d391202Aff3fb11956Ad1', // TODO: get address
+    KEEPER_JR_VAULT: '0x134dD282b7b3De06d4f5916c5e801a605b8854C3', // TODO: get address from productlead
     DEPOSIT_CAP_JR_VAULT: parseEther('10640000'),
 
     // batching manager
-    KEEPER_BATCHING_MANAGER: '0xee2A909e3382cdF45a0d391202Aff3fb11956Ad1', // TODO: get address
+    KEEPER_BATCHING_MANAGER: '0x134dD282b7b3De06d4f5916c5e801a605b8854C3', // TODO: get address
     SLIPPAGE_THRESHOLD_BATCHING_MANAGER: 55,
 
     // withdraw periphery
-    SLIPPAGE_THRESHOLD_WITHDRAW_PERIPHERY: 40
+    SLIPPAGE_THRESHOLD_WITHDRAW_PERIPHERY: 40,
   };
 
   const arbgoerliNetworkInfo: NetworkInfo = {
@@ -209,11 +209,10 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
 
     // withdraw periphery
     SLIPPAGE_THRESHOLD_WITHDRAW_PERIPHERY: 100,
-  }
+  };
 
   switch (chainId) {
     case CHAIN_ID.arbmain: // Arbitrum Mainnet
-      return arbmainNetworkInfo
     case CHAIN_ID.hardhat: // Hardhat Mainnet Fork
       return arbmainNetworkInfo;
     case CHAIN_ID.arbgoerli: // Arbitrum Goerli
