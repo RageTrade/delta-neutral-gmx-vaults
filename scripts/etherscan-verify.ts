@@ -1,26 +1,75 @@
 import hre, { deployments } from 'hardhat';
 import { Deployment } from 'hardhat-deploy/types';
+import { getNetworkInfo } from '../deploy/network-info';
+import {
+  DnGmxBatchingManager__factory,
+  DnGmxJuniorVault__factory,
+  DnGmxSeniorVault__factory,
+} from '../typechain-types';
 
 async function main() {
   const { get } = deployments;
 
-  const dnGmxJuniorVaultManagerLibrary = await hreVerify('DnGmxJuniorVaultManagerLibrary');
-  const logicLibrary = await hreVerify('LogicLibrary', {
+  const ni = await getNetworkInfo();
+
+  const ProxyAdmin = await hreVerify('ProxyAdmin');
+
+  const DnGmxJuniorVaultManagerLibrary = await hreVerify('DnGmxJuniorVaultManagerLibrary');
+  const DnGmxJuniorVaultLogic = await hreVerify('DnGmxJuniorVaultLogic', {
     libraries: {
-      DnGmxJuniorVaultManager: dnGmxJuniorVaultManagerLibrary.address,
+      DnGmxJuniorVaultManager: DnGmxJuniorVaultManagerLibrary.address,
     },
   });
+  const DnGmxSeniorVaultLogic = await hreVerify('DnGmxSeniorVaultLogic');
+  const DnGmxBatchingManager = await hreVerify('DnGmxBatchingManager');
 
-  await hreVerify('CurveYieldStrategyLogic', {
-    libraries: {
-      DnGmxJuniorVaultManager: dnGmxJuniorVaultManagerLibrary.address,
-      Logic: logicLibrary.address,
-    },
+  const DnGmxJuniorVault = await hreVerify('DnGmxJuniorVault', {
+    constructorArguments: [
+      DnGmxJuniorVaultLogic.address,
+      ProxyAdmin.address,
+      DnGmxJuniorVault__factory.createInterface().encodeFunctionData('initialize', [
+        'Delta Netural GMX Vault (Junior)', // _name
+        'DN_GMX_JUNIOR', // _symbol
+        ni.UNI_V3_SWAP_ROUTER,
+        ni.GMX_REWARD_ROUTER,
+        {
+          weth: ni.WETH_ADDRESS,
+          wbtc: ni.WBTC_ADDRESS,
+          sGlp: ni.GMX_SGLP_ADDRESS,
+          usdc: ni.USDC_ADDRESS,
+        },
+        ni.AAVE_POOL_ADDRESS_PROVIDER,
+      ]),
+    ],
   });
 
-  await hreVerify('CurveYieldStrategy');
+  await hreVerify('DnGmxSeniorVault', {
+    constructorArguments: [
+      DnGmxSeniorVaultLogic.address,
+      ProxyAdmin.address,
+      DnGmxSeniorVault__factory.createInterface().encodeFunctionData('initialize', [
+        ni.USDC_ADDRESS,
+        'Delta Netural GMX Vault (Senior)',
+        'DN_GMX_SENIOR',
+        ni.AAVE_POOL_ADDRESS_PROVIDER,
+      ]),
+    ],
+  });
 
-  await hreVerify('VaultPeriphery');
+  await hreVerify('DnGmxBatchingManager', {
+    constructorArguments: [
+      DnGmxBatchingManager.address,
+      ProxyAdmin.address,
+      DnGmxBatchingManager__factory.createInterface().encodeFunctionData('initialize', [
+        ni.GMX_SGLP_ADDRESS,
+        ni.USDC_ADDRESS,
+        ni.GMX_REWARD_ROUTER,
+        ni.GLP_MANAGER,
+        DnGmxJuniorVault.address,
+        ni.KEEPER_BATCHING_MANAGER,
+      ]),
+    ],
+  });
 
   // helper method that verify a contract and returns the deployment
   async function hreVerify(label: string, taskArguments: any = {}): Promise<Deployment> {
