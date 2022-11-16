@@ -160,9 +160,7 @@ export default {
     paths: ['@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol'],
   },
   etherscan: {
-    apiKey: {
-      arbitrumTestnet: process.env.ETHERSCAN_KEY,
-    },
+    apiKey: process.env.ETHERSCAN_KEY,
   },
   mocha: {
     timeout: 4000000,
