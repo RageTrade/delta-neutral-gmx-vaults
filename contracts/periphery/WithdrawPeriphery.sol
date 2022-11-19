@@ -44,7 +44,7 @@ contract WithdrawPeriphery is Ownable {
 
     event AddressesUpdated(address juniorVault, address rewardRouter);
 
-    uint256 internal constant MAX_BPS = 1000;
+    uint256 internal constant MAX_BPS = 10_000;
     // same price precision is used in gmx's Vault (Vault.sol)
     uint256 internal constant PRICE_PRECISION = 1e30;
 
