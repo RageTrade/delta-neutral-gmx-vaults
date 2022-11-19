@@ -646,7 +646,7 @@ library DnGmxJuniorVaultManager {
         uint256 minUsdcOut = usdcAmountDesired.mulDivDown((MAX_BPS - state.slippageThresholdGmxBps), MAX_BPS);
 
         // calculate the amount of glp to be converted to get the desired usdc amount
-        uint256 glpAmountInput = usdcAmountDesired.mulDivDown(PRICE_PRECISION, _getGlpPrice(state, false));
+        uint256 glpAmountInput = usdcAmountDesired.mulDivDown(PRICE_PRECISION, _getGlpPriceInUsdc(state, false));
 
         usdcAmountOut = state.rewardRouter.unstakeAndRedeemGlp(_usdc, glpAmountInput, minUsdcOut, address(this));
 
@@ -702,7 +702,7 @@ library DnGmxJuniorVaultManager {
         );
 
         // usdc value of unhedged glp assets
-        uint256 unhedgedGlpUsdcAmount = unhedgedGlp.mulDivDown(_getGlpPrice(state, false), PRICE_PRECISION);
+        uint256 unhedgedGlpUsdcAmount = unhedgedGlp.mulDivDown(_getGlpPriceInUsdc(state, false), PRICE_PRECISION);
 
         if (unhedgedGlpUsdcAmount > state.unhedgedGlpInUsdc) {
             // if target unhedged amount > current unhedged amount
@@ -1019,7 +1019,7 @@ library DnGmxJuniorVaultManager {
         // convert usdc amount into glp amount
         uint256 unhedgedGlp = (state.unhedgedGlpInUsdc + dnUsdcDepositedPos).mulDivDown(
             PRICE_PRECISION,
-            _getGlpPrice(state, !maximize)
+            _getGlpPriceInUsdc(state, !maximize)
         );
 
         // calculate current borrow amounts
@@ -1030,7 +1030,7 @@ library DnGmxJuniorVaultManager {
         // convert usdc amount into glp amount
         uint256 borrowValueGlp = (totalCurrentBorrowValue + dnUsdcDepositedNeg).mulDivDown(
             PRICE_PRECISION,
-            _getGlpPrice(state, maximize)
+            _getGlpPriceInUsdc(state, maximize)
         );
 
         // if we need to minimize then add additional slippage
@@ -1121,6 +1121,22 @@ library DnGmxJuniorVaultManager {
 
         // price per glp token = (total AUM / total supply)
         return aum.mulDivDown(PRICE_PRECISION, totalSupply * 1e24);
+    }
+
+    ///@notice returns the price of glp token in usdc
+    ///@param state set of all state variables of vault
+    ///@param maximize true to get maximum price and flase to get minimum
+    ///@return glp price in usd
+    function _getGlpPriceInUsdc(State storage state, bool maximize) private view returns (uint256) {
+        uint256 aum = state.glpManager.getAum(maximize);
+        uint256 totalSupply = state.glp.totalSupply();
+
+        // @dev aave returns from same source as chainlink (which is 8 decimals)
+        uint256 quotePrice = state.oracle.getAssetPrice(address(state.usdc));
+
+        // price per glp token = (total AUM / total supply)
+        // scaling factor = 30(aum) -18(totalSupply) -8(quotePrice) +18(glp) -6(usdc) = 16
+        return aum.mulDivDown(PRICE_PRECISION, totalSupply * quotePrice * 1e16);
     }
 
     ///@notice returns the price of given token in USDC using AAVE oracle
