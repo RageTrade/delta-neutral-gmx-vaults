@@ -644,7 +644,7 @@ library DnGmxJuniorVaultManager {
         // calculate the minimum required amount basis the set slippage param
         // uses current usdc max price from GMX and adds slippage on top
         uint256 minUsdcOut = usdcAmountDesired.mulDivDown(
-            usdcPrice * (MAX_BPS - state.slippageThresholdGmxBps),
+            (MAX_BPS - state.slippageThresholdGmxBps),
             PRICE_PRECISION * MAX_BPS
         );
 
