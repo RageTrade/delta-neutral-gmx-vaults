@@ -43,8 +43,6 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
 
     uint256 private constant MAX_BPS = 10_000;
 
-    uint256[100] private _gaps;
-
     // keeper can be EOA or smart contracts which executes stake and batch
     address public keeper;
     // delta neutral junior tranche
@@ -71,7 +69,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     VaultBatchingState public vaultBatchingState;
 
     // these gaps are added to allow adding new variables without shifting down inheritance chain
-    uint256[50] private __gaps2;
+    uint256[50] private __gaps;
 
     /// @dev ensures caller is junior vault
     modifier onlyDnGmxJuniorVault() {
