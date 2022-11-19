@@ -39,9 +39,8 @@ describe('Withdraw Periphery', () => {
 
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
 
-    await expect(
-      periphery.connect(users[0]).withdrawToken(users[0].address, usdc.address, users[0].address, parseEther('10')),
-    ).to.be.reverted;
+    await expect(periphery.connect(users[0]).withdrawToken(usdc.address, users[0].address, parseEther('10'))).to.be
+      .reverted;
   });
 
   it('withdrawToken - non registered token', async () => {
@@ -54,9 +53,8 @@ describe('Withdraw Periphery', () => {
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
     await dnGmxJuniorVault.connect(users[0]).approve(periphery.address, constants.MaxUint256);
 
-    await expect(
-      periphery.connect(users[0]).withdrawToken(users[0].address, aUSDC.address, users[0].address, parseEther('10')),
-    ).to.be.reverted;
+    await expect(periphery.connect(users[0]).withdrawToken(aUSDC.address, users[0].address, parseEther('10'))).to.be
+      .reverted;
   });
 
   it('withdrawToken - usdc', async () => {
@@ -72,9 +70,7 @@ describe('Withdraw Periphery', () => {
 
     const usdcBalBefore = await usdc.balanceOf(users[0].address);
 
-    const tx = periphery
-      .connect(users[0])
-      .withdrawToken(users[0].address, usdc.address, users[0].address, withdrawAmount);
+    const tx = periphery.connect(users[0]).withdrawToken(usdc.address, users[0].address, withdrawAmount);
 
     await expect(tx).to.emit(periphery, 'TokenWithdrawn');
 
@@ -119,7 +115,7 @@ describe('Withdraw Periphery', () => {
 
     const tx = periphery
       .connect(users[0])
-      .redeemToken(users[0].address, weth.address, users[0].address, dnGmxJuniorVault.balanceOf(users[0].address));
+      .redeemToken(weth.address, users[0].address, dnGmxJuniorVault.balanceOf(users[0].address));
 
     await expect(tx).to.emit(periphery, 'TokenRedeemed');
 
@@ -157,9 +153,7 @@ describe('Withdraw Periphery', () => {
 
     const usdcBalBefore = await usdc.balanceOf(users[5].address);
 
-    const tx = periphery
-      .connect(users[0])
-      .withdrawToken(users[0].address, usdc.address, users[5].address, withdrawAmount);
+    const tx = periphery.connect(users[0]).withdrawToken(usdc.address, users[5].address, withdrawAmount);
 
     await expect(tx).to.emit(periphery, 'TokenWithdrawn');
 
@@ -193,7 +187,7 @@ describe('Withdraw Periphery', () => {
     await dnGmxJuniorVault.connect(users[0]).approve(periphery.address, constants.MaxUint256);
 
     await expect(
-      periphery.connect(users[0]).withdrawToken(users[0].address, usdc.address, users[0].address, withdrawAmount),
+      periphery.connect(users[0]).withdrawToken(usdc.address, users[0].address, withdrawAmount),
     ).to.be.revertedWith(
       `VM Exception while processing transaction: reverted with reason string 'GlpManager: insufficient output'`,
     );
