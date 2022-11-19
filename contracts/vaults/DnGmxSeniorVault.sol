@@ -348,7 +348,12 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @param borrower allowed borrower address
     /// @return availableAUsdc max aUsdc which given borrower can borrow
     function availableBorrow(address borrower) public view returns (uint256 availableAUsdc) {
-        uint256 availableBasisCap = borrowCaps[borrower] - IBorrower(borrower).getUsdcBorrowed();
+        uint256 borrowCap = borrowCaps[borrower];
+        uint256 borrowed = IBorrower(borrower).getUsdcBorrowed();
+
+        if (borrowed > borrowCap) return 0;
+
+        uint256 availableBasisCap = borrowCap - borrowed;
         uint256 availableBasisBalance = aUsdc.balanceOf(address(this));
 
         availableAUsdc = availableBasisCap < availableBasisBalance ? availableBasisCap : availableBasisBalance;
