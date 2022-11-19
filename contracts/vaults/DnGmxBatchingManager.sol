@@ -193,7 +193,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         emit DepositToken(0, token, msg.sender, amount, glpStaked);
     }
 
-    function depositUsdc(uint256 amount, address receiver) external whenNotPaused returns (uint256 glpStaked) {
+    function depositUsdc(uint256 amount, address receiver) external whenNotPaused {
         // revert for zero values
         if (amount == 0) revert InvalidInput(0x21);
         if (receiver == address(0)) revert InvalidInput(0x22);
@@ -221,7 +221,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         userDeposit.usdcBalance = userUsdcBalance + amount.toUint128();
         vaultBatchingState.roundUsdcBalance += amount.toUint128();
 
-        emit DepositToken(vaultBatchingState.currentRound, address(usdc), receiver, amount, glpStaked);
+        emit DepositToken(vaultBatchingState.currentRound, address(usdc), receiver, amount, 0);
     }
 
     /// @notice executes batch and deposits into appropriate vault with/without minting shares
