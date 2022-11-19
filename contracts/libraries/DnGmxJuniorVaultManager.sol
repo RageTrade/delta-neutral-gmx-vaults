@@ -406,7 +406,7 @@ library DnGmxJuniorVaultManager {
             assets = new address[](1);
             amounts = new uint256[](1);
 
-            if (btcAssetAmount == 0) {
+            if (btcAssetAmount != 0) {
                 assets[0] = (repayDebtBtc ? address(state.usdc) : address(state.wbtc));
                 amounts[0] = btcAssetAmount;
             } else {
