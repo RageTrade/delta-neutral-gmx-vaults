@@ -596,7 +596,7 @@ describe('Dn Gmx Batching Manager', () => {
       expect(postRound).to.eq(prevRound.add(1));
     });
 
-    it('execute batch - fail', async () => {
+    it('execute batch - batching manager bypass', async () => {
       const opts = await dnGmxJuniorVaultFixture();
       const changer = new Changer(opts);
 

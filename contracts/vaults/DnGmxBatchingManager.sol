@@ -14,7 +14,7 @@ import { IGlpManager } from '../interfaces/gmx/IGlpManager.sol';
 import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
 import { IVault } from '../interfaces/gmx/IVault.sol';
 
-import { BatchingManagerBypass } from '../periphery/BatchingManagerBypass.sol';
+import { IBatchingManagerBypass } from '../interfaces/IBatchingManagerBypass.sol';
 
 import { SafeCast } from '../libraries/SafeCast.sol';
 
@@ -66,8 +66,9 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     IVault private gmxUnderlyingVault;
     // gmx's RewardRouterV2 (RewardRouterV2.sol) contract
     IRewardRouterV2 private rewardRouter;
-    //
-    BatchingManagerBypass private bypass;
+
+    // batching mangager bypass contract
+    IBatchingManagerBypass private bypass;
 
     // batching manager's state
     VaultBatchingState public vaultBatchingState;
@@ -150,7 +151,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         emit KeeperUpdated(_keeper);
     }
 
-    function setBypass(BatchingManagerBypass _bypass) external onlyOwner {
+    function setBypass(IBatchingManagerBypass _bypass) external onlyOwner {
         bypass = _bypass;
     }
 
