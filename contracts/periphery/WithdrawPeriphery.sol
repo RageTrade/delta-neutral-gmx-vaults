@@ -9,6 +9,7 @@ import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
 
 import { Ownable } from '@openzeppelin/contracts/access/Ownable.sol';
 import { IERC20 } from '@openzeppelin/contracts/interfaces/IERC20.sol';
+import { IERC20Metadata } from '@openzeppelin/contracts/interfaces/IERC20Metadata.sol';
 
 import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
 
@@ -155,6 +156,7 @@ contract WithdrawPeriphery is Ownable {
 
         // apply slippage threshold on top of estimated output amount
         uint256 minTokenOut = outputGlp.mulDiv(glpPrice * (MAX_BPS - slippageThreshold), tokenPrice * MAX_BPS);
+        minTokenOut = minTokenOut * 10**(IERC20Metadata(token).decimals() - 6);
 
         // will revert if atleast minTokenOut is not received
         amountOut = rewardRouter.unstakeAndRedeemGlp(address(token), outputGlp, minTokenOut, receiver);
