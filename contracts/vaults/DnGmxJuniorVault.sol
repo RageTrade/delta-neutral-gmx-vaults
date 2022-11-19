@@ -17,6 +17,7 @@ import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 
 import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMathLib.sol';
 
+import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 
 import { IBalancerVault } from '../interfaces/balancer/IBalancerVault.sol';
@@ -45,6 +46,7 @@ import { ERC4626Upgradeable } from '../ERC4626/ERC4626Upgradeable.sol';
  **/
 contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable {
     using SafeCast for uint256;
+    using FullMath for uint256;
     using WadRayMath for uint256;
     using SafeERC20 for IERC20Metadata;
     using FixedPointMathLib for uint256;
@@ -488,7 +490,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         uint256 aum = state.glpManager.getAum(false);
         uint256 totalSupply = state.glp.totalSupply();
 
-        return aum.mulDivDown(1 << 128, totalSupply * 1e24);
+        return aum.mulDiv(1 << 128, totalSupply * 1e24);
     }
 
     ///@notice returns the minimum market value of "assetAmount" of asset (sGlp) tokens
