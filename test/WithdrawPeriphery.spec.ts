@@ -144,6 +144,38 @@ describe('Withdraw Periphery', () => {
     expect(wethBalAfter.sub(wethBalBefore)).to.lt(wethOutWithoutSlippage);
   });
 
+  it('redeemToken - weth - fail slippage', async () => {
+    const { weth, users, admin, gmxVault, glpBatchingManager, periphery, dnGmxJuniorVault, dnGmxSeniorVault } =
+      await dnGmxJuniorVaultFixture();
+
+    await dnGmxJuniorVault.setAdminParams(
+      admin.address,
+      dnGmxSeniorVault.address,
+      constants.MaxUint256,
+      glpBatchingManager.address,
+      100,
+    );
+
+    await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('100', 6), users[1].address);
+    await periphery.setSlippageThreshold(1);
+
+    const amount = parseEther('100');
+    const withdrawAmount = parseEther('10');
+
+    await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
+    await dnGmxJuniorVault.connect(users[0]).approve(periphery.address, constants.MaxUint256);
+
+    const wethBalBefore = await weth.balanceOf(users[0].address);
+
+    const tx = periphery
+      .connect(users[0])
+      .redeemToken(users[0].address, weth.address, users[0].address, dnGmxJuniorVault.balanceOf(users[0].address));
+
+    await expect(tx).to.be.revertedWith(
+      `VM Exception while processing transaction: reverted with reason string 'GlpManager: insufficient output'`,
+    );
+  });
+
   it('withdrawToken - different receiver than msg.sender', async () => {
     const { usdc, users, periphery, gmxVault, dnGmxJuniorVault, dnGmxSeniorVault } = await dnGmxJuniorVaultFixture();
 
