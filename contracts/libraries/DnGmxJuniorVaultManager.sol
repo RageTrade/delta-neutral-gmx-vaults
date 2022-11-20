@@ -102,6 +102,8 @@ library DnGmxJuniorVaultManager {
         uint16 feeBps;
         // fees on the withdrawn assets
         uint16 withdrawFeeBps;
+        // fee tier for uniswap path
+        uint24 feeTierWethWbtcPool;
 
         // thresholds
         uint256 depositCap;
@@ -1534,7 +1536,7 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@return the path bytes
     function USDC_TO_WBTC(State storage state) internal view returns (bytes memory) {
-        return abi.encodePacked(state.wbtc, uint24(3000), state.weth, uint24(500), state.usdc);
+        return abi.encodePacked(state.wbtc, state.feeTierWethWbtcPool, state.weth, uint24(500), state.usdc);
     }
 
     ///@notice returns weth to usdc swap path
@@ -1548,6 +1550,6 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@return the path bytes
     function WBTC_TO_USDC(State storage state) internal view returns (bytes memory) {
-        return abi.encodePacked(state.wbtc, uint24(3000), state.weth, uint24(500), state.usdc);
+        return abi.encodePacked(state.wbtc, state.feeTierWethWbtcPool, state.weth, uint24(500), state.usdc);
     }
 }

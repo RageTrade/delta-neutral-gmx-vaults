@@ -300,6 +300,7 @@ describe('Rebalance Scenarios', () => {
       ethers.constants.MaxUint256,
       glpBatchingManager.address,
       1000,
+      3000,
     );
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds(
@@ -1333,6 +1334,7 @@ describe('Rebalance Scenarios', () => {
       ethers.constants.MaxUint256,
       glpBatchingManager.address,
       1000,
+      3000,
     );
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds(
