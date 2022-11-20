@@ -165,7 +165,7 @@ describe('Withdraw Periphery', () => {
 
     const tx = periphery
       .connect(users[0])
-      .redeemToken(users[0].address, weth.address, users[0].address, dnGmxJuniorVault.balanceOf(users[0].address));
+      .redeemToken(weth.address, users[0].address, dnGmxJuniorVault.balanceOf(users[0].address));
 
     await expect(tx).to.be.revertedWith(
       `VM Exception while processing transaction: reverted with reason string 'GlpManager: insufficient output'`,
