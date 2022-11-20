@@ -130,7 +130,7 @@ describe('Swaps', () => {
 
     const usdcAmount = parseUnits('100', 6);
 
-    const glpPrice = await dnGmxJuniorVault.getPriceExternal();
+    const glpPrice = await dnGmxJuniorVault.getGlpPriceInUsdc(false);
     // console.log('glpPrice', formatUnits(glpPrice, 30))
 
     const usdcPrice = await gmxVault.getMaxPrice(usdc.address);
