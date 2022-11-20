@@ -1127,6 +1127,14 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@param maximize true to get maximum price and flase to get minimum
     ///@return glp price in usd
+    function getGlpPriceInUsdc(State storage state, bool maximize) external view returns (uint256) {
+        return _getGlpPriceInUsdc(state, maximize);
+    }
+
+    ///@notice returns the price of glp token in usdc
+    ///@param state set of all state variables of vault
+    ///@param maximize true to get maximum price and flase to get minimum
+    ///@return glp price in usd
     function _getGlpPriceInUsdc(State storage state, bool maximize) private view returns (uint256) {
         uint256 aum = state.glpManager.getAum(maximize);
         uint256 totalSupply = state.glp.totalSupply();
