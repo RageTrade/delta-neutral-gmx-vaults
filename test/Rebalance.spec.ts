@@ -583,7 +583,7 @@ describe('Rebalance & its utils', () => {
     expect(await dnGmxJuniorVault.unhedgedGlpInUsdc()).to.eq(0);
 
     // adjust slippage with closeTo
-    expect(currentBorrows[0]).to.closeTo(optimalBorrows[0], 400n);
+    expect(currentBorrows[0]).to.closeTo(optimalBorrows[0], 2500n);
     expect(currentBorrows[1]).to.closeTo(optimalBorrows[1], 6n * 10n ** 14n);
 
     expect(btcAmount).to.eq(currentBorrows[0]);
