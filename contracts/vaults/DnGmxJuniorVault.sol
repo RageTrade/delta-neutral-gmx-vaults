@@ -172,15 +172,18 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         address dnGmxSeniorVault,
         uint256 newDepositCap,
         address batchingManager,
-        uint16 withdrawFeeBps
+        uint16 withdrawFeeBps,
+        uint24 feeTierWethWbtcPool
     ) external onlyOwner {
         if (withdrawFeeBps > MAX_BPS) revert InvalidWithdrawFeeBps();
 
         state.keeper = newKeeper;
-        state.dnGmxSeniorVault = IDnGmxSeniorVault(dnGmxSeniorVault);
         state.depositCap = newDepositCap;
-        state.batchingManager = IDnGmxBatchingManager(batchingManager);
         state.withdrawFeeBps = withdrawFeeBps;
+        state.feeTierWethWbtcPool = feeTierWethWbtcPool;
+
+        state.dnGmxSeniorVault = IDnGmxSeniorVault(dnGmxSeniorVault);
+        state.batchingManager = IDnGmxBatchingManager(batchingManager);
 
         emit AdminParamsUpdated(newKeeper, dnGmxSeniorVault, newDepositCap, batchingManager, withdrawFeeBps);
     }
@@ -629,10 +632,18 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
             IDnGmxSeniorVault dnGmxSeniorVault,
             uint256 depositCap,
             IDnGmxBatchingManager batchingManager,
-            uint16 withdrawFeeBps
+            uint16 withdrawFeeBps,
+            uint24 feeTierWethWbtcPool
         )
     {
-        return (state.keeper, state.dnGmxSeniorVault, state.depositCap, state.batchingManager, state.withdrawFeeBps);
+        return (
+            state.keeper,
+            state.dnGmxSeniorVault,
+            state.depositCap,
+            state.batchingManager,
+            state.withdrawFeeBps,
+            state.feeTierWethWbtcPool
+        );
     }
 
     function getThresholds()
