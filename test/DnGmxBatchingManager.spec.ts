@@ -11,6 +11,7 @@ import {
   IVault,
 } from '../typechain-types';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
+import { Changer } from './utils/changer';
 import { generateErc20Balance } from './utils/generator';
 import { increaseBlockTimestamp } from './utils/shared';
 
@@ -582,6 +583,58 @@ describe('Dn Gmx Batching Manager', () => {
       await generateErc20Balance(usdc, depositAmount, users[1].address);
       await usdc.connect(users[1]).approve(glpBatchingManager.address, depositAmount);
       await glpBatchingManager.connect(users[1]).depositUsdc(depositAmount, users[1].address);
+
+      await glpBatchingManager.executeBatchStake();
+      await increaseBlockTimestamp(15 * 60 + 1);
+
+      expect(await glpBatchingManager.paused()).to.true;
+
+      const prevRound = await glpBatchingManager.currentRound();
+      await glpBatchingManager.executeBatchDeposit();
+      const postRound = await glpBatchingManager.currentRound();
+
+      expect(postRound).to.eq(prevRound.add(1));
+    });
+
+    it('execute batch - batching manager bypass', async () => {
+      const opts = await dnGmxJuniorVaultFixture();
+      const changer = new Changer(opts);
+
+      {
+        ({ dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, fsGlp, usdc, sGlp, gmxVault, rewardRouter } =
+          opts);
+      }
+
+      const amount = parseEther('10000');
+      const amountD6 = parseUnits('10000', 6);
+
+      const depositAmount = parseUnits('100', 6);
+
+      await generateErc20Balance(usdc, amountD6, users[2].address);
+      await dnGmxSeniorVault.setDepositCap(ethers.constants.MaxUint256);
+      await dnGmxSeniorVault.updateBorrowCap(dnGmxJuniorVault.address, amountD6);
+
+      await usdc.connect(users[2]).approve(dnGmxSeniorVault.address, ethers.constants.MaxUint256);
+      await dnGmxSeniorVault.connect(users[2]).deposit(amountD6, users[2].address);
+
+      // console.log('price of usdc from glp (min)', await gmxVault.getMinPrice(usdc.address));
+      // console.log('price of usdc from glp (max)', await gmxVault.getMaxPrice(usdc.address));
+      // console.log('get price', await dnGmxJuniorVault['getPrice(address)'](usdc.address));
+
+      // await sGlp.connect(users[0]).transfer(dnGmxJuniorVault.address, amount);
+      await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
+      await increaseBlockTimestamp(60 * 60 * 480);
+
+      // console.log('price of usdc from glp (min)', await gmxVault.getMinPrice(usdc.address));
+      // console.log('price of usdc from glp (max)', await gmxVault.getMaxPrice(usdc.address));
+      // console.log('get price', await dnGmxJuniorVault['getPrice(address)'](usdc.address));
+
+      await generateErc20Balance(usdc, depositAmount, users[1].address);
+      await usdc.connect(users[1]).approve(glpBatchingManager.address, depositAmount);
+      await glpBatchingManager.connect(users[1]).depositUsdc(depositAmount, users[1].address);
+
+      await changer.changePriceToken('WBTC', 15000);
+      await changer.changePriceToken('WETH', 1000);
 
       await glpBatchingManager.executeBatchStake();
       await increaseBlockTimestamp(15 * 60 + 1);
