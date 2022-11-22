@@ -412,4 +412,23 @@ describe('Junior Vault ERC4646 functions', () => {
       `VM Exception while processing transaction: reverted with custom error 'DepositCapExceeded()'`,
     );
   });
+
+  it('getPriceX128 - does not revert', async () => {
+    const opts = await dnGmxJuniorVaultFixture();
+    const { dnGmxJuniorVault, dnGmxSeniorVault, vdWBTC, vdWETH, aUSDC, fsGlp, users } = opts;
+
+    const withdrawFeeBps = await dnGmxJuniorVault.withdrawFeeBps();
+
+    const MAX_BPS = BigNumber.from(10_000);
+    const PRICE_PRECISION = BigNumber.from(10).pow(30);
+
+    await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('100', 6), users[1].address);
+
+    const amount = parseEther('100');
+    const preview = await dnGmxJuniorVault.previewDeposit(amount);
+
+    await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
+
+    await expect(dnGmxJuniorVault.getPriceX128()).to.be.not.reverted;
+  });
 });
