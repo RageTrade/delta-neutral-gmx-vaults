@@ -106,6 +106,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     ethers.constants.MaxUint256,
     glpBatchingStakingManagerFixtures.gmxBatchingManager.address,
     50,
+    3000,
   );
 
   await dnGmxJuniorVault.setThresholds(

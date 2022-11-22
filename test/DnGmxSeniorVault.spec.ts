@@ -76,6 +76,7 @@ describe('DnGmx Senior Vault', () => {
         ethers.constants.MaxUint256,
         glpBatchingManager.address,
         100,
+        3000,
       );
 
       const adminParams = await dnGmxJuniorVault.getAdminParams();
@@ -84,6 +85,7 @@ describe('DnGmx Senior Vault', () => {
       expect(adminParams.depositCap).to.eq(ethers.constants.MaxUint256);
       expect(adminParams.batchingManager).to.eq(glpBatchingManager.address);
       expect(adminParams.withdrawFeeBps).to.eq(100);
+      expect(adminParams.feeTierWethWbtcPool).to.eq(3000);
     });
 
     it('setAdminParams bad withdrawFeeBps', async () => {
@@ -94,6 +96,7 @@ describe('DnGmx Senior Vault', () => {
           ethers.constants.MaxUint256,
           glpBatchingManager.address,
           10_001, // bad withdrawFeeBps
+          3000,
         ),
       ).to.be.revertedWith('InvalidWithdrawFeeBps()');
     });

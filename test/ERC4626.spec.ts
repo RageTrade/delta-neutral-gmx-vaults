@@ -130,6 +130,7 @@ describe('Junior Vault ERC4646 functions', () => {
       constants.MaxUint256,
       glpBatchingManager.address,
       150,
+      3000,
     );
 
     const PRICE_PRECISION = BigNumber.from(10).pow(30);
