@@ -1030,12 +1030,12 @@ library DnGmxJuniorVaultManager {
         // convert usdc amount into glp amount
         uint256 borrowValueGlp = (totalCurrentBorrowValue + dnUsdcDepositedNeg).mulDivDown(
             PRICE_PRECISION,
-            _getGlpPrice(state, !maximize)
+            _getGlpPrice(state, maximize)
         );
 
         // if we need to minimize then add additional slippage
         if (!maximize) unhedgedGlp = unhedgedGlp.mulDivDown(MAX_BPS - state.slippageThresholdGmxBps, MAX_BPS);
-        if (!maximize) borrowValueGlp = borrowValueGlp.mulDivDown(MAX_BPS - state.slippageThresholdGmxBps, MAX_BPS);
+        if (!maximize) borrowValueGlp = borrowValueGlp.mulDivDown(MAX_BPS + state.slippageThresholdGmxBps, MAX_BPS);
 
         // total assets considers 3 parts
         // part1: glp balance in vault
