@@ -16,6 +16,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     KEEPER_JR_VAULT,
     REBALANCE_PARAMS,
     WITHDRAW_FEE_BPS,
+    FEE_TIER_WETH_WBTC_POOL,
     TARGET_HEALTH_FACTOR,
     AAVE_REWARDS_CONTROLLER,
     GMX_SGLP_ADDRESS,
@@ -88,6 +89,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     DEPOSIT_CAP_JR_VAULT,
     DnGmxBatchingManagerDeployment.address,
     WITHDRAW_FEE_BPS,
+    FEE_TIER_WETH_WBTC_POOL,
   );
 
   await execute(
