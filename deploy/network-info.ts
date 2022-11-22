@@ -42,6 +42,7 @@ export interface NetworkInfo {
   FEE_BPS: BigNumberish;
   FEE_RECIPIENT: string;
   WITHDRAW_FEE_BPS: BigNumberish;
+  FEE_TIER_WETH_WBTC_POOL: BigNumberish;
 
   TARGET_HEALTH_FACTOR: BigNumberish;
 
@@ -115,6 +116,7 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
     FEE_BPS: 1_500,
     FEE_RECIPIENT: '0x507c7777837B85EDe1e67f5A4554dDD7e58b1F87',
     WITHDRAW_FEE_BPS: 50,
+    FEE_TIER_WETH_WBTC_POOL: 3000,
 
     TARGET_HEALTH_FACTOR: 15_000,
 
@@ -180,6 +182,7 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
     FEE_BPS: 1000,
     FEE_RECIPIENT: '0x4ec0dda0430A54b4796109913545F715B2d89F34',
     WITHDRAW_FEE_BPS: 50,
+    FEE_TIER_WETH_WBTC_POOL: 3000,
 
     TARGET_HEALTH_FACTOR: 15_000,
 
