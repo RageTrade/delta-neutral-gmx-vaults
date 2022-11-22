@@ -151,6 +151,7 @@ describe('Withdraw Periphery', () => {
       constants.MaxUint256,
       glpBatchingManager.address,
       100,
+      3000,
     );
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('100', 6), users[1].address);
