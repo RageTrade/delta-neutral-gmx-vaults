@@ -14,6 +14,8 @@ import { IGlpManager } from '../interfaces/gmx/IGlpManager.sol';
 import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
 import { IVault } from '../interfaces/gmx/IVault.sol';
 
+import { IBatchingManagerBypass } from '../interfaces/IBatchingManagerBypass.sol';
+
 import { SafeCast } from '../libraries/SafeCast.sol';
 
 /**
@@ -64,6 +66,9 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     IVault private gmxUnderlyingVault;
     // gmx's RewardRouterV2 (RewardRouterV2.sol) contract
     IRewardRouterV2 private rewardRouter;
+
+    // batching mangager bypass contract
+    IBatchingManagerBypass private bypass;
 
     // batching manager's state
     VaultBatchingState public vaultBatchingState;
@@ -144,6 +149,10 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     function setKeeper(address _keeper) external onlyOwner {
         keeper = _keeper;
         emit KeeperUpdated(_keeper);
+    }
+
+    function setBypass(IBatchingManagerBypass _bypass) external onlyOwner {
+        bypass = _bypass;
     }
 
     /// @notice sets the slippage (in bps) to use while staking on gmx
@@ -355,7 +364,8 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         // Transfer user glp through deposit
         if (vaultBatchingState.roundGlpStaked == 0) return;
 
-        uint256 totalShares = dnGmxJuniorVault.deposit(vaultBatchingState.roundGlpStaked, address(this));
+        sGlp.transfer(address(bypass), vaultBatchingState.roundGlpStaked);
+        uint256 totalShares = bypass.deposit(vaultBatchingState.roundGlpStaked, address(this));
 
         // Update round data
         vaultBatchingState.roundDeposits[vaultBatchingState.currentRound] = RoundDeposit(
