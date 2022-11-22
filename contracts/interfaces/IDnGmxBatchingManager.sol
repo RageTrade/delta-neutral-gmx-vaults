@@ -64,5 +64,5 @@ interface IDnGmxBatchingManager {
 
     function roundDeposits(uint256 round) external view returns (RoundDeposit memory);
 
-    function depositUsdc(uint256 amount, address receiver) external returns (uint256 glpStaked);
+    function depositUsdc(uint256 amount, address receiver) external;
 }
