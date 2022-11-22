@@ -1,11 +1,11 @@
 <p>
     <a href="https://github.com/RageTrade/vaults/actions"><img alt="test status" src="https://github.com/RageTrade/vaults/actions/workflows/tests.yml/badge.svg"></a>
-    <a href="https://solidity.readthedocs.io/en/v0.8.13/"><img alt="solidity v0.8.13" src="https://badgen.net/badge/solidity/v0.8.13/blue"></a>
+    <a href="https://solidity.readthedocs.io/en/v0.8.17/"><img alt="solidity v0.8.13" src="https://badgen.net/badge/solidity/v0.8.17/blue"></a>
 </p>
 
 # Rage Trade Vaults
 
-This repository contains the 80-20 Curve TriCrypto Vault smart contracts for the Rage Trade Protocol. You can find more info in the [docs](https://docs.rage.trade/80-20-vaults).
+This repository contains the Delta Neutral GMX Vault smart contracts for the Rage Trade Protocol. You can find more info in the [docs](https://docs.rage.trade/4TdI-overview).
 
 ## Bug Bounty
 
