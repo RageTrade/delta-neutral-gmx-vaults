@@ -403,8 +403,7 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         uint256 borrowed = totalUsdcBorrowed();
 
         // checks the max withdrawable amount until which the vault remains below max utilization
-        uint256 maxAvailable = (total * maxUtilizationBps) / MAX_BPS;
-        maxAvailable = borrowed < maxAvailable ? maxAvailable - borrowed : 0;
+        uint256 maxAvailable = total - (borrowed * MAX_BPS) / maxUtilizationBps;
 
         // checks the balance of the user
         uint256 maxOfUser = convertToAssets(balanceOf(owner));
