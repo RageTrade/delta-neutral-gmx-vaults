@@ -345,17 +345,17 @@ describe('Junior Vault ERC4646 functions', () => {
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
 
     const totalBorrowed = await dnGmxSeniorVault.totalUsdcBorrowed();
-    // console.log('totalBorrowed', totalBorrowed);
+    const totalAssetsAvailable = await dnGmxSeniorVault.totalAssets();
 
     expect(totalBorrowed).to.lt(seniorVaultDeposit);
     expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.eq(totalBorrowed);
 
     // only single user, so max(user'shares, avaiable) = available
     expect(await dnGmxSeniorVault.maxWithdraw(users[1].address)).to.eq(
-      seniorVaultDeposit.mul(maxUtilization).div(MAX_BPS).sub(totalBorrowed),
+      totalAssetsAvailable.sub(totalBorrowed.mul(MAX_BPS).div(maxUtilization)),
     );
     expect(await dnGmxSeniorVault.maxRedeem(users[1].address)).to.eq(
-      await dnGmxSeniorVault.convertToShares(seniorVaultDeposit.mul(maxUtilization).div(MAX_BPS).sub(totalBorrowed)),
+      await dnGmxSeniorVault.convertToShares(totalAssetsAvailable.sub(totalBorrowed.mul(MAX_BPS).div(maxUtilization))),
     );
 
     await generateErc20Balance(usdc, seniorVaultDeposit.mul(5), users[2].address);
@@ -376,6 +376,42 @@ describe('Junior Vault ERC4646 functions', () => {
       await dnGmxSeniorVault.balanceOf(users[1].address),
       1,
     );
+  });
+
+  it('Max Withdraw - Senior Vault', async () => {
+    const opts = await dnGmxJuniorVaultFixture();
+    const { dnGmxJuniorVault, dnGmxSeniorVault, users, usdc } = opts;
+
+    const MAX_BPS = BigNumber.from(10_000);
+    const maxUtilization = BigNumber.from(9_000);
+
+    const amount = parseEther('100');
+    const seniorVaultDeposit = parseUnits('150', 6);
+
+    await dnGmxSeniorVault.setMaxUtilizationBps(maxUtilization);
+
+    await dnGmxSeniorVault.connect(users[1]).deposit(seniorVaultDeposit, users[1].address);
+
+    // should be able to withdraw everything if nothing is borrowed
+    expect(await dnGmxSeniorVault.maxWithdraw(users[1].address)).to.eq(seniorVaultDeposit);
+
+    // deposit 1
+    await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
+
+    let totalBorrowed = await dnGmxSeniorVault.totalUsdcBorrowed();
+    let totalAssetsAvailable = await dnGmxSeniorVault.totalAssets();
+    let maxWithdraw = await dnGmxSeniorVault.maxWithdraw(users[1].address);
+
+    expect(totalAssetsAvailable.sub(maxWithdraw).mul(maxUtilization).div(MAX_BPS)).to.closeTo(totalBorrowed, 1n);
+
+    // deposit 2
+    await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
+
+    totalBorrowed = await dnGmxSeniorVault.totalUsdcBorrowed();
+    totalAssetsAvailable = await dnGmxSeniorVault.totalAssets();
+    maxWithdraw = await dnGmxSeniorVault.maxWithdraw(users[1].address);
+
+    expect(totalAssetsAvailable.sub(maxWithdraw).mul(maxUtilization).div(MAX_BPS)).to.closeTo(totalBorrowed, 1n);
   });
 
   it('MaxDeposit & MaxMint - Senior Vault', async () => {
