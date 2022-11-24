@@ -121,7 +121,7 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
     TARGET_HEALTH_FACTOR: 15_000,
 
     THRESHOLDS: {
-      slippageThresholdSwapBtcBps: 90,
+      slippageThresholdSwapBtcBps: 100,
       slippageThresholdSwapEthBps: 15,
       slippageThresholdGmxBps: 50,
       usdcConversionThreshold: parseUnits('10', 6),
