@@ -116,7 +116,7 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
     FEE_BPS: 1_500,
     FEE_RECIPIENT: '0x507c7777837B85EDe1e67f5A4554dDD7e58b1F87',
     WITHDRAW_FEE_BPS: 50,
-    FEE_TIER_WETH_WBTC_POOL: 3000,
+    FEE_TIER_WETH_WBTC_POOL: 500,
 
     TARGET_HEALTH_FACTOR: 15_000,
 
@@ -137,11 +137,11 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
       rebalanceHfThresholdBps: 12_000,
     },
 
-    KEEPER_JR_VAULT: '0x134dD282b7b3De06d4f5916c5e801a605b8854C3', // TODO: get address from productlead
+    KEEPER_JR_VAULT: '0x57F980d4446f5D51D2A6DD2B9BC624C59E9d09c0',
     DEPOSIT_CAP_JR_VAULT: parseEther('10640000'),
 
     // batching manager
-    KEEPER_BATCHING_MANAGER: '0x134dD282b7b3De06d4f5916c5e801a605b8854C3', // TODO: get address
+    KEEPER_BATCHING_MANAGER: '0x6189ED8744695ed773f8feB1eAC02864a07B59E2',
     SLIPPAGE_THRESHOLD_BATCHING_MANAGER: 55,
 
     // withdraw periphery
