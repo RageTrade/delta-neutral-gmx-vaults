@@ -13,6 +13,8 @@ interface IDnGmxBatchingManager {
     error InvalidInput(uint256 errorCode);
     error InsufficientShares(uint256 balance);
 
+    error DepositCapBreached();
+
     event DepositToken(
         uint256 indexed round,
         address indexed token,
@@ -24,13 +26,15 @@ interface IDnGmxBatchingManager {
     event VaultDeposit(uint256 vaultGlpAmount);
 
     event KeeperUpdated(address newKeeper);
-    event ThresholdsUpdated(uint256 newSlippageThresholdGmx);
+    event ThresholdsUpdated(uint256 newSlippageThresholdGmx, uint256 newGlpDepositPendingThreshold);
 
     event BatchStake(uint256 indexed round, uint256 userUsdcAmount, uint256 userGlpAmount);
     event SharesClaimed(address indexed from, address indexed receiver, uint256 claimAmount);
     event BatchDeposit(uint256 indexed round, uint256 userUsdcAmount, uint256 userGlpAmount, uint256 userShareAmount);
 
     event ClaimedAndRedeemed(address indexed claimer, address indexed receiver, uint256 shares, uint256 assetsReceived);
+    event DepositCapUpdated(uint256 newDepositCap);
+    event PartialBatchDeposit(uint256 indexed round, uint256 partialGlpAmount, uint256 partialShareAmount);
 
     struct UserDeposit {
         uint256 round;
@@ -50,7 +54,7 @@ interface IDnGmxBatchingManager {
 
     function executeBatchStake() external;
 
-    function executeBatchDeposit() external;
+    function executeBatchDeposit(uint256 depositAmount) external;
 
     function currentRound() external view returns (uint256);
 

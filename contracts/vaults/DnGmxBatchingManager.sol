@@ -33,6 +33,8 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     struct VaultBatchingState {
         // round indentifier
         uint256 currentRound;
+        uint256 roundGlpDepositPending;
+        uint256 roundSharesMinted;
         // amount of sGlp received in current round
         uint256 roundGlpStaked;
         // amount of usdc recieved in current round
@@ -54,6 +56,10 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     uint256 public slippageThresholdGmxBps;
     // accumulator to keep track of sGlp direclty (as a means of compounding) send by junior vault
     uint256 public dnGmxJuniorVaultGlpBalance;
+
+    uint256 public depositCap;
+
+    uint256 public glpDepositPendingThreshold;
 
     // staked glp
     IERC20 private sGlp;
@@ -157,9 +163,15 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
 
     /// @notice sets the slippage (in bps) to use while staking on gmx
     /// @param _slippageThresholdGmxBps slippage (in bps)
-    function setThresholds(uint256 _slippageThresholdGmxBps) external onlyOwner {
+    function setThresholds(uint256 _slippageThresholdGmxBps, uint256 _glpDepositPendingThreshold) external onlyOwner {
         slippageThresholdGmxBps = _slippageThresholdGmxBps;
-        emit ThresholdsUpdated(_slippageThresholdGmxBps);
+        glpDepositPendingThreshold = _glpDepositPendingThreshold;
+        emit ThresholdsUpdated(_slippageThresholdGmxBps, _glpDepositPendingThreshold);
+    }
+
+    function setDepositCap(uint256 _depositCap) external onlyOwner {
+        depositCap = _depositCap;
+        emit DepositCapUpdated(_depositCap);
     }
 
     /// @notice pauses deposits (to prevent DOS due to GMX 15 min cooldown)
@@ -204,6 +216,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         // revert for zero values
         if (amount == 0) revert InvalidInput(0x21);
         if (receiver == address(0)) revert InvalidInput(0x22);
+        if (vaultBatchingState.roundUsdcBalance + amount > depositCap) revert DepositCapBreached();
 
         // user gives approval to batching manager to spend usdc
         usdc.transferFrom(msg.sender, address(this), amount);
@@ -244,7 +257,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     }
 
     /// @notice executes batch and deposits into appropriate vault with/without minting shares
-    function executeBatchDeposit() external {
+    function executeBatchDeposit(uint256 depositAmount) external {
         // If the deposit is paused then unpause on execute batch deposit
         if (paused()) _unpause();
 
@@ -256,7 +269,9 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
             emit VaultDeposit(glpToTransfer);
         }
 
-        _executeVaultUserBatchDeposit();
+        _executeVaultUserBatchDeposit(depositAmount);
+
+        if (vaultBatchingState.roundGlpDepositPending > 0) _pause();
     }
 
     /// @notice claim the shares received from depositing batch
@@ -317,6 +332,14 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         return vaultBatchingState.roundGlpStaked;
     }
 
+    function roundGlpDepositPending() external view returns (uint256) {
+        return vaultBatchingState.roundGlpDepositPending;
+    }
+
+    function roundSharesMinted() external view returns (uint256) {
+        return vaultBatchingState.roundSharesMinted;
+    }
+
     /// @notice get the vaultBatchingState of user deposits
     /// @param account address of user
     function userDeposits(address account) external view returns (UserDeposit memory) {
@@ -355,35 +378,56 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         // adjust for decimals and max possible slippage
         uint256 minUsdg = _roundUsdcBalance.mulDiv(price * 1e12 * (MAX_BPS - slippageThresholdGmxBps), 1e30 * MAX_BPS);
 
-        vaultBatchingState.roundGlpStaked = _stakeGlp(address(usdc), _roundUsdcBalance, minUsdg);
+        uint256 _roundGlpStaked = _stakeGlp(address(usdc), _roundUsdcBalance, minUsdg);
 
-        emit BatchStake(vaultBatchingState.currentRound, _roundUsdcBalance, vaultBatchingState.roundGlpStaked);
+        vaultBatchingState.roundGlpStaked = _roundGlpStaked;
+        vaultBatchingState.roundGlpDepositPending = _roundGlpStaked;
+
+        emit BatchStake(vaultBatchingState.currentRound, _roundUsdcBalance, _roundGlpStaked);
     }
 
-    function _executeVaultUserBatchDeposit() internal {
+    function _executeVaultUserBatchDeposit(uint256 depositAmount) internal {
         // Transfer user glp through deposit
         if (vaultBatchingState.roundGlpStaked == 0) return;
+        if (depositAmount == 0) return;
 
-        sGlp.transfer(address(bypass), vaultBatchingState.roundGlpStaked);
-        uint256 totalShares = bypass.deposit(vaultBatchingState.roundGlpStaked, address(this));
+        uint256 sGlpToDeposit;
+        uint256 _roundGlpDepositPending = vaultBatchingState.roundGlpDepositPending;
 
-        // Update round data
-        vaultBatchingState.roundDeposits[vaultBatchingState.currentRound] = RoundDeposit(
-            vaultBatchingState.roundUsdcBalance.toUint128(),
-            totalShares.toUint128()
-        );
+        if (_roundGlpDepositPending < depositAmount + glpDepositPendingThreshold)
+            sGlpToDeposit = _roundGlpDepositPending;
+        else sGlpToDeposit = depositAmount;
 
-        emit BatchDeposit(
-            vaultBatchingState.currentRound,
-            vaultBatchingState.roundUsdcBalance,
-            vaultBatchingState.roundGlpStaked,
-            totalShares
-        );
+        _roundGlpDepositPending -= sGlpToDeposit;
+        vaultBatchingState.roundGlpDepositPending = _roundGlpDepositPending;
 
-        // reset curret round's bal and increase round id
-        vaultBatchingState.roundUsdcBalance = 0;
-        vaultBatchingState.roundGlpStaked = 0;
-        ++vaultBatchingState.currentRound;
+        sGlp.transfer(address(bypass), sGlpToDeposit);
+        uint256 totalShares = bypass.deposit(sGlpToDeposit, address(this));
+
+        vaultBatchingState.roundSharesMinted += totalShares;
+
+        emit PartialBatchDeposit(vaultBatchingState.currentRound, sGlpToDeposit, totalShares);
+
+        if (_roundGlpDepositPending == 0) {
+            // Update round data
+            vaultBatchingState.roundDeposits[vaultBatchingState.currentRound] = RoundDeposit(
+                vaultBatchingState.roundUsdcBalance.toUint128(),
+                vaultBatchingState.roundSharesMinted.toUint128()
+            );
+
+            emit BatchDeposit(
+                vaultBatchingState.currentRound,
+                vaultBatchingState.roundUsdcBalance,
+                vaultBatchingState.roundGlpStaked,
+                totalShares
+            );
+
+            // reset curret round's bal and increase round id
+            vaultBatchingState.roundUsdcBalance = 0;
+            vaultBatchingState.roundGlpStaked = 0;
+            vaultBatchingState.roundSharesMinted = 0;
+            ++vaultBatchingState.currentRound;
+        }
     }
 
     function _claim(
