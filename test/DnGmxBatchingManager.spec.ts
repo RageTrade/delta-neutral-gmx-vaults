@@ -270,7 +270,7 @@ describe('Dn Gmx Batching Manager', () => {
       const roundGlpStaked = await glpBatchingManager.roundGlpStaked();
 
       // Check sGlp transfer and dnGmxJuniorVault share transfer
-      await expect(() => glpBatchingManager.executeBatchDeposit()).to.changeTokenBalance(
+      await expect(() => glpBatchingManager.executeBatchDeposit(roundGlpStaked)).to.changeTokenBalance(
         fsGlp,
         glpBatchingManager,
         roundGlpStaked.mul(-1),
@@ -301,7 +301,7 @@ describe('Dn Gmx Batching Manager', () => {
 
       const vaultBalanceBefore = await glpBatchingManager.dnGmxJuniorVaultGlpBalance();
       //Check sGlp transfer and dnGmxJuniorVault share transfer
-      await expect(() => glpBatchingManager.executeBatchDeposit()).to.changeTokenBalances(
+      await expect(() => glpBatchingManager.executeBatchDeposit(0)).to.changeTokenBalances(
         fsGlp,
         [glpBatchingManager, dnGmxJuniorVault],
         [vaultBalanceBefore.mul(-1), vaultBalanceBefore],
@@ -360,7 +360,7 @@ describe('Dn Gmx Batching Manager', () => {
       expect(await fsGlp.balanceOf(glpBatchingManager.address)).to.eq(roundGlpStaked.add(glpBalanceAfterVaultDeposit));
 
       //Check sGlp transfer and dnGmxJuniorVault share transfer
-      await expect(() => glpBatchingManager.executeBatchDeposit()).to.changeTokenBalances(
+      await expect(() => glpBatchingManager.executeBatchDeposit(roundGlpStaked)).to.changeTokenBalances(
         fsGlp,
         [glpBatchingManager, dnGmxJuniorVault],
         [roundGlpStaked.add(glpBalanceAfterVaultDeposit).mul(-1), roundGlpStaked.add(glpBalanceAfterVaultDeposit)],
@@ -422,7 +422,7 @@ describe('Dn Gmx Batching Manager', () => {
 
       await increaseBlockTimestamp(15 * 60); //15 mins
 
-      await glpBatchingManager.executeBatchDeposit();
+      await glpBatchingManager.executeBatchDeposit(parseUnits("1000000000000",18));
 
       const roundDeposit = await glpBatchingManager.roundDeposits(1);
 
@@ -457,7 +457,7 @@ describe('Dn Gmx Batching Manager', () => {
       await glpBatchingManager.executeBatchStake();
       await increaseBlockTimestamp(15 * 60); //15 mins
 
-      await glpBatchingManager.executeBatchDeposit();
+      await glpBatchingManager.executeBatchDeposit(parseUnits("1000000000000",18));
 
       const balanceBeforeDeposit = await fsGlp.balanceOf(glpBatchingManager.address);
 
@@ -501,7 +501,7 @@ describe('Dn Gmx Batching Manager', () => {
 
       await increaseBlockTimestamp(15 * 60); //15 mins
 
-      await glpBatchingManager.executeBatchDeposit();
+      await glpBatchingManager.executeBatchDeposit(parseUnits("1000000000000",18));
 
       const roundDeposit = await glpBatchingManager.roundDeposits(1);
 
@@ -545,7 +545,7 @@ describe('Dn Gmx Batching Manager', () => {
       await increaseBlockTimestamp(15 * 60); //15 mins
       const user1Share = await fsGlp.balanceOf(glpBatchingManager.address);
 
-      await glpBatchingManager.executeBatchDeposit();
+      await glpBatchingManager.executeBatchDeposit(parseUnits("1000000000000",18));
 
       const shareAmountWithdrawn = user1Share.div(5);
       await expect(() =>
@@ -590,7 +590,7 @@ describe('Dn Gmx Batching Manager', () => {
       expect(await glpBatchingManager.paused()).to.true;
 
       const prevRound = await glpBatchingManager.currentRound();
-      await glpBatchingManager.executeBatchDeposit();
+      await glpBatchingManager.executeBatchDeposit(parseUnits("1000000000000",18));
       const postRound = await glpBatchingManager.currentRound();
 
       expect(postRound).to.eq(prevRound.add(1));
@@ -642,7 +642,7 @@ describe('Dn Gmx Batching Manager', () => {
       expect(await glpBatchingManager.paused()).to.true;
 
       const prevRound = await glpBatchingManager.currentRound();
-      await glpBatchingManager.executeBatchDeposit();
+      await glpBatchingManager.executeBatchDeposit(parseUnits("1000000000000",18));
       const postRound = await glpBatchingManager.currentRound();
 
       expect(postRound).to.eq(prevRound.add(1));
@@ -666,7 +666,7 @@ describe('Dn Gmx Batching Manager', () => {
 
       await glpBatchingManager.executeBatchStake();
       await increaseBlockTimestamp(15 * 60);
-      await glpBatchingManager.executeBatchDeposit();
+      await glpBatchingManager.executeBatchDeposit(parseUnits("1000000000000",18));
       await dnGmxJuniorVault.rebalance();
 
       const unclaimedShares = await glpBatchingManager.unclaimedShares(users[1].address);
@@ -743,7 +743,7 @@ describe('Dn Gmx Batching Manager', () => {
 
       await glpBatchingManager.executeBatchStake();
       await increaseBlockTimestamp(15 * 60);
-      await glpBatchingManager.executeBatchDeposit();
+      await glpBatchingManager.executeBatchDeposit(parseUnits("1000000000000",18));
       await dnGmxJuniorVault.rebalance();
 
       const unclaimedShares = await glpBatchingManager.unclaimedShares(users[1].address);
