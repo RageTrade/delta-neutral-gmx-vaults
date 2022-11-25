@@ -257,7 +257,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     }
 
     /// @notice executes batch and deposits into appropriate vault with/without minting shares
-    function executeBatchDeposit(uint256 depositAmount) external {
+    function executeBatchDeposit(uint256 depositAmount) external onlyKeeper {
         // If the deposit is paused then unpause on execute batch deposit
         if (paused()) _unpause();
 
