@@ -69,6 +69,7 @@ export interface NetworkInfo {
   // batching manager
   KEEPER_BATCHING_MANAGER: string;
   SLIPPAGE_THRESHOLD_BATCHING_MANAGER: BigNumberish;
+  GLP_DEPOSIT_PENDING_THRESHOLD: BigNumberish;
 
   // withdraw periphery
   SLIPPAGE_THRESHOLD_WITHDRAW_PERIPHERY: BigNumberish;
@@ -143,6 +144,7 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
     // batching manager
     KEEPER_BATCHING_MANAGER: '0x6189ED8744695ed773f8feB1eAC02864a07B59E2',
     SLIPPAGE_THRESHOLD_BATCHING_MANAGER: 55,
+    GLP_DEPOSIT_PENDING_THRESHOLD: parseUnits('10', 18),
 
     // withdraw periphery
     SLIPPAGE_THRESHOLD_WITHDRAW_PERIPHERY: 40,
@@ -209,6 +211,7 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
     // batching manager
     KEEPER_BATCHING_MANAGER: '0x111375FAe3228bdE95F82581270a1E2Ef82Ef203',
     SLIPPAGE_THRESHOLD_BATCHING_MANAGER: 100,
+    GLP_DEPOSIT_PENDING_THRESHOLD: parseUnits('10', 18),
 
     // withdraw periphery
     SLIPPAGE_THRESHOLD_WITHDRAW_PERIPHERY: 100,

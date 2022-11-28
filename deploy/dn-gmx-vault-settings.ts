@@ -30,6 +30,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     FEE_BPS,
     KEEPER_BATCHING_MANAGER,
     SLIPPAGE_THRESHOLD_BATCHING_MANAGER,
+    GLP_DEPOSIT_PENDING_THRESHOLD,
     SLIPPAGE_THRESHOLD_WITHDRAW_PERIPHERY,
   } = await getNetworkInfo();
 
@@ -144,6 +145,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     { from: deployer, log: true, waitConfirmations },
     'setThresholds',
     SLIPPAGE_THRESHOLD_BATCHING_MANAGER,
+    GLP_DEPOSIT_PENDING_THRESHOLD,
   );
 
   await execute('DnGmxBatchingManager', { from: deployer, log: true, waitConfirmations }, 'grantAllowances');
