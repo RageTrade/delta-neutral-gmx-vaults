@@ -19,7 +19,7 @@ describe('Deposit Periphery', () => {
       depositPeriphery.setAddresses(dnGmxJuniorVault.address, dnGmxJuniorVault.address, rewardRouter.address),
     )
       .to.emit(depositPeriphery, 'AddressesUpdated')
-      .withArgs(dnGmxJuniorVault.address, rewardRouter.address);
+      .withArgs(dnGmxJuniorVault.address, dnGmxJuniorVault.address, rewardRouter.address);
 
     await expect(depositPeriphery.connect(users[5]).setSlippageThreshold(100)).to.be.revertedWith(
       `VM Exception while processing transaction: reverted with reason string 'Ownable: caller is not the owner'`,
