@@ -79,7 +79,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
 
   await depositPeriphery.setSlippageThreshold(100);
   ///@dev setting JIT router as junior vault since JIT router is not available in current fork state
-  await depositPeriphery.setAddresses(dnGmxJuniorVault.address, dnGmxJuniorVault.address, rewardRouter.address);
+  await depositPeriphery.setAddresses(dnGmxJuniorVault.address, rewardRouter.address);
 
   await dnGmxJuniorVault.setFeeParams(1000, feeRecipient.address);
 

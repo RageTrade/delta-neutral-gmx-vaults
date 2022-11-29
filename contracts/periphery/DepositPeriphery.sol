@@ -11,7 +11,6 @@ import { Ownable } from '@openzeppelin/contracts/access/Ownable.sol';
 import { IERC20 } from '@openzeppelin/contracts/interfaces/IERC20.sol';
 import { IERC20Metadata } from '@openzeppelin/contracts/interfaces/IERC20Metadata.sol';
 
-import { IDnGmxRouter } from '../interfaces/jit/IDnGmxRouter.sol';
 import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
 
 import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
@@ -37,7 +36,7 @@ contract DepositPeriphery is Ownable {
 
     event SlippageThresholdUpdated(uint256 newSlippageThreshold);
 
-    event AddressesUpdated(address jitRouter, address juniorVault, address rewardRouter);
+    event AddressesUpdated(address juniorVault, address rewardRouter);
 
     uint256 internal constant MAX_BPS = 10_000;
     // same price precision is used in gmx's Vault (Vault.sol)
@@ -56,8 +55,6 @@ contract DepositPeriphery is Ownable {
     // gmx's RewardRouterV2 (RewardRouterV2.sol) contract
     IRewardRouterV2 internal rewardRouter;
 
-    // JIT router for deposits
-    IDnGmxRouter internal jitRouter;
     // delta neutral junior tranche
     IDnGmxJuniorVault internal dnGmxJuniorVault;
 
@@ -70,15 +67,9 @@ contract DepositPeriphery is Ownable {
 
     /// @notice sets the required external contract address in order to swap glp for tokens
     /// @dev only owner call this setter function
-    /// @param _jitRouter just-in-time liqudity router for better slippages for junior vault
     /// @param _dnGmxJuniorVault junior tranche of delta neutral vault
     /// @param _rewardRouter reward router v2 of gmx protocol
-    function setAddresses(
-        IDnGmxRouter _jitRouter,
-        IDnGmxJuniorVault _dnGmxJuniorVault,
-        IRewardRouterV2 _rewardRouter
-    ) external onlyOwner {
-        jitRouter = _jitRouter;
+    function setAddresses(IDnGmxJuniorVault _dnGmxJuniorVault, IRewardRouterV2 _rewardRouter) external onlyOwner {
         rewardRouter = _rewardRouter;
         dnGmxJuniorVault = _dnGmxJuniorVault;
 
@@ -91,12 +82,10 @@ contract DepositPeriphery is Ownable {
         // query gmxVault from glpManager
         gmxVault = IVault(glpManager.vault());
 
-        // give allowance to JIT router
-        sGlp.approve(address(_jitRouter), type(uint256).max);
         // give allowance to glpManager to pull & burn sGlp
         sGlp.approve(address(_dnGmxJuniorVault), type(uint256).max);
 
-        emit AddressesUpdated(address(_jitRouter), address(_dnGmxJuniorVault), address(_rewardRouter));
+        emit AddressesUpdated(address(_dnGmxJuniorVault), address(_rewardRouter));
     }
 
     /// @notice allows to use tokens to deposit into junior vault
@@ -114,25 +103,6 @@ contract DepositPeriphery is Ownable {
         uint256 glpReceived = _convertToSglp(token, tokenAmount);
 
         sharesReceived = dnGmxJuniorVault.deposit(glpReceived, receiver);
-
-        emit TokenDeposited(msg.sender, receiver, token, glpReceived, sharesReceived, tokenAmount);
-    }
-
-    /// @notice allows to use tokens to deposit into junior vault using JIT router
-    /// @param token input token
-    /// @param receiver address of the receiver
-    /// @param tokenAmount amount of token to deposit
-    /// @return sharesReceived shares received in exchange of token
-    function depositTokenWithJIT(
-        address token,
-        address receiver,
-        uint256 tokenAmount
-    ) external returns (uint256 sharesReceived) {
-        IERC20(token).transferFrom(msg.sender, address(this), tokenAmount);
-
-        uint256 glpReceived = _convertToSglp(token, tokenAmount);
-
-        sharesReceived = jitRouter.deposit(glpReceived, receiver);
 
         emit TokenDeposited(msg.sender, receiver, token, glpReceived, sharesReceived, tokenAmount);
     }
