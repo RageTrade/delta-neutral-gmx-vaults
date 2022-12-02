@@ -163,8 +163,11 @@ library DnGmxJuniorVaultManager {
         IRewardTracker sGmx;
         // glp manager (for giving assets allowance and fetching AUM)
         IGlpManager glpManager;
-        // rewardRouter to stake & unstake glp
+        // old rewardRouter for all actions except minting and burning glp
         IRewardRouterV2 rewardRouter;
+        // new rewardRouter to be used for mintAndStakeGlp and unstakeAndRedeem
+        // ref: https://medium.com/@gmx.io/gmx-deployment-updates-nov-2022-16572314874d
+        IRewardRouterV2 mintBurnRewardRouter;
 
         // other external protocols
         // uniswap swap router for token swaps
@@ -650,7 +653,12 @@ library DnGmxJuniorVaultManager {
         // calculate the amount of glp to be converted to get the desired usdc amount
         uint256 glpAmountInput = usdcAmountDesired.mulDivDown(PRICE_PRECISION, _getGlpPriceInUsdc(state, false));
 
-        usdcAmountOut = state.rewardRouter.unstakeAndRedeemGlp(_usdc, glpAmountInput, minUsdcOut, address(this));
+        usdcAmountOut = state.mintBurnRewardRouter.unstakeAndRedeemGlp(
+            _usdc,
+            glpAmountInput,
+            minUsdcOut,
+            address(this)
+        );
 
         emit GlpSwapped(glpAmountInput, usdcAmountOut, true);
 
