@@ -92,6 +92,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         string calldata _symbol,
         address _swapRouter,
         address _rewardRouter,
+        address _mintBurnRewardRouter,
         DnGmxJuniorVaultManager.Tokens calldata _tokens,
         IPoolAddressesProvider _poolAddressesProvider
     ) external initializer {
@@ -105,6 +106,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
 
         state.swapRouter = ISwapRouter(_swapRouter);
         state.rewardRouter = IRewardRouterV2(_rewardRouter);
+        state.mintBurnRewardRouter = IRewardRouterV2(_mintBurnRewardRouter);
 
         state.poolAddressProvider = _poolAddressesProvider;
 
