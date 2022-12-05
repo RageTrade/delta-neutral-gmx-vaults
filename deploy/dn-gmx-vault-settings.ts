@@ -29,9 +29,11 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     FEE_RECIPIENT,
     FEE_BPS,
     KEEPER_BATCHING_MANAGER,
+    ROUND_DEPOSIT_CAP,
     SLIPPAGE_THRESHOLD_BATCHING_MANAGER,
     GLP_DEPOSIT_PENDING_THRESHOLD,
     SLIPPAGE_THRESHOLD_WITHDRAW_PERIPHERY,
+    SLIPPAGE_THRESHOLD_DEPOSIT_PERIPHERY,
   } = await getNetworkInfo();
 
   const DnGmxJuniorVaultDeployment = await get('DnGmxJuniorVault');
@@ -164,6 +166,13 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     KEEPER_BATCHING_MANAGER,
   );
 
+  await execute(
+    'DnGmxBatchingManager',
+    { from: deployer, log: true, waitConfirmations },
+    'setDepositCap',
+    ROUND_DEPOSIT_CAP,
+  );
+
   // batching manager bypass
 
   await execute(
@@ -174,6 +183,23 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   );
 
   await execute('BatchingManagerBypass', { from: deployer, log: true, waitConfirmations }, 'setSglp', GMX_SGLP_ADDRESS);
+
+  // deposit periphery
+
+  await execute(
+    'DepositPeriphery',
+    { from: deployer, log: true, waitConfirmations },
+    'setAddresses',
+    DnGmxJuniorVaultDeployment.address,
+    GMX_REWARD_ROUTER,
+  );
+
+  await execute(
+    'DepositPeriphery',
+    { from: deployer, log: true, waitConfirmations },
+    'setSlippageThreshold',
+    SLIPPAGE_THRESHOLD_DEPOSIT_PERIPHERY,
+  );
 
   // withdraw periphery
 
@@ -201,6 +227,7 @@ func.dependencies = [
   'DnGmxSeniorVault',
   'DnGmxBatchingManager',
   'WithdrawPeriphery',
+  'DepositPeriphery',
   'BatchingManagerBypass',
   'BalancerVault',
 ];

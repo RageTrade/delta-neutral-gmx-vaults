@@ -20,6 +20,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     GMX_SGLP_ADDRESS,
     GMX_REWARD_ROUTER,
+    GMX_MINT_BURN_REWARD_ROUTER
   } = await getNetworkInfo();
 
   const ProxyAdminDeployment = await get('ProxyAdmin');
@@ -37,6 +38,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         'DN_GMX_JUNIOR', // _symbol
         UNI_V3_SWAP_ROUTER,
         GMX_REWARD_ROUTER,
+        GMX_MINT_BURN_REWARD_ROUTER,
         {
           weth: WETH_ADDRESS,
           wbtc: WBTC_ADDRESS,
