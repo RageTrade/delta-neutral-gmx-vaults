@@ -21,6 +21,7 @@ export interface NetworkInfo {
   USDC_ADDRESS: string;
 
   GMX_REWARD_ROUTER: string;
+  GMX_MINT_BURN_REWARD_ROUTER: string;
   GMX_SGLP_ADDRESS: string;
   GLP_MANAGER: string;
 
@@ -68,11 +69,15 @@ export interface NetworkInfo {
 
   // batching manager
   KEEPER_BATCHING_MANAGER: string;
+  ROUND_DEPOSIT_CAP: BigNumberish;
   SLIPPAGE_THRESHOLD_BATCHING_MANAGER: BigNumberish;
   GLP_DEPOSIT_PENDING_THRESHOLD: BigNumberish;
 
   // withdraw periphery
   SLIPPAGE_THRESHOLD_WITHDRAW_PERIPHERY: BigNumberish;
+
+  // deposit periphery
+  SLIPPAGE_THRESHOLD_DEPOSIT_PERIPHERY: BigNumberish;
 }
 
 export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
@@ -91,6 +96,7 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
     USDC_ADDRESS: tokensAddresses.usdcAddress,
 
     GMX_REWARD_ROUTER: '0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1',
+    GMX_MINT_BURN_REWARD_ROUTER: '0xB95DB5B167D75e6d04227CfFFA61069348d271F5',
     GMX_SGLP_ADDRESS: '0x2F546AD4eDD93B956C8999Be404cdCAFde3E89AE',
     GLP_MANAGER: '0x321F653eED006AD1C29D174e17d96351BDe22649',
 
@@ -143,11 +149,13 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
 
     // batching manager
     KEEPER_BATCHING_MANAGER: '0x6189ED8744695ed773f8feB1eAC02864a07B59E2',
+    ROUND_DEPOSIT_CAP: parseUnits('750000', 6),
     SLIPPAGE_THRESHOLD_BATCHING_MANAGER: 55,
-    GLP_DEPOSIT_PENDING_THRESHOLD: parseUnits('10', 18),
+    GLP_DEPOSIT_PENDING_THRESHOLD: parseUnits('20', 18),
 
     // withdraw periphery
     SLIPPAGE_THRESHOLD_WITHDRAW_PERIPHERY: 40,
+    SLIPPAGE_THRESHOLD_DEPOSIT_PERIPHERY: 40
   };
 
   const arbgoerliNetworkInfo: NetworkInfo = {
@@ -158,6 +166,7 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
     USDC_ADDRESS: '0x6775842AE82BF2F0f987b10526768Ad89d79536E',
 
     GMX_REWARD_ROUTER: '0xB627689d94BE29451b3E4Fa734F9cA4Be83b7eE3',
+    GMX_MINT_BURN_REWARD_ROUTER: '',
     GMX_SGLP_ADDRESS: '0x28Fa343Dc9af1B976688C6551784FF9AC20D2937',
     GLP_MANAGER: '0x17e14B4C2C519DC119ffE9E01520650D938fcD94',
 
@@ -210,11 +219,13 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
 
     // batching manager
     KEEPER_BATCHING_MANAGER: '0x111375FAe3228bdE95F82581270a1E2Ef82Ef203',
+    ROUND_DEPOSIT_CAP: parseUnits('750000', 6),
     SLIPPAGE_THRESHOLD_BATCHING_MANAGER: 100,
-    GLP_DEPOSIT_PENDING_THRESHOLD: parseUnits('10', 18),
+    GLP_DEPOSIT_PENDING_THRESHOLD: parseUnits('20', 18),
 
     // withdraw periphery
     SLIPPAGE_THRESHOLD_WITHDRAW_PERIPHERY: 100,
+    SLIPPAGE_THRESHOLD_DEPOSIT_PERIPHERY: 40
   };
 
   switch (chainId) {
