@@ -122,7 +122,7 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
     // junior vault
     FEE_BPS: 1_500,
     FEE_RECIPIENT: '0x507c7777837B85EDe1e67f5A4554dDD7e58b1F87',
-    WITHDRAW_FEE_BPS: 50,
+    WITHDRAW_FEE_BPS: 20,
     FEE_TIER_WETH_WBTC_POOL: 500,
 
     TARGET_HEALTH_FACTOR: 15_000,
@@ -130,7 +130,7 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
     THRESHOLDS: {
       slippageThresholdSwapBtcBps: 100,
       slippageThresholdSwapEthBps: 15,
-      slippageThresholdGmxBps: 50,
+      slippageThresholdGmxBps: 30,
       usdcConversionThreshold: parseUnits('10', 6),
       wethConversionThreshold: parseUnits('0.00625', 18),
       hedgeUsdcAmountThreshold: parseUnits('10', 6),
@@ -155,7 +155,7 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
 
     // withdraw periphery
     SLIPPAGE_THRESHOLD_WITHDRAW_PERIPHERY: 40,
-    SLIPPAGE_THRESHOLD_DEPOSIT_PERIPHERY: 40
+    SLIPPAGE_THRESHOLD_DEPOSIT_PERIPHERY: 40,
   };
 
   const arbgoerliNetworkInfo: NetworkInfo = {
@@ -225,7 +225,7 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
 
     // withdraw periphery
     SLIPPAGE_THRESHOLD_WITHDRAW_PERIPHERY: 100,
-    SLIPPAGE_THRESHOLD_DEPOSIT_PERIPHERY: 40
+    SLIPPAGE_THRESHOLD_DEPOSIT_PERIPHERY: 40,
   };
 
   switch (chainId) {
