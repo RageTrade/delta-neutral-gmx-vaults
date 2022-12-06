@@ -1,6 +1,6 @@
 {
   "name": "@ragetrade/delta-neutral-gmx-vaults",
-  "version": "1.0.2-alpha",
+  "version": "1.0.2-alpha.1",
   "repository": "https://github.com/RageTrade/delta-neutral-gmx-vaults.git",
   "license": "MIT",
   "scripts": {
