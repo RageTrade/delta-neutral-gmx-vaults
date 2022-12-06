@@ -20,7 +20,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     TARGET_HEALTH_FACTOR,
     AAVE_REWARDS_CONTROLLER,
     GMX_SGLP_ADDRESS,
-    GMX_REWARD_ROUTER,
+    GMX_MINT_BURN_REWARD_ROUTER,
     DEPOSIT_CAP_JR_VAULT,
     DEPOSIT_CAP_SR_VAULT,
     MAX_UTILIZATION_BPS,
@@ -191,7 +191,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     { from: deployer, log: true, waitConfirmations },
     'setAddresses',
     DnGmxJuniorVaultDeployment.address,
-    GMX_REWARD_ROUTER,
+    GMX_MINT_BURN_REWARD_ROUTER,
   );
 
   await execute(
@@ -208,7 +208,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     { from: deployer, log: true, waitConfirmations },
     'setAddresses',
     DnGmxJuniorVaultDeployment.address,
-    GMX_REWARD_ROUTER,
+    GMX_MINT_BURN_REWARD_ROUTER,
   );
 
   await execute(
