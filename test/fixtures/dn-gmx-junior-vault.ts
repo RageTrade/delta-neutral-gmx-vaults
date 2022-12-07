@@ -64,15 +64,27 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     addresses.AAVE_POOL_ADDRESS_PROVIDER, // _poolAddressesProvider
   );
 
-  const periphery = await (await hre.ethers.getContractFactory('WithdrawPeriphery')).deploy();
-
   const bypass = await (await hre.ethers.getContractFactory('BatchingManagerBypass')).deploy();
 
   await bypass.setJuniorVault(dnGmxJuniorVault.address);
   await bypass.setSglp(GMX_ECOSYSTEM_ADDRESSES.StakedGlp);
 
-  await periphery.setSlippageThreshold(100);
-  await periphery.setAddresses(dnGmxJuniorVault.address, rewardRouter.address);
+  // withdraw periphery
+  const withdrawPeriphery = await (await hre.ethers.getContractFactory('WithdrawPeriphery')).deploy();
+
+  await withdrawPeriphery.setSlippageThreshold(100);
+  await withdrawPeriphery.setAddresses(dnGmxJuniorVault.address, rewardRouter.address);
+
+  // deposit periphery
+  const depositPeriphery = await (await hre.ethers.getContractFactory('DepositPeriphery')).deploy();
+
+  await depositPeriphery.setSlippageThreshold(100);
+  ///@dev setting JIT router as junior vault since JIT router is not available in current fork state
+  await depositPeriphery.setAddresses(
+    dnGmxJuniorVault.address,
+    rewardRouter.address,
+    GMX_ECOSYSTEM_ADDRESSES.GlpManager,
+  );
 
   await dnGmxJuniorVault.setFeeParams(1000, feeRecipient.address);
 
@@ -240,7 +252,8 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     gmxVault,
     glpManager,
     lendingPool,
-    periphery,
+    depositPeriphery,
+    withdrawPeriphery,
     dnGmxSeniorVault,
     dnGmxJuniorVault,
     dnGmxJuniorVaultManager,
