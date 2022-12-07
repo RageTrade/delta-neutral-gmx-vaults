@@ -69,15 +69,19 @@ contract DepositPeriphery is Ownable {
     /// @dev only owner call this setter function
     /// @param _dnGmxJuniorVault junior tranche of delta neutral vault
     /// @param _rewardRouter reward router v2 of gmx protocol
-    function setAddresses(IDnGmxJuniorVault _dnGmxJuniorVault, IRewardRouterV2 _rewardRouter) external onlyOwner {
+    /// @param _glpManager glp manager of gmx protocol
+    function setAddresses(
+        IDnGmxJuniorVault _dnGmxJuniorVault,
+        IRewardRouterV2 _rewardRouter,
+        IGlpManager _glpManager
+    ) external onlyOwner {
         rewardRouter = _rewardRouter;
         dnGmxJuniorVault = _dnGmxJuniorVault;
 
         // query sGlp direclty from junior tranche
         sGlp = ISglpExtended(dnGmxJuniorVault.asset());
 
-        // query glpManager from sGlp
-        glpManager = IGlpManager(sGlp.glpManager());
+        glpManager = _glpManager;
 
         // query gmxVault from glpManager
         gmxVault = IVault(glpManager.vault());
@@ -116,7 +120,7 @@ contract DepositPeriphery is Ownable {
 
         // USDG has 18 decimals
         uint256 minUsdgOut = tokenAmount.mulDiv(
-            price * (MAX_BPS - slippageThreshold) * 10**(18 - decimals),
+            price * (MAX_BPS - slippageThreshold) * 10 ** (18 - decimals),
             PRICE_PRECISION * MAX_BPS
         );
 
