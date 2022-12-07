@@ -54,6 +54,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     'DN_GMX', // _symbol
     addresses.UNI_V3_SWAP_ROUTER, // _swapRouter
     GMX_ECOSYSTEM_ADDRESSES.RewardRouter, // _rewardRouter
+    GMX_ECOSYSTEM_ADDRESSES.RewardRouter, // _mintBurnRewardRouter
     {
       weth: addresses.WETH,
       wbtc: addresses.WBTC,
