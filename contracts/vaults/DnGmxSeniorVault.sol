@@ -110,6 +110,16 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         emit AllowancesGranted();
     }
 
+    /// @notice pause deposit, mint, withdraw and redeem
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /// @notice unpause deposit, mint, withdraw and redeem
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
     /*//////////////////////////////////////////////////////////////
                              ADMIN SETTERS
     //////////////////////////////////////////////////////////////*/
