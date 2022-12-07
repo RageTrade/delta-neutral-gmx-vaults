@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { BigNumber, constants } from 'ethers';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
 import hre, { ethers } from 'hardhat';
+import { GMX_ECOSYSTEM_ADDRESSES } from './fixtures/addresses';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 import { generateErc20Balance } from './utils/generator';
 
@@ -15,7 +16,9 @@ describe('Deposit Periphery', () => {
       .to.emit(depositPeriphery, 'SlippageThresholdUpdated')
       .withArgs(BigNumber.from(100));
 
-    await expect(depositPeriphery.setAddresses(dnGmxJuniorVault.address, rewardRouter.address))
+    await expect(
+      depositPeriphery.setAddresses(dnGmxJuniorVault.address, rewardRouter.address, GMX_ECOSYSTEM_ADDRESSES.GlpManager),
+    )
       .to.emit(depositPeriphery, 'AddressesUpdated')
       .withArgs(dnGmxJuniorVault.address, rewardRouter.address);
 
@@ -24,7 +27,9 @@ describe('Deposit Periphery', () => {
     );
 
     await expect(
-      depositPeriphery.connect(users[5]).setAddresses(dnGmxJuniorVault.address, rewardRouter.address),
+      depositPeriphery
+        .connect(users[5])
+        .setAddresses(dnGmxJuniorVault.address, rewardRouter.address, GMX_ECOSYSTEM_ADDRESSES.GlpManager),
     ).to.be.revertedWith(
       `VM Exception while processing transaction: reverted with reason string 'Ownable: caller is not the owner'`,
     );
