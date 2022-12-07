@@ -96,7 +96,7 @@ contract WithdrawPeriphery is Ownable {
 
         rewardRouter = _rewardRouter;
         // query glpManager from sGlp
-        glpManager = IGlpManager(sGlp.glpManager());
+        glpManager = IGlpManager(rewardRouter.glpManager());
 
         // query gmxVault from glpManager
         gmxVault = IVault(glpManager.vault());

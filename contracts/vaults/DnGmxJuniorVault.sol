@@ -111,7 +111,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         state.poolAddressProvider = _poolAddressesProvider;
 
         state.glp = IERC20Metadata(ISglpExtended(asset).glp());
-        state.glpManager = IGlpManager(ISglpExtended(asset).glpManager());
+        state.glpManager = IGlpManager(IRewardRouterV2(_mintBurnRewardRouter).glpManager());
         state.fsGlp = IERC20(ISglpExtended(asset).stakedGlpTracker());
 
         state.gmxVault = IVault(state.glpManager.vault());
@@ -283,6 +283,12 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         state.oracle = oracle;
 
         emit HedgeParamsUpdated(vault, swapRouter, targetHealthFactor, aaveRewardsController, pool, oracle);
+    }
+
+    /// @notice set GMX parameters
+    /// @param _glpManager GMX glp manager
+    function setGmxParams(IGlpManager _glpManager) external onlyOwner {
+        state.glpManager = _glpManager;
     }
 
     /// @notice pause deposit, mint, withdraw and redeem
