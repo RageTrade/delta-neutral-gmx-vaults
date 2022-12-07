@@ -98,7 +98,7 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
     GMX_REWARD_ROUTER: '0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1',
     GMX_MINT_BURN_REWARD_ROUTER: '0xB95DB5B167D75e6d04227CfFFA61069348d271F5',
     GMX_SGLP_ADDRESS: '0x2F546AD4eDD93B956C8999Be404cdCAFde3E89AE',
-    GLP_MANAGER: '0x321F653eED006AD1C29D174e17d96351BDe22649',
+    GLP_MANAGER: '0x3963FfC9dff443c2A94f21b129D429891E32ec18',
 
     BALANCER_VAULT: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     UNI_V3_SWAP_ROUTER: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
@@ -107,9 +107,9 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
     AAVE_REWARDS_CONTROLLER: '0x929EC64c34a17401F460460D4B9390518E5B473e',
 
     // senior vault
-    BORROW_CAP: parseUnits('5500000', 6),
+    BORROW_CAP: parseUnits('2000000', 6),
     MAX_UTILIZATION_BPS: 9_000,
-    DEPOSIT_CAP_SR_VAULT: parseUnits('7000000', 6),
+    DEPOSIT_CAP_SR_VAULT: parseUnits('2600000', 6),
 
     // fee split strategy
     FEE_STRATEGY_PARAMS: {
@@ -120,7 +120,7 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
     },
 
     // junior vault
-    FEE_BPS: 1_500,
+    FEE_BPS: 1_850,
     FEE_RECIPIENT: '0x507c7777837B85EDe1e67f5A4554dDD7e58b1F87',
     WITHDRAW_FEE_BPS: 20,
     FEE_TIER_WETH_WBTC_POOL: 500,
@@ -132,7 +132,7 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
       slippageThresholdSwapEthBps: 15,
       slippageThresholdGmxBps: 30,
       usdcConversionThreshold: parseUnits('10', 6),
-      wethConversionThreshold: parseUnits('0.00625', 18),
+      wethConversionThreshold: parseUnits('0.0125', 18),
       hedgeUsdcAmountThreshold: parseUnits('10', 6),
       partialBtcHedgeUsdcAmountThreshold: parseUnits('50000', 6),
       partialEthHedgeUsdcAmountThreshold: parseUnits('200000', 6),
@@ -145,13 +145,13 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
     },
 
     KEEPER_JR_VAULT: '0x57F980d4446f5D51D2A6DD2B9BC624C59E9d09c0',
-    DEPOSIT_CAP_JR_VAULT: parseEther('10640000'),
+    DEPOSIT_CAP_JR_VAULT: parseEther('5250000'),
 
     // batching manager
     KEEPER_BATCHING_MANAGER: '0x6189ED8744695ed773f8feB1eAC02864a07B59E2',
-    ROUND_DEPOSIT_CAP: parseUnits('750000', 6),
+    ROUND_DEPOSIT_CAP: parseUnits('500000', 6),
     SLIPPAGE_THRESHOLD_BATCHING_MANAGER: 55,
-    GLP_DEPOSIT_PENDING_THRESHOLD: parseUnits('20', 18),
+    GLP_DEPOSIT_PENDING_THRESHOLD: parseUnits('25', 18),
 
     // withdraw periphery
     SLIPPAGE_THRESHOLD_WITHDRAW_PERIPHERY: 40,
