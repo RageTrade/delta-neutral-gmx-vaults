@@ -419,7 +419,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
                 vaultBatchingState.currentRound,
                 vaultBatchingState.roundUsdcBalance,
                 vaultBatchingState.roundGlpStaked,
-                totalShares
+                vaultBatchingState.roundSharesMinted
             );
 
             // reset curret round's bal and increase round id
