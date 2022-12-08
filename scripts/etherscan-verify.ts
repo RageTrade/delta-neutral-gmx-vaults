@@ -32,6 +32,7 @@ async function main() {
         'DN_GMX_JUNIOR', // _symbol
         ni.UNI_V3_SWAP_ROUTER,
         ni.GMX_REWARD_ROUTER,
+        ni.GMX_MINT_BURN_REWARD_ROUTER,
         {
           weth: ni.WETH_ADDRESS,
           wbtc: ni.WBTC_ADDRESS,
