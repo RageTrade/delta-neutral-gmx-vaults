@@ -157,7 +157,10 @@ export default {
     alwaysGenerateOverloads: false,
   },
   dependencyCompiler: {
-    paths: ['@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol'],
+    paths: [
+      '@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol',
+      '@ragetrade/core/contracts/utils/TimelockControllerWithMinDelayOverride.sol',
+    ],
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_KEY,
