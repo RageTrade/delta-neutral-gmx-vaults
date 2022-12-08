@@ -14,6 +14,7 @@ const CHAIN_ID = {
 export const skip = () => true;
 
 export interface NetworkInfo {
+  MULTISIG?: string;
   PROXY_ADMIN_ADDRESS?: string;
 
   WETH_ADDRESS: string;
@@ -89,6 +90,7 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
   );
 
   const arbmainNetworkInfo: NetworkInfo = {
+    MULTISIG: '0x622441bc2112B3C1B39fCe04b33f0Effeb357CFa',
     // PROXY_ADMIN_ADDRESS: '0xA335Dd9CeFBa34449c0A89FB4d247f395C5e3782', // TODO uncomment this
 
     WETH_ADDRESS: tokensAddresses.wethAddress,
