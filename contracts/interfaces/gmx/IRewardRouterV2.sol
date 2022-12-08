@@ -17,6 +17,8 @@ interface IRewardRouterV2 {
 
     function glpVester() external view returns (address);
 
+    function glpManager() external view returns (address);
+
     function batchStakeGmxForAccount(address[] memory _accounts, uint256[] memory _amounts) external;
 
     function stakeGmxForAccount(address _account, uint256 _amount) external;

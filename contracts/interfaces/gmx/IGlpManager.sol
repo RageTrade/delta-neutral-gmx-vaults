@@ -3,9 +3,13 @@
 pragma solidity ^0.8.0;
 
 interface IGlpManager {
+    function gov() external view returns (address);
+
     function cooldownDuration() external returns (uint256);
 
     function lastAddedAt(address _account) external returns (uint256);
+
+    function setCooldownDuration(uint256 _cooldownDuration) external;
 
     function addLiquidity(
         address _token,

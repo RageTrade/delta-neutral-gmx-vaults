@@ -13,7 +13,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const { BALANCER_VAULT } = await getNetworkInfo();
   if (BALANCER_VAULT) {
-    await save('SettlementToken', { abi: IBalancerVault__factory.abi, address: BALANCER_VAULT });
+    await save('BalancerVault', { abi: IBalancerVault__factory.abi, address: BALANCER_VAULT });
     console.log('Skipping BalancerVaultMock deployment, using BalancerVault at', BALANCER_VAULT);
     return;
   }
