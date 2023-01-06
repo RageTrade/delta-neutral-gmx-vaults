@@ -931,10 +931,10 @@
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts-upgradeable/-/contracts-upgradeable-4.7.3.tgz#f1d606e2827d409053f3e908ba4eb8adb1dd6995"
   integrity sha512-+wuegAMaLcZnLCJIvrVUDzA9z/Wp93f0Dla/4jJvIhijRrPabjQbZe6fWiECLaJyfn5ci9fqf9vTw3xpQOad2A==
 
-"@openzeppelin/contracts@3.4.2-solc-0.7":
-  version "3.4.2-solc-0.7"
-  resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-3.4.2-solc-0.7.tgz#38f4dbab672631034076ccdf2f3201fab1726635"
-  integrity sha512-W6QmqgkADuFcTLzHL8vVoNBtkwjvQRpYIAom7KiUNoLKghyx3FgH0GBjt8NRvigV1ZmMOBllvE1By1C+bi8WpA==
+"@openzeppelin/contracts@4.6.0":
+  version "4.6.0"
+  resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-4.6.0.tgz#c91cf64bc27f573836dba4122758b4743418c1b3"
+  integrity sha512-8vi4d50NNya/bQqCmaVzvHNmwHvS0OBKb7HNtuNwEE3scXWrP31fKQoGxNMT+KbzmrNZzatE3QK5p2gFONI/hg==
 
 "@openzeppelin/contracts@^4.7.3":
   version "4.7.3"
@@ -1347,11 +1347,6 @@
   resolved "https://registry.yarnpkg.com/@ungap/promise-all-settled/-/promise-all-settled-1.1.2.tgz#aa58042711d6e3275dd37dc597e5d31e8c290a44"
   integrity sha512-sL/cEvJWAnClXw0wHk85/2L0G6Sj8UB0Ctc1TEMbKSsmpRosqhwj9gWgFRZSrBr2f9tiXISwNhCPmlfqUqyb9Q==
 
-"@uniswap/lib@^4.0.1-alpha":
-  version "4.0.1-alpha"
-  resolved "https://registry.yarnpkg.com/@uniswap/lib/-/lib-4.0.1-alpha.tgz#2881008e55f075344675b3bca93f020b028fbd02"
-  integrity sha512-f6UIliwBbRsgVLxIaBANF6w09tYqc6Y/qXdsrbEmXHyFA7ILiKrIwRFXe1yOg8M3cksgVsO9N7yuL2DdCGQKBA==
-
 "@uniswap/v2-core@1.0.1":
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/@uniswap/v2-core/-/v2-core-1.0.1.tgz#af8f508bf183204779938969e2e54043e147d425"
@@ -1361,21 +1356,19 @@
   version "1.0.2-solc-0.8-simulate"
   resolved "https://github.com/uniswap/v3-core.git#d55e297b938e5b56fd1cf9fe668f5bd385be85b5"
 
-"@uniswap/v3-core@1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@uniswap/v3-core/-/v3-core-1.0.0.tgz#6c24adacc4c25dceee0ba3ca142b35adbd7e359d"
-  integrity sha512-kSC4djMGKMHj7sLMYVnn61k9nu+lHjMIxgg9CDQT+s2QYLoA56GbSK9Oxr+qJXzzygbkrmuY6cwgP6cW2JXPFA==
+"@uniswap/v3-core@1.0.2-solc-0.8-simulate":
+  version "1.0.2-solc-0.8-simulate"
+  resolved "https://registry.yarnpkg.com/@uniswap/v3-core/-/v3-core-1.0.2-solc-0.8-simulate.tgz#77fb42f2b502b4fec81844736d039fc059e8688c"
+  integrity sha512-ALAZbsb3wvUrRzeAjrTKjv1fH7UrueJ/+D8uX4yintXHxxzbnnp78Kis2pa4D26cFQ72rwM3DrZpUES9rhsEuQ==
 
-"@uniswap/v3-periphery@^1.4.0":
-  version "1.4.1"
-  resolved "https://registry.yarnpkg.com/@uniswap/v3-periphery/-/v3-periphery-1.4.1.tgz#b90f08b7386163c0abfd7258831caef6339c7862"
-  integrity sha512-Ab0ZCKOQrQMKIcpBTezTsEhWfQjItd0TtkCG8mPhoQu+wC67nPaf4hYUhM6wGHeFUmDiYY5MpEQuokB0ENvoTg==
+"@uniswap/v3-periphery@https://github.com/RageTrade/uniswap-v3-periphery.git#0faa06e447e54d582af514f847fc892c7dfb43a3":
+  version "1.4.2-solc-0.8"
+  resolved "https://github.com/RageTrade/uniswap-v3-periphery.git#0faa06e447e54d582af514f847fc892c7dfb43a3"
   dependencies:
-    "@openzeppelin/contracts" "3.4.2-solc-0.7"
-    "@uniswap/lib" "^4.0.1-alpha"
+    "@openzeppelin/contracts" "4.6.0"
     "@uniswap/v2-core" "1.0.1"
-    "@uniswap/v3-core" "1.0.0"
-    base64-sol "1.0.1"
+    "@uniswap/v3-core" "1.0.2-solc-0.8-simulate"
+    base64-sol "1.1.0"
     hardhat-watcher "^2.1.1"
 
 "@yarnpkg/lockfile@^1.1.0":
@@ -2383,10 +2376,10 @@ base64-js@^1.3.1:
   resolved "https://registry.yarnpkg.com/base64-js/-/base64-js-1.5.1.tgz#1b1b440160a5bf7ad40b650f095963481903930a"
   integrity sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==
 
-base64-sol@1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/base64-sol/-/base64-sol-1.0.1.tgz#91317aa341f0bc763811783c5729f1c2574600f6"
-  integrity sha512-ld3cCNMeXt4uJXmLZBHFGMvVpK9KsLVEhPpFRXnvSVAqABKbuNZg/+dsq3NuM+wxFLb/UrVkz7m1ciWmkMfTbg==
+base64-sol@1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/base64-sol/-/base64-sol-1.1.0.tgz#39c3c91a35790b6eb3b8e73114b46bacf0fc2865"
+  integrity sha512-mksLxtFyBcXd3LYK5UxyMj29YR//zoaeXpJaKRbnLQC0E99oCJl7VpKaJDXWAuTvnhxBU9XNYzhxSL8umsrxWg==
 
 base@^0.11.1:
   version "0.11.2"
