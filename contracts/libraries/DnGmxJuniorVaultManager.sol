@@ -29,6 +29,7 @@ import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
 
 import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMathLib.sol';
 
+import { IQuoter } from '@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 
 /**
@@ -181,8 +182,11 @@ library DnGmxJuniorVaultManager {
         // batching manager address
         IDnGmxBatchingManager batchingManager;
 
+        // !!! STORAGE EXTENSIONS !!! (reduced gaps by no. of slots added here)
+        IQuoter uniswapV3Quoter;
+
         // gaps for extending struct (if required during upgrade)
-        uint256[50] __gaps;
+        uint256[49] __gaps;
     }
 
     /// @notice stakes the rewards from the staked Glp and claims WETH to buy glp
@@ -1223,6 +1227,74 @@ library DnGmxJuniorVaultManager {
             btcAmount.mulDivDown(_getTokenPrice(state, state.wbtc), PRICE_PRECISION) +
             ethAmount.mulDivDown(_getTokenPrice(state, state.weth), PRICE_PRECISION);
         borrowValue = borrowValue.mulDivDown(PRICE_PRECISION, _getTokenPrice(state, state.usdc));
+    }
+
+    function getSlippageAdjustedAssets(State storage state, int256 assets) external view returns (uint256) {
+        return _getSlippageAdjustedAssets(state, assets);
+    }
+
+    function _getSlippageAdjustedAssets(State storage state, int256 assets) private view returns (uint256 netAssets) {
+        // get change in borrow positions to calculate amount to swap on uniswap
+        (int256 netBtcBorrowChange, int256 netEthBorrowChange) = _getNetPositionChange(state, assets);
+
+        // netSlippage returned is in glp (asset) terms
+        uint256 netSlippage = _quoteSwapSlippage(state, netBtcBorrowChange, netEthBorrowChange);
+
+        // subtract slippage from assets, and calculate shares basis that slippage adjusted asset amount
+        netAssets = assets > 0 ? uint256(assets) - netSlippage : uint256(-assets) - netSlippage;
+    }
+
+    function getNetPositionChange(State storage state, int256 assetAmount) external view returns (int256, int256) {
+        return _getNetPositionChange(state, assetAmount);
+    }
+
+    function _getNetPositionChange(State storage state, int256 assetAmount)
+        private
+        view
+        returns (int256 netBtcBorrowChange, int256 netEthBorrowChange)
+    {
+        // get current borrows
+        (uint256 currentBtcBorrow, uint256 currentEthBorrow) = _getCurrentBorrows(state);
+
+        // calculate new total assets basis assetAmount
+        uint256 total = _totalAssets(state, true);
+        uint256 totalAssetsAfter = assetAmount > 0 ? total + uint256(assetAmount) : total - uint256(assetAmount);
+
+        // get optimal borrows accounting for incoming glp deposit
+        (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrows(state, totalAssetsAfter);
+
+        // calculate the diff, i.e token amounts to be swapped on uniswap
+        // if optimal > current, swapping token to usdc
+        // if optimal < current, swapping usdc to token
+        netBtcBorrowChange = optimalBtcBorrow.toInt256() - currentBtcBorrow.toInt256();
+        netEthBorrowChange = optimalEthBorrow.toInt256() - currentEthBorrow.toInt256();
+    }
+
+    function quoteSwapSlippage(
+        State storage state,
+        int256 btcAmount,
+        int256 ethAmount
+    ) external view returns (uint256) {
+        return _quoteSwapSlippage(state, btcAmount, ethAmount);
+    }
+
+    function _quoteSwapSlippage(
+        State storage state,
+        int256 btcAmount,
+        int256 ethAmount
+    ) private view returns (uint256 slippage) {
+        uint256 btcSwapOutput = btcAmount > 0
+            ? state.uniswapV3Quoter.quoteExactInput(WBTC_TO_USDC(state), uint256(btcAmount))
+            : state.uniswapV3Quoter.quoteExactOutput(USDC_TO_WBTC(state), uint256(-btcAmount));
+
+        uint256 ethSwapOutput = ethAmount > 0
+            ? state.uniswapV3Quoter.quoteExactInput(WETH_TO_USDC(state), uint256(ethAmount))
+            : state.uniswapV3Quoter.quoteExactOutput(USDC_TO_WETH(state), uint256(-ethAmount));
+
+        uint256 btcSwapInput = _getTokenPriceInUsdc(state, state.wbtc);
+        uint256 ethSwapInput = _getTokenPriceInUsdc(state, state.weth);
+
+        // TODO: covert slippage from usdc terms to glp
     }
 
     ///@notice returns the amount of flashloan for a given token
