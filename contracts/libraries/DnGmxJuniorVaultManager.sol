@@ -255,7 +255,7 @@ library DnGmxJuniorVaultManager {
 
                 // deposits weth into batching manager which handles the conversion into glp
                 // can be taken back through batch execution
-                glpReceived = state.batchingManager.depositToken(address(state.weth), dnGmxWethShare, usdgAmount);
+                glpReceived = _stakeGlp(state, address(state.weth), dnGmxWethShare, usdgAmount);
             }
 
             if (_seniorVaultWethRewards > state.wethConversionThreshold) {
@@ -682,9 +682,22 @@ library DnGmxJuniorVaultManager {
         // conversion of token into glp using batching manager
         // batching manager handles the conversion due to the cooldown
         // glp transferred to the vault on batch execution
-        uint256 glpReceived = state.batchingManager.depositToken(address(state.usdc), amount, usdgAmount);
+
+        uint256 glpReceived = _stakeGlp(state, address(state.usdc), amount, usdgAmount);
 
         emit GlpSwapped(glpReceived, amount, false);
+    }
+
+    function _stakeGlp(
+        State storage state,
+        address token,
+        uint256 amount,
+        uint256 minUSDG
+    ) internal returns (uint256 glpStaked) {
+        // swap token to obtain sGLP
+        IERC20(token).approve(address(state.glpManager), amount);
+        // will revert if notional output is less than minUSDG
+        glpStaked = state.rewardRouter.mintAndStakeGlp(token, amount, minUSDG, 0);
     }
 
     ///@notice rebalances unhedged glp amount
@@ -1051,11 +1064,7 @@ library DnGmxJuniorVaultManager {
         // part1: glp balance in vault
         // part2: glp balance in batching manager
         // part3: pnl on AAVE (usdc deposit by junior tranche (i.e. dnUsdcDeposited) - current borrow value)
-        return
-            state.fsGlp.balanceOf(address(this)) +
-            state.batchingManager.dnGmxJuniorVaultGlpBalance() +
-            unhedgedGlp -
-            borrowValueGlp;
+        return state.fsGlp.balanceOf(address(this)) + unhedgedGlp - borrowValueGlp;
     }
 
     ///@notice returns if the rebalance is valid basis last rebalance time and rebalanceTimeThreshold

@@ -520,7 +520,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     function getVaultMarketValue() public view returns (int256 vaultMarketValue) {
         (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
         uint256 totalCurrentBorrowValue = state.getBorrowValue(currentBtc, currentEth);
-        uint256 glpBalance = state.fsGlp.balanceOf(address(this)) + state.batchingManager.dnGmxJuniorVaultGlpBalance();
+        uint256 glpBalance = state.fsGlp.balanceOf(address(this));
         vaultMarketValue = ((getMarketValue(glpBalance).toInt256() +
             state.dnUsdcDeposited +
             state.unhedgedGlpInUsdc.toInt256()) - totalCurrentBorrowValue.toInt256());
