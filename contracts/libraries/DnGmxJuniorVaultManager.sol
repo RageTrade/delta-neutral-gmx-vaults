@@ -183,7 +183,7 @@ library DnGmxJuniorVaultManager {
 
         uint128 rebalanceProfitUsdcAmountThreshold;
         // gaps for extending struct (if required during upgrade)
-        uint256[50] __gaps;
+        uint256[49] __gaps;
     }
 
     /// @notice stakes the rewards from the staked Glp and claims WETH to buy glp
