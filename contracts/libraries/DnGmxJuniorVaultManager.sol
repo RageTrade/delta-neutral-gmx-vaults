@@ -512,28 +512,26 @@ library DnGmxJuniorVaultManager {
         }
     }
 
-    ///@notice rebalances btc and eth hedges according to underlying glp token weights
-    ///@notice updates the borrowed amount from senior tranche basis the target health factor
-    ///@notice if the amount of swap for a token > theshold then a partial hedge is taken and remaining is taken separately
-    ///@notice if the amount of swap for a token < threshold complete hedge is taken
-    ///@notice in case there is not enough money in senior tranche then relevant amount of glp is converted into usdc
-    ///@dev to be called after settle profits only (since vaultMarketValue if after settlement of profits)
-    ///@param state set of all state variables of vault
-    ///@param currentBtcBorrow The amount of USDC collateral token deposited to LB Protocol
-    ///@param currentEthBorrow The market value of ETH/BTC part in sGLP
-    ///@param glpDeposited amount of glp deposited into the vault
-    ///@param isPartialAllowed true if partial hedge is allowed
-    ///@return isPartialHedge true if partial hedge is executed
-    function rebalanceHedge(
+    function _getOptimalBorrowsFinal(
         State storage state,
         uint256 currentBtcBorrow,
         uint256 currentEthBorrow,
         uint256 glpDeposited,
         bool isPartialAllowed
-    ) external returns (bool isPartialHedge) {
+    )
+        internal
+        view
+        returns (
+            uint256 optimalBtcBorrow,
+            uint256 optimalEthBorrow,
+            uint256 targetDnGmxSeniorVaultAmount,
+            uint256 optimalUncappedEthBorrow,
+            bool isPartialHedge
+        )
+    {
         // optimal btc and eth borrows
         // calculated basis the underlying token weights in glp
-        (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrows(state, glpDeposited);
+        (optimalBtcBorrow, optimalEthBorrow) = _getOptimalBorrows(state, glpDeposited);
 
         if (isPartialAllowed) {
             // if partial hedges are allowed (i.e. rebalance call and not deposit/withdraw)
@@ -572,7 +570,7 @@ library DnGmxJuniorVaultManager {
         // usdc supply value = usdc borrowed from senior tranche + borrow value
         // replacing usdc supply value formula above in AAVE target health factor formula
         // we can derive usdc amount to borrow from senior tranche i.e. targetDnGmxSeniorVaultAmount
-        uint256 targetDnGmxSeniorVaultAmount = (state.targetHealthFactor - usdcLiquidationThreshold).mulDivDown(
+        targetDnGmxSeniorVaultAmount = (state.targetHealthFactor - usdcLiquidationThreshold).mulDivDown(
             optimalBorrowValue,
             usdcLiquidationThreshold
         );
@@ -591,7 +589,7 @@ library DnGmxJuniorVaultManager {
                     // we won't be able to hedge glp completely
                     // convert some glp into usdc to keep the vault delta neutral
                     // hedge the btc/eth of remaining amount
-                    uint256 optimalUncappedEthBorrow = optimalEthBorrow;
+                    optimalUncappedEthBorrow = optimalEthBorrow;
 
                     // optimal btc and eth borrows basis the hedged part of glp
                     (optimalBtcBorrow, optimalEthBorrow) = _getOptimalCappedBorrows(
@@ -599,6 +597,56 @@ library DnGmxJuniorVaultManager {
                         currentDnGmxSeniorVaultAmount + availableBorrow,
                         usdcLiquidationThreshold
                     );
+                }
+            }
+        }
+    }
+
+    ///@notice rebalances btc and eth hedges according to underlying glp token weights
+    ///@notice updates the borrowed amount from senior tranche basis the target health factor
+    ///@notice if the amount of swap for a token > theshold then a partial hedge is taken and remaining is taken separately
+    ///@notice if the amount of swap for a token < threshold complete hedge is taken
+    ///@notice in case there is not enough money in senior tranche then relevant amount of glp is converted into usdc
+    ///@dev to be called after settle profits only (since vaultMarketValue if after settlement of profits)
+    ///@param state set of all state variables of vault
+    ///@param currentBtcBorrow The amount of USDC collateral token deposited to LB Protocol
+    ///@param currentEthBorrow The market value of ETH/BTC part in sGLP
+    ///@param glpDeposited amount of glp deposited into the vault
+    ///@param isPartialAllowed true if partial hedge is allowed
+    ///@return isPartialHedge true if partial hedge is executed
+    function rebalanceHedge(
+        State storage state,
+        uint256 currentBtcBorrow,
+        uint256 currentEthBorrow,
+        uint256 glpDeposited,
+        bool isPartialAllowed
+    ) external returns (bool isPartialHedge) {
+        uint256 optimalBtcBorrow;
+        uint256 optimalEthBorrow;
+        uint256 targetDnGmxSeniorVaultAmount;
+        uint256 currentDnGmxSeniorVaultAmount;
+        uint256 optimalUncappedEthBorrow;
+        (
+            optimalBtcBorrow,
+            optimalEthBorrow,
+            targetDnGmxSeniorVaultAmount,
+            optimalUncappedEthBorrow,
+            isPartialHedge
+        ) = _getOptimalBorrowsFinal(state, currentBtcBorrow, currentEthBorrow, glpDeposited, isPartialAllowed);
+        // current usdc borrowed from senior tranche
+        currentDnGmxSeniorVaultAmount = _getUsdcBorrowed(state);
+        if (targetDnGmxSeniorVaultAmount > currentDnGmxSeniorVaultAmount) {
+            // case where we need to borrow more usdc
+            // To get more usdc from senior tranche, so usdc is borrowed first and then hedge is updated on AAVE
+            {
+                uint256 amountToBorrow = targetDnGmxSeniorVaultAmount - currentDnGmxSeniorVaultAmount;
+                uint256 availableBorrow = state.dnGmxSeniorVault.availableBorrow(address(this));
+
+                if (amountToBorrow > availableBorrow) {
+                    // if amount to borrow > available borrow amount
+                    // we won't be able to hedge glp completely
+                    // convert some glp into usdc to keep the vault delta neutral
+                    // hedge the btc/eth of remaining amount
 
                     // rebalance the unhedged glp (increase/decrease basis the capped optimal token hedges)
                     _rebalanceUnhedgedGlp(state, optimalUncappedEthBorrow, optimalEthBorrow);
