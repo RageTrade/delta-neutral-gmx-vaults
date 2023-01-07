@@ -229,6 +229,16 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   await generateErc20Balance(usdc, BigNumber.from(10).pow(6 + 10), swapRouterMock.address);
   await generateErc20Balance(weth, BigNumber.from(10).pow(18 + 10), swapRouterMock.address);
 
+  const govAddr = await glpManager.gov();
+
+  await hre.network.provider.request({
+    method: 'hardhat_impersonateAccount',
+    params: [govAddr],
+  });
+
+  const gov_glpManager = await ethers.getSigner(govAddr);
+  await glpManager.connect(gov_glpManager).setCooldownDuration(0);
+
   return {
     glp,
     gov,
