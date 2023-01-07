@@ -1338,7 +1338,7 @@ library DnGmxJuniorVaultManager {
         uint256 totalAssetsAfter = assetAmount > 0 ? total + uint256(assetAmount) : total - uint256(assetAmount);
 
         // get optimal borrows accounting for incoming glp deposit
-        (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrows(state, totalAssetsAfter);
+        (uint256 optimalBtcBorrow, uint256 optimalEthBorrow, , , ) = _getOptimalBorrowsFinal(state,  currentBtcBorrow, currentEthBorrow, totalAssetsAfter, false);
 
         // calculate the diff, i.e token amounts to be swapped on uniswap
         // if optimal > current, swapping token to usdc
