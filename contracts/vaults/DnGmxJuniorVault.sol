@@ -234,6 +234,14 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         );
     }
 
+    /// @notice set thresholds
+    /// @param rebalanceProfitUsdcAmountThreshold (BPS) slippage threshold on btc swaps
+    function setThresholdsV1(uint128 rebalanceProfitUsdcAmountThreshold) external onlyOwner {
+        state.rebalanceProfitUsdcAmountThreshold = rebalanceProfitUsdcAmountThreshold;
+
+        emit ThresholdsV1Updated(rebalanceProfitUsdcAmountThreshold);
+    }
+
     /// @notice set rebalance paramters
     /// @param rebalanceTimeThreshold (seconds) minimum time difference required between two rebalance calls
     /// @dev a partial rebalance (rebalance where partial hedge gets taken) does not count.
