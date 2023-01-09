@@ -22,7 +22,6 @@ import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRou
 
 import { IBalancerVault } from '../interfaces/balancer/IBalancerVault.sol';
 import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
-import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
 import { IDnGmxJuniorVault, IERC4626 } from '../interfaces/IDnGmxJuniorVault.sol';
 import { IDebtToken } from '../interfaces/IDebtToken.sol';
 import { IGlpManager } from '../interfaces/gmx/IGlpManager.sol';
@@ -145,14 +144,14 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         // allowance to uniswap swap router for weth for swap
         state.weth.approve(swapRouter, type(uint256).max);
         // allowance to batching manager for weth
-        state.weth.approve(address(state.batchingManager), type(uint256).max);
+        state.weth.approve(address(state.glpManager), type(uint256).max);
 
         // allowance to aave pool for usdc for supply
         state.usdc.approve(aavePool, type(uint256).max);
         // allowance to swap router for usdc for swap
         state.usdc.approve(address(swapRouter), type(uint256).max);
         // allowance to batching manager for usdc deposits when rebalancing profits
-        state.usdc.approve(address(state.batchingManager), type(uint256).max);
+        state.usdc.approve(address(state.glpManager), type(uint256).max);
 
         // allowance to aave pool for aUSDC transfers to senior tranche
         state.aUsdc.approve(address(state.dnGmxSeniorVault), type(uint256).max);
@@ -167,13 +166,11 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @param newKeeper keeper address
     /// @param dnGmxSeniorVault senior vault address
     /// @param newDepositCap deposit cap
-    /// @param batchingManager batching manager (responsible for staking tokens into GMX)
     /// @param withdrawFeeBps fees bps on withdrawals and redeems
     function setAdminParams(
         address newKeeper,
         address dnGmxSeniorVault,
         uint256 newDepositCap,
-        address batchingManager,
         uint16 withdrawFeeBps,
         uint24 feeTierWethWbtcPool
     ) external onlyOwner {
@@ -185,9 +182,8 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         state.feeTierWethWbtcPool = feeTierWethWbtcPool;
 
         state.dnGmxSeniorVault = IDnGmxSeniorVault(dnGmxSeniorVault);
-        state.batchingManager = IDnGmxBatchingManager(batchingManager);
 
-        emit AdminParamsUpdated(newKeeper, dnGmxSeniorVault, newDepositCap, batchingManager, withdrawFeeBps);
+        emit AdminParamsUpdated(newKeeper, dnGmxSeniorVault, newDepositCap, withdrawFeeBps);
     }
 
     /// @notice set thresholds
@@ -540,7 +536,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     function getVaultMarketValue() public view returns (int256 vaultMarketValue) {
         (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
         uint256 totalCurrentBorrowValue = state.getBorrowValue(currentBtc, currentEth);
-        uint256 glpBalance = state.fsGlp.balanceOf(address(this)) + state.batchingManager.dnGmxJuniorVaultGlpBalance();
+        uint256 glpBalance = state.fsGlp.balanceOf(address(this));
         vaultMarketValue = ((getMarketValue(glpBalance).toInt256() +
             state.dnUsdcDeposited +
             state.unhedgedGlpInUsdc.toInt256()) - totalCurrentBorrowValue.toInt256());
@@ -661,7 +657,6 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
             address keeper,
             IDnGmxSeniorVault dnGmxSeniorVault,
             uint256 depositCap,
-            IDnGmxBatchingManager batchingManager,
             uint16 withdrawFeeBps,
             uint24 feeTierWethWbtcPool
         )
@@ -670,7 +665,6 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
             state.keeper,
             state.dnGmxSeniorVault,
             state.depositCap,
-            state.batchingManager,
             state.withdrawFeeBps,
             state.feeTierWethWbtcPool
         );

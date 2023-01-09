@@ -116,14 +116,8 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
 
   await glpBatchingStakingManagerFixtures.gmxBatchingManager.setBypass(bypass.address);
 
-  await dnGmxJuniorVault.setAdminParams(
-    admin.address,
-    dnGmxSeniorVault.address,
-    ethers.constants.MaxUint256,
-    glpBatchingStakingManagerFixtures.gmxBatchingManager.address,
-    50,
-    3000,
-  );
+  await dnGmxJuniorVault.setAdminParams(admin.address, dnGmxSeniorVault.address, ethers.constants.MaxUint256, 50, 3000);
+  await dnGmxJuniorVault.setBatchingManager(glpBatchingStakingManagerFixtures.gmxBatchingManager.address);
 
   await dnGmxJuniorVault.setThresholds(
     100, //_slippageThresholdSwapBtcBps
@@ -230,6 +224,16 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   await generateErc20Balance(wbtc, BigNumber.from(10).pow(8 + 10), swapRouterMock.address);
   await generateErc20Balance(usdc, BigNumber.from(10).pow(6 + 10), swapRouterMock.address);
   await generateErc20Balance(weth, BigNumber.from(10).pow(18 + 10), swapRouterMock.address);
+
+  const govAddr = await glpManager.gov();
+
+  await hre.network.provider.request({
+    method: 'hardhat_impersonateAccount',
+    params: [govAddr],
+  });
+
+  const gov_glpManager = await ethers.getSigner(govAddr);
+  await glpManager.connect(gov_glpManager).setCooldownDuration(0);
 
   return {
     glp,

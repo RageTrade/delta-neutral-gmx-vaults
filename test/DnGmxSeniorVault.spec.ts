@@ -74,7 +74,6 @@ describe('DnGmx Senior Vault', () => {
         admin.address,
         dnGmxSeniorVault.address,
         ethers.constants.MaxUint256,
-        glpBatchingManager.address,
         100,
         3000,
       );
@@ -83,7 +82,6 @@ describe('DnGmx Senior Vault', () => {
       expect(adminParams.keeper).to.eq(admin.address);
       expect(adminParams.dnGmxSeniorVault).to.eq(dnGmxSeniorVault.address);
       expect(adminParams.depositCap).to.eq(ethers.constants.MaxUint256);
-      expect(adminParams.batchingManager).to.eq(glpBatchingManager.address);
       expect(adminParams.withdrawFeeBps).to.eq(100);
       expect(adminParams.feeTierWethWbtcPool).to.eq(3000);
     });
@@ -94,7 +92,6 @@ describe('DnGmx Senior Vault', () => {
           admin.address,
           dnGmxSeniorVault.address,
           ethers.constants.MaxUint256,
-          glpBatchingManager.address,
           10_001, // bad withdrawFeeBps
           3000,
         ),
