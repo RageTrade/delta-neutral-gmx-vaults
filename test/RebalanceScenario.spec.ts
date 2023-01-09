@@ -298,7 +298,6 @@ describe('Rebalance Scenarios', () => {
       admin.address,
       dnGmxSeniorVault.address,
       ethers.constants.MaxUint256,
-      glpBatchingManager.address,
       1000,
       3000,
     );
@@ -1423,7 +1422,6 @@ describe('Rebalance Scenarios', () => {
       admin.address,
       dnGmxSeniorVault.address,
       ethers.constants.MaxUint256,
-      glpBatchingManager.address,
       1000,
       3000,
     );

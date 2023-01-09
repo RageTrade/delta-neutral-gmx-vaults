@@ -96,14 +96,7 @@ describe('Withdraw Periphery', () => {
     const { weth, users, admin, gmxVault, glpBatchingManager, withdrawPeriphery, dnGmxJuniorVault, dnGmxSeniorVault } =
       await dnGmxJuniorVaultFixture();
 
-    await dnGmxJuniorVault.setAdminParams(
-      admin.address,
-      dnGmxSeniorVault.address,
-      constants.MaxUint256,
-      glpBatchingManager.address,
-      100,
-      3000,
-    );
+    await dnGmxJuniorVault.setAdminParams(admin.address, dnGmxSeniorVault.address, constants.MaxUint256, 100, 3000);
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('100', 6), users[1].address);
 
@@ -146,14 +139,7 @@ describe('Withdraw Periphery', () => {
     const { weth, users, admin, gmxVault, glpBatchingManager, withdrawPeriphery, dnGmxJuniorVault, dnGmxSeniorVault } =
       await dnGmxJuniorVaultFixture();
 
-    await dnGmxJuniorVault.setAdminParams(
-      admin.address,
-      dnGmxSeniorVault.address,
-      constants.MaxUint256,
-      glpBatchingManager.address,
-      100,
-      3000,
-    );
+    await dnGmxJuniorVault.setAdminParams(admin.address, dnGmxSeniorVault.address, constants.MaxUint256, 100, 3000);
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('100', 6), users[1].address);
     await withdrawPeriphery.setSlippageThreshold(1);
