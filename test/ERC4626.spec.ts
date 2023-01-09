@@ -124,14 +124,7 @@ describe('Junior Vault ERC4646 functions', () => {
     } = opts;
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
-    await dnGmxJuniorVault.setAdminParams(
-      admin.address,
-      dnGmxSeniorVault.address,
-      constants.MaxUint256,
-      glpBatchingManager.address,
-      150,
-      3000,
-    );
+    await dnGmxJuniorVault.setAdminParams(admin.address, dnGmxSeniorVault.address, constants.MaxUint256, 150, 3000);
 
     const PRICE_PRECISION = BigNumber.from(10).pow(30);
 
