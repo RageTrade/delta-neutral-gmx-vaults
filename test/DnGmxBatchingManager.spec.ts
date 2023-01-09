@@ -88,25 +88,7 @@ describe('Dn Gmx Batching Manager', () => {
       expect(await fsGlp.balanceOf(glpBatchingManager.address)).to.eq(0);
     });
 
-    it('Single Vault Deposit', async () => {
-      const depositAmount = parseUnits('100', 6);
-
-      await generateErc20Balance(usdc, depositAmount, dnGmxJuniorVault.address);
-      await expect(() => dnGmxJuniorVault.depositToken(usdc.address, depositAmount, 0)).to.changeTokenBalances(
-        usdc,
-        [dnGmxJuniorVault, glpBatchingManager],
-        [depositAmount.mul(-1n), 0],
-      );
-
-      const vaultDeposit = await glpBatchingManager.dnGmxJuniorVaultGlpBalance();
-      // console.log(vaultDeposit);
-      expect(vaultDeposit).to.eq(await fsGlp.balanceOf(glpBatchingManager.address));
-
-      expect(await glpBatchingManager.roundUsdcBalance()).to.eq(0);
-      expect(await fsGlp.balanceOf(glpBatchingManager.address)).to.eq(vaultDeposit);
-    });
-
-    it('Multiple User & Vault Deposit', async () => {
+    it('Multiple User Deposit', async () => {
       const depositAmount = parseUnits('100', 6);
       await usdc.connect(users[1]).approve(glpBatchingManager.address, depositAmount);
 
@@ -117,11 +99,6 @@ describe('Dn Gmx Batching Manager', () => {
       const usdcBalanceAfterUser1Deposit = await usdc.balanceOf(glpBatchingManager.address);
 
       await generateErc20Balance(usdc, depositAmount, dnGmxJuniorVault.address);
-      await expect(() => dnGmxJuniorVault.depositToken(usdc.address, depositAmount, 0)).to.changeTokenBalance(
-        usdc,
-        dnGmxJuniorVault,
-        depositAmount.mul(-1n),
-      );
 
       const glpBalanceAfterVaultDeposit = await fsGlp.balanceOf(glpBatchingManager.address);
       await usdc.connect(users[2]).approve(glpBatchingManager.address, depositAmount);
@@ -192,7 +169,7 @@ describe('Dn Gmx Batching Manager', () => {
       expect(round1Deposit.totalShares).to.eq(0);
     });
 
-    it('Multiple User & Vault Batch Stake', async () => {
+    it('Multiple User Batch Stake', async () => {
       const depositAmount = parseUnits('100', 6);
       await usdc.connect(users[1]).approve(glpBatchingManager.address, depositAmount);
 
@@ -203,11 +180,6 @@ describe('Dn Gmx Batching Manager', () => {
       const usdcBalanceAfterUser1Deposit = await usdc.balanceOf(glpBatchingManager.address);
 
       await generateErc20Balance(usdc, depositAmount, dnGmxJuniorVault.address);
-      await expect(() => dnGmxJuniorVault.depositToken(usdc.address, depositAmount, 0)).to.changeTokenBalance(
-        usdc,
-        dnGmxJuniorVault,
-        depositAmount.mul(-1n),
-      );
 
       const glpBalanceAfterVaultDeposit = await fsGlp.balanceOf(glpBatchingManager.address);
       await usdc.connect(users[2]).approve(glpBatchingManager.address, depositAmount);
@@ -471,32 +443,7 @@ describe('Dn Gmx Batching Manager', () => {
       expect(round1Deposit.totalShares).to.eq(await dnGmxJuniorVault.balanceOf(glpBatchingManager.address));
     });
 
-    it('Vault User Batch Deposit', async () => {
-      const depositAmount = parseUnits('100', 6);
-      await generateErc20Balance(usdc, depositAmount, dnGmxJuniorVault.address);
-
-      await dnGmxJuniorVault.depositToken(usdc.address, depositAmount, 0);
-
-      await increaseBlockTimestamp(15 * 60); //15 mins
-
-      const vaultBalanceBefore = await glpBatchingManager.dnGmxJuniorVaultGlpBalance();
-      //Check sGlp transfer and dnGmxJuniorVault share transfer
-      // await expect(() => glpBatchingManager.executeBatchDeposit(0)).to.changeTokenBalances(
-      //   fsGlp,
-      //   [glpBatchingManager, dnGmxJuniorVault],
-      //   [vaultBalanceBefore.mul(-1), vaultBalanceBefore],
-      // );
-      const vaultBalance = await glpBatchingManager.dnGmxJuniorVaultGlpBalance();
-      expect(vaultBalance).to.eq(0);
-
-      expect(await dnGmxJuniorVault.balanceOf(glpBatchingManager.address)).to.eq(0);
-
-      expect(await glpBatchingManager.currentRound()).to.eq(1);
-      expect(await glpBatchingManager.roundUsdcBalance()).to.eq(0);
-      expect(await glpBatchingManager.roundGlpStaked()).to.eq(0);
-    });
-
-    it('Multiple User & Vault Batch Deposit', async () => {
+    it('Multiple User Batch Deposit', async () => {
       await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('10000', 6), users[1].address);
 
       const depositAmount = parseUnits('100', 6);
@@ -509,11 +456,6 @@ describe('Dn Gmx Batching Manager', () => {
       const usdcBalanceAfterUser1Deposit = await usdc.balanceOf(glpBatchingManager.address);
 
       await generateErc20Balance(usdc, depositAmount, dnGmxJuniorVault.address);
-      await expect(() => dnGmxJuniorVault.depositToken(usdc.address, depositAmount, 0)).to.changeTokenBalance(
-        usdc,
-        dnGmxJuniorVault,
-        depositAmount.mul(-1n),
-      );
 
       const glpBalanceAfterVaultDeposit = await fsGlp.balanceOf(glpBatchingManager.address);
       await usdc.connect(users[2]).approve(glpBatchingManager.address, depositAmount);
