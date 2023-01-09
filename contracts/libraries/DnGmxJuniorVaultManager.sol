@@ -181,8 +181,9 @@ library DnGmxJuniorVaultManager {
         // batching manager address
         IDnGmxBatchingManager batchingManager;
 
+        uint128 rebalanceProfitUsdcAmountThreshold;
         // gaps for extending struct (if required during upgrade)
-        uint256[50] __gaps;
+        uint256[49] __gaps;
     }
 
     /// @notice stakes the rewards from the staked Glp and claims WETH to buy glp
@@ -322,13 +323,17 @@ library DnGmxJuniorVaultManager {
         int256 borrowVal = borrowValue.toInt256();
 
         if (borrowVal > state.dnUsdcDeposited) {
+            uint256 diff = uint256(borrowVal - state.dnUsdcDeposited);
+            if (diff < state.rebalanceProfitUsdcAmountThreshold && !_isValidRebalanceHF(state)) return;
             // If glp goes up - there is profit on GMX and loss on AAVE
             // So convert some glp to usdc and deposit to AAVE
-            state.dnUsdcDeposited += _convertAssetToAUsdc(state, uint256(borrowVal - state.dnUsdcDeposited)).toInt256();
+            state.dnUsdcDeposited += _convertAssetToAUsdc(state, diff).toInt256();
         } else if (borrowVal < state.dnUsdcDeposited) {
+            uint256 diff = uint256(state.dnUsdcDeposited - borrowVal);
+            if (diff < state.rebalanceProfitUsdcAmountThreshold) return;
             // If glp goes down - there is profit on AAVE and loss on GMX
             // So withdraw some aave usdc and convert to glp
-            _convertAUsdcToAsset(state, uint256(state.dnUsdcDeposited - borrowVal));
+            _convertAUsdcToAsset(state, diff);
             state.dnUsdcDeposited = borrowVal;
         }
     }
@@ -1072,6 +1077,10 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@return true if the rebalance is valid basis AAVE health factor
     function isValidRebalanceHF(State storage state) external view returns (bool) {
+        return _isValidRebalanceHF(state);
+    }
+
+    function _isValidRebalanceHF(State storage state) private view returns (bool) {
         // check if health factor on AAVE is below rebalanceHfThreshold
         (, , , , , uint256 healthFactor) = state.pool.getUserAccountData(address(this));
 
