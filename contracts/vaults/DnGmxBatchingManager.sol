@@ -201,7 +201,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         address token,
         uint256 amount,
         uint256 minUSDG
-    ) external whenNotPaused onlyDnGmxJuniorVault returns (uint256 glpStaked) {
+    ) external onlyDnGmxJuniorVault returns (uint256 glpStaked) {
         // revert for zero values
         if (token == address(0)) revert InvalidInput(0x30);
         if (amount == 0) revert InvalidInput(0x31);
