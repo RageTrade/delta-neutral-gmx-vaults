@@ -450,6 +450,30 @@ describe('Junior Vault ERC4646 functions', () => {
     );
   });
 
+  it('maxDeposit overflow', async () => {
+    const opts = await dnGmxJuniorVaultFixture();
+    const { dnGmxJuniorVault, dnGmxSeniorVault, vdWBTC, vdWETH, aUSDC, fsGlp, admin, users, glpBatchingManager } = opts;
+
+    await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('100', 6), users[1].address);
+
+    const amount = parseEther('100');
+
+    await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
+
+    expect(await dnGmxJuniorVault.maxDeposit(users[0].address)).to.eq(
+      115792089237316195423570985008687907853269984665640564039357397665252224175871n,
+    );
+    await dnGmxJuniorVault.setAdminParams(
+      admin.address,
+      dnGmxSeniorVault.address,
+      0,
+      glpBatchingManager.address,
+      50,
+      3000,
+    );
+    expect(await dnGmxJuniorVault.maxDeposit(users[0].address)).to.eq(0);
+  });
+
   it('getPriceX128 - does not revert', async () => {
     const opts = await dnGmxJuniorVaultFixture();
     const { dnGmxJuniorVault, dnGmxSeniorVault, vdWBTC, vdWETH, aUSDC, fsGlp, users } = opts;
