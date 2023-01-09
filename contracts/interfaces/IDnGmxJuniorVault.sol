@@ -64,6 +64,7 @@ interface IDnGmxJuniorVault is IERC4626, IBorrower {
         uint128 partialBtcHedgeUsdcAmountThreshold,
         uint128 partialEthHedgeUsdcAmountThreshold
     );
+    event ThresholdsV1Updated(uint128 rebalanceProfitUsdcAmountThreshold);
     event RebalanceParamsUpdated(
         uint32 rebalanceTimeThreshold,
         uint16 rebalanceDeltaThresholdBps,
