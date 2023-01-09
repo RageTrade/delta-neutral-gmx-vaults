@@ -256,6 +256,8 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     function executeBatch(uint128 usdcConversionFractionBps) external onlyKeeper {
         if (!paused()) _pause();
 
+        if (usdcConversionFractionBps == 0 || usdcConversionFractionBps > MAX_BPS) revert InvalidInput(0x40);
+
         (uint128 glpReceived, uint128 usdcUsed) = _executeVaultUserBatchStake(usdcConversionFractionBps);
 
         uint128 sharesReceived = _executeVaultUserBatchDeposit(glpReceived);

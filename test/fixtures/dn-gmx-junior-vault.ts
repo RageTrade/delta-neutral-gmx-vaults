@@ -110,7 +110,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   await glpBatchingStakingManagerFixtures.gmxBatchingManager.setDepositCap(parseUnits('1000000000', 18));
 
   await glpBatchingStakingManagerFixtures.gmxBatchingManager.grantAllowances();
-  await glpBatchingStakingManagerFixtures.gmxBatchingManager.setThresholds(100, parseUnits('10', 18));
+  await glpBatchingStakingManagerFixtures.gmxBatchingManager.setThresholds(100, parseUnits('10', 6));
 
   await glpBatchingStakingManagerFixtures.gmxBatchingManager.setBypass(bypass.address);
 
