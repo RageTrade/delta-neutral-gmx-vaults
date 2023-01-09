@@ -115,6 +115,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   await glpBatchingStakingManagerFixtures.gmxBatchingManager.setBypass(bypass.address);
 
   await dnGmxJuniorVault.setAdminParams(admin.address, dnGmxSeniorVault.address, ethers.constants.MaxUint256, 50, 3000);
+  await dnGmxJuniorVault.setBatchingManager(glpBatchingStakingManagerFixtures.gmxBatchingManager.address);
 
   await dnGmxJuniorVault.setThresholds(
     100, //_slippageThresholdSwapBtcBps

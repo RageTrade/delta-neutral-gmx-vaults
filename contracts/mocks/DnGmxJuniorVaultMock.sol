@@ -8,8 +8,11 @@ import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/I
 import { DnGmxJuniorVaultManager } from '../libraries/DnGmxJuniorVaultManager.sol';
 import { DnGmxJuniorVault } from '../vaults/DnGmxJuniorVault.sol';
 
+import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
+
 contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
     uint256 internal constant VARIABLE_INTEREST_MODE = 2;
+    IDnGmxBatchingManager batchingManager;
 
     using DnGmxJuniorVaultManager for DnGmxJuniorVaultManager.State;
 
@@ -219,11 +222,17 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         state.swapRouter = _swapRouter;
     }
 
+    function setBatchingManager(IDnGmxBatchingManager _batchingManager) external {
+        batchingManager = _batchingManager;
+        state.weth.approve(address(_batchingManager), type(uint256).max);
+        state.usdc.approve(address(_batchingManager), type(uint256).max);
+    }
+
     function depositToken(
         address token,
         uint256 amount,
         uint256 minUsdg
     ) external {
-        state.batchingManager.depositToken(token, amount, minUsdg);
+        batchingManager.depositToken(token, amount, minUsdg);
     }
 }
