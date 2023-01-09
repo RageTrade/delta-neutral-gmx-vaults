@@ -45,15 +45,8 @@ interface IDnGmxJuniorVault is IERC4626, IBorrower {
     event FeesWithdrawn(uint256 feeAmount);
 
     event DepositCapUpdated(uint256 _newDepositCap);
-    event BatchingManagerUpdated(address _batchingManager);
 
-    event AdminParamsUpdated(
-        address newKeeper,
-        address dnGmxSeniorVault,
-        uint256 newDepositCap,
-        address batchingManager,
-        uint16 withdrawFeeBps
-    );
+    event AdminParamsUpdated(address newKeeper, address dnGmxSeniorVault, uint256 newDepositCap, uint16 withdrawFeeBps);
     event ThresholdsUpdated(
         uint16 slippageThresholdSwapBtcBps,
         uint16 slippageThresholdSwapEthBps,

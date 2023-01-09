@@ -694,8 +694,6 @@ library DnGmxJuniorVaultManager {
         uint256 amount,
         uint256 minUSDG
     ) internal returns (uint256 glpStaked) {
-        // swap token to obtain sGLP
-        IERC20(token).approve(address(state.glpManager), amount);
         // will revert if notional output is less than minUSDG
         glpStaked = state.rewardRouter.mintAndStakeGlp(token, amount, minUSDG, 0);
     }
