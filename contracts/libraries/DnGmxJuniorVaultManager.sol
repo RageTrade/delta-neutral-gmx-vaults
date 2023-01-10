@@ -1257,7 +1257,7 @@ library DnGmxJuniorVaultManager {
     ///@param token the token for which price is expected
     ///@return scaledPrice token price in usdc
     function _getTokenPriceInUsdc(State storage state, IERC20Metadata token)
-        private
+        internal
         view
         returns (uint256 scaledPrice)
     {
@@ -1324,7 +1324,7 @@ library DnGmxJuniorVaultManager {
         // get change in borrow positions to calculate amount to swap on uniswap
         (int256 netBtcBorrowChange, int256 netEthBorrowChange) = _getNetPositionChange(state, assets, isDeposit);
 
-        uint256 dollarsLostDueToSlippage = _quoteSwapSlippage(state, netBtcBorrowChange, netEthBorrowChange);
+        uint256 dollarsLostDueToSlippage = _quoteSwapSlippageLoss(state, netBtcBorrowChange, netEthBorrowChange);
 
         // netSlippage returned is in glp (asset) terms
         uint256 glpPrice = _getGlpPrice(state, false);
@@ -1372,12 +1372,12 @@ library DnGmxJuniorVaultManager {
         netEthBorrowChange = optimalEthBorrow.toInt256() - currentEthBorrow.toInt256();
     }
 
-    function quoteSwapSlippage(
+    function quoteSwapSlippageLoss(
         State storage state,
         int256 btcAmount,
         int256 ethAmount
     ) external view returns (uint256) {
-        return _quoteSwapSlippage(state, btcAmount, ethAmount);
+        return _quoteSwapSlippageLoss(state, btcAmount, ethAmount);
     }
 
     /// @notice gives the quote for exactIn tokenAmount if positive or exactOut tokenAmount if negative
@@ -1393,61 +1393,59 @@ library DnGmxJuniorVaultManager {
             // swap wbtc to usdc
             uint256 otherTokenAmountAbs = state.uniswapV3Quoter.quoteExactInput(swapPath, uint256(tokenAmount));
             return -int256(otherTokenAmountAbs); // pool looses usdc hence negative
-        } else {
+        } else if (tokenAmount < 0) {
             // swap usdc to wbtc
             uint256 otherTokenAmountAbs = state.uniswapV3Quoter.quoteExactOutput(swapPath, uint256(-tokenAmount));
             return int256(otherTokenAmountAbs); // pool gains usdc hence positive
         }
     }
 
+    function _calculateSwapLoss(
+        int256 tokenAmount,
+        int256 otherTokenAmount,
+        uint256 tokenPrice,
+        uint256 otherTokenPrice
+    ) internal pure returns (uint256) {
+        int256 dollarsPaid;
+        int256 dollarsReceived;
+        if (tokenAmount > 0) {
+            dollarsPaid = tokenAmount.mulDivDown(tokenPrice, PRICE_PRECISION);
+            dollarsReceived = (-otherTokenAmount).mulDivDown(otherTokenPrice, PRICE_PRECISION);
+        } else if (tokenAmount < 0) {
+            dollarsPaid = otherTokenAmount.mulDivDown(otherTokenPrice, PRICE_PRECISION);
+            dollarsReceived = (-tokenAmount).mulDivDown(tokenPrice, PRICE_PRECISION);
+        }
+        return (dollarsPaid > dollarsReceived) ? uint256(dollarsPaid - dollarsReceived) : 0;
+    }
+
     /// @notice returns the amount of glp to be charged as slippage loss
     /// @param state set of all state variables of vault
     /// @param btcAmountInBtcSwap if positive btc sell amount else if negative btc buy amount
     /// @param ethAmountInEthSwap if positive eth sell amount else if negative eth buy amount
-    function _quoteSwapSlippage(
+    function _quoteSwapSlippageLoss(
         State storage state,
         int256 btcAmountInBtcSwap,
         int256 ethAmountInEthSwap
-    ) internal view returns (uint256) {
+    ) internal view returns (uint256 dollarsLostDueToSlippage) {
         uint256 btcPrice = _getTokenPriceInUsdc(state, state.wbtc);
         uint256 ethPrice = _getTokenPriceInUsdc(state, state.weth);
         uint256 usdcPrice = _getTokenPriceInUsdc(state, state.usdc);
 
-        uint256 dollarsLostDueToSlippage;
-
         // btc swap
         int256 usdcAmountInBtcSwap = _getQuote(state, btcAmountInBtcSwap, WBTC_TO_USDC(state));
-        {
-            int256 dollarsPaid = btcAmountInBtcSwap > 0
-                ? btcAmountInBtcSwap.mulDivUp(btcPrice, PRICE_PRECISION)
-                : usdcAmountInBtcSwap;
-            int256 dollarsReceived = btcAmountInBtcSwap > 0
-                ? (-usdcAmountInBtcSwap).mulDivDown(usdcPrice, PRICE_PRECISION)
-                : (-btcAmountInBtcSwap).mulDivDown(btcPrice, PRICE_PRECISION);
-            if (dollarsPaid > dollarsReceived) {
-                dollarsLostDueToSlippage += uint256(dollarsPaid - dollarsReceived);
-            }
-        }
+        dollarsLostDueToSlippage += _calculateSwapLoss(btcAmountInBtcSwap, usdcAmountInBtcSwap, btcPrice, usdcPrice);
+
+        // getting intermediate eth amount in btc swap
+        int256 ethAmountInBtcSwap = _getQuote(state, usdcAmountInBtcSwap, USDC_TO_WETH_(state));
 
         // eth swap (also accounting for price change in btc swap)
-        int256 ethAmountInBtcSwap = _getQuote(state, usdcAmountInBtcSwap, USDC_TO_WETH(state));
         int256 usdcAmountInEthSwap = _getQuote(
             state,
             ethAmountInEthSwap + ethAmountInBtcSwap, // including btc swap amount
             WETH_TO_USDC(state)
         );
         usdcAmountInEthSwap -= usdcAmountInBtcSwap; // accounting for price change in btc swap
-        {
-            int256 dollarsPaid = ethAmountInEthSwap > 0
-                ? ethAmountInEthSwap.mulDivUp(ethPrice, PRICE_PRECISION)
-                : usdcAmountInEthSwap;
-            int256 dollarsReceived = ethAmountInEthSwap > 0
-                ? -usdcAmountInBtcSwap.mulDivDown(usdcPrice, PRICE_PRECISION)
-                : -ethAmountInEthSwap.mulDivDown(ethPrice, PRICE_PRECISION);
-            if (dollarsPaid > dollarsReceived) {
-                dollarsLostDueToSlippage += uint256(dollarsPaid - dollarsReceived);
-            }
-        }
+        dollarsLostDueToSlippage += _calculateSwapLoss(ethAmountInEthSwap, usdcAmountInEthSwap, ethPrice, usdcPrice);
 
         // ensure ethAmountInEthSwap and usdcAmountInEthSwap are of opposite sign when they are both non-zero
         assert(
@@ -1791,6 +1789,10 @@ library DnGmxJuniorVaultManager {
     ///@return the path bytes
     function USDC_TO_WETH(State storage state) internal view returns (bytes memory) {
         return abi.encodePacked(state.weth, uint24(500), state.usdc);
+    }
+
+    function USDC_TO_WETH_(State storage state) internal view returns (bytes memory) {
+        return abi.encodePacked(state.usdc, uint24(500), state.weth);
     }
 
     ///@notice returns usdc to wbtc swap path

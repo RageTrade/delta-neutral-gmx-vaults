@@ -107,7 +107,7 @@ export default {
     ],
   },
   dependencyCompiler: {
-    paths: ['@uniswap/v3-periphery/contracts/lens/QuoterV3.sol'],
+    paths: ['@uniswap/v3-periphery/contracts/lens/QuoterV3.sol', '@uniswap/v3-periphery/contracts/SwapRouter.sol'],
   },
   typechain: {
     target: 'ethers-v5',
