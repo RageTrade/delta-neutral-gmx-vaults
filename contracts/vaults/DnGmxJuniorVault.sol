@@ -580,7 +580,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @param assets number of assets to be deposited
     /// @return shares that would be minted to the user
     function previewDeposit(uint256 assets) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
-        uint256 netAssets = state.getSlippageAdjustedAssets(int256(assets));
+        uint256 netAssets = state.getSlippageAdjustedAssets({ assets: assets, isDeposit: true });
         return convertToShares(netAssets);
     }
 
@@ -593,7 +593,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         if (supply == 0) return shares;
 
         uint256 assets = convertToAssets(shares);
-        uint256 netAssets = state.getSlippageAdjustedAssets(int256(assets));
+        uint256 netAssets = state.getSlippageAdjustedAssets({ assets: assets, isDeposit: true });
 
         return netAssets;
     }
@@ -606,7 +606,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
 
         if (supply == 0) return assets;
 
-        uint256 netAssets = state.getSlippageAdjustedAssets(int256(assets) * -1);
+        uint256 netAssets = state.getSlippageAdjustedAssets({ assets: assets, isDeposit: false });
 
         return netAssets.mulDivUp(supply * MAX_BPS, state.totalAssets(false) * (MAX_BPS - state.withdrawFeeBps));
     }
@@ -620,7 +620,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         if (supply == 0) return shares;
 
         uint256 assets = convertToAssets(shares);
-        uint256 netAssets = state.getSlippageAdjustedAssets(int256(assets) * -1);
+        uint256 netAssets = state.getSlippageAdjustedAssets({ assets: assets, isDeposit: false });
 
         return netAssets.mulDivDown(MAX_BPS - state.withdrawFeeBps, MAX_BPS);
     }

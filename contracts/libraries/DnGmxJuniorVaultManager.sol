@@ -1308,41 +1308,53 @@ library DnGmxJuniorVaultManager {
         borrowValue = borrowValue.mulDivDown(PRICE_PRECISION, _getTokenPrice(state, state.usdc));
     }
 
-    function getSlippageAdjustedAssets(State storage state, int256 assets) external view returns (uint256) {
-        return _getSlippageAdjustedAssets(state, assets);
+    function getSlippageAdjustedAssets(
+        State storage state,
+        uint256 assets,
+        bool isDeposit
+    ) external view returns (uint256) {
+        return _getSlippageAdjustedAssets(state, assets, isDeposit);
     }
 
-    function _getSlippageAdjustedAssets(State storage state, int256 assets) private view returns (uint256 netAssets) {
+    function _getSlippageAdjustedAssets(
+        State storage state,
+        uint256 assets,
+        bool isDeposit
+    ) private view returns (uint256) {
         // get change in borrow positions to calculate amount to swap on uniswap
-        (int256 netBtcBorrowChange, int256 netEthBorrowChange) = _getNetPositionChange(state, assets);
+        (int256 netBtcBorrowChange, int256 netEthBorrowChange) = _getNetPositionChange(state, assets, isDeposit);
+
+        uint256 dollarsLostDueToSlippage = _quoteSwapSlippage(state, netBtcBorrowChange, netEthBorrowChange);
 
         // netSlippage returned is in glp (asset) terms
-        int256 netSlippage = _quoteSwapSlippage(state, netBtcBorrowChange, netEthBorrowChange);
+        uint256 glpPrice = _getGlpPrice(state, false);
+        uint256 netSlippage = dollarsLostDueToSlippage.mulDivDown(glpPrice, PRICE_PRECISION);
 
         // subtract slippage from assets, and calculate shares basis that slippage adjusted asset amount
-        netAssets = assets.abs();
-        if (netSlippage > 0) {
-            netAssets -= uint256(netSlippage);
-        } else {
-            netAssets += uint256(-netSlippage);
-        }
+        assets -= uint256(netSlippage);
+
+        return assets;
     }
 
-    function getNetPositionChange(State storage state, int256 assetAmount) external view returns (int256, int256) {
-        return _getNetPositionChange(state, assetAmount);
+    function getNetPositionChange(
+        State storage state,
+        uint256 assetAmount,
+        bool isDeposit
+    ) external view returns (int256, int256) {
+        return _getNetPositionChange(state, assetAmount, isDeposit);
     }
 
-    function _getNetPositionChange(State storage state, int256 assetAmount)
-        private
-        view
-        returns (int256 netBtcBorrowChange, int256 netEthBorrowChange)
-    {
+    function _getNetPositionChange(
+        State storage state,
+        uint256 assetAmount,
+        bool isDeposit
+    ) private view returns (int256 netBtcBorrowChange, int256 netEthBorrowChange) {
         // get current borrows
         (uint256 currentBtcBorrow, uint256 currentEthBorrow) = _getCurrentBorrows(state);
 
         // calculate new total assets basis assetAmount
         uint256 total = _totalAssets(state, true);
-        uint256 totalAssetsAfter = assetAmount > 0 ? total + uint256(assetAmount) : total - uint256(assetAmount);
+        uint256 totalAssetsAfter = isDeposit ? total + assetAmount : total - assetAmount;
 
         // get optimal borrows accounting for incoming glp deposit
         (uint256 optimalBtcBorrow, uint256 optimalEthBorrow, , , ) = _getOptimalBorrowsFinal(
@@ -1364,7 +1376,7 @@ library DnGmxJuniorVaultManager {
         State storage state,
         int256 btcAmount,
         int256 ethAmount
-    ) external view returns (int256) {
+    ) external view returns (uint256) {
         return _quoteSwapSlippage(state, btcAmount, ethAmount);
     }
 
@@ -1393,23 +1405,25 @@ library DnGmxJuniorVaultManager {
         State storage state,
         int256 btcAmountInBtcSwap,
         int256 ethAmountInEthSwap
-    ) internal view returns (int256 lossInGlpTermsDueToSlippage) {
+    ) internal view returns (uint256) {
         uint256 btcPrice = _getTokenPriceInUsdc(state, state.wbtc);
         uint256 ethPrice = _getTokenPriceInUsdc(state, state.weth);
         uint256 usdcPrice = _getTokenPriceInUsdc(state, state.usdc);
 
-        int256 dollarsLostDueToSlippage;
+        uint256 dollarsLostDueToSlippage;
 
         // btc swap
         int256 usdcAmountInBtcSwap = _getQuote(state, btcAmountInBtcSwap, WBTC_TO_USDC(state), USDC_TO_WBTC(state));
         {
-            int256 inDollars = btcAmountInBtcSwap > 0
-                ? btcAmountInBtcSwap.mulDivDown(btcPrice, PRICE_PRECISION)
+            int256 dollarsPaid = btcAmountInBtcSwap > 0
+                ? btcAmountInBtcSwap.mulDivUp(btcPrice, PRICE_PRECISION)
                 : usdcAmountInBtcSwap;
-            int256 outDollars = btcAmountInBtcSwap > 0
+            int256 dollarsReceived = btcAmountInBtcSwap > 0
                 ? (-usdcAmountInBtcSwap).mulDivDown(usdcPrice, PRICE_PRECISION)
                 : (-btcAmountInBtcSwap).mulDivDown(btcPrice, PRICE_PRECISION);
-            dollarsLostDueToSlippage += inDollars - outDollars;
+            if (dollarsPaid > dollarsReceived) {
+                dollarsLostDueToSlippage += uint256(dollarsPaid - dollarsReceived);
+            }
         }
 
         // eth swap (also accounting for price change in btc swap)
@@ -1422,13 +1436,15 @@ library DnGmxJuniorVaultManager {
         );
         usdcAmountInEthSwap -= usdcAmountInBtcSwap; // accounting for price change in btc swap
         {
-            int256 inDollars = ethAmountInEthSwap > 0
-                ? ethAmountInEthSwap.mulDivDown(ethPrice, PRICE_PRECISION)
+            int256 dollarsPaid = ethAmountInEthSwap > 0
+                ? ethAmountInEthSwap.mulDivUp(ethPrice, PRICE_PRECISION)
                 : usdcAmountInEthSwap;
-            int256 outDollars = ethAmountInEthSwap > 0
+            int256 dollarsReceived = ethAmountInEthSwap > 0
                 ? -usdcAmountInBtcSwap.mulDivDown(usdcPrice, PRICE_PRECISION)
                 : -ethAmountInEthSwap.mulDivDown(ethPrice, PRICE_PRECISION);
-            dollarsLostDueToSlippage += inDollars - outDollars;
+            if (dollarsPaid > dollarsReceived) {
+                dollarsLostDueToSlippage += uint256(dollarsPaid - dollarsReceived);
+            }
         }
 
         // ensure ethAmountInEthSwap and usdcAmountInEthSwap are of opposite sign when they are both non-zero
@@ -1436,10 +1452,7 @@ library DnGmxJuniorVaultManager {
             ethAmountInEthSwap == 0 || usdcAmountInEthSwap == 0 || ethAmountInEthSwap > 0 != usdcAmountInEthSwap > 0
         );
 
-        // glp price in usd
-        uint256 glpPrice = _getGlpPrice(state, false);
-
-        return dollarsLostDueToSlippage.mulDivDown(glpPrice, PRICE_PRECISION);
+        return dollarsLostDueToSlippage;
     }
 
     ///@notice returns the amount of flashloan for a given token
