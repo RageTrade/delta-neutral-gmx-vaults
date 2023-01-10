@@ -25,12 +25,8 @@ contract DnGmxJuniorVaultManagerTest {
         state.feeTierWethWbtcPool = 3000;
     }
 
-    function getQuote(
-        int256 tokenAmount,
-        bytes memory sellPath,
-        bytes memory buyPath
-    ) public view returns (int256 otherTokenAmount) {
-        return DnGmxJuniorVaultManager._getQuote(state, tokenAmount, sellPath, buyPath);
+    function getQuote(int256 tokenAmount, bytes memory swapPath) public view returns (int256 otherTokenAmount) {
+        return DnGmxJuniorVaultManager._getQuote(state, tokenAmount, swapPath);
     }
 
     function quoteSwapSlippage(int256 btcAmountInBtcSwap, int256 ethAmountInEthSwap) public view returns (uint256) {
@@ -41,12 +37,12 @@ contract DnGmxJuniorVaultManagerTest {
         return abi.encodePacked(state.usdc, uint24(500), state.weth);
     }
 
-    function USDC_TO_WBTC() public view returns (bytes memory) {
-        return abi.encodePacked(state.usdc, uint24(500), state.weth, state.feeTierWethWbtcPool, state.wbtc);
-    }
-
     function WETH_TO_USDC() public view returns (bytes memory) {
         return abi.encodePacked(state.weth, uint24(500), state.usdc);
+    }
+
+    function USDC_TO_WBTC() public view returns (bytes memory) {
+        return abi.encodePacked(state.usdc, uint24(500), state.weth, state.feeTierWethWbtcPool, state.wbtc);
     }
 
     function WBTC_TO_USDC() public view returns (bytes memory) {

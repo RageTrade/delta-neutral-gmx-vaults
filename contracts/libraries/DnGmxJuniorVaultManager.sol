@@ -1380,19 +1380,22 @@ library DnGmxJuniorVaultManager {
         return _quoteSwapSlippage(state, btcAmount, ethAmount);
     }
 
+    /// @notice gives the quote for exactIn tokenAmount if positive or exactOut tokenAmount if negative
+    /// @param state set of all state variables of vault
+    /// @param tokenAmount if positive btc sell amount else if negative btc buy amount
+    /// @param swapPath path of swap, path for token to otherToken exactIn is same as path for otherToken to token exactOut
     function _getQuote(
         State storage state,
         int256 tokenAmount,
-        bytes memory sellPath,
-        bytes memory buyPath
+        bytes memory swapPath
     ) internal view returns (int256) {
         if (tokenAmount > 0) {
             // swap wbtc to usdc
-            uint256 otherTokenAmountAbs = state.uniswapV3Quoter.quoteExactInput(sellPath, uint256(tokenAmount));
+            uint256 otherTokenAmountAbs = state.uniswapV3Quoter.quoteExactInput(swapPath, uint256(tokenAmount));
             return -int256(otherTokenAmountAbs); // pool looses usdc hence negative
         } else {
             // swap usdc to wbtc
-            uint256 otherTokenAmountAbs = state.uniswapV3Quoter.quoteExactOutput(buyPath, uint256(-tokenAmount));
+            uint256 otherTokenAmountAbs = state.uniswapV3Quoter.quoteExactOutput(swapPath, uint256(-tokenAmount));
             return int256(otherTokenAmountAbs); // pool gains usdc hence positive
         }
     }
@@ -1413,7 +1416,7 @@ library DnGmxJuniorVaultManager {
         uint256 dollarsLostDueToSlippage;
 
         // btc swap
-        int256 usdcAmountInBtcSwap = _getQuote(state, btcAmountInBtcSwap, WBTC_TO_USDC(state), USDC_TO_WBTC(state));
+        int256 usdcAmountInBtcSwap = _getQuote(state, btcAmountInBtcSwap, WBTC_TO_USDC(state));
         {
             int256 dollarsPaid = btcAmountInBtcSwap > 0
                 ? btcAmountInBtcSwap.mulDivUp(btcPrice, PRICE_PRECISION)
@@ -1427,12 +1430,11 @@ library DnGmxJuniorVaultManager {
         }
 
         // eth swap (also accounting for price change in btc swap)
-        int256 ethAmountInBtcSwap = _getQuote(state, usdcAmountInBtcSwap, USDC_TO_WETH(state), WETH_TO_USDC(state));
+        int256 ethAmountInBtcSwap = _getQuote(state, usdcAmountInBtcSwap, USDC_TO_WETH(state));
         int256 usdcAmountInEthSwap = _getQuote(
             state,
             ethAmountInEthSwap + ethAmountInBtcSwap, // including btc swap amount
-            WETH_TO_USDC(state),
-            USDC_TO_WETH(state)
+            WETH_TO_USDC(state)
         );
         usdcAmountInEthSwap -= usdcAmountInBtcSwap; // accounting for price change in btc swap
         {
