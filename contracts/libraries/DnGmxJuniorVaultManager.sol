@@ -26,6 +26,7 @@ import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
 import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
 import { SafeCast } from '../libraries/SafeCast.sol';
 import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
+import { SignedFixedPointMathLib } from '../libraries/SignedFixedPointMathLib.sol';
 
 import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMathLib.sol';
 
@@ -57,6 +58,7 @@ library DnGmxJuniorVaultManager {
 
     using FixedPointMathLib for uint256;
     using SafeCast for uint256;
+    using SignedFixedPointMathLib for int256;
 
     uint256 internal constant MAX_BPS = 10_000;
 
@@ -1315,10 +1317,15 @@ library DnGmxJuniorVaultManager {
         (int256 netBtcBorrowChange, int256 netEthBorrowChange) = _getNetPositionChange(state, assets);
 
         // netSlippage returned is in glp (asset) terms
-        uint256 netSlippage = _quoteSwapSlippage(state, netBtcBorrowChange, netEthBorrowChange);
+        int256 netSlippage = _quoteSwapSlippage(state, netBtcBorrowChange, netEthBorrowChange);
 
         // subtract slippage from assets, and calculate shares basis that slippage adjusted asset amount
-        netAssets = assets > 0 ? uint256(assets) - netSlippage : uint256(-assets) - netSlippage;
+        netAssets = assets.abs();
+        if (netSlippage > 0) {
+            netAssets -= uint256(netSlippage);
+        } else {
+            netAssets += uint256(-netSlippage);
+        }
     }
 
     function getNetPositionChange(State storage state, int256 assetAmount) external view returns (int256, int256) {
@@ -1357,27 +1364,82 @@ library DnGmxJuniorVaultManager {
         State storage state,
         int256 btcAmount,
         int256 ethAmount
-    ) external view returns (uint256) {
+    ) external view returns (int256) {
         return _quoteSwapSlippage(state, btcAmount, ethAmount);
     }
 
+    function _getQuote(
+        State storage state,
+        int256 tokenAmount,
+        bytes memory sellPath,
+        bytes memory buyPath
+    ) internal view returns (int256 otherTokenAmount) {
+        if (tokenAmount > 0) {
+            // swap wbtc to usdc
+            uint256 usdcAmountAbs = state.uniswapV3Quoter.quoteExactInput(sellPath, uint256(tokenAmount));
+            return -int256(usdcAmountAbs); // pool looses usdc hence negative
+        } else {
+            // swap usdc to wbtc
+            uint256 usdcAmountAbs = state.uniswapV3Quoter.quoteExactOutput(buyPath, uint256(-tokenAmount));
+            return int256(usdcAmountAbs); // pool gains usdc hence positive
+        }
+    }
+
+    /// @notice returns the amount of glp to be charged as slippage loss
+    /// @param state set of all state variables of vault
+    /// @param btcAmountInBtcSwap if positive btc sell amount else if negative btc buy amount
+    /// @param ethAmountInEthSwap if positive eth sell amount else if negative eth buy amount
     function _quoteSwapSlippage(
         State storage state,
-        int256 btcAmount,
-        int256 ethAmount
-    ) private view returns (uint256 slippage) {
-        uint256 btcSwapOutput = btcAmount > 0
-            ? state.uniswapV3Quoter.quoteExactInput(WBTC_TO_USDC(state), uint256(btcAmount))
-            : state.uniswapV3Quoter.quoteExactOutput(USDC_TO_WBTC(state), uint256(-btcAmount));
+        int256 btcAmountInBtcSwap,
+        int256 ethAmountInEthSwap
+    ) internal view returns (int256 lossInGlpTermsDueToSlippage) {
+        uint256 btcPrice = _getTokenPriceInUsdc(state, state.wbtc);
+        uint256 ethPrice = _getTokenPriceInUsdc(state, state.weth);
+        uint256 usdcPrice = _getTokenPriceInUsdc(state, state.usdc);
 
-        uint256 ethSwapOutput = ethAmount > 0
-            ? state.uniswapV3Quoter.quoteExactInput(WETH_TO_USDC(state), uint256(ethAmount))
-            : state.uniswapV3Quoter.quoteExactOutput(USDC_TO_WETH(state), uint256(-ethAmount));
+        int256 dollarsLostDueToSlippage;
 
-        uint256 btcSwapInput = _getTokenPriceInUsdc(state, state.wbtc);
-        uint256 ethSwapInput = _getTokenPriceInUsdc(state, state.weth);
+        // btc swap
+        int256 usdcAmountInBtcSwap = _getQuote(state, btcAmountInBtcSwap, WBTC_TO_USDC(state), USDC_TO_WBTC(state));
+        {
+            int256 inDollars = btcAmountInBtcSwap > 0
+                ? btcAmountInBtcSwap.mulDivDown(btcPrice, PRICE_PRECISION)
+                : usdcAmountInBtcSwap;
+            int256 outDollars = btcAmountInBtcSwap > 0
+                ? (-usdcAmountInBtcSwap).mulDivDown(usdcPrice, PRICE_PRECISION)
+                : (-btcAmountInBtcSwap).mulDivDown(btcPrice, PRICE_PRECISION);
+            dollarsLostDueToSlippage += inDollars - outDollars;
+        }
 
-        // TODO: covert slippage from usdc terms to glp
+        // eth swap (also accounting for price change in btc swap)
+        int256 ethAmountInBtcSwap = _getQuote(state, usdcAmountInBtcSwap, USDC_TO_WETH(state), WETH_TO_USDC(state));
+        int256 usdcAmountInEthSwap = _getQuote(
+            state,
+            ethAmountInEthSwap + ethAmountInBtcSwap, // including btc swap amount
+            WETH_TO_USDC(state),
+            USDC_TO_WETH(state)
+        );
+        usdcAmountInEthSwap -= usdcAmountInBtcSwap; // accounting for price change in btc swap
+        {
+            int256 inDollars = ethAmountInEthSwap > 0
+                ? ethAmountInEthSwap.mulDivDown(ethPrice, PRICE_PRECISION)
+                : usdcAmountInEthSwap;
+            int256 outDollars = ethAmountInEthSwap > 0
+                ? -usdcAmountInBtcSwap.mulDivDown(usdcPrice, PRICE_PRECISION)
+                : -ethAmountInEthSwap.mulDivDown(ethPrice, PRICE_PRECISION);
+            dollarsLostDueToSlippage += inDollars - outDollars;
+        }
+
+        // ensure ethAmountInEthSwap and usdcAmountInEthSwap are of opposite sign when they are both non-zero
+        assert(
+            ethAmountInEthSwap == 0 || usdcAmountInEthSwap == 0 || ethAmountInEthSwap > 0 != usdcAmountInEthSwap > 0
+        );
+
+        // glp price in usd
+        uint256 glpPrice = _getGlpPrice(state, false);
+
+        return dollarsLostDueToSlippage.mulDivDown(glpPrice, PRICE_PRECISION);
     }
 
     ///@notice returns the amount of flashloan for a given token
