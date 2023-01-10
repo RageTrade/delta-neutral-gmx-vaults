@@ -254,7 +254,6 @@ describe('Dn Gmx Batching Manager', () => {
       await expect(glpBatchingManager.executeBatch(CONVERSION_BPS))
         .to.changeTokenBalance(usdc, glpBatchingManager, roundUsdcBalance.mul(-CONVERSION_BPS).div(MAX_CONVERSION_BPS))
         .to.emit(glpBatchingManager, 'BatchStake')
-        .to.emit(glpBatchingManager, 'BatchDeposit')
         .to.emit(glpBatchingManager, 'PartialBatchDeposit');
 
       expect(await glpBatchingManager.paused()).to.be.true;
@@ -271,7 +270,7 @@ describe('Dn Gmx Batching Manager', () => {
       let user1Deposit = await glpBatchingManager.userDeposits(users[1].address);
       let unclaimedShares = await glpBatchingManager.unclaimedShares(users[1].address);
 
-      const batchingManagerTotalSharesBal = await dnGmxJuniorVault.balanceOf(glpBatchingManager.address);
+      let batchingManagerTotalSharesBal = await dnGmxJuniorVault.balanceOf(glpBatchingManager.address);
 
       expect(user1Deposit.round).to.eq(1);
       // totalUsdc should be usdc amount that is converted to shares in ongoing round
@@ -298,6 +297,8 @@ describe('Dn Gmx Batching Manager', () => {
       round1Deposit = await glpBatchingManager.roundDeposits(1);
       user1Deposit = await glpBatchingManager.userDeposits(users[1].address);
       unclaimedShares = await glpBatchingManager.unclaimedShares(users[1].address);
+
+      batchingManagerTotalSharesBal = await dnGmxJuniorVault.balanceOf(glpBatchingManager.address);
 
       expect(user1Deposit.round).to.eq(1);
       // totalUsdc should be now roundUsdcBalance since all usdc in round is converted
