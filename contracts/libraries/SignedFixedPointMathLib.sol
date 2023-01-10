@@ -17,6 +17,22 @@ library SignedFixedPointMathLib {
         uint256 y,
         uint256 denominator
     ) internal pure returns (int256 z) {
-        z = sign(x) * int256(FixedPointMathLib.mulDivDown(abs(x), y, denominator));
+        int256 _sign = sign(x);
+        z = _sign * int256(FixedPointMathLib.mulDivDown(abs(x), y, denominator));
+        if (_sign < 0) {
+            z--;
+        }
+    }
+
+    function mulDivUp(
+        int256 x,
+        uint256 y,
+        uint256 denominator
+    ) internal pure returns (int256 z) {
+        int256 _sign = sign(x);
+        z = _sign * int256(FixedPointMathLib.mulDivUp(abs(x), y, denominator));
+        if (_sign < 0) {
+            z++;
+        }
     }
 }
