@@ -60,6 +60,7 @@ export default {
   },
   solidity: {
     compilers: [
+      { version: '0.8.15' },
       {
         version: '0.8.17',
         settings: {
@@ -104,6 +105,9 @@ export default {
         },
       },
     ],
+  },
+  dependencyCompiler: {
+    paths: ['@uniswap/v3-periphery/contracts/lens/QuoterV3.sol'],
   },
   typechain: {
     target: 'ethers-v5',

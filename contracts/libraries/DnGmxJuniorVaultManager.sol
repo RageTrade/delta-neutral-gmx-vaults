@@ -1385,15 +1385,15 @@ library DnGmxJuniorVaultManager {
         int256 tokenAmount,
         bytes memory sellPath,
         bytes memory buyPath
-    ) internal view returns (int256 otherTokenAmount) {
+    ) internal view returns (int256) {
         if (tokenAmount > 0) {
             // swap wbtc to usdc
-            uint256 usdcAmountAbs = state.uniswapV3Quoter.quoteExactInput(sellPath, uint256(tokenAmount));
-            return -int256(usdcAmountAbs); // pool looses usdc hence negative
+            uint256 otherTokenAmountAbs = state.uniswapV3Quoter.quoteExactInput(sellPath, uint256(tokenAmount));
+            return -int256(otherTokenAmountAbs); // pool looses usdc hence negative
         } else {
             // swap usdc to wbtc
-            uint256 usdcAmountAbs = state.uniswapV3Quoter.quoteExactOutput(buyPath, uint256(-tokenAmount));
-            return int256(usdcAmountAbs); // pool gains usdc hence positive
+            uint256 otherTokenAmountAbs = state.uniswapV3Quoter.quoteExactOutput(buyPath, uint256(-tokenAmount));
+            return int256(otherTokenAmountAbs); // pool gains usdc hence positive
         }
     }
 
