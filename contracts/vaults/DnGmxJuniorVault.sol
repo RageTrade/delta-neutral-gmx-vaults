@@ -234,10 +234,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
 
     /// @notice set thresholds
     /// @param rebalanceProfitUsdcAmountThreshold (BPS) slippage threshold on btc swaps
-    function setParamsV1(uint128 rebalanceProfitUsdcAmountThreshold, IQuoterV3 _uniswapV3Quoter)
-        external
-        onlyOwner
-    {
+    function setParamsV1(uint128 rebalanceProfitUsdcAmountThreshold, IQuoterV3 _uniswapV3Quoter) external onlyOwner {
         state.rebalanceProfitUsdcAmountThreshold = rebalanceProfitUsdcAmountThreshold;
         state.uniswapV3Quoter = _uniswapV3Quoter;
 
