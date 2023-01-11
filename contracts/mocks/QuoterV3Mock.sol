@@ -21,6 +21,7 @@ contract QuoterV3Mock {
     bytes public USDC_TO_WETH;
     bytes public USDC_TO_WBTC;
 
+    bytes public USDC_TO_WETH_;
     bytes public WETH_TO_USDC;
     bytes public WBTC_TO_USDC;
 
@@ -35,6 +36,7 @@ contract QuoterV3Mock {
         state.usdc = IERC20Metadata(0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8);
 
         USDC_TO_WETH = abi.encodePacked(address(state.weth), uint24(500), address(state.usdc));
+        USDC_TO_WETH_ = abi.encodePacked(address(state.usdc), uint24(500), address(state.weth));
         USDC_TO_WBTC = abi.encodePacked(
             address(state.wbtc),
             uint24(3000),
@@ -64,7 +66,9 @@ contract QuoterV3Mock {
     function quoteExactInput(bytes memory path, uint256 amountIn) external view returns (uint256 amountOut) {
         uint256 btcPrice = state.getTokenPriceInUsdc(state.wbtc);
         uint256 ethPrice = state.getTokenPriceInUsdc(state.weth);
-
+        if (keccak256(path) == keccak256(USDC_TO_WETH_)) {
+            return (amountIn * PRICE_PRECISION * (MAX_BPS - slippageThresholdSwapEthBps)) / MAX_BPS / ethPrice;
+        }
         return
             keccak256(path) == keccak256(WETH_TO_USDC)
                 ? (ethPrice * amountIn * (MAX_BPS - slippageThresholdSwapEthBps)) / MAX_BPS / PRICE_PRECISION
@@ -74,7 +78,9 @@ contract QuoterV3Mock {
     function quoteExactOutput(bytes memory path, uint256 amountOut) external view returns (uint256 amountIn) {
         uint256 btcPrice = state.getTokenPriceInUsdc(state.wbtc);
         uint256 ethPrice = state.getTokenPriceInUsdc(state.weth);
-
+        if (keccak256(path) == keccak256(USDC_TO_WETH_)) {
+            return (amountOut * PRICE_PRECISION * (MAX_BPS + slippageThresholdSwapEthBps)) / MAX_BPS / ethPrice;
+        }
         return
             keccak256(path) == keccak256(USDC_TO_WETH)
                 ? (ethPrice * amountOut * (MAX_BPS + slippageThresholdSwapEthBps)) / MAX_BPS / PRICE_PRECISION
