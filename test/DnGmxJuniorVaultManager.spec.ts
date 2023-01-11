@@ -4,9 +4,16 @@ import { expect } from 'chai';
 import { loadFixture } from 'ethereum-waffle';
 import { BigNumber, BigNumberish } from 'ethers';
 import hre, { ethers } from 'hardhat';
-import { DnGmxJuniorVaultManagerTest, IERC20, ISwapRouter, QuoterV3 } from '../typechain-types';
+import {
+  DnGmxJuniorVaultManager,
+  DnGmxJuniorVaultManagerTest,
+  IERC20,
+  ISwapRouter,
+  QuoterV3,
+} from '../typechain-types';
 import addresses from './fixtures/addresses';
 import { generateErc20Balance } from './utils/generator';
+import { formatUnits } from 'ethers/lib/utils';
 
 describe('DnGmxJuniorVaultManager', () => {
   let weth: IERC20;
@@ -28,6 +35,23 @@ describe('DnGmxJuniorVaultManager', () => {
     await generateErc20Balance(wbtc, parseBtc('100000'));
     await generateErc20Balance(usdc, parseUsdc('100000000'));
   });
+
+  async function deployMock() {
+    const dnGmxJuniorVaultManager = (await (
+      await hre.ethers.getContractFactory('contracts/libraries/DnGmxJuniorVaultManager.sol:DnGmxJuniorVaultManager')
+    ).deploy()) as DnGmxJuniorVaultManager;
+
+    const quoterMock = await (
+      await hre.ethers.getContractFactory('QuoterV3Mock', {
+        libraries: {
+          ['contracts/libraries/DnGmxJuniorVaultManager.sol:DnGmxJuniorVaultManager']: dnGmxJuniorVaultManager.address,
+        },
+      })
+    ).deploy();
+
+    await quoterMock.setSlippages(90, 15);
+    return quoterMock;
+  }
 
   async function deployTest() {
     const quoter = (await hre.ethers.deployContract('QuoterV3', [
@@ -244,6 +268,21 @@ describe('DnGmxJuniorVaultManager', () => {
         return BigNumber.from(0);
       }
     }
+  });
+
+  describe('#mock', () => {
+    it('should mock slippage on basis chainlink price', async () => {
+      const mock = await loadFixture(deployMock);
+
+      const btcAmount = parseBtc('1');
+      const ethAmount = parseEther('1');
+
+      console.log(formatUnits(await mock.quoteExactInput(mock.WBTC_TO_USDC(), btcAmount), 6));
+      console.log(formatUnits(await mock.quoteExactInput(mock.WETH_TO_USDC(), ethAmount), 6));
+
+      console.log(formatUnits(await mock.quoteExactOutput(mock.USDC_TO_WBTC(), btcAmount), 6));
+      console.log(formatUnits(await mock.quoteExactOutput(mock.USDC_TO_WETH(), ethAmount), 6));
+    });
   });
 });
 
