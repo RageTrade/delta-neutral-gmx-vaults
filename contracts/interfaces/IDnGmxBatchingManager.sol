@@ -26,7 +26,7 @@ interface IDnGmxBatchingManager {
     event VaultDeposit(uint256 vaultGlpAmount);
 
     event KeeperUpdated(address newKeeper);
-    event ThresholdsUpdated(uint256 newSlippageThresholdGmx, uint256 newGlpDepositPendingThreshold);
+    event ThresholdsUpdated(uint256 newSlippageThresholdGmx, uint256 minUsdcConversionAmount);
 
     event BatchStake(uint256 indexed round, uint256 userUsdcAmount, uint256 userGlpAmount);
     event SharesClaimed(address indexed from, address indexed receiver, uint256 claimAmount);
@@ -52,9 +52,7 @@ interface IDnGmxBatchingManager {
         uint256 minUSDG
     ) external returns (uint256 glpStaked);
 
-    function executeBatchStake() external;
-
-    function executeBatchDeposit(uint256 depositAmount) external;
+    function executeBatch(uint128 usdcConversionFractionBps) external;
 
     function currentRound() external view returns (uint256);
 
