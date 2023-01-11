@@ -182,6 +182,7 @@ library DnGmxJuniorVaultManager {
         IDnGmxBatchingManager batchingManager;
 
         uint128 rebalanceProfitUsdcAmountThreshold;
+
         // gaps for extending struct (if required during upgrade)
         uint256[49] __gaps;
     }
@@ -1037,37 +1038,49 @@ library DnGmxJuniorVaultManager {
         // usdc deposited by junior tranche (can be negative)
         int256 dnUsdcDeposited = state.dnUsdcDeposited;
 
-        // convert int into two uints basis the sign
-        uint256 dnUsdcDepositedPos = dnUsdcDeposited > int256(0) ? uint256(dnUsdcDeposited) : 0;
-        uint256 dnUsdcDepositedNeg = dnUsdcDeposited < int256(0) ? uint256(-dnUsdcDeposited) : 0;
+        // calculate current borrow amounts
+        (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows(state);
+        // total borrow value is the value of ETH and BTC required to be paid off
+        uint256 totalCurrentBorrowValue = _getBorrowValue(state, currentBtc, currentEth);
+        uint256 aaveProfitGlp;
+        uint256 aaveLossGlp;
+        {
+            // convert it into two uints basis the sign
+            uint256 aaveProfit = dnUsdcDeposited > int256(0) ? uint256(dnUsdcDeposited) : 0;
+            uint256 aaveLoss = dnUsdcDeposited < int256(0)
+                ? uint256(-dnUsdcDeposited) + totalCurrentBorrowValue
+                : totalCurrentBorrowValue;
 
-        // add positive part to unhedgedGlp which will be added at the end
+            if (aaveProfit > aaveLoss) {
+                aaveProfitGlp = (aaveProfit - aaveLoss).mulDivDown(
+                    PRICE_PRECISION,
+                    _getGlpPriceInUsdc(state, maximize)
+                );
+                if (!maximize)
+                    aaveProfitGlp = aaveProfitGlp.mulDivDown(MAX_BPS - state.slippageThresholdGmxBps, MAX_BPS);
+                aaveLossGlp = 0;
+            } else {
+                aaveLossGlp = (aaveLoss - aaveProfit).mulDivDown(PRICE_PRECISION, _getGlpPriceInUsdc(state, maximize));
+                if (!maximize) aaveLossGlp = aaveLossGlp.mulDivDown(MAX_BPS + state.slippageThresholdGmxBps, MAX_BPS);
+                aaveProfitGlp = 0;
+            }
+        }
+
         // convert usdc amount into glp amount
-        uint256 unhedgedGlp = (state.unhedgedGlpInUsdc + dnUsdcDepositedPos).mulDivDown(
+        // unhedged glp is kept in usdc so there would be conversion slippage on that
+        uint256 unhedgedGlp = (state.unhedgedGlpInUsdc).mulDivDown(
             PRICE_PRECISION,
             _getGlpPriceInUsdc(state, !maximize)
         );
 
-        // calculate current borrow amounts
-        (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows(state);
-        uint256 totalCurrentBorrowValue = _getBorrowValue(state, currentBtc, currentEth);
-
-        // add negative part to current borrow value which will be subtracted at the end
-        // convert usdc amount into glp amount
-        uint256 borrowValueGlp = (totalCurrentBorrowValue + dnUsdcDepositedNeg).mulDivDown(
-            PRICE_PRECISION,
-            _getGlpPriceInUsdc(state, maximize)
-        );
-
         // if we need to minimize then add additional slippage
         if (!maximize) unhedgedGlp = unhedgedGlp.mulDivDown(MAX_BPS - state.slippageThresholdGmxBps, MAX_BPS);
-        if (!maximize) borrowValueGlp = borrowValueGlp.mulDivDown(MAX_BPS + state.slippageThresholdGmxBps, MAX_BPS);
 
         // total assets considers 3 parts
         // part1: glp balance in vault
-        // part2: glp balance in batching manager
-        // part3: pnl on AAVE (usdc deposit by junior tranche (i.e. dnUsdcDeposited) - current borrow value)
-        return state.fsGlp.balanceOf(address(this)) + unhedgedGlp - borrowValueGlp;
+        // part2: usdc balance in vault (unhedged glp)
+        // part3: pnl on AAVE (i.e. aaveProfitGlp - aaveLossGlp)
+        return state.fsGlp.balanceOf(address(this)) + unhedgedGlp + aaveProfitGlp - aaveLossGlp;
     }
 
     ///@notice returns if the rebalance is valid basis last rebalance time and rebalanceTimeThreshold

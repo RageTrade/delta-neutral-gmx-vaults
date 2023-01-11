@@ -454,16 +454,9 @@ describe('Junior Vault ERC4646 functions', () => {
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
 
     expect(await dnGmxJuniorVault.maxDeposit(users[0].address)).to.eq(
-      115792089237316195423570985008687907853269984665640564039357397665252224175871n,
+      (await dnGmxJuniorVault.depositCap()).sub(await dnGmxJuniorVault.totalAssetsMax()),
     );
-    await dnGmxJuniorVault.setAdminParams(
-      admin.address,
-      dnGmxSeniorVault.address,
-      0,
-      glpBatchingManager.address,
-      50,
-      3000,
-    );
+    await dnGmxJuniorVault.setAdminParams(admin.address, dnGmxSeniorVault.address, 0, 50, 3000);
     expect(await dnGmxJuniorVault.maxDeposit(users[0].address)).to.eq(0);
   });
 
