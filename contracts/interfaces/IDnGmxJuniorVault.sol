@@ -7,7 +7,7 @@ import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPool
 import { IPool } from '@aave/core-v3/contracts/interfaces/IPool.sol';
 import { IPriceOracle } from '@aave/core-v3/contracts/interfaces/IPriceOracle.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
-
+import { IQuoterV3 } from '@uniswap/v3-periphery/contracts/interfaces/IQuoterV3.sol';
 import { IERC4626 } from './IERC4626.sol';
 import { IBorrower } from './IBorrower.sol';
 import { IBalancerVault } from './balancer/IBalancerVault.sol';
@@ -57,7 +57,7 @@ interface IDnGmxJuniorVault is IERC4626, IBorrower {
         uint128 partialBtcHedgeUsdcAmountThreshold,
         uint128 partialEthHedgeUsdcAmountThreshold
     );
-    event ThresholdsV1Updated(uint128 rebalanceProfitUsdcAmountThreshold);
+    event ParamsV1Updated(uint128 rebalanceProfitUsdcAmountThreshold, IQuoterV3 uniswapV3Quoter);
     event RebalanceParamsUpdated(
         uint32 rebalanceTimeThreshold,
         uint16 rebalanceDeltaThresholdBps,
