@@ -1328,7 +1328,7 @@ library DnGmxJuniorVaultManager {
 
         // netSlippage returned is in glp (asset) terms
         uint256 glpPrice = _getGlpPrice(state, false);
-        uint256 netSlippage = dollarsLostDueToSlippage.mulDivDown(glpPrice, PRICE_PRECISION);
+        uint256 netSlippage = dollarsLostDueToSlippage.mulDivUp(PRICE_PRECISION, glpPrice);
 
         // subtract slippage from assets, and calculate shares basis that slippage adjusted asset amount
         assets -= uint256(netSlippage);
