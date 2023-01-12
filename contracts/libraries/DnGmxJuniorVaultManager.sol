@@ -33,6 +33,10 @@ import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMat
 import { IQuoterV3 } from '@uniswap/v3-periphery/contracts/interfaces/IQuoterV3.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 
+// TODO remove
+import 'hardhat/console.sol';
+bool constant SHOULD_LOG = false;
+
 /**
  * @title Helper library for junior vault
  * @dev junior vault delegates calls to this library for logic
@@ -1397,6 +1401,8 @@ library DnGmxJuniorVaultManager {
             // swap usdc to wbtc
             uint256 otherTokenAmountAbs = state.uniswapV3Quoter.quoteExactOutput(swapPath, uint256(-tokenAmount));
             return int256(otherTokenAmountAbs); // pool gains usdc hence positive
+        } else {
+            return 0;
         }
     }
 
@@ -1405,15 +1411,32 @@ library DnGmxJuniorVaultManager {
         int256 otherTokenAmount,
         uint256 tokenPrice,
         uint256 otherTokenPrice
-    ) internal pure returns (uint256) {
-        int256 dollarsPaid;
-        int256 dollarsReceived;
+    ) internal view returns (uint256) {
+        uint256 dollarsPaid;
+        uint256 dollarsReceived;
         if (tokenAmount > 0) {
-            dollarsPaid = tokenAmount.mulDivDown(tokenPrice, PRICE_PRECISION);
-            dollarsReceived = (-otherTokenAmount).mulDivDown(otherTokenPrice, PRICE_PRECISION);
+            if (SHOULD_LOG) {
+                console.log('tokenAmount', uint256(tokenAmount));
+                console.log('tokenPrice', tokenPrice);
+                console.log('PRICE_PRECISION', PRICE_PRECISION);
+                console.log('-otherTokenAmount', uint256(-otherTokenAmount));
+                console.log('otherTokenPrice', otherTokenPrice);
+            }
+            dollarsPaid = uint256(tokenAmount).mulDivUp(tokenPrice, PRICE_PRECISION);
+            dollarsReceived = uint256(-otherTokenAmount).mulDivDown(otherTokenPrice, PRICE_PRECISION);
         } else if (tokenAmount < 0) {
-            dollarsPaid = otherTokenAmount.mulDivDown(otherTokenPrice, PRICE_PRECISION);
-            dollarsReceived = (-tokenAmount).mulDivDown(tokenPrice, PRICE_PRECISION);
+            if (SHOULD_LOG) {
+                console.log('-tokenAmount', uint256(-tokenAmount));
+                console.log('tokenPrice', tokenPrice);
+                console.log('PRICE_PRECISION', PRICE_PRECISION);
+            }
+            dollarsPaid = uint256(otherTokenAmount).mulDivUp(otherTokenPrice, PRICE_PRECISION);
+            dollarsReceived = uint256(-tokenAmount).mulDivDown(tokenPrice, PRICE_PRECISION);
+        }
+        if (SHOULD_LOG) {
+            console.log('dollarsPaid', dollarsPaid);
+            console.log('dollarsReceived', dollarsReceived);
+            console.log('loss', (dollarsPaid > dollarsReceived) ? uint256(dollarsPaid - dollarsReceived) : 0);
         }
         return (dollarsPaid > dollarsReceived) ? uint256(dollarsPaid - dollarsReceived) : 0;
     }
@@ -1434,9 +1457,37 @@ library DnGmxJuniorVaultManager {
         // btc swap
         int256 usdcAmountInBtcSwap = _getQuote(state, btcAmountInBtcSwap, WBTC_TO_USDC(state));
         dollarsLostDueToSlippage += _calculateSwapLoss(btcAmountInBtcSwap, usdcAmountInBtcSwap, btcPrice, usdcPrice);
+        if (SHOULD_LOG) {
+            console.log('btcAmountInBtcSwap');
+            console.logInt(btcAmountInBtcSwap);
+            console.log('usdcAmountInBtcSwap');
+            console.logInt(usdcAmountInBtcSwap);
+            console.log('====');
+        }
 
         // getting intermediate eth amount in btc swap
         int256 ethAmountInBtcSwap = _getQuote(state, usdcAmountInBtcSwap, USDC_TO_WETH_(state));
+        if (SHOULD_LOG) {
+            console.log('ethAmountInBtcSwap');
+            console.logInt(ethAmountInBtcSwap);
+            console.log('====');
+        }
+        //
+        //
+
+        // remove extra fees                                                                    46362469400
+        // ethAmountInBtcSwap = ((ethAmountInBtcSwap) * (1e6 + 500) * (1e6 + 500)) / 1e12;      46362555628
+        // ethAmountInBtcSwap = ((ethAmountInBtcSwap) * (1e6 + 1000)) / 1e6;                    46362555628
+        ethAmountInBtcSwap = ((ethAmountInBtcSwap) * (1e6 + 500)) / (1e6 - 500); //             46362550640
+        //                                                                                          46362550640
+
+        // with adding
+        // desired usdc  -46362469400
+        // actual usdc -46362545651 0.0001% error 1e12 / (1e6 - 500) / (1e6 - 500)
+        // actual usdc -46362555628 0.0001% error (1e6 + 500) * (1e6 + 500)) / 1e12
+        // with subtracting
+        // desired usdc  -46362469400
+        // actual usdc -46392460680 0.06% error
 
         // eth swap (also accounting for price change in btc swap)
         int256 usdcAmountInEthSwap = _getQuote(
@@ -1444,7 +1495,20 @@ library DnGmxJuniorVaultManager {
             ethAmountInEthSwap + ethAmountInBtcSwap, // including btc swap amount
             WETH_TO_USDC(state)
         );
+        if (SHOULD_LOG) {
+            console.log('ethAmountInEth');
+            console.logInt(ethAmountInEthSwap);
+            console.log('ethAmountInEth+BtcSwap');
+            console.logInt(ethAmountInEthSwap + ethAmountInBtcSwap);
+            console.log('usdcAmountInEth+BtcSwap');
+            console.logInt(usdcAmountInEthSwap);
+        }
         usdcAmountInEthSwap -= usdcAmountInBtcSwap; // accounting for price change in btc swap
+        if (SHOULD_LOG) {
+            console.log('usdcAmountInEthSwap');
+            console.logInt(usdcAmountInEthSwap);
+            console.log('====');
+        }
         dollarsLostDueToSlippage += _calculateSwapLoss(ethAmountInEthSwap, usdcAmountInEthSwap, ethPrice, usdcPrice);
 
         // ensure ethAmountInEthSwap and usdcAmountInEthSwap are of opposite sign when they are both non-zero

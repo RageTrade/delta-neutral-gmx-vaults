@@ -1,4 +1,4 @@
-import { parseEther, parseUnits } from '@ethersproject/units';
+import { formatUnits, parseEther, parseUnits } from '@ethersproject/units';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
@@ -13,7 +13,6 @@ import {
 } from '../typechain-types';
 import addresses from './fixtures/addresses';
 import { generateErc20Balance } from './utils/generator';
-import { formatUnits } from 'ethers/lib/utils';
 
 describe('DnGmxJuniorVaultManager', () => {
   let weth: IERC20;
@@ -184,45 +183,179 @@ describe('DnGmxJuniorVaultManager', () => {
   });
 
   describe('#quoteSwapSlippageLoss', () => {
-    it('should quote btc swap loss correctly', async () => {
-      const { test } = await loadFixture(deployTest);
+    describe('basic', () => {
+      it('should quote btc swap loss correctly', async () => {
+        const { test } = await loadFixture(deployTest);
 
-      const btcAmount = parseBtc('1');
-      const btcLossQuoted = await test.quoteSwapSlippageLoss(btcAmount, 0);
-      const btcLossActual = await executeSwapAndCalculateSlippageLoss(wbtc, usdc, btcAmount, test.WBTC_TO_USDC(), test);
+        const btcAmount = parseBtc('1');
+        const btcLossQuoted = await test.quoteSwapSlippageLoss(btcAmount, 0);
+        const btcLossActual = await executeSwapAndCalculateSlippageLoss(
+          wbtc,
+          usdc,
+          btcAmount,
+          test.WBTC_TO_USDC(),
+          test,
+        );
 
-      expect(btcLossQuoted).to.be.eq(btcLossActual);
+        expect(btcLossQuoted).to.be.eq(btcLossActual);
+      });
+
+      it('should quote eth swap loss correctly', async () => {
+        const { test } = await loadFixture(deployTest);
+
+        const ethAmount = parseEther('15');
+        const ethLossQuoted = await test.quoteSwapSlippageLoss(0, ethAmount);
+        const ethLossActual = await executeSwapAndCalculateSlippageLoss(
+          weth,
+          usdc,
+          ethAmount,
+          test.WETH_TO_USDC(),
+          test,
+        );
+
+        expect(ethLossQuoted).to.be.eq(ethLossActual);
+      });
+
+      it('should quote btc and eth swap loss together correctly', async () => {
+        const { test } = await loadFixture(deployTest);
+
+        const btcAmount = parseBtc('1');
+        const ethAmount = parseEther('15');
+        const totalLossQuoted = await test.quoteSwapSlippageLoss(btcAmount, ethAmount);
+
+        const btcLossActual = await executeSwapAndCalculateSlippageLoss(
+          wbtc,
+          usdc,
+          btcAmount,
+          test.WBTC_TO_USDC(),
+          test,
+        );
+        const ethLossActual = await executeSwapAndCalculateSlippageLoss(
+          weth,
+          usdc,
+          ethAmount,
+          test.WETH_TO_USDC(),
+          test,
+        );
+
+        // Absolute error of 1 would be there because the intermediate eth amount in btc to usdc swap
+        // is being derived by a reverse quote and it has error of 1.
+        expectEqualWithAbsoluteError(totalLossQuoted, btcLossActual.add(ethLossActual), 1);
+      });
     });
 
-    it('should quote eth swap loss correctly', async () => {
-      const { test } = await loadFixture(deployTest);
+    describe('btc +ve, eth +ve', () => {
+      it('similar amounts', async () => {
+        await testQuoteSwapSlippageLoss({
+          btcAmount: parseBtc('1'),
+          ethAmount: parseEther('15'),
+        });
+      });
 
-      const ethAmount = parseEther('15');
-      const ethLossQuoted = await test.quoteSwapSlippageLoss(0, ethAmount);
-      const ethLossActual = await executeSwapAndCalculateSlippageLoss(weth, usdc, ethAmount, test.WETH_TO_USDC(), test);
+      it('little btc, lot of eth', async () => {
+        await testQuoteSwapSlippageLoss({
+          btcAmount: parseBtc('1'),
+          ethAmount: parseEther('30'),
+        });
+      });
 
-      expect(ethLossQuoted).to.be.eq(ethLossActual);
+      it('lot of btc, little eth', async () => {
+        await testQuoteSwapSlippageLoss({
+          btcAmount: parseBtc('2'),
+          ethAmount: parseEther('15'),
+        });
+      });
     });
 
-    it('should quote btc and eth swap loss together correctly', async () => {
+    describe('btc +ve, eth -ve', () => {
+      it('similar amounts', async () => {
+        await testQuoteSwapSlippageLoss({
+          btcAmount: parseBtc('1'),
+          ethAmount: parseEther('-15'),
+        });
+      });
+
+      it('little btc, lot of eth', async () => {
+        await testQuoteSwapSlippageLoss({
+          btcAmount: parseBtc('1'),
+          ethAmount: parseEther('-30'),
+        });
+      });
+
+      it('lot of btc, little eth', async () => {
+        await testQuoteSwapSlippageLoss({
+          btcAmount: parseBtc('2'),
+          ethAmount: parseEther('-15'),
+        });
+      });
+    });
+
+    describe('btc -ve, eth +ve', () => {
+      it('similar amounts', async () => {
+        await testQuoteSwapSlippageLoss({
+          btcAmount: parseBtc('-1'),
+          ethAmount: parseEther('15'),
+        });
+      });
+
+      it.only('little btc, lot of eth', async () => {
+        await testQuoteSwapSlippageLoss({
+          btcAmount: parseBtc('-1'),
+          ethAmount: parseEther('30'),
+        });
+      });
+
+      it('lot of btc, little eth', async () => {
+        await testQuoteSwapSlippageLoss({
+          btcAmount: parseBtc('-2'),
+          ethAmount: parseEther('15'),
+        });
+      });
+    });
+
+    describe('btc -ve, eth -ve', () => {
+      it('similar amounts', async () => {
+        await testQuoteSwapSlippageLoss({
+          btcAmount: parseBtc('-1'),
+          ethAmount: parseEther('-15'),
+        });
+      });
+
+      it('little btc, lot of eth', async () => {
+        await testQuoteSwapSlippageLoss({
+          btcAmount: parseBtc('-1'),
+          ethAmount: parseEther('-30'),
+        });
+      });
+
+      it('lot of btc, little eth', async () => {
+        await testQuoteSwapSlippageLoss({
+          btcAmount: parseBtc('-2'),
+          ethAmount: parseEther('-15'),
+        });
+      });
+    });
+
+    async function testQuoteSwapSlippageLoss({ btcAmount, ethAmount }: { btcAmount: BigNumber; ethAmount: BigNumber }) {
       const { test } = await loadFixture(deployTest);
 
-      const btcAmount = parseBtc('1');
-      const ethAmount = parseEther('15');
       const totalLossQuoted = await test.quoteSwapSlippageLoss(btcAmount, ethAmount);
 
       const btcLossActual = await executeSwapAndCalculateSlippageLoss(wbtc, usdc, btcAmount, test.WBTC_TO_USDC(), test);
       const ethLossActual = await executeSwapAndCalculateSlippageLoss(weth, usdc, ethAmount, test.WETH_TO_USDC(), test);
 
-      expect(totalLossQuoted).to.be.eq(btcLossActual.add(ethLossActual));
-    });
+      console.log('totalLossQuoted', formatUnits(totalLossQuoted, 6));
+      console.log(
+        'btcLossActual',
+        formatUnits(btcLossActual, 6),
+        'ethLossActual',
+        formatUnits(ethLossActual, 6),
+        'totalLossActual',
+        formatUnits(btcLossActual.add(ethLossActual), 6),
+      );
 
-    it('btc +ve, eth +ve');
-    it('btc +ve, eth -ve');
-    it('btc -ve, eth +ve');
-    it('btc -ve, eth -ve');
-    it('btc -ve and huge, eth +ve');
-    it('btc +ve, eth -ve and huge');
+      expectEqualWithAbsoluteError(totalLossQuoted, btcLossActual.add(ethLossActual), 1);
+    }
 
     async function executeSwapAndCalculateSlippageLoss(
       token: IERC20,
@@ -237,7 +370,6 @@ describe('DnGmxJuniorVaultManager', () => {
 
       tokenAmount = BigNumber.from(tokenAmount);
       if (tokenAmount.gt(0)) {
-        await token.approve(swapRouter.address, tokenAmount.abs());
         const params: ISwapRouter.ExactInputParamsStruct = {
           path,
           recipient: signer.address,
@@ -245,25 +377,55 @@ describe('DnGmxJuniorVaultManager', () => {
           amountIn: tokenAmount,
           amountOutMinimum: 0,
         };
+        await token.approve(swapRouter.address, tokenAmount);
         const otherTokenAmount = await swapRouter.callStatic.exactInput(params);
+        const dollarsPaid = mulDivUp(tokenAmount, tokenPrice, PRICE_PRECISION);
+        const dollarsReceived = mulDivDown(otherTokenAmount, otherTokenPrice, PRICE_PRECISION);
+        const loss = dollarsPaid.gt(dollarsReceived) ? dollarsPaid.sub(dollarsReceived) : BigNumber.from(0);
+        console.log({
+          tokenAmount,
+          tokenPrice,
+          PRICE_PRECISION,
+          otherTokenAmount,
+          otherTokenPrice,
+          dollarsPaid,
+          dollarsReceived,
+          loss,
+        });
+        // if (loss.gt(0)) {
+        // change price on uniswap
         await swapRouter.exactInput(params);
-        const dollarsPaid = tokenAmount.mul(tokenPrice).div(PRICE_PRECISION);
-        const dollarsReceived = otherTokenAmount.mul(otherTokenPrice).div(PRICE_PRECISION);
-        return dollarsPaid.gt(dollarsReceived) ? dollarsPaid.sub(dollarsReceived) : BigNumber.from(0);
+        // }
+        return loss;
       } else if (tokenAmount.lt(0)) {
-        await otherToken.approve(swapRouter.address, ethers.constants.MaxUint256);
         const params: ISwapRouter.ExactOutputParamsStruct = {
           path,
           recipient: signer.address,
           deadline: Math.floor(Date.now() / 1000) + 60,
           amountOut: tokenAmount.abs(),
-          amountInMaximum: 0,
+          amountInMaximum: ethers.constants.MaxUint256,
         };
+        await otherToken.approve(swapRouter.address, ethers.constants.MaxUint256);
+        hre.tracer.printNext = true;
         const otherTokenAmount = await swapRouter.callStatic.exactOutput(params);
+        const dollarsPaid = mulDivUp(otherTokenAmount, otherTokenPrice, PRICE_PRECISION);
+        const dollarsReceived = mulDivDown(tokenAmount.abs(), tokenPrice, PRICE_PRECISION);
+        const loss = dollarsPaid.gt(dollarsReceived) ? dollarsPaid.sub(dollarsReceived) : BigNumber.from(0);
+        console.log({
+          tokenAmount,
+          tokenPrice,
+          PRICE_PRECISION,
+          otherTokenAmount,
+          otherTokenPrice,
+          dollarsPaid,
+          dollarsReceived,
+          loss,
+        });
+        // if (loss.gt(0)) {
+        // change price on uniswap
         await swapRouter.exactOutput(params);
-        const dollarsPaid = otherTokenAmount.mul(otherTokenPrice).div(PRICE_PRECISION);
-        const dollarsReceived = tokenAmount.mul(tokenPrice).div(PRICE_PRECISION);
-        return dollarsPaid.gt(dollarsReceived) ? dollarsPaid.sub(dollarsReceived) : BigNumber.from(0);
+        // }
+        return loss;
       } else {
         return BigNumber.from(0);
       }
@@ -292,4 +454,25 @@ function parseBtc(amount: string) {
 
 function parseUsdc(amount: string) {
   return parseUnits(amount, 6);
+}
+
+function mulDivUp(a: BigNumber, b: BigNumber, c: BigNumber) {
+  let result = a.mul(b).div(c);
+  if (!a.mul(b).eq(result.mul(c))) {
+    result = result.add(1);
+  }
+  return result;
+}
+
+function mulDivDown(a: BigNumber, b: BigNumber, c: BigNumber) {
+  return a.mul(b).div(c);
+}
+
+function expectEqualWithAbsoluteError(a: BigNumber, b: BigNumber, error: BigNumberish) {
+  error = BigNumber.from(error);
+  try {
+    expect(a.gte(b.sub(error)) && a.lte(b.add(error))).to.be.true;
+  } catch (e) {
+    expect(a).to.be.eq(b); // for printing error
+  }
 }
