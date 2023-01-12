@@ -1391,7 +1391,7 @@ describe('Rebalance Scenarios', () => {
     await checker.checkUsdcBorrwed(49254484n, 500n);
 
     console.log('-------------------- Rebalance 4 --------------------');
-    await expect(dnGmxJuniorVault.rebalance()).to.be.revertedWith('InvalidRebalance()');
+    await expect(dnGmxJuniorVault.rebalance()).to.be.revertedWithCustomError(dnGmxJuniorVault, 'InvalidRebalance');
   });
 
   it('Multiple Users Deposit/Withdraw (Excel)', async () => {

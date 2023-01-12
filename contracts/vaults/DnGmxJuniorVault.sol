@@ -20,6 +20,8 @@ import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMat
 import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 
+import { IQuoterV3 } from '@uniswap/v3-periphery/contracts/interfaces/IQuoterV3.sol';
+
 import { IBalancerVault } from '../interfaces/balancer/IBalancerVault.sol';
 import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
 import { IDnGmxJuniorVault, IERC4626 } from '../interfaces/IDnGmxJuniorVault.sol';
@@ -232,10 +234,11 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
 
     /// @notice set thresholds
     /// @param rebalanceProfitUsdcAmountThreshold (BPS) slippage threshold on btc swaps
-    function setThresholdsV1(uint128 rebalanceProfitUsdcAmountThreshold) external onlyOwner {
+    function setParamsV1(uint128 rebalanceProfitUsdcAmountThreshold, IQuoterV3 _uniswapV3Quoter) external onlyOwner {
         state.rebalanceProfitUsdcAmountThreshold = rebalanceProfitUsdcAmountThreshold;
+        state.uniswapV3Quoter = _uniswapV3Quoter;
 
-        emit ThresholdsV1Updated(rebalanceProfitUsdcAmountThreshold);
+        emit ParamsV1Updated(rebalanceProfitUsdcAmountThreshold, _uniswapV3Quoter);
     }
 
     /// @notice set rebalance paramters
@@ -576,37 +579,53 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         return supply == 0 ? shares : shares.mulDivDown(state.totalAssets(false), supply);
     }
 
+    /// @notice preview function for using assets to mint shares
+    /// @param assets number of assets to be deposited
+    /// @return shares that would be minted to the user
+    function previewDeposit(uint256 assets) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
+        uint256 netAssets = state.getSlippageAdjustedAssets({ assets: assets, isDeposit: true });
+        return convertToShares(netAssets);
+    }
+
     /// @notice preview function for minting of shares
     /// @param shares number of shares to mint
     /// @return assets that would be taken from the user
     function previewMint(uint256 shares) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
-        uint256 supply = totalSupply(); // Saves an extra SLOAD if totalSupply is non-zero.
+        uint256 supply = totalSupply();
 
-        return supply == 0 ? shares : shares.mulDivUp(state.totalAssets(true), supply);
+        if (supply == 0) return shares;
+
+        uint256 assets = convertToAssets(shares);
+        uint256 netAssets = state.getSlippageAdjustedAssets({ assets: assets, isDeposit: true });
+
+        return netAssets;
     }
 
     /// @notice preview function for withdrawal of assets
     /// @param assets that would be given to the user
     /// @return shares that would be burnt
     function previewWithdraw(uint256 assets) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
-        uint256 supply = totalSupply(); // Saves an extra SLOAD if totalSupply is non-zero.
+        uint256 supply = totalSupply();
 
-        return
-            supply == 0
-                ? assets
-                : assets.mulDivUp(supply * MAX_BPS, state.totalAssets(false) * (MAX_BPS - state.withdrawFeeBps));
+        if (supply == 0) return assets;
+
+        uint256 netAssets = state.getSlippageAdjustedAssets({ assets: assets, isDeposit: false });
+
+        return netAssets.mulDivUp(supply * MAX_BPS, state.totalAssets(false) * (MAX_BPS - state.withdrawFeeBps));
     }
 
     /// @notice preview function for redeeming shares
     /// @param shares that would be taken from the user
     /// @return assets that user would get
     function previewRedeem(uint256 shares) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
-        uint256 supply = totalSupply(); // Saves an extra SLOAD if totalSupply is non-zero.
+        uint256 supply = totalSupply();
 
-        return
-            supply == 0
-                ? shares
-                : shares.mulDivDown(state.totalAssets(false) * (MAX_BPS - state.withdrawFeeBps), supply * MAX_BPS);
+        if (supply == 0) return shares;
+
+        uint256 assets = convertToAssets(shares);
+        uint256 netAssets = state.getSlippageAdjustedAssets({ assets: assets, isDeposit: false });
+
+        return netAssets.mulDivDown(MAX_BPS - state.withdrawFeeBps, MAX_BPS);
     }
 
     /// @notice returns deposit cap in terms of asset tokens

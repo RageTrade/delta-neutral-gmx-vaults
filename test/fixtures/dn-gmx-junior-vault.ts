@@ -47,6 +47,16 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     })
   ).deploy();
 
+  const quoterMock = await (
+    await hre.ethers.getContractFactory('QuoterV3Mock', {
+      libraries: {
+        ['contracts/libraries/DnGmxJuniorVaultManager.sol:DnGmxJuniorVaultManager']: dnGmxJuniorVaultManager.address,
+      },
+    })
+  ).deploy();
+
+  await quoterMock.setSlippages(90, 15);
+
   const gmxVault = IVault__factory.connect(GMX_ECOSYSTEM_ADDRESSES.Vault, admin);
 
   await dnGmxJuniorVault.initialize(
@@ -63,6 +73,8 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     },
     addresses.AAVE_POOL_ADDRESS_PROVIDER, // _poolAddressesProvider
   );
+
+  await dnGmxJuniorVault.setParamsV1(BigNumber.from(2).pow(128).sub(1), quoterMock.address);
 
   const bypass = await (await hre.ethers.getContractFactory('BatchingManagerBypass')).deploy();
 

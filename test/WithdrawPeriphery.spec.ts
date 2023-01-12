@@ -20,14 +20,12 @@ describe('Withdraw Periphery', () => {
       .withArgs(dnGmxJuniorVault.address, rewardRouter.address);
 
     await expect(withdrawPeriphery.connect(users[5]).setSlippageThreshold(100)).to.be.revertedWith(
-      `VM Exception while processing transaction: reverted with reason string 'Ownable: caller is not the owner'`,
+      'Ownable: caller is not the owner',
     );
 
     await expect(
       withdrawPeriphery.connect(users[5]).setAddresses(dnGmxJuniorVault.address, rewardRouter.address),
-    ).to.be.revertedWith(
-      `VM Exception while processing transaction: reverted with reason string 'Ownable: caller is not the owner'`,
-    );
+    ).to.be.revertedWith('Ownable: caller is not the owner');
   });
 
   it('withdrawToken - revert due to allowance', async () => {
@@ -153,9 +151,7 @@ describe('Withdraw Periphery', () => {
       .connect(users[0])
       .redeemToken(weth.address, users[0].address, dnGmxJuniorVault.balanceOf(users[0].address));
 
-    await expect(tx).to.be.revertedWith(
-      `VM Exception while processing transaction: reverted with reason string 'GlpManager: insufficient output'`,
-    );
+    await expect(tx).to.be.revertedWith('GlpManager: insufficient output');
   });
 
   it('withdrawToken - different receiver than msg.sender', async () => {
@@ -208,8 +204,6 @@ describe('Withdraw Periphery', () => {
 
     await expect(
       withdrawPeriphery.connect(users[0]).withdrawToken(usdc.address, users[0].address, withdrawAmount),
-    ).to.be.revertedWith(
-      `VM Exception while processing transaction: reverted with reason string 'GlpManager: insufficient output'`,
-    );
+    ).to.be.revertedWith('GlpManager: insufficient output');
   });
 });
