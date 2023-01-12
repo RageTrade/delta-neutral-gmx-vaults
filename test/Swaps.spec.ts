@@ -191,9 +191,7 @@ describe('Swaps', () => {
     expect(await dnGmxJuniorVault.totalAssets()).to.eq(assets);
 
     // slippageThresholdGmxBps = 0.1%
-    expect(dnGmxJuniorVault.convertAssetToAUsdc(usdcAmount)).to.be.revertedWith(
-      `VM Exception while processing transaction: reverted with reason string 'GlpManager: insufficient output'`,
-    );
+    expect(dnGmxJuniorVault.convertAssetToAUsdc(usdcAmount)).to.be.revertedWith('GlpManager: insufficient output');
   });
 
   it('convert aUSDC to asset', async () => {
@@ -275,8 +273,6 @@ describe('Swaps', () => {
     expect(await dnGmxJuniorVault.totalAssets()).to.eq(0);
 
     // slippageThresholdGmxBps = 0.1%
-    expect(dnGmxJuniorVault.convertAssetToAUsdc(aUSDCAmount)).to.be.revertedWith(
-      `VM Exception while processing transaction: reverted with reason string 'GlpManager: insufficient output'`,
-    );
+    expect(dnGmxJuniorVault.convertAssetToAUsdc(aUSDCAmount)).to.be.revertedWith('GlpManager: insufficient output');
   });
 });
