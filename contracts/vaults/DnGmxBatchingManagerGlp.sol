@@ -38,7 +38,7 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
         // amount of sGlp received in current round
         uint256 roundGlpDeposited;
         // amount of usdc recieved in current round
-        uint256 roundGlpBalance;
+        uint256 roundAssetBalance;
         // stores junior vault shares accumuated for user
         mapping(address => UserDeposit) userDeposits;
         // stores total glp received in a given round
@@ -186,7 +186,7 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
         // such that it would revert while converting to glp if it was only deposit in batch
         if (amount < minGlpDepositThreshold) revert InvalidInput(0x23);
 
-        if (vaultBatchingState.roundGlpBalance + amount > depositCap) revert DepositCapBreached();
+        if (vaultBatchingState.roundAssetBalance + amount > depositCap) revert DepositCapBreached();
 
         // user gives approval to batching manager to spend usdc
         sGlp.transferFrom(msg.sender, address(this), amount);
@@ -209,7 +209,7 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
         // Update round and glp balance for current round
         userDeposit.round = vaultBatchingState.currentRound;
         userDeposit.assetBalance = userAssetBalance + amount.toUint128();
-        vaultBatchingState.roundGlpBalance += amount.toUint128();
+        vaultBatchingState.roundAssetBalance += amount.toUint128();
 
         emit DepositToken(vaultBatchingState.currentRound, address(sGlp), receiver, amount, 0);
     }
@@ -219,32 +219,32 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
 
         if (sGlpToDeposit == 0) revert InvalidInput(0x40);
 
-        uint128 _roundGlpBalance = vaultBatchingState.roundGlpBalance.toUint128();
+        uint128 _roundAssetBalance = vaultBatchingState.roundAssetBalance.toUint128();
 
-        uint128 _sGlpToDeposit = sGlpToDeposit < _roundGlpBalance ? sGlpToDeposit : _roundGlpBalance;
+        uint128 _sGlpToDeposit = sGlpToDeposit < _roundAssetBalance ? sGlpToDeposit : _roundAssetBalance;
 
         if (_sGlpToDeposit == 0) revert NoAssetBalance();
 
         // ensure we are atleast swapping minGlpDepositThreshold units of usdc
         //
-        // here, _roundGlpBalance will be always >= _sGlpToDeposit, because:
+        // here, _roundAssetBalance will be always >= _sGlpToDeposit, because:
         // 1) usdcConversionFractionBps <= MAX_BPS
         //
-        // here, _roundGlpBalance will be always >= minGlpDepositThreshold because:
+        // here, _roundAssetBalance will be always >= minGlpDepositThreshold because:
         // 1) when swapping first time in round, due to checks in depositUsdc
         // 2) when swapping subsequent times, due to checks below (which ensure remaining usdc >= minGlpDepositThreshold)
         if (_sGlpToDeposit < minGlpDepositThreshold.toUint128()) _sGlpToDeposit = minGlpDepositThreshold.toUint128();
 
-        if ((_roundGlpBalance - _sGlpToDeposit) <= minGlpDepositThreshold) _sGlpToDeposit = _roundGlpBalance;
+        if ((_roundAssetBalance - _sGlpToDeposit) <= minGlpDepositThreshold) _sGlpToDeposit = _roundAssetBalance;
 
-        // eventually, vaultBatchingState.roundGlpBalance should become 0 for current round
+        // eventually, vaultBatchingState.roundAssetBalance should become 0 for current round
         // (due to above conditions)
-        vaultBatchingState.roundGlpBalance = _roundGlpBalance - _sGlpToDeposit;
+        vaultBatchingState.roundAssetBalance = _roundAssetBalance - _sGlpToDeposit;
 
         vaultBatchingState.roundGlpDeposited += _sGlpToDeposit;
         ////
         uint128 sharesReceived = _executeVaultUserBatchDeposit(_sGlpToDeposit);
-        uint128 assetRemainingInRound = vaultBatchingState.roundGlpBalance.toUint128();
+        uint128 assetRemainingInRound = vaultBatchingState.roundAssetBalance.toUint128();
 
         vaultBatchingState.roundDeposits[vaultBatchingState.currentRound].totalAssets += _sGlpToDeposit;
         vaultBatchingState.roundDeposits[vaultBatchingState.currentRound].totalShares += sharesReceived;
@@ -317,8 +317,8 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
     }
 
     /// @notice get the glp balance for current active round
-    function roundGlpBalance() external view returns (uint256) {
-        return vaultBatchingState.roundGlpBalance;
+    function roundAssetBalance() external view returns (uint256) {
+        return vaultBatchingState.roundAssetBalance;
     }
 
     /// @notice get the glp balance for current active round

@@ -46,12 +46,6 @@ interface IDnGmxBatchingManager {
         uint128 totalShares;
     }
 
-    function depositToken(
-        address token,
-        uint256 amount,
-        uint256 minUSDG
-    ) external returns (uint256 glpStaked);
-
     function executeBatch(uint128 usdcConversionFractionBps) external;
 
     function currentRound() external view returns (uint256);

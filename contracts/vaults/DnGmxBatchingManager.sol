@@ -77,7 +77,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     // gmx's RewardRouterV2 (RewardRouterV2.sol) contract
     IRewardRouterV2 private rewardRouter;
 
-    // batching mangager bypass contract
+    // batching mangager bypass contract !!! deprecated !!!
     IBatchingManagerBypass private bypass;
 
     // batching manager's state
@@ -161,10 +161,6 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         emit KeeperUpdated(_keeper);
     }
 
-    function setBypass(IBatchingManagerBypass _bypass) external onlyOwner {
-        bypass = _bypass;
-    }
-
     /// @notice sets the slippage (in bps) to use while staking on gmx
     /// @param _slippageThresholdGmxBps slippage (in bps)
     function setThresholds(uint256 _slippageThresholdGmxBps, uint256 _minUsdcConversionAmount) external onlyOwner {
@@ -191,30 +187,6 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     /*//////////////////////////////////////////////////////////////
                             PROTOCOL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
-
-    /// @notice convert the token into glp and obtain staked glp
-    /// @dev this function should be only called by junior vault
-    /// @param token address of input token (should be supported on gmx)
-    /// @param amount amount of token to be used
-    /// @param minUSDG minimum output of swap in terms of USDG
-    function depositToken(
-        address token,
-        uint256 amount,
-        uint256 minUSDG
-    ) external onlyDnGmxJuniorVault returns (uint256 glpStaked) {
-        // revert for zero values
-        if (token == address(0)) revert InvalidInput(0x30);
-        if (amount == 0) revert InvalidInput(0x31);
-
-        // dnGmxJuniorVault gives approval to batching manager to spend token
-        IERC20(token).transferFrom(msg.sender, address(this), amount);
-
-        // convert tokens to glp
-        glpStaked = _stakeGlp(token, amount, minUSDG);
-        dnGmxJuniorVaultGlpBalance += glpStaked.toUint128();
-
-        emit DepositToken(0, token, msg.sender, amount, glpStaked);
-    }
 
     function depositUsdc(uint256 amount, address receiver) external whenNotPaused {
         // revert for zero values
