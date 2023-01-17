@@ -298,7 +298,7 @@ describe('DnGmxJuniorVaultManager', () => {
         });
       });
 
-      it.only('little btc, lot of eth', async () => {
+      it('little btc, lot of eth', async () => {
         await testQuoteSwapSlippageLoss({
           btcAmount: parseBtc('-1'),
           ethAmount: parseEther('30'),
