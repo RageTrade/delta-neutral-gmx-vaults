@@ -1149,9 +1149,9 @@
   resolved "https://registry.yarnpkg.com/@uniswap/v3-core/-/v3-core-1.0.2-solc-0.8-simulate.tgz#77fb42f2b502b4fec81844736d039fc059e8688c"
   integrity sha512-ALAZbsb3wvUrRzeAjrTKjv1fH7UrueJ/+D8uX4yintXHxxzbnnp78Kis2pa4D26cFQ72rwM3DrZpUES9rhsEuQ==
 
-"@uniswap/v3-periphery@https://github.com/RageTrade/uniswap-v3-periphery.git#0faa06e447e54d582af514f847fc892c7dfb43a3":
+"@uniswap/v3-periphery@https://github.com/RageTrade/uniswap-v3-periphery.git#8567f35b651c5902e8889e778b981c0803319b59":
   version "1.4.2-solc-0.8"
-  resolved "https://github.com/RageTrade/uniswap-v3-periphery.git#0faa06e447e54d582af514f847fc892c7dfb43a3"
+  resolved "https://github.com/RageTrade/uniswap-v3-periphery.git#8567f35b651c5902e8889e778b981c0803319b59"
   dependencies:
     "@openzeppelin/contracts" "4.6.0"
     "@uniswap/v2-core" "1.0.1"
