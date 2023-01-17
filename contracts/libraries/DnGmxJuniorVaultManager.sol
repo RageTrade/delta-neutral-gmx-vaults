@@ -33,10 +33,6 @@ import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMat
 import { IQuoterV3 } from '@uniswap/v3-periphery/contracts/interfaces/IQuoterV3.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 
-// TODO remove
-import 'hardhat/console.sol';
-bool constant SHOULD_LOG = true;
-
 /**
  * @title Helper library for junior vault
  * @dev junior vault delegates calls to this library for logic
@@ -1408,39 +1404,17 @@ library DnGmxJuniorVaultManager {
         int256 otherTokenAmount,
         uint256 tokenPrice,
         uint256 otherTokenPrice
-    ) internal view returns (uint256) {
+    ) internal pure returns (uint256) {
         uint256 dollarsPaid;
         uint256 dollarsReceived;
-        if (SHOULD_LOG) {
-            console.log('_calculateSwapLoss start');
-        }
         if (tokenAmount > 0) {
-            if (SHOULD_LOG) {
-                console.log('tokenAmount', uint256(tokenAmount));
-                console.log('tokenPrice', tokenPrice);
-                console.log('PRICE_PRECISION', PRICE_PRECISION);
-                console.log('-otherTokenAmount', uint256(-otherTokenAmount));
-                console.log('otherTokenPrice', otherTokenPrice);
-            }
             dollarsPaid = uint256(tokenAmount).mulDivUp(tokenPrice, PRICE_PRECISION);
             dollarsReceived = uint256(-otherTokenAmount).mulDivDown(otherTokenPrice, PRICE_PRECISION);
         } else if (tokenAmount < 0) {
-            if (SHOULD_LOG) {
-                console.log('-tokenAmount', uint256(-tokenAmount));
-                console.log('tokenPrice', tokenPrice);
-                console.log('PRICE_PRECISION', PRICE_PRECISION);
-                console.log('otherTokenAmount', uint256(otherTokenAmount));
-                console.log('otherTokenPrice', otherTokenPrice);
-            }
             dollarsPaid = uint256(otherTokenAmount).mulDivUp(otherTokenPrice, PRICE_PRECISION);
             dollarsReceived = uint256(-tokenAmount).mulDivDown(tokenPrice, PRICE_PRECISION);
         }
-        if (SHOULD_LOG) {
-            console.log('dollarsPaid', dollarsPaid);
-            console.log('dollarsReceived', dollarsReceived);
-            console.log('loss', (dollarsPaid > dollarsReceived) ? uint256(dollarsPaid - dollarsReceived) : 0);
-            console.log('_calculateSwapLoss end');
-        }
+
         return (dollarsPaid > dollarsReceived) ? uint256(dollarsPaid - dollarsReceived) : 0;
     }
 
@@ -1457,123 +1431,40 @@ library DnGmxJuniorVaultManager {
         uint256 ethPrice = _getTokenPriceInUsdc(state, state.weth);
         uint256 usdcPrice = _getTokenPriceInUsdc(state, state.usdc);
 
-        // btc swap
+        // get btc swap quote, get intermediate eth amount and final usdc amount
         (int256 usdcAmountInBtcSwap, int ethAmountInBtcSwap) = _getQuote2(
             state,
             btcAmountInBtcSwap,
             WBTC_TO_USDC(state)
         );
+
+        // account for loss estimated in btc swap
         dollarsLostDueToSlippage += _calculateSwapLoss(btcAmountInBtcSwap, usdcAmountInBtcSwap, btcPrice, usdcPrice);
-        if (SHOULD_LOG) {
-            console.log('btcAmountInBtcSwap');
-            console.logInt(btcAmountInBtcSwap);
-            console.log('usdcAmountInBtcSwap');
-            console.logInt(usdcAmountInBtcSwap);
-            console.log('====');
-        }
 
-        // getting intermediate eth amount in btc swap
-        // ethAmountInBtcSwap = _getQuote(state, usdcAmountInBtcSwap, USDC_TO_WETH_(state));
-        if (SHOULD_LOG) {
-            console.log('ethAmountInBtcSwap');
-            console.logInt(ethAmountInBtcSwap);
-            console.log('====');
-        }
-        //
-        //
-        // {
-        //     int inputLow = -2e18;
-        //     int inputHigh = 2e18;
-        //     int target = 46472303309;
-        //     uint lastDeviation = type(uint).max;
-        //     for (uint i = 0; i < 100; i++) {
-        //         // int input = ((inputLow + inputHigh) / 2);
-        //         int256 _usdcAmountInEthSwap = _getQuote(
-        //             state,
-        //             ethAmountInEthSwap + ((ethAmountInBtcSwap * (1e18 + ((inputLow + inputHigh) / 2))) / 1e18), // including btc swap amount
-        //             WETH_TO_USDC(state)
-        //         );
-        //         _usdcAmountInEthSwap -= usdcAmountInBtcSwap;
-        //         console.log('input');
-        //         console.logInt(((inputLow + inputHigh) / 2));
-        //         console.log('_usdcAmountInEthSwap');
-        //         console.logInt(_usdcAmountInEthSwap);
-
-        //         // uint currentDeviation = uint(
-        //         //     _usdcAmountInEthSwap > target ? _usdcAmountInEthSwap - target : target - _usdcAmountInEthSwap
-        //         // );
-
-        //         if (_usdcAmountInEthSwap > target) {
-        //             // decrease input
-        //             inputLow = ((inputLow + inputHigh) / 2);
-        //         } else if (_usdcAmountInEthSwap < target) {
-        //             inputHigh = ((inputLow + inputHigh) / 2);
-        //             // increase input
-        //         }
-
-        //         // if (currentDeviation <= lastDeviation) {
-        //         //     lastDeviation = currentDeviation;
-        //         // } else {
-        //         //     break;
-        //         // }
-        //     }
-
-        //     console.log('==============================x');
-        //     console.log('inputLow');
-        //     console.logInt(inputLow);
-        //     console.log('target');
-        //     console.logInt(target);
-        //     console.log('lastDeviation');
-        //     console.log(lastDeviation);
-        //     console.log('==============================x');
-        // }
-
+        // before estimating eth swap, adjust uniswap fees applied in the quotes
         if ((btcAmountInBtcSwap < 0) && (ethAmountInEthSwap > 0)) {
-            // remove extra fees                                                                       46362469400
-            // ethAmountInBtcSwap = (((ethAmountInBtcSwap) * 1e6) / (1e6 - 500)); //                   46372522335     0.0217%
-            // ethAmountInBtcSwap = (((ethAmountInBtcSwap) * 1e12) / (1e6 - 500) / (1e6 - 500)); //    46352563958                46372522335     0.0217%
-            // ethAmountInBtcSwap = (((ethAmountInBtcSwap) * (1e6 + 1645)) / 1e6); //                  46332600511                46372522335     0.0217%
             ethAmountInBtcSwap = (ethAmountInBtcSwap * (1e18 + 1004575809929518)) / 1e18;
         } else if ((btcAmountInBtcSwap > 0) && (ethAmountInEthSwap < 0)) {
             ethAmountInBtcSwap = (ethAmountInBtcSwap * (1e18 - 995934708043931)) / 1e18;
         }
 
-        // with adding
-        // desired usdc  -46362469400
-        // actual usdc -46362545651 0.0001% error 1e12 / (1e6 - 500) / (1e6 - 500)
-        // actual usdc -46362555628 0.0001% error (1e6 + 500) * (1e6 + 500)) / 1e12
-        // with subtracting
-        // desired usdc  -46362469400
-        // actual usdc -46392460680 0.06% error
-
-        // eth swap (also accounting for price change in btc swap)
-        int256 usdcAmountInEthSwap = _getQuote(
+        // eth swap, perform combined swap of btc and eth for considering btc swap state changes
+        int256 usdcAmountInEthAndBtcSwap = _getQuote(
             state,
-            ethAmountInEthSwap + ethAmountInBtcSwap, // including btc swap amount
+            ethAmountInEthSwap + ethAmountInBtcSwap, // account for price change in btc swap
             WETH_TO_USDC(state)
         );
-        if (SHOULD_LOG) {
-            console.log('ethAmountInEth');
-            console.logInt(ethAmountInEthSwap);
-            console.log('ethAmountInEth+BtcSwap');
-            console.logInt(ethAmountInEthSwap + ethAmountInBtcSwap);
-            console.log('usdcAmountInEth+BtcSwap');
-            console.logInt(usdcAmountInEthSwap);
-        }
-        usdcAmountInEthSwap -= usdcAmountInBtcSwap; // accounting for price change in btc swap
-        if (SHOULD_LOG) {
-            console.log('usdcAmountInEthSwap');
-            console.logInt(usdcAmountInEthSwap);
-            console.log('====');
-        }
+
+        // estimate usdc amount in eth swap
+        int usdcAmountInEthSwap = usdcAmountInEthAndBtcSwap - usdcAmountInBtcSwap;
+
+        // account for loss estimated in eth swap
         dollarsLostDueToSlippage += _calculateSwapLoss(ethAmountInEthSwap, usdcAmountInEthSwap, ethPrice, usdcPrice);
 
         // ensure ethAmountInEthSwap and usdcAmountInEthSwap are of opposite sign when they are both non-zero
         assert(
             ethAmountInEthSwap == 0 || usdcAmountInEthSwap == 0 || ethAmountInEthSwap > 0 != usdcAmountInEthSwap > 0
         );
-
-        return dollarsLostDueToSlippage;
     }
 
     ///@notice returns the amount of flashloan for a given token

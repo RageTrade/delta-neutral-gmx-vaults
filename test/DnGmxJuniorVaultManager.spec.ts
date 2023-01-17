@@ -344,16 +344,6 @@ describe('DnGmxJuniorVaultManager', () => {
       const btcLossActual = await executeSwapAndCalculateSlippageLoss(wbtc, usdc, btcAmount, test.WBTC_TO_USDC(), test);
       const ethLossActual = await executeSwapAndCalculateSlippageLoss(weth, usdc, ethAmount, test.WETH_TO_USDC(), test);
 
-      console.log('totalLossQuoted', formatUnits(totalLossQuoted, 6));
-      console.log(
-        'btcLossActual',
-        formatUnits(btcLossActual, 6),
-        'ethLossActual',
-        formatUnits(ethLossActual, 6),
-        'totalLossActual',
-        formatUnits(btcLossActual.add(ethLossActual), 6),
-      );
-
       expectEqualWithAbsoluteError(totalLossQuoted, btcLossActual.add(ethLossActual), 1);
     }
 
@@ -382,20 +372,8 @@ describe('DnGmxJuniorVaultManager', () => {
         const dollarsPaid = mulDivUp(tokenAmount, tokenPrice, PRICE_PRECISION);
         const dollarsReceived = mulDivDown(otherTokenAmount, otherTokenPrice, PRICE_PRECISION);
         const loss = dollarsPaid.gt(dollarsReceived) ? dollarsPaid.sub(dollarsReceived) : BigNumber.from(0);
-        console.log({
-          tokenAmount,
-          tokenPrice,
-          PRICE_PRECISION,
-          otherTokenAmount,
-          otherTokenPrice,
-          dollarsPaid,
-          dollarsReceived,
-          loss,
-        });
-        // if (loss.gt(0)) {
         // change price on uniswap
         await swapRouter.exactInput(params);
-        // }
         return loss;
       } else if (tokenAmount.lt(0)) {
         const params: ISwapRouter.ExactOutputParamsStruct = {
@@ -411,20 +389,8 @@ describe('DnGmxJuniorVaultManager', () => {
         const dollarsPaid = mulDivUp(otherTokenAmount, otherTokenPrice, PRICE_PRECISION);
         const dollarsReceived = mulDivDown(tokenAmount.abs(), tokenPrice, PRICE_PRECISION);
         const loss = dollarsPaid.gt(dollarsReceived) ? dollarsPaid.sub(dollarsReceived) : BigNumber.from(0);
-        console.log({
-          tokenAmount,
-          tokenPrice,
-          PRICE_PRECISION,
-          otherTokenAmount,
-          otherTokenPrice,
-          dollarsPaid,
-          dollarsReceived,
-          loss,
-        });
-        // if (loss.gt(0)) {
         // change price on uniswap
         await swapRouter.exactOutput(params);
-        // }
         return loss;
       } else {
         return BigNumber.from(0);
