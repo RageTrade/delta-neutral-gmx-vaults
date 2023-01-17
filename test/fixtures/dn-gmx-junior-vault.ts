@@ -119,12 +119,24 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     dnGmxJuniorVault.address,
     admin.address,
   );
+
   await glpBatchingStakingManagerFixtures.gmxBatchingManager.setDepositCap(parseUnits('1000000000', 18));
 
   await glpBatchingStakingManagerFixtures.gmxBatchingManager.grantAllowances();
   await glpBatchingStakingManagerFixtures.gmxBatchingManager.setThresholds(100, parseUnits('10', 6));
 
-  await glpBatchingStakingManagerFixtures.gmxBatchingManager.setBypass(bypass.address);
+  await glpBatchingStakingManagerFixtures.gmxBatchingManagerGlp.initialize(
+    GMX_ECOSYSTEM_ADDRESSES.StakedGlp,
+    GMX_ECOSYSTEM_ADDRESSES.RewardRouter,
+    GMX_ECOSYSTEM_ADDRESSES.GlpManager,
+    dnGmxJuniorVault.address,
+    admin.address,
+  );
+
+  await glpBatchingStakingManagerFixtures.gmxBatchingManagerGlp.setDepositCap(parseUnits('1000000000', 18));
+
+  await glpBatchingStakingManagerFixtures.gmxBatchingManagerGlp.grantAllowances();
+  await glpBatchingStakingManagerFixtures.gmxBatchingManagerGlp.setThresholds(parseUnits('10', 18));
 
   await dnGmxJuniorVault.setAdminParams(admin.address, dnGmxSeniorVault.address, ethers.constants.MaxUint256, 50, 3000);
   await dnGmxJuniorVault.setBatchingManager(glpBatchingStakingManagerFixtures.gmxBatchingManager.address);
@@ -165,6 +177,9 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
 
   await rewardRouter.connect(users[0]).mintAndStakeGlpETH(0, 0, {
     value: parseEther('10'),
+  });
+  await rewardRouter.connect(users[1]).mintAndStakeGlpETH(0, 0, {
+    value: parseEther('5'),
   });
   await increaseBlockTimestamp(15 * 60); // GLP cooldown
   await sGlp.connect(users[0]).approve(dnGmxJuniorVault.address, ethers.constants.MaxUint256);
@@ -279,5 +294,6 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     usdcLiquidationThreshold,
     mocks: { swapRouterMock },
     glpBatchingManager: glpBatchingStakingManagerFixtures.gmxBatchingManager,
+    gmxBatchingManagerGlp: glpBatchingStakingManagerFixtures.gmxBatchingManagerGlp,
   };
 });
