@@ -1,5 +1,5 @@
-import "@nomicfoundation/hardhat-chai-matchers";
-import "@nomiclabs/hardhat-ethers";
+import '@nomicfoundation/hardhat-chai-matchers';
+import '@nomiclabs/hardhat-ethers';
 import 'hardhat-tracer';
 import '@typechain/hardhat';
 import 'hardhat-gas-reporter';
@@ -120,7 +120,7 @@ export default {
     },
   },
   mocha: {
-    timeout: 4000000,
+    timeout: 400000,
   },
   gasReporter: {
     currency: 'USD',
