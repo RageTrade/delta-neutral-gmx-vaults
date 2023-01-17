@@ -253,12 +253,12 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         emit DepositToken(vaultBatchingState.currentRound, address(usdc), receiver, amount, 0);
     }
 
-    function executeBatch(uint128 usdcConversionFractionBps) external onlyKeeper {
+    function executeBatch(uint128 usdcAmountToConvert) external onlyKeeper {
         if (!paused()) _pause();
 
-        if (usdcConversionFractionBps == 0 || usdcConversionFractionBps > MAX_BPS) revert InvalidInput(0x40);
+        if (usdcAmountToConvert == 0) revert InvalidInput(0x40);
 
-        (uint128 glpReceived, uint128 usdcUsed) = _executeVaultUserBatchStake(usdcConversionFractionBps);
+        (uint128 glpReceived, uint128 usdcUsed) = _executeVaultUserBatchStake(usdcAmountToConvert);
 
         uint128 sharesReceived = _executeVaultUserBatchDeposit(glpReceived);
         uint128 usdcRemainingInRound = vaultBatchingState.roundUsdcBalance.toUint128();
@@ -378,13 +378,13 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         glpStaked = rewardRouter.mintAndStakeGlp(token, amount, minUSDG, 0);
     }
 
-    function _executeVaultUserBatchStake(uint128 usdcConversionFractionBps)
+    function _executeVaultUserBatchStake(uint128 usdcAmountToConvert)
         internal
         returns (uint128 _roundGlpStaked, uint128 _usdcToConvert)
     {
         uint128 _roundUsdcBalance = vaultBatchingState.roundUsdcBalance.toUint128();
 
-        _usdcToConvert = (_roundUsdcBalance * usdcConversionFractionBps) / MAX_BPS.toUint128();
+        _usdcToConvert = usdcAmountToConvert < _roundUsdcBalance ? usdcAmountToConvert : _roundUsdcBalance;
 
         if (_usdcToConvert == 0) revert NoUsdcBalance();
 
