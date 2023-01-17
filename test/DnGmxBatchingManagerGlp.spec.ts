@@ -3,7 +3,6 @@ import { expect } from 'chai';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import {
-  DnGmxBatchingManager,
   DnGmxBatchingManagerGlp,
   DnGmxJuniorVaultMock,
   DnGmxSeniorVault,
@@ -12,9 +11,7 @@ import {
   IVault,
 } from '../typechain-types';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
-import { Changer } from './utils/changer';
 import { generateErc20Balance } from './utils/generator';
-import { increaseBlockTimestamp } from './utils/shared';
 import { BigNumber } from 'ethers';
 
 describe('Dn Gmx Batching Manager Glp', () => {
@@ -69,7 +66,6 @@ describe('Dn Gmx Batching Manager Glp', () => {
       expect(user1Deposit.unclaimedShares).to.eq(0);
 
       expect(await gmxBatchingManagerGlp.roundAssetBalance()).to.eq(user1Deposit.assetBalance);
-      expect(await fsGlp.balanceOf(gmxBatchingManagerGlp.address)).to.eq(0);
     });
 
     it('Single User Deposit To Receiver', async () => {
@@ -86,18 +82,22 @@ describe('Dn Gmx Batching Manager Glp', () => {
       expect(user2Deposit.unclaimedShares).to.eq(0);
 
       expect(await gmxBatchingManagerGlp.roundAssetBalance()).to.eq(user2Deposit.assetBalance);
-      expect(await fsGlp.balanceOf(gmxBatchingManagerGlp.address)).to.eq(0);
     });
 
     it('Multiple User Deposit', async () => {
+      await rewardRouter.connect(users[2]).mintAndStakeGlpETH(0, 0, {
+        value: parseEther('10'),
+      });
+
       const depositAmount = parseUnits('100', 18);
       await sGlp.connect(users[1]).approve(gmxBatchingManagerGlp.address, depositAmount);
+      await sGlp.connect(users[2]).approve(gmxBatchingManagerGlp.address, depositAmount);
 
       await expect(() =>
         gmxBatchingManagerGlp.connect(users[1]).deposit(depositAmount, users[1].address),
       ).to.changeTokenBalance(fsGlp, users[1], depositAmount.mul(-1n));
 
-      const assetBalanceAfterUser1Deposit = await usdc.balanceOf(gmxBatchingManagerGlp.address);
+      const assetBalanceAfterUser1Deposit = await fsGlp.balanceOf(gmxBatchingManagerGlp.address);
 
       await generateErc20Balance(usdc, depositAmount, dnGmxJuniorVault.address);
 
@@ -109,7 +109,7 @@ describe('Dn Gmx Batching Manager Glp', () => {
         gmxBatchingManagerGlp.connect(users[2]).deposit(depositAmount, users[2].address),
       ).to.changeTokenBalance(fsGlp, users[2], depositAmount.mul(-1n));
 
-      const assetBalanceAfterUser2Deposit = await usdc.balanceOf(gmxBatchingManagerGlp.address);
+      const assetBalanceAfterUser2Deposit = await fsGlp.balanceOf(gmxBatchingManagerGlp.address);
 
       const user1Deposit = await gmxBatchingManagerGlp.userDeposits(users[1].address);
 
@@ -127,7 +127,6 @@ describe('Dn Gmx Batching Manager Glp', () => {
 
       expect(await gmxBatchingManagerGlp.roundAssetBalance()).to.eq(assetBalanceAfterUser2Deposit);
       expect(await gmxBatchingManagerGlp.roundGlpDeposited()).to.eq(0);
-      expect(await fsGlp.balanceOf(gmxBatchingManagerGlp.address)).to.eq(glpBalanceAfterVaultDeposit);
     });
   });
 
@@ -262,8 +261,6 @@ describe('Dn Gmx Batching Manager Glp', () => {
 
       // should be non-zero
       expect(roundGlpDeposited).to.not.eq(0);
-      // should not have any sglp at all, all should be converted to shares
-      expect(await fsGlp.balanceOf(gmxBatchingManagerGlp.address)).to.eq(0);
 
       let round1Deposit = await gmxBatchingManagerGlp.roundDeposits(1);
       let user1Deposit = await gmxBatchingManagerGlp.userDeposits(users[1].address);
@@ -314,8 +311,13 @@ describe('Dn Gmx Batching Manager Glp', () => {
     });
 
     it('Multiple User Deposit + executeBatch', async () => {
+      await rewardRouter.connect(users[2]).mintAndStakeGlpETH(0, 0, {
+        value: parseEther('10'),
+      });
+
       const depositAmount = parseUnits('100', 18);
       await sGlp.connect(users[1]).approve(gmxBatchingManagerGlp.address, depositAmount);
+      await sGlp.connect(users[2]).approve(gmxBatchingManagerGlp.address, depositAmount);
 
       expect(await gmxBatchingManagerGlp.currentRound()).to.eq(1);
 
@@ -323,7 +325,7 @@ describe('Dn Gmx Batching Manager Glp', () => {
         gmxBatchingManagerGlp.connect(users[1]).deposit(depositAmount, users[1].address),
       ).to.changeTokenBalance(fsGlp, users[1], depositAmount.mul(-1n));
 
-      const assetBalanceAfterUser1Deposit = await usdc.balanceOf(gmxBatchingManagerGlp.address);
+      const assetBalanceAfterUser1Deposit = await fsGlp.balanceOf(gmxBatchingManagerGlp.address);
 
       await generateErc20Balance(usdc, depositAmount, dnGmxJuniorVault.address);
 
@@ -335,7 +337,7 @@ describe('Dn Gmx Batching Manager Glp', () => {
         gmxBatchingManagerGlp.connect(users[2]).deposit(depositAmount, users[2].address),
       ).to.changeTokenBalance(fsGlp, users[2], depositAmount.mul(-1n));
 
-      const assetBalanceAfterUser2Deposit = await usdc.balanceOf(gmxBatchingManagerGlp.address);
+      const assetBalanceAfterUser2Deposit = await fsGlp.balanceOf(gmxBatchingManagerGlp.address);
 
       expect(await gmxBatchingManagerGlp.roundAssetBalance()).to.eq(assetBalanceAfterUser2Deposit);
 
@@ -349,9 +351,10 @@ describe('Dn Gmx Batching Manager Glp', () => {
       expect(await gmxBatchingManagerGlp.currentRound()).to.eq(2);
 
       const roundGlpDeposited = await gmxBatchingManagerGlp.roundGlpDeposited();
-      expect(await fsGlp.balanceOf(gmxBatchingManagerGlp.address)).to.eq(
-        roundGlpDeposited.add(glpBalanceAfterVaultDeposit),
-      );
+
+      // batching execution makes sglp 0 and shares non-zero
+      expect(await fsGlp.balanceOf(gmxBatchingManagerGlp.address)).to.eq(0);
+      expect(await dnGmxJuniorVault.balanceOf(gmxBatchingManagerGlp.address)).to.not.eq(0);
 
       const user1Deposit = await gmxBatchingManagerGlp.userDeposits(users[1].address);
       const user2Deposit = await gmxBatchingManagerGlp.userDeposits(users[2].address);
