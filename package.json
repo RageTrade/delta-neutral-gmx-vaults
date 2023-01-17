@@ -33,7 +33,7 @@
     "@rari-capital/solmate": "https://github.com/Rari-Capital/solmate.git#25015a1d18e75921f8cb1bacd4beb9f364e788a9",
     "@solidity-parser/parser": "^0.14.3",
     "@uniswap/v3-core-0.8-support": "https://github.com/uniswap/v3-core.git#d55e297b938e5b56fd1cf9fe668f5bd385be85b5",
-    "@uniswap/v3-periphery": "https://github.com/RageTrade/uniswap-v3-periphery.git#0faa06e447e54d582af514f847fc892c7dfb43a3",
+    "@uniswap/v3-periphery": "https://github.com/RageTrade/uniswap-v3-periphery.git#efa1d58df39d04473a5c7b90797113c4576e0cd3",
     "hardhat-dependency-compiler": "^1.1.3"
   },
   "devDependencies": {
