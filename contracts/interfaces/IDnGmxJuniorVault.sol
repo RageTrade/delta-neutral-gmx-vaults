@@ -72,26 +72,6 @@ interface IDnGmxJuniorVault is IERC4626, IBorrower {
         IPriceOracle oracle
     );
 
-    event StartVaultState(
-        uint256 btcBorrows,
-        uint256 ethBorrows,
-        uint256 glpBalance,
-        int256 dnUsdcDeposited,
-        uint256 unhedgedGlpInUsdc,
-        uint256 juniorVaultAusdc,
-        uint256 seniorVaultAusdc
-    );
-
-    event EndVaultState(
-        uint256 btcBorrows,
-        uint256 ethBorrows,
-        uint256 glpBalance,
-        int256 dnUsdcDeposited,
-        uint256 unhedgedGlpInUsdc,
-        uint256 juniorVaultAusdc,
-        uint256 seniorVaultAusdc
-    );
-
     event EsGmxVested(uint256 amount);
 
     event EsGmxStaked(uint256 amount);

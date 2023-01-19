@@ -389,21 +389,13 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
 
         emit Rebalanced();
 
-        // harvest fees
-        state.harvestFees();
-
         (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
         uint256 totalCurrentBorrowValue = state.getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
 
-        emit StartVaultState(
-            currentBtc,
-            currentEth,
-            state.fsGlp.balanceOf(address(this)),
-            state.dnUsdcDeposited,
-            state.unhedgedGlpInUsdc,
-            state.aUsdc.balanceOf(address(this)),
-            state.aUsdc.balanceOf(address(state.dnGmxSeniorVault))
-        );
+        _emitVaultState(0);
+
+        // harvest fees
+        state.harvestFees();
 
         // rebalance profit
         state.rebalanceProfit(totalCurrentBorrowValue);
@@ -417,15 +409,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
 
         (currentBtc, currentEth) = state.getCurrentBorrows();
 
-        emit EndVaultState(
-            currentBtc,
-            currentEth,
-            state.fsGlp.balanceOf(address(this)),
-            state.dnUsdcDeposited,
-            state.unhedgedGlpInUsdc,
-            state.aUsdc.balanceOf(address(this)),
-            state.aUsdc.balanceOf(address(state.dnGmxSeniorVault))
-        );
+        _emitVaultState(1);
     }
 
     /* ##################################################################
@@ -444,6 +428,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     {
         _rebalanceBeforeShareAllocation();
         shares = super.deposit(amount, to);
+        _emitVaultState(1);
     }
 
     /// @notice mints "shares" amount of vault shares and pull relevant amount of sGlp tokens
@@ -459,6 +444,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     {
         _rebalanceBeforeShareAllocation();
         amount = super.mint(shares, to);
+        _emitVaultState(1);
     }
 
     ///@notice withdraws "assets" amount of sGlp tokens and burns relevant amount of vault shares
@@ -474,6 +460,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     ) public override(IERC4626, ERC4626Upgradeable) whenNotPaused returns (uint256 shares) {
         _rebalanceBeforeShareAllocation();
         shares = super.withdraw(assets, receiver, owner);
+        _emitVaultState(1);
     }
 
     ///@notice burns "shares" amount of vault shares and withdraws relevant amount of sGlp tokens
@@ -489,6 +476,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     ) public override(IERC4626, ERC4626Upgradeable) whenNotPaused returns (uint256 assets) {
         _rebalanceBeforeShareAllocation();
         assets = super.redeem(shares, receiver, owner);
+        _emitVaultState(1);
     }
 
     /* ##################################################################
@@ -762,6 +750,10 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
                             INTERNAL FUNCTIONS
     ################################################################## */
 
+    function _emitVaultState(uint256 eventType) internal {
+        state.emitVaultState(eventType);
+    }
+
     /*
         DEPOSIT/WITHDRAW HELPERS
     */
@@ -769,21 +761,13 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @notice harvests fees and rebalances profits before deposits and withdrawals
     /// @dev called first on any deposit/withdrawals
     function _rebalanceBeforeShareAllocation() internal {
-        // harvest fees
-        state.harvestFees();
-
         (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
         uint256 totalCurrentBorrowValue = state.getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
 
-        emit StartVaultState(
-            currentBtc,
-            currentEth,
-            state.fsGlp.balanceOf(address(this)),
-            state.dnUsdcDeposited,
-            state.unhedgedGlpInUsdc,
-            state.aUsdc.balanceOf(address(this)),
-            state.aUsdc.balanceOf(address(state.dnGmxSeniorVault))
-        );
+        _emitVaultState(0);
+
+        // harvest fees
+        state.harvestFees();
 
         // rebalance profit
         state.rebalanceProfit(totalCurrentBorrowValue);
