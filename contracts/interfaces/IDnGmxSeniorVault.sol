@@ -32,9 +32,8 @@ interface IDnGmxSeniorVault is IERC4626 {
         uint128 variableRateSlope2
     );
 
-    event StartVaultState(uint256 juniorVaultAusdc, uint256 seniorVaultAusdc);
-
-    event EndVaultState(uint256 juniorVaultAusdc, uint256 seniorVaultAusdc);
+    // eventType - 0 = start of txn | 1 = end of txn
+    event VaultState(uint256 indexed eventType, uint256 juniorVaultAusdc, uint256 seniorVaultAusdc);
 
     function borrow(uint256 amount) external;
 
