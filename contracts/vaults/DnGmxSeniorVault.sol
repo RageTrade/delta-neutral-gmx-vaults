@@ -182,6 +182,12 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @param _feeStrategy: new fee strategy
     function updateFeeStrategyParams(FeeSplitStrategy.Info calldata _feeStrategy) external onlyOwner {
         feeStrategy = _feeStrategy;
+        emit FeeStrategyUpdated(
+            _feeStrategy.optimalUtilizationRate,
+            _feeStrategy.baseVariableBorrowRate,
+            _feeStrategy.variableRateSlope1,
+            _feeStrategy.variableRateSlope2
+        );
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -225,9 +231,13 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         whenNotPaused
         returns (uint256 shares)
     {
+        emit StartVaultState(aUsdc.balanceOf(address(dnGmxJuniorVault)), aUsdc.balanceOf(address(this)));
+
         // harvesting fees so asset to shares conversion rate is not stale
         dnGmxJuniorVault.harvestFees();
         shares = super.deposit(amount, to);
+
+        emit EndVaultState(aUsdc.balanceOf(address(dnGmxJuniorVault)), aUsdc.balanceOf(address(this)));
     }
 
     /// @notice deposit usdc
@@ -242,9 +252,13 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         whenNotPaused
         returns (uint256 amount)
     {
+        emit StartVaultState(aUsdc.balanceOf(address(dnGmxJuniorVault)), aUsdc.balanceOf(address(this)));
+
         // harvesting fees so asset to shares conversion rate is not stale
         dnGmxJuniorVault.harvestFees();
         amount = super.mint(shares, to);
+
+        emit EndVaultState(aUsdc.balanceOf(address(dnGmxJuniorVault)), aUsdc.balanceOf(address(this)));
     }
 
     /// @notice withdraw usdc
@@ -259,8 +273,13 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         address owner
     ) public override(IERC4626, ERC4626Upgradeable) whenNotPaused returns (uint256 shares) {
         // harvesting fees so asset to shares conversion rate is not stale
+
+        emit StartVaultState(aUsdc.balanceOf(address(dnGmxJuniorVault)), aUsdc.balanceOf(address(this)));
+
         dnGmxJuniorVault.harvestFees();
         shares = super.withdraw(assets, receiver, owner);
+
+        emit EndVaultState(aUsdc.balanceOf(address(dnGmxJuniorVault)), aUsdc.balanceOf(address(this)));
     }
 
     /// @notice withdraw usdc
@@ -274,9 +293,12 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         address receiver,
         address owner
     ) public override(IERC4626, ERC4626Upgradeable) whenNotPaused returns (uint256 assets) {
+        emit StartVaultState(aUsdc.balanceOf(address(dnGmxJuniorVault)), aUsdc.balanceOf(address(this)));
         // harvesting fees so asset to shares conversion rate is not stale
         dnGmxJuniorVault.harvestFees();
         assets = super.redeem(shares, receiver, owner);
+
+        emit EndVaultState(aUsdc.balanceOf(address(dnGmxJuniorVault)), aUsdc.balanceOf(address(this)));
     }
 
     /*//////////////////////////////////////////////////////////////

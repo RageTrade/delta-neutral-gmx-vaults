@@ -25,6 +25,17 @@ interface IDnGmxSeniorVault is IERC4626 {
     event DnGmxJuniorVaultUpdated(IBorrower dnGmxJuniorVault);
     event MaxUtilizationBpsUpdated(uint256 maxUtilizationBps);
 
+    event FeeStrategyUpdated(
+        uint128 optimalUtilizationRate,
+        uint128 baseVariableBorrowRate,
+        uint128 variableRateSlope1,
+        uint128 variableRateSlope2
+    );
+
+    event StartVaultState(uint256 juniorVaultAusdc, uint256 seniorVaultAusdc);
+
+    event EndVaultState(uint256 juniorVaultAusdc, uint256 seniorVaultAusdc);
+
     function borrow(uint256 amount) external;
 
     function repay(uint256 amount) external;

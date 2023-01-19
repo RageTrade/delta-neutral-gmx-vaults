@@ -50,9 +50,21 @@ library DnGmxJuniorVaultManager {
         uint256 seniorVaultAUsdc
     );
 
+    event ProtocolFeeAccrued(uint256 fees);
+
     event GlpSwapped(uint256 glpQuantity, uint256 usdcQuantity, bool fromGlpToUsdc);
 
     event TokenSwapped(address indexed fromToken, address indexed toToken, uint256 fromQuantity, uint256 toQuantity);
+
+    event EndVaultState(
+        uint256 btcBorrows,
+        uint256 ethBorrows,
+        uint256 glpBalance,
+        int256 dnUsdcDeposited,
+        uint256 unhedgedGlpInUsdc,
+        uint256 juniorVaultAusdc,
+        uint256 seniorVaultAusdc
+    );
 
     using DnGmxJuniorVaultManager for State;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
@@ -232,6 +244,7 @@ library DnGmxJuniorVaultManager {
             uint256 protocolFeeHarvested = (wethHarvested * state.feeBps) / MAX_BPS;
             // protocol fee incremented
             state.protocolFee += protocolFeeHarvested;
+            emit ProtocolFeeAccrued(protocolFeeHarvested);
 
             // protocol fee to be kept in weth
             // remaining amount needs to be compounded
@@ -686,6 +699,18 @@ library DnGmxJuniorVaultManager {
             // Deposit to LB Vault
 
             state.dnGmxSeniorVault.repay(currentDnGmxSeniorVaultAmount - targetDnGmxSeniorVaultAmount);
+        }
+
+        {
+            emit EndVaultState(
+                state.vWbtc.balanceOf(address(this)),
+                state.vWeth.balanceOf(address(this)),
+                state.fsGlp.balanceOf(address(this)),
+                state.dnUsdcDeposited,
+                state.unhedgedGlpInUsdc,
+                state.aUsdc.balanceOf(address(this)),
+                state.aUsdc.balanceOf(address(state.dnGmxSeniorVault))
+            );
         }
     }
 
