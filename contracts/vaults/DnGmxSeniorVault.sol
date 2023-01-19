@@ -231,13 +231,12 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         whenNotPaused
         returns (uint256 shares)
     {
-        emit StartVaultState(aUsdc.balanceOf(address(dnGmxJuniorVault)), aUsdc.balanceOf(address(this)));
-
+        _emitVaultState(0);
         // harvesting fees so asset to shares conversion rate is not stale
         dnGmxJuniorVault.harvestFees();
         shares = super.deposit(amount, to);
 
-        emit EndVaultState(aUsdc.balanceOf(address(dnGmxJuniorVault)), aUsdc.balanceOf(address(this)));
+        _emitVaultState(1);
     }
 
     /// @notice deposit usdc
@@ -252,13 +251,13 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         whenNotPaused
         returns (uint256 amount)
     {
-        emit StartVaultState(aUsdc.balanceOf(address(dnGmxJuniorVault)), aUsdc.balanceOf(address(this)));
+        _emitVaultState(0);
 
         // harvesting fees so asset to shares conversion rate is not stale
         dnGmxJuniorVault.harvestFees();
         amount = super.mint(shares, to);
 
-        emit EndVaultState(aUsdc.balanceOf(address(dnGmxJuniorVault)), aUsdc.balanceOf(address(this)));
+        _emitVaultState(1);
     }
 
     /// @notice withdraw usdc
@@ -273,13 +272,12 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         address owner
     ) public override(IERC4626, ERC4626Upgradeable) whenNotPaused returns (uint256 shares) {
         // harvesting fees so asset to shares conversion rate is not stale
-
-        emit StartVaultState(aUsdc.balanceOf(address(dnGmxJuniorVault)), aUsdc.balanceOf(address(this)));
+        _emitVaultState(0);
 
         dnGmxJuniorVault.harvestFees();
         shares = super.withdraw(assets, receiver, owner);
 
-        emit EndVaultState(aUsdc.balanceOf(address(dnGmxJuniorVault)), aUsdc.balanceOf(address(this)));
+        _emitVaultState(1);
     }
 
     /// @notice withdraw usdc
@@ -293,12 +291,12 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         address receiver,
         address owner
     ) public override(IERC4626, ERC4626Upgradeable) whenNotPaused returns (uint256 assets) {
-        emit StartVaultState(aUsdc.balanceOf(address(dnGmxJuniorVault)), aUsdc.balanceOf(address(this)));
+        _emitVaultState(0);
         // harvesting fees so asset to shares conversion rate is not stale
         dnGmxJuniorVault.harvestFees();
         assets = super.redeem(shares, receiver, owner);
 
-        emit EndVaultState(aUsdc.balanceOf(address(dnGmxJuniorVault)), aUsdc.balanceOf(address(this)));
+        _emitVaultState(1);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -451,5 +449,9 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @return max no. of shares
     function maxRedeem(address owner) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
         return convertToShares(maxWithdraw(owner));
+    }
+
+    function _emitVaultState(uint256 eventType) internal {
+        emit VaultState(eventType, aUsdc.balanceOf(address(dnGmxJuniorVault)), aUsdc.balanceOf(address(this)));
     }
 }
