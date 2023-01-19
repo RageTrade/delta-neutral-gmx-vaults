@@ -33,10 +33,6 @@ import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMat
 import { IQuoterV3 } from '@uniswap/v3-periphery/contracts/interfaces/IQuoterV3.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 
-// TODO remove
-import 'hardhat/console.sol';
-bool constant SHOULD_LOG = false;
-
 /**
  * @title Helper library for junior vault
  * @dev junior vault delegates calls to this library for logic
@@ -53,9 +49,21 @@ library DnGmxJuniorVaultManager {
         uint256 seniorVaultAUsdc
     );
 
+    event ProtocolFeeAccrued(uint256 fees);
+
     event GlpSwapped(uint256 glpQuantity, uint256 usdcQuantity, bool fromGlpToUsdc);
 
     event TokenSwapped(address indexed fromToken, address indexed toToken, uint256 fromQuantity, uint256 toQuantity);
+
+    event EndVaultState(
+        uint256 btcBorrows,
+        uint256 ethBorrows,
+        uint256 glpBalance,
+        int256 dnUsdcDeposited,
+        uint256 unhedgedGlpInUsdc,
+        uint256 juniorVaultAusdc,
+        uint256 seniorVaultAusdc
+    );
 
     using DnGmxJuniorVaultManager for State;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
@@ -237,6 +245,7 @@ library DnGmxJuniorVaultManager {
             uint256 protocolFeeHarvested = (wethHarvested * state.feeBps) / MAX_BPS;
             // protocol fee incremented
             state.protocolFee += protocolFeeHarvested;
+            emit ProtocolFeeAccrued(protocolFeeHarvested);
 
             // protocol fee to be kept in weth
             // remaining amount needs to be compounded
@@ -691,6 +700,18 @@ library DnGmxJuniorVaultManager {
             // Deposit to LB Vault
 
             state.dnGmxSeniorVault.repay(currentDnGmxSeniorVaultAmount - targetDnGmxSeniorVaultAmount);
+        }
+
+        {
+            emit EndVaultState(
+                state.vWbtc.balanceOf(address(this)),
+                state.vWeth.balanceOf(address(this)),
+                state.fsGlp.balanceOf(address(this)),
+                state.dnUsdcDeposited,
+                state.unhedgedGlpInUsdc,
+                state.aUsdc.balanceOf(address(this)),
+                state.aUsdc.balanceOf(address(state.dnGmxSeniorVault))
+            );
         }
     }
 
@@ -1415,28 +1436,11 @@ library DnGmxJuniorVaultManager {
         uint256 dollarsPaid;
         uint256 dollarsReceived;
         if (tokenAmount > 0) {
-            if (SHOULD_LOG) {
-                console.log('tokenAmount', uint256(tokenAmount));
-                console.log('tokenPrice', tokenPrice);
-                console.log('PRICE_PRECISION', PRICE_PRECISION);
-                console.log('-otherTokenAmount', uint256(-otherTokenAmount));
-                console.log('otherTokenPrice', otherTokenPrice);
-            }
             dollarsPaid = uint256(tokenAmount).mulDivUp(tokenPrice, PRICE_PRECISION);
             dollarsReceived = uint256(-otherTokenAmount).mulDivDown(otherTokenPrice, PRICE_PRECISION);
         } else if (tokenAmount < 0) {
-            if (SHOULD_LOG) {
-                console.log('-tokenAmount', uint256(-tokenAmount));
-                console.log('tokenPrice', tokenPrice);
-                console.log('PRICE_PRECISION', PRICE_PRECISION);
-            }
             dollarsPaid = uint256(otherTokenAmount).mulDivUp(otherTokenPrice, PRICE_PRECISION);
             dollarsReceived = uint256(-tokenAmount).mulDivDown(tokenPrice, PRICE_PRECISION);
-        }
-        if (SHOULD_LOG) {
-            console.log('dollarsPaid', dollarsPaid);
-            console.log('dollarsReceived', dollarsReceived);
-            console.log('loss', (dollarsPaid > dollarsReceived) ? uint256(dollarsPaid - dollarsReceived) : 0);
         }
         return (dollarsPaid > dollarsReceived) ? uint256(dollarsPaid - dollarsReceived) : 0;
     }
@@ -1457,21 +1461,8 @@ library DnGmxJuniorVaultManager {
         // btc swap
         int256 usdcAmountInBtcSwap = _getQuote(state, btcAmountInBtcSwap, WBTC_TO_USDC(state));
         dollarsLostDueToSlippage += _calculateSwapLoss(btcAmountInBtcSwap, usdcAmountInBtcSwap, btcPrice, usdcPrice);
-        if (SHOULD_LOG) {
-            console.log('btcAmountInBtcSwap');
-            console.logInt(btcAmountInBtcSwap);
-            console.log('usdcAmountInBtcSwap');
-            console.logInt(usdcAmountInBtcSwap);
-            console.log('====');
-        }
-
         // getting intermediate eth amount in btc swap
         int256 ethAmountInBtcSwap = _getQuote(state, usdcAmountInBtcSwap, USDC_TO_WETH_(state));
-        if (SHOULD_LOG) {
-            console.log('ethAmountInBtcSwap');
-            console.logInt(ethAmountInBtcSwap);
-            console.log('====');
-        }
         //
         //
 
@@ -1495,20 +1486,7 @@ library DnGmxJuniorVaultManager {
             ethAmountInEthSwap + ethAmountInBtcSwap, // including btc swap amount
             WETH_TO_USDC(state)
         );
-        if (SHOULD_LOG) {
-            console.log('ethAmountInEth');
-            console.logInt(ethAmountInEthSwap);
-            console.log('ethAmountInEth+BtcSwap');
-            console.logInt(ethAmountInEthSwap + ethAmountInBtcSwap);
-            console.log('usdcAmountInEth+BtcSwap');
-            console.logInt(usdcAmountInEthSwap);
-        }
         usdcAmountInEthSwap -= usdcAmountInBtcSwap; // accounting for price change in btc swap
-        if (SHOULD_LOG) {
-            console.log('usdcAmountInEthSwap');
-            console.logInt(usdcAmountInEthSwap);
-            console.log('====');
-        }
         dollarsLostDueToSlippage += _calculateSwapLoss(ethAmountInEthSwap, usdcAmountInEthSwap, ethPrice, usdcPrice);
 
         // ensure ethAmountInEthSwap and usdcAmountInEthSwap are of opposite sign when they are both non-zero
