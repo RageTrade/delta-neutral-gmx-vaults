@@ -22,7 +22,8 @@ contract DnGmxJuniorVaultManagerTest {
     }
 
     function getQuote(int256 tokenAmount, bytes memory swapPath) public view returns (int256 otherTokenAmount) {
-        return DnGmxJuniorVaultManager._getQuote(state, tokenAmount, swapPath);
+        Simulate.State[] memory states;
+        (otherTokenAmount, , ) = DnGmxJuniorVaultManager._getQuote(state, tokenAmount, swapPath, states);
     }
 
     function quoteCombinedSwap(

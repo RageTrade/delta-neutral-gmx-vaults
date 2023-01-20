@@ -34,10 +34,6 @@ import { Simulate } from '@uniswap/v3-core/contracts/libraries/Simulate.sol';
 import { IQuoterV3 } from '@uniswap/v3-periphery/contracts/interfaces/IQuoterV3.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 
-// TODO remove
-import 'hardhat/console.sol';
-bool constant SHOULD_LOG = true;
-
 /**
  * @title Helper library for junior vault
  * @dev junior vault delegates calls to this library for logic
@@ -1362,25 +1358,7 @@ library DnGmxJuniorVaultManager {
         return _quoteSwapSlippageLoss(state, btcAmount, ethAmount);
     }
 
-    /// @notice gives the quote for exactIn tokenAmount if positive or exactOut tokenAmount if negative
-    /// @param state set of all state variables of vault
-    /// @param tokenAmount if positive btc sell amount else if negative btc buy amount
-    /// @param swapPath path of swap, path for token to otherToken exactIn is same as path for otherToken to token exactOut
-    function _getQuote(State storage state, int256 tokenAmount, bytes memory swapPath) internal view returns (int256) {
-        if (tokenAmount > 0) {
-            // swap wbtc to usdc
-            uint256 otherTokenAmountAbs = state.uniswapV3Quoter.quoteExactInput(swapPath, uint256(tokenAmount));
-            return -int256(otherTokenAmountAbs); // pool looses usdc hence negative
-        } else if (tokenAmount < 0) {
-            // swap usdc to wbtc
-            uint256 otherTokenAmountAbs = state.uniswapV3Quoter.quoteExactOutput(swapPath, uint256(-tokenAmount));
-            return int256(otherTokenAmountAbs); // pool gains usdc hence positive
-        } else {
-            return 0;
-        }
-    }
-
-    function _getQuote2(
+    function _getQuote(
         State storage state,
         int256 tokenAmount,
         bytes memory swapPath,
@@ -1408,38 +1386,15 @@ library DnGmxJuniorVaultManager {
         int256 otherTokenAmount,
         uint256 tokenPrice,
         uint256 otherTokenPrice
-    ) internal view returns (uint256) {
+    ) internal pure returns (uint256) {
         uint256 dollarsPaid;
         uint256 dollarsReceived;
-        if (SHOULD_LOG) {
-            console.log('_calculateSwapLoss start');
-        }
         if (tokenAmount > 0) {
-            if (SHOULD_LOG) {
-                console.log('tokenAmount', uint256(tokenAmount));
-                console.log('tokenPrice', tokenPrice);
-                console.log('PRICE_PRECISION', PRICE_PRECISION);
-                console.log('-otherTokenAmount', uint256(-otherTokenAmount));
-                console.log('otherTokenPrice', otherTokenPrice);
-            }
             dollarsPaid = uint256(tokenAmount).mulDivUp(tokenPrice, PRICE_PRECISION);
             dollarsReceived = uint256(-otherTokenAmount).mulDivDown(otherTokenPrice, PRICE_PRECISION);
         } else if (tokenAmount < 0) {
-            if (SHOULD_LOG) {
-                console.log('-tokenAmount', uint256(-tokenAmount));
-                console.log('tokenPrice', tokenPrice);
-                console.log('PRICE_PRECISION', PRICE_PRECISION);
-                console.log('otherTokenAmount', uint256(otherTokenAmount));
-                console.log('otherTokenPrice', otherTokenPrice);
-            }
             dollarsPaid = uint256(otherTokenAmount).mulDivUp(otherTokenPrice, PRICE_PRECISION);
             dollarsReceived = uint256(-tokenAmount).mulDivDown(tokenPrice, PRICE_PRECISION);
-        }
-        if (SHOULD_LOG) {
-            console.log('dollarsPaid', dollarsPaid);
-            console.log('dollarsReceived', dollarsReceived);
-            console.log('loss', (dollarsPaid > dollarsReceived) ? uint256(dollarsPaid - dollarsReceived) : 0);
-            console.log('_calculateSwapLoss end');
         }
         return (dollarsPaid > dollarsReceived) ? uint256(dollarsPaid - dollarsReceived) : 0;
     }
@@ -1452,95 +1407,19 @@ library DnGmxJuniorVaultManager {
         // btc swap
         int ethAmountInBtcSwap;
         Simulate.State[] memory swapStates;
-        (usdcAmountInBtcSwap, ethAmountInBtcSwap, swapStates) = _getQuote2(
+        (usdcAmountInBtcSwap, ethAmountInBtcSwap, swapStates) = _getQuote(
             state,
             btcAmountInBtcSwap,
             WBTC_TO_USDC(state),
             swapStates
         );
 
-        if (SHOULD_LOG) {
-            console.log('====');
-            console.log('BTC SWAP');
-            console.log('btcAmountInBtcSwap');
-            console.logInt(btcAmountInBtcSwap);
-            console.log('ethAmountInBtcSwap');
-            console.logInt(ethAmountInBtcSwap);
-            console.log('usdcAmountInBtcSwap');
-            console.logInt(usdcAmountInBtcSwap);
-
-            // try consolex(address(123456)).logg('swapStates', swapStates) {} catch {}
-            address(123456).staticcall(
-                abi.encodeWithSelector(consolex.logg1.selector, 'swapStates', swapStates[0], swapStates[1])
-            );
-            console.log('====');
-        }
-
-        // int ethAmountInBtcEthSwap;
-        // if (ethAmountInBtcSwap > 0 == ethAmountInEthSwap > 0) {
-        //     // ethAmountInBtcSwap and ethAmountInEthSwap are of same sign
-        //     console.log('condition 1 A');
-        //     ethAmountInBtcEthSwap = ethAmountInBtcSwap + ethAmountInEthSwap;
-        // } else if (ethAmountInBtcSwap < 0 == -ethAmountInBtcSwap > ethAmountInEthSwap) {
-        //     // ethAmountInBtcSwap and ethAmountInEthSwap are of opposite sign
-        //     // abs(ethAmountInBtcSwap) > abs(ethAmountInEthSwap)
-        //     console.log('condition 1 B');
-        //     ethAmountInBtcEthSwap = ethAmountInBtcSwap + (ethAmountInEthSwap * (1e6 - 500)) / 1e6;
-        // } else {
-        //     // ethAmountInBtcSwap and ethAmountInEthSwap are of opposite sign
-        //     // abs(ethAmountInBtcSwap) < abs(ethAmountInEthSwap)
-        //     console.log('condition 1 C');
-        //     ethAmountInBtcEthSwap = ((ethAmountInBtcSwap * 1e6) / (1e6 - 500)) + ethAmountInEthSwap;
-        // }
-
         // eth swap (also accounting for price change in btc swap)
         Simulate.State[] memory swapStates2 = new Simulate.State[](1);
-        swapStates2[0] = swapStates[0];
-        address(123456).staticcall(abi.encodeWithSelector(consolex.logg.selector, 'swapStates2', swapStates2[0]));
-        (usdcAmountInEthSwap, , ) = _getQuote2(
-            state,
-            // ethAmountInBtcSwap + (ethAmountInEthSwap * (1e6 - 500)) / 1e6, // including btc swap amount
-            // ((ethAmountInBtcSwap * 1e6) / (1e6 - 500)) + ethAmountInEthSwap, // including btc swap amount
-            ethAmountInEthSwap,
-            WETH_TO_USDC(state),
-            swapStates2
-        );
-        // if (SHOULD_LOG) {
-        //     console.log('====');
-        //     console.log('BTC ETH SWAP');
-        //     console.log('ethAmountInBtcEthSwap');
-        //     console.logInt(ethAmountInBtcSwap + ethAmountInEthSwap);
-        //     console.log('usdcAmountInBtcEthSwap');
-        //     console.logInt(usdcAmountInBtcEthSwap);
-        //     console.log('====');
-        // }
-
-        // usdcAmountInEthSwap = ((usdcAmountInBtcEthSwap - usdcAmountInBtcSwap) * (1e6 - 500)) / 1e6; // accounting for price change in btc swap
-        // usdcAmountInEthSwap = (usdcAmountInBtcEthSwap * 1e12 - usdcAmountInBtcSwap * (1e6 - 500) * (1e6 - 500)) / 1e12;
-
-        // if (ethAmountInBtcSwap > 0 == ethAmountInEthSwap > 0) {
-        //     console.log('condition 2 A');
-        //     usdcAmountInEthSwap = usdcAmountInBtcEthSwap - usdcAmountInBtcSwap;
-        // } else if (ethAmountInBtcSwap < 0 == -ethAmountInBtcSwap > ethAmountInEthSwap) {
-        //     console.log('condition 2 B');
-        //     usdcAmountInEthSwap = ((usdcAmountInBtcEthSwap - usdcAmountInBtcSwap) * (1e6 - 500)) / 1e6;
-        // } else {
-        //     console.log('condition 2 C');
-        //     usdcAmountInEthSwap =
-        //         (usdcAmountInBtcEthSwap * 1e12 - usdcAmountInBtcSwap * (1e6 - 500) * (1e6 - 500)) /
-        //         1e12;
-        // }
-
-        if (SHOULD_LOG) {
-            console.log('====');
-            console.log('ETH SWAP calculated');
-            console.log('ethAmountInEthSwap');
-            console.logInt(ethAmountInEthSwap);
-            console.log('usdcAmountInEthSwap');
-            console.logInt(usdcAmountInEthSwap);
-            console.log('====');
+        if (ethAmountInBtcSwap != 0) {
+            swapStates2[0] = swapStates[0];
         }
-        // 23343733075/23332061202
+        (usdcAmountInEthSwap, , ) = _getQuote(state, ethAmountInEthSwap, WETH_TO_USDC(state), swapStates2);
 
         // ensure ethAmountInEthSwap and usdcAmountInEthSwap are of opposite sign when they are both non-zero
         assert(
@@ -1561,132 +1440,15 @@ library DnGmxJuniorVaultManager {
         uint256 ethPrice = _getTokenPriceInUsdc(state, state.weth);
         uint256 usdcPrice = _getTokenPriceInUsdc(state, state.usdc);
 
-        // btc swap
-        Simulate.State[] memory swapStates;
-        (int256 usdcAmountInBtcSwap, int ethAmountInBtcSwap, ) = _getQuote2(
+        (int256 usdcAmountInBtcSwap, int256 usdcAmountInEthSwap) = _quoteCombinedSwap(
             state,
             btcAmountInBtcSwap,
-            WBTC_TO_USDC(state),
-            swapStates
-        );
-        dollarsLostDueToSlippage += _calculateSwapLoss(btcAmountInBtcSwap, usdcAmountInBtcSwap, btcPrice, usdcPrice);
-        if (SHOULD_LOG) {
-            console.log('btcAmountInBtcSwap');
-            console.logInt(btcAmountInBtcSwap);
-            console.log('usdcAmountInBtcSwap');
-            console.logInt(usdcAmountInBtcSwap);
-            console.log('====');
-        }
-
-        // getting intermediate eth amount in btc swap
-        // ethAmountInBtcSwap = _getQuote(state, usdcAmountInBtcSwap, USDC_TO_WETH_(state));
-        if (SHOULD_LOG) {
-            console.log('ethAmountInBtcSwap');
-            console.logInt(ethAmountInBtcSwap);
-            console.log('====');
-        }
-        //
-        //
-        // {
-        //     int inputLow = -2e18;
-        //     int inputHigh = 2e18;
-        //     int target = 46472303309;
-        //     uint lastDeviation = type(uint).max;
-        //     for (uint i = 0; i < 100; i++) {
-        //         // int input = ((inputLow + inputHigh) / 2);
-        //         int256 _usdcAmountInEthSwap = _getQuote(
-        //             state,
-        //             ethAmountInEthSwap + ((ethAmountInBtcSwap * (1e18 + ((inputLow + inputHigh) / 2))) / 1e18), // including btc swap amount
-        //             WETH_TO_USDC(state)
-        //         );
-        //         _usdcAmountInEthSwap -= usdcAmountInBtcSwap;
-        //         console.log('input');
-        //         console.logInt(((inputLow + inputHigh) / 2));
-        //         console.log('_usdcAmountInEthSwap');
-        //         console.logInt(_usdcAmountInEthSwap);
-
-        //         // uint currentDeviation = uint(
-        //         //     _usdcAmountInEthSwap > target ? _usdcAmountInEthSwap - target : target - _usdcAmountInEthSwap
-        //         // );
-
-        //         if (_usdcAmountInEthSwap > target) {
-        //             // decrease input
-        //             inputLow = ((inputLow + inputHigh) / 2);
-        //         } else if (_usdcAmountInEthSwap < target) {
-        //             inputHigh = ((inputLow + inputHigh) / 2);
-        //             // increase input
-        //         }
-
-        //         // if (currentDeviation <= lastDeviation) {
-        //         //     lastDeviation = currentDeviation;
-        //         // } else {
-        //         //     break;
-        //         // }
-        //     }
-
-        //     console.log('==============================x');
-        //     console.log('inputLow');
-        //     console.logInt(inputLow);
-        //     console.log('target');
-        //     console.logInt(target);
-        //     console.log('lastDeviation');
-        //     console.log(lastDeviation);
-        //     console.log('==============================x');
-        // }
-
-        // if ((btcAmountInBtcSwap < 0) && (ethAmountInEthSwap > 0)) {
-        //     // remove extra fees                                                                       46362469400
-        //     // ethAmountInBtcSwap = (((ethAmountInBtcSwap) * 1e6) / (1e6 - 500)); //                   46372522335     0.0217%
-        //     // ethAmountInBtcSwap = (((ethAmountInBtcSwap) * 1e12) / (1e6 - 500) / (1e6 - 500)); //    46352563958                46372522335     0.0217%
-        //     // ethAmountInBtcSwap = (((ethAmountInBtcSwap) * (1e6 + 1645)) / 1e6); //                  46332600511                46372522335     0.0217%
-        //     ethAmountInBtcSwap = (ethAmountInBtcSwap * (1e18 + 1004575809929518)) / 1e18;
-        // } else if ((btcAmountInBtcSwap > 0) && (ethAmountInEthSwap < 0)) {
-        //     ethAmountInBtcSwap = (ethAmountInBtcSwap * (1e18 - 995934708043931)) / 1e18;
-        // }
-
-        // 12826435796293363381
-        // 12832852222404565663 1-f using this diff is   0.0002893451088 %
-        //                      using magic number diff -0.0001926020603 %
-
-        // with adding
-        // desired usdc  -46362469400
-        // actual usdc -46362545651 0.0001% error 1e12 / (1e6 - 500) / (1e6 - 500)
-        // actual usdc -46362555628 0.0001% error (1e6 + 500) * (1e6 + 500)) / 1e12
-        // with subtracting
-        // desired usdc  -46362469400
-        // actual usdc -46392460680 0.06% error
-
-        //
-
-        // eth swap (also accounting for price change in btc swap)
-        int256 usdcAmountInBtcEthSwap = _getQuote(
-            state,
-            ethAmountInBtcSwap + ethAmountInEthSwap, // including btc swap amount
-            WETH_TO_USDC(state)
-        );
-        if (SHOULD_LOG) {
-            console.log('ethAmountInEth');
-            console.logInt(ethAmountInEthSwap);
-            console.log('ethAmountInEth+BtcSwap');
-            console.logInt(ethAmountInEthSwap + ethAmountInBtcSwap);
-            console.log('usdcAmountInEth+BtcSwap');
-            console.logInt(usdcAmountInBtcEthSwap);
-        }
-        // int usdcAmountInEthSwap = ((usdcAmountInBtcEthSwap - usdcAmountInBtcSwap)); // accounting for price change in btc swap
-        int usdcAmountInEthSwap = ((usdcAmountInBtcEthSwap - usdcAmountInBtcSwap) * (1e6 - 500) * (1e6 - 500)) / 1e12; // accounting for price change in btc swap
-        if (SHOULD_LOG) {
-            console.log('usdcAmountInEthSwap');
-            console.logInt(usdcAmountInEthSwap);
-            console.log('====');
-        }
-        dollarsLostDueToSlippage += _calculateSwapLoss(ethAmountInEthSwap, usdcAmountInEthSwap, ethPrice, usdcPrice);
-
-        // ensure ethAmountInEthSwap and usdcAmountInEthSwap are of opposite sign when they are both non-zero
-        assert(
-            ethAmountInEthSwap == 0 || usdcAmountInEthSwap == 0 || ethAmountInEthSwap > 0 != usdcAmountInEthSwap > 0
+            ethAmountInEthSwap
         );
 
-        return dollarsLostDueToSlippage;
+        return
+            _calculateSwapLoss(btcAmountInBtcSwap, usdcAmountInBtcSwap, btcPrice, usdcPrice) +
+            _calculateSwapLoss(ethAmountInEthSwap, usdcAmountInEthSwap, ethPrice, usdcPrice);
     }
 
     ///@notice returns the amount of flashloan for a given token
@@ -2027,29 +1789,4 @@ library DnGmxJuniorVaultManager {
     function WBTC_TO_USDC(State storage state) internal view returns (bytes memory) {
         return abi.encodePacked(state.wbtc, state.feeTierWethWbtcPool, state.weth, uint24(500), state.usdc);
     }
-}
-
-interface consolex {
-    function logg(string memory str, Simulate.State memory simulatestate) external view;
-
-    function logg1(
-        string memory str,
-        Simulate.State memory simulatestate,
-        Simulate.State memory simulatestate1
-    ) external view;
-
-    function logg2(
-        string memory str,
-        Simulate.State memory simulatestate,
-        Simulate.State memory simulatestate1,
-        Simulate.State memory simulatestate2
-    ) external view;
-
-    function logg3(
-        string memory str,
-        Simulate.State memory simulatestate,
-        Simulate.State memory simulatestate1,
-        Simulate.State memory simulatestate2,
-        Simulate.State memory simulatestate3
-    ) external view;
 }

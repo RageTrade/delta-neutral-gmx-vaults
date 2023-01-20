@@ -70,30 +70,6 @@ describe('DnGmxJuniorVaultManager', () => {
 
   describe('#getQuote', () => {
     describe('positive input or exactIn', () => {
-      it.skip('check', async () => {
-        const { quoter } = await loadFixture(deployTest);
-        //
-        const usdcAmountByExactIn = await quoter.quoteExactInputSingle(
-          weth.address,
-          usdc.address,
-          500,
-          parseEther('0.001'),
-          0,
-        );
-        const usdcAmountByExactOut = await quoter.quoteExactOutputSingle(
-          usdc.address,
-          weth.address,
-          500,
-          parseEther('0.001'),
-          0,
-        );
-
-        console.log({
-          usdcAmountByExactIn: formatUnits(usdcAmountByExactIn, 6),
-          usdcAmountByExactOut: formatUnits(usdcAmountByExactOut, 6),
-        });
-      });
-
       it('wbtc to usdc', async () => {
         const { quoter, test } = await loadFixture(deployTest);
 
@@ -160,8 +136,6 @@ describe('DnGmxJuniorVaultManager', () => {
 
         const usdcAmountAbs = await quoter.quoteExactOutput(test.WBTC_TO_USDC(), btcAmount.abs());
         expect(usdcAmountAbs).to.be.eq(usdcAmount.abs());
-
-        // console.log({ usdcAmount: formatUnits(usdcAmount, 6), btcAmount: formatUnits(btcAmount, 8) });
       });
 
       it('usdc to wbtc', async () => {
@@ -206,7 +180,7 @@ describe('DnGmxJuniorVaultManager', () => {
     });
   });
 
-  describe.only('#quoteCombinedSwap', () => {
+  describe('#quoteCombinedSwap', () => {
     describe('btc +ve, eth +ve', () => {
       it('similar amounts', async () => {
         await testQuoteCombinedSwap({
@@ -307,7 +281,12 @@ describe('DnGmxJuniorVaultManager', () => {
 
         const btcAmount = parseBtc('1');
         const btcLossQuoted = await test.quoteSwapSlippageLoss(btcAmount, 0);
-        const btcLossActual = await executeSwapAndCalculateSlippageLoss(wbtc, btcAmount, test.WBTC_TO_USDC(), test);
+        const { loss: btcLossActual } = await executeSwapAndCalculateSlippageLoss(
+          wbtc,
+          btcAmount,
+          test.WBTC_TO_USDC(),
+          test,
+        );
 
         expect(btcLossQuoted).to.be.eq(btcLossActual);
       });
@@ -317,7 +296,12 @@ describe('DnGmxJuniorVaultManager', () => {
 
         const ethAmount = parseEther('15');
         const ethLossQuoted = await test.quoteSwapSlippageLoss(0, ethAmount);
-        const ethLossActual = await executeSwapAndCalculateSlippageLoss(weth, ethAmount, test.WETH_TO_USDC(), test);
+        const { loss: ethLossActual } = await executeSwapAndCalculateSlippageLoss(
+          weth,
+          ethAmount,
+          test.WETH_TO_USDC(),
+          test,
+        );
 
         expect(ethLossQuoted).to.be.eq(ethLossActual);
       });
@@ -482,16 +466,6 @@ describe('DnGmxJuniorVaultManager', () => {
       test,
     );
 
-    console.log('totalLossQuoted', formatUnits(totalLossQuoted, 6));
-    console.log(
-      'btcLossActual',
-      formatUnits(btcLossActual, 6),
-      'ethLossActual',
-      formatUnits(ethLossActual, 6),
-      'totalLossActual',
-      formatUnits(btcLossActual.add(ethLossActual), 6),
-    );
-
     expectEqualWithAbsoluteError(totalLossQuoted, btcLossActual.add(ethLossActual), 1);
   }
 
@@ -520,21 +494,8 @@ describe('DnGmxJuniorVaultManager', () => {
       const dollarsPaid = mulDivUp(tokenAmount, tokenPrice, PRICE_PRECISION);
       const dollarsReceived = mulDivDown(usdcAmount, usdcPrice, PRICE_PRECISION);
       const loss = dollarsPaid.gt(dollarsReceived) ? dollarsPaid.sub(dollarsReceived) : BigNumber.from(0);
-      console.log({
-        type: 'exactInput',
-        tokenAmount,
-        tokenPrice,
-        PRICE_PRECISION,
-        usdcAmount,
-        usdcPrice,
-        dollarsPaid,
-        dollarsReceived,
-        loss,
-      });
-      // if (loss.gt(0)) {
       // change price on uniswap
       await swapRouter.exactInput(params);
-      // }
       return { usdcAmount: usdcAmount.mul(-1), loss };
     } else if (tokenAmount.lt(0)) {
       const params: ISwapRouter.ExactOutputParamsStruct = {
@@ -545,26 +506,12 @@ describe('DnGmxJuniorVaultManager', () => {
         amountInMaximum: ethers.constants.MaxUint256,
       };
       await usdc.approve(swapRouter.address, ethers.constants.MaxUint256);
-      hre.tracer.printNext = true;
       const usdcAmount = await swapRouter.callStatic.exactOutput(params);
       const dollarsPaid = mulDivUp(usdcAmount, usdcPrice, PRICE_PRECISION);
       const dollarsReceived = mulDivDown(tokenAmount.abs(), tokenPrice, PRICE_PRECISION);
       const loss = dollarsPaid.gt(dollarsReceived) ? dollarsPaid.sub(dollarsReceived) : BigNumber.from(0);
-      console.log({
-        type: 'exactOutput',
-        tokenAmount,
-        tokenPrice,
-        PRICE_PRECISION,
-        usdcAmount,
-        usdcPrice,
-        dollarsPaid,
-        dollarsReceived,
-        loss,
-      });
-      // if (loss.gt(0)) {
       // change price on uniswap
       await swapRouter.exactOutput(params);
-      // }
       return { usdcAmount, loss };
     } else {
       return { usdcAmount: BigNumber.from(0), loss: BigNumber.from(0) };
