@@ -11,12 +11,7 @@ import '../libraries/DnGmxJuniorVaultManager.sol';
 contract DnGmxJuniorVaultManagerTest {
     DnGmxJuniorVaultManager.State state;
 
-    constructor(
-        IERC20Metadata usdc,
-        IERC20Metadata weth,
-        IERC20Metadata wbtc,
-        IQuoterV3 quoter
-    ) {
+    constructor(IERC20Metadata usdc, IERC20Metadata weth, IERC20Metadata wbtc, IQuoterV3 quoter) {
         state.usdc = usdc;
         state.weth = weth;
         state.wbtc = wbtc;
@@ -28,6 +23,13 @@ contract DnGmxJuniorVaultManagerTest {
 
     function getQuote(int256 tokenAmount, bytes memory swapPath) public view returns (int256 otherTokenAmount) {
         return DnGmxJuniorVaultManager._getQuote(state, tokenAmount, swapPath);
+    }
+
+    function quoteCombinedSwap(
+        int256 btcAmountInBtcSwap,
+        int256 ethAmountInEthSwap
+    ) public view returns (int256 usdcAmountInBtcSwap, int256 usdcAmountInEthSwap) {
+        return DnGmxJuniorVaultManager._quoteCombinedSwap(state, btcAmountInBtcSwap, ethAmountInEthSwap);
     }
 
     function quoteSwapSlippageLoss(int256 btcAmountInBtcSwap, int256 ethAmountInEthSwap) public view returns (uint256) {

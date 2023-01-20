@@ -30,12 +30,13 @@ import { SignedFixedPointMathLib } from '../libraries/SignedFixedPointMathLib.so
 
 import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMathLib.sol';
 
+import { Simulate } from '@uniswap/v3-core/contracts/libraries/Simulate.sol';
 import { IQuoterV3 } from '@uniswap/v3-periphery/contracts/interfaces/IQuoterV3.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 
 // TODO remove
 import 'hardhat/console.sol';
-bool constant SHOULD_LOG = false;
+bool constant SHOULD_LOG = true;
 
 /**
  * @title Helper library for junior vault
@@ -698,10 +699,10 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@param usdcAmountDesired amount of USDC desired
     ///@return usdcAmountOut usdc amount returned by gmx
-    function _convertAssetToAUsdc(State storage state, uint256 usdcAmountDesired)
-        internal
-        returns (uint256 usdcAmountOut)
-    {
+    function _convertAssetToAUsdc(
+        State storage state,
+        uint256 usdcAmountDesired
+    ) internal returns (uint256 usdcAmountOut) {
         ///@dev if usdcAmountDesired < 10, then there is precision issue in gmx contracts while redeeming for usdg
 
         if (usdcAmountDesired < state.usdcConversionThreshold) return 0;
@@ -769,11 +770,7 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@param uncappedTokenHedge token hedge if there was no asset cap
     ///@param cappedTokenHedge token hedge if given there is limited about of assets available in senior tranche
-    function _rebalanceUnhedgedGlp(
-        State storage state,
-        uint256 uncappedTokenHedge,
-        uint256 cappedTokenHedge
-    ) private {
+    function _rebalanceUnhedgedGlp(State storage state, uint256 uncappedTokenHedge, uint256 cappedTokenHedge) private {
         // part of glp assets to be kept unhedged
         // calculated basis the uncapped amount (assumes unlimited borrow availability)
         // and capped amount (basis available borrow)
@@ -895,11 +892,7 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@param token address of token to borrow
     ///@param amount amount of token to borrow
-    function _executeBorrow(
-        State storage state,
-        address token,
-        uint256 amount
-    ) internal {
+    function _executeBorrow(State storage state, address token, uint256 amount) internal {
         state.pool.borrow(token, amount, VARIABLE_INTEREST_MODE, 0, address(this));
     }
 
@@ -907,11 +900,7 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@param token address of token to borrow
     ///@param amount amount of token to borrow
-    function _executeRepay(
-        State storage state,
-        address token,
-        uint256 amount
-    ) internal {
+    function _executeRepay(State storage state, address token, uint256 amount) internal {
         state.pool.repay(token, amount, VARIABLE_INTEREST_MODE, address(this));
     }
 
@@ -919,11 +908,7 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@param token address of token to borrow
     ///@param amount amount of token to borrow
-    function _executeSupply(
-        State storage state,
-        address token,
-        uint256 amount
-    ) internal {
+    function _executeSupply(State storage state, address token, uint256 amount) internal {
         state.pool.supply(token, amount, address(this), 0);
     }
 
@@ -932,12 +917,7 @@ library DnGmxJuniorVaultManager {
     ///@param token address of token to borrow
     ///@param amount amount of token to borrow
     ///@param receiver address to which withdrawn tokens should be sent
-    function _executeWithdraw(
-        State storage state,
-        address token,
-        uint256 amount,
-        address receiver
-    ) internal {
+    function _executeWithdraw(State storage state, address token, uint256 amount, address receiver) internal {
         state.pool.withdraw(token, amount, receiver);
     }
 
@@ -1197,7 +1177,7 @@ library DnGmxJuniorVaultManager {
         uint256 price = state.oracle.getAssetPrice(address(token));
 
         // @dev aave returns from same source as chainlink (which is 8 decimals)
-        return price.mulDivDown(PRICE_PRECISION, 10**(decimals + 2));
+        return price.mulDivDown(PRICE_PRECISION, 10 ** (decimals + 2));
     }
 
     ///@notice returns the price of glp token
@@ -1248,11 +1228,10 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@param token the token for which price is expected
     ///@return scaledPrice token price in usdc
-    function getTokenPriceInUsdc(State storage state, IERC20Metadata token)
-        external
-        view
-        returns (uint256 scaledPrice)
-    {
+    function getTokenPriceInUsdc(
+        State storage state,
+        IERC20Metadata token
+    ) external view returns (uint256 scaledPrice) {
         return _getTokenPriceInUsdc(state, token);
     }
 
@@ -1260,11 +1239,10 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@param token the token for which price is expected
     ///@return scaledPrice token price in usdc
-    function _getTokenPriceInUsdc(State storage state, IERC20Metadata token)
-        internal
-        view
-        returns (uint256 scaledPrice)
-    {
+    function _getTokenPriceInUsdc(
+        State storage state,
+        IERC20Metadata token
+    ) internal view returns (uint256 scaledPrice) {
         uint256 decimals = token.decimals();
         uint256 price = state.oracle.getAssetPrice(address(token));
 
@@ -1272,7 +1250,7 @@ library DnGmxJuniorVaultManager {
         uint256 quotePrice = state.oracle.getAssetPrice(address(state.usdc));
 
         // token price / usdc price
-        scaledPrice = price.mulDivDown(PRICE_PRECISION, quotePrice * 10**(decimals - 6));
+        scaledPrice = price.mulDivDown(PRICE_PRECISION, quotePrice * 10 ** (decimals - 6));
     }
 
     ///@notice returns liquidation threshold of the selected asset's AAVE pool
@@ -1388,11 +1366,7 @@ library DnGmxJuniorVaultManager {
     /// @param state set of all state variables of vault
     /// @param tokenAmount if positive btc sell amount else if negative btc buy amount
     /// @param swapPath path of swap, path for token to otherToken exactIn is same as path for otherToken to token exactOut
-    function _getQuote(
-        State storage state,
-        int256 tokenAmount,
-        bytes memory swapPath
-    ) internal view returns (int256) {
+    function _getQuote(State storage state, int256 tokenAmount, bytes memory swapPath) internal view returns (int256) {
         if (tokenAmount > 0) {
             // swap wbtc to usdc
             uint256 otherTokenAmountAbs = state.uniswapV3Quoter.quoteExactInput(swapPath, uint256(tokenAmount));
@@ -1406,6 +1380,29 @@ library DnGmxJuniorVaultManager {
         }
     }
 
+    function _getQuote2(
+        State storage state,
+        int256 tokenAmount,
+        bytes memory swapPath,
+        Simulate.State[] memory swapStates
+    ) internal view returns (int256, int256, Simulate.State[] memory) {
+        if (tokenAmount > 0) {
+            // swap wbtc to usdc
+            (uint256[] memory otherTokenAmounts, Simulate.State[] memory swapStatesEnd) = state
+                .uniswapV3Quoter
+                .quoteExactInputV3(swapPath, uint256(tokenAmount), swapStates);
+            return (-int256(otherTokenAmounts[0]), int256(otherTokenAmounts[1]), swapStatesEnd); // pool looses usdc hence negative
+        } else if (tokenAmount < 0) {
+            // swap usdc to wbtc
+            (uint256[] memory otherTokenAmounts, Simulate.State[] memory swapStatesEnd) = state
+                .uniswapV3Quoter
+                .quoteExactOutputV3(swapPath, uint256(-tokenAmount), swapStates);
+            return (int256(otherTokenAmounts[0]), -int256(otherTokenAmounts[1]), swapStatesEnd); // pool gains usdc hence positive
+        } else {
+            return (0, 0, swapStates);
+        }
+    }
+
     function _calculateSwapLoss(
         int256 tokenAmount,
         int256 otherTokenAmount,
@@ -1414,6 +1411,9 @@ library DnGmxJuniorVaultManager {
     ) internal view returns (uint256) {
         uint256 dollarsPaid;
         uint256 dollarsReceived;
+        if (SHOULD_LOG) {
+            console.log('_calculateSwapLoss start');
+        }
         if (tokenAmount > 0) {
             if (SHOULD_LOG) {
                 console.log('tokenAmount', uint256(tokenAmount));
@@ -1429,6 +1429,8 @@ library DnGmxJuniorVaultManager {
                 console.log('-tokenAmount', uint256(-tokenAmount));
                 console.log('tokenPrice', tokenPrice);
                 console.log('PRICE_PRECISION', PRICE_PRECISION);
+                console.log('otherTokenAmount', uint256(otherTokenAmount));
+                console.log('otherTokenPrice', otherTokenPrice);
             }
             dollarsPaid = uint256(otherTokenAmount).mulDivUp(otherTokenPrice, PRICE_PRECISION);
             dollarsReceived = uint256(-tokenAmount).mulDivDown(tokenPrice, PRICE_PRECISION);
@@ -1437,8 +1439,113 @@ library DnGmxJuniorVaultManager {
             console.log('dollarsPaid', dollarsPaid);
             console.log('dollarsReceived', dollarsReceived);
             console.log('loss', (dollarsPaid > dollarsReceived) ? uint256(dollarsPaid - dollarsReceived) : 0);
+            console.log('_calculateSwapLoss end');
         }
         return (dollarsPaid > dollarsReceived) ? uint256(dollarsPaid - dollarsReceived) : 0;
+    }
+
+    function _quoteCombinedSwap(
+        State storage state,
+        int256 btcAmountInBtcSwap,
+        int256 ethAmountInEthSwap
+    ) internal view returns (int256 usdcAmountInBtcSwap, int256 usdcAmountInEthSwap) {
+        // btc swap
+        int ethAmountInBtcSwap;
+        Simulate.State[] memory swapStates;
+        (usdcAmountInBtcSwap, ethAmountInBtcSwap, swapStates) = _getQuote2(
+            state,
+            btcAmountInBtcSwap,
+            WBTC_TO_USDC(state),
+            swapStates
+        );
+
+        if (SHOULD_LOG) {
+            console.log('====');
+            console.log('BTC SWAP');
+            console.log('btcAmountInBtcSwap');
+            console.logInt(btcAmountInBtcSwap);
+            console.log('ethAmountInBtcSwap');
+            console.logInt(ethAmountInBtcSwap);
+            console.log('usdcAmountInBtcSwap');
+            console.logInt(usdcAmountInBtcSwap);
+
+            // try consolex(address(123456)).logg('swapStates', swapStates) {} catch {}
+            address(123456).staticcall(
+                abi.encodeWithSelector(consolex.logg1.selector, 'swapStates', swapStates[0], swapStates[1])
+            );
+            console.log('====');
+        }
+
+        // int ethAmountInBtcEthSwap;
+        // if (ethAmountInBtcSwap > 0 == ethAmountInEthSwap > 0) {
+        //     // ethAmountInBtcSwap and ethAmountInEthSwap are of same sign
+        //     console.log('condition 1 A');
+        //     ethAmountInBtcEthSwap = ethAmountInBtcSwap + ethAmountInEthSwap;
+        // } else if (ethAmountInBtcSwap < 0 == -ethAmountInBtcSwap > ethAmountInEthSwap) {
+        //     // ethAmountInBtcSwap and ethAmountInEthSwap are of opposite sign
+        //     // abs(ethAmountInBtcSwap) > abs(ethAmountInEthSwap)
+        //     console.log('condition 1 B');
+        //     ethAmountInBtcEthSwap = ethAmountInBtcSwap + (ethAmountInEthSwap * (1e6 - 500)) / 1e6;
+        // } else {
+        //     // ethAmountInBtcSwap and ethAmountInEthSwap are of opposite sign
+        //     // abs(ethAmountInBtcSwap) < abs(ethAmountInEthSwap)
+        //     console.log('condition 1 C');
+        //     ethAmountInBtcEthSwap = ((ethAmountInBtcSwap * 1e6) / (1e6 - 500)) + ethAmountInEthSwap;
+        // }
+
+        // eth swap (also accounting for price change in btc swap)
+        Simulate.State[] memory swapStates2 = new Simulate.State[](1);
+        swapStates2[0] = swapStates[0];
+        address(123456).staticcall(abi.encodeWithSelector(consolex.logg.selector, 'swapStates2', swapStates2[0]));
+        (usdcAmountInEthSwap, , ) = _getQuote2(
+            state,
+            // ethAmountInBtcSwap + (ethAmountInEthSwap * (1e6 - 500)) / 1e6, // including btc swap amount
+            // ((ethAmountInBtcSwap * 1e6) / (1e6 - 500)) + ethAmountInEthSwap, // including btc swap amount
+            ethAmountInEthSwap,
+            WETH_TO_USDC(state),
+            swapStates2
+        );
+        // if (SHOULD_LOG) {
+        //     console.log('====');
+        //     console.log('BTC ETH SWAP');
+        //     console.log('ethAmountInBtcEthSwap');
+        //     console.logInt(ethAmountInBtcSwap + ethAmountInEthSwap);
+        //     console.log('usdcAmountInBtcEthSwap');
+        //     console.logInt(usdcAmountInBtcEthSwap);
+        //     console.log('====');
+        // }
+
+        // usdcAmountInEthSwap = ((usdcAmountInBtcEthSwap - usdcAmountInBtcSwap) * (1e6 - 500)) / 1e6; // accounting for price change in btc swap
+        // usdcAmountInEthSwap = (usdcAmountInBtcEthSwap * 1e12 - usdcAmountInBtcSwap * (1e6 - 500) * (1e6 - 500)) / 1e12;
+
+        // if (ethAmountInBtcSwap > 0 == ethAmountInEthSwap > 0) {
+        //     console.log('condition 2 A');
+        //     usdcAmountInEthSwap = usdcAmountInBtcEthSwap - usdcAmountInBtcSwap;
+        // } else if (ethAmountInBtcSwap < 0 == -ethAmountInBtcSwap > ethAmountInEthSwap) {
+        //     console.log('condition 2 B');
+        //     usdcAmountInEthSwap = ((usdcAmountInBtcEthSwap - usdcAmountInBtcSwap) * (1e6 - 500)) / 1e6;
+        // } else {
+        //     console.log('condition 2 C');
+        //     usdcAmountInEthSwap =
+        //         (usdcAmountInBtcEthSwap * 1e12 - usdcAmountInBtcSwap * (1e6 - 500) * (1e6 - 500)) /
+        //         1e12;
+        // }
+
+        if (SHOULD_LOG) {
+            console.log('====');
+            console.log('ETH SWAP calculated');
+            console.log('ethAmountInEthSwap');
+            console.logInt(ethAmountInEthSwap);
+            console.log('usdcAmountInEthSwap');
+            console.logInt(usdcAmountInEthSwap);
+            console.log('====');
+        }
+        // 23343733075/23332061202
+
+        // ensure ethAmountInEthSwap and usdcAmountInEthSwap are of opposite sign when they are both non-zero
+        assert(
+            ethAmountInEthSwap == 0 || usdcAmountInEthSwap == 0 || ethAmountInEthSwap > 0 != usdcAmountInEthSwap > 0
+        );
     }
 
     /// @notice returns the amount of glp to be charged as slippage loss
@@ -1455,7 +1562,13 @@ library DnGmxJuniorVaultManager {
         uint256 usdcPrice = _getTokenPriceInUsdc(state, state.usdc);
 
         // btc swap
-        int256 usdcAmountInBtcSwap = _getQuote(state, btcAmountInBtcSwap, WBTC_TO_USDC(state));
+        Simulate.State[] memory swapStates;
+        (int256 usdcAmountInBtcSwap, int ethAmountInBtcSwap, ) = _getQuote2(
+            state,
+            btcAmountInBtcSwap,
+            WBTC_TO_USDC(state),
+            swapStates
+        );
         dollarsLostDueToSlippage += _calculateSwapLoss(btcAmountInBtcSwap, usdcAmountInBtcSwap, btcPrice, usdcPrice);
         if (SHOULD_LOG) {
             console.log('btcAmountInBtcSwap');
@@ -1466,7 +1579,7 @@ library DnGmxJuniorVaultManager {
         }
 
         // getting intermediate eth amount in btc swap
-        int256 ethAmountInBtcSwap = _getQuote(state, usdcAmountInBtcSwap, USDC_TO_WETH_(state));
+        // ethAmountInBtcSwap = _getQuote(state, usdcAmountInBtcSwap, USDC_TO_WETH_(state));
         if (SHOULD_LOG) {
             console.log('ethAmountInBtcSwap');
             console.logInt(ethAmountInBtcSwap);
@@ -1474,12 +1587,66 @@ library DnGmxJuniorVaultManager {
         }
         //
         //
+        // {
+        //     int inputLow = -2e18;
+        //     int inputHigh = 2e18;
+        //     int target = 46472303309;
+        //     uint lastDeviation = type(uint).max;
+        //     for (uint i = 0; i < 100; i++) {
+        //         // int input = ((inputLow + inputHigh) / 2);
+        //         int256 _usdcAmountInEthSwap = _getQuote(
+        //             state,
+        //             ethAmountInEthSwap + ((ethAmountInBtcSwap * (1e18 + ((inputLow + inputHigh) / 2))) / 1e18), // including btc swap amount
+        //             WETH_TO_USDC(state)
+        //         );
+        //         _usdcAmountInEthSwap -= usdcAmountInBtcSwap;
+        //         console.log('input');
+        //         console.logInt(((inputLow + inputHigh) / 2));
+        //         console.log('_usdcAmountInEthSwap');
+        //         console.logInt(_usdcAmountInEthSwap);
 
-        // remove extra fees                                                                    46362469400
-        // ethAmountInBtcSwap = ((ethAmountInBtcSwap) * (1e6 + 500) * (1e6 + 500)) / 1e12;      46362555628
-        // ethAmountInBtcSwap = ((ethAmountInBtcSwap) * (1e6 + 1000)) / 1e6;                    46362555628
-        ethAmountInBtcSwap = ((ethAmountInBtcSwap) * (1e6 + 500)) / (1e6 - 500); //             46362550640
-        //                                                                                          46362550640
+        //         // uint currentDeviation = uint(
+        //         //     _usdcAmountInEthSwap > target ? _usdcAmountInEthSwap - target : target - _usdcAmountInEthSwap
+        //         // );
+
+        //         if (_usdcAmountInEthSwap > target) {
+        //             // decrease input
+        //             inputLow = ((inputLow + inputHigh) / 2);
+        //         } else if (_usdcAmountInEthSwap < target) {
+        //             inputHigh = ((inputLow + inputHigh) / 2);
+        //             // increase input
+        //         }
+
+        //         // if (currentDeviation <= lastDeviation) {
+        //         //     lastDeviation = currentDeviation;
+        //         // } else {
+        //         //     break;
+        //         // }
+        //     }
+
+        //     console.log('==============================x');
+        //     console.log('inputLow');
+        //     console.logInt(inputLow);
+        //     console.log('target');
+        //     console.logInt(target);
+        //     console.log('lastDeviation');
+        //     console.log(lastDeviation);
+        //     console.log('==============================x');
+        // }
+
+        // if ((btcAmountInBtcSwap < 0) && (ethAmountInEthSwap > 0)) {
+        //     // remove extra fees                                                                       46362469400
+        //     // ethAmountInBtcSwap = (((ethAmountInBtcSwap) * 1e6) / (1e6 - 500)); //                   46372522335     0.0217%
+        //     // ethAmountInBtcSwap = (((ethAmountInBtcSwap) * 1e12) / (1e6 - 500) / (1e6 - 500)); //    46352563958                46372522335     0.0217%
+        //     // ethAmountInBtcSwap = (((ethAmountInBtcSwap) * (1e6 + 1645)) / 1e6); //                  46332600511                46372522335     0.0217%
+        //     ethAmountInBtcSwap = (ethAmountInBtcSwap * (1e18 + 1004575809929518)) / 1e18;
+        // } else if ((btcAmountInBtcSwap > 0) && (ethAmountInEthSwap < 0)) {
+        //     ethAmountInBtcSwap = (ethAmountInBtcSwap * (1e18 - 995934708043931)) / 1e18;
+        // }
+
+        // 12826435796293363381
+        // 12832852222404565663 1-f using this diff is   0.0002893451088 %
+        //                      using magic number diff -0.0001926020603 %
 
         // with adding
         // desired usdc  -46362469400
@@ -1489,10 +1656,12 @@ library DnGmxJuniorVaultManager {
         // desired usdc  -46362469400
         // actual usdc -46392460680 0.06% error
 
+        //
+
         // eth swap (also accounting for price change in btc swap)
-        int256 usdcAmountInEthSwap = _getQuote(
+        int256 usdcAmountInBtcEthSwap = _getQuote(
             state,
-            ethAmountInEthSwap + ethAmountInBtcSwap, // including btc swap amount
+            ethAmountInBtcSwap + ethAmountInEthSwap, // including btc swap amount
             WETH_TO_USDC(state)
         );
         if (SHOULD_LOG) {
@@ -1501,9 +1670,10 @@ library DnGmxJuniorVaultManager {
             console.log('ethAmountInEth+BtcSwap');
             console.logInt(ethAmountInEthSwap + ethAmountInBtcSwap);
             console.log('usdcAmountInEth+BtcSwap');
-            console.logInt(usdcAmountInEthSwap);
+            console.logInt(usdcAmountInBtcEthSwap);
         }
-        usdcAmountInEthSwap -= usdcAmountInBtcSwap; // accounting for price change in btc swap
+        // int usdcAmountInEthSwap = ((usdcAmountInBtcEthSwap - usdcAmountInBtcSwap)); // accounting for price change in btc swap
+        int usdcAmountInEthSwap = ((usdcAmountInBtcEthSwap - usdcAmountInBtcSwap) * (1e6 - 500) * (1e6 - 500)) / 1e12; // accounting for price change in btc swap
         if (SHOULD_LOG) {
             console.log('usdcAmountInEthSwap');
             console.logInt(usdcAmountInEthSwap);
@@ -1534,15 +1704,7 @@ library DnGmxJuniorVaultManager {
         address token,
         uint256 optimalBorrow,
         uint256 currentBorrow
-    )
-        external
-        view
-        returns (
-            uint256 tokenAmount,
-            uint256 usdcAmount,
-            bool repayDebt
-        )
-    {
+    ) external view returns (uint256 tokenAmount, uint256 usdcAmount, bool repayDebt) {
         return _flashloanAmounts(state, token, optimalBorrow, currentBorrow);
     }
 
@@ -1561,15 +1723,7 @@ library DnGmxJuniorVaultManager {
         address token,
         uint256 optimalBorrow,
         uint256 currentBorrow
-    )
-        private
-        view
-        returns (
-            uint256 tokenAmount,
-            uint256 usdcAmount,
-            bool repayDebt
-        )
-    {
+    ) private view returns (uint256 tokenAmount, uint256 usdcAmount, bool repayDebt) {
         uint256 slippageThresholdSwap = token == address(state.wbtc)
             ? state.slippageThresholdSwapBtcBps
             : state.slippageThresholdSwapEthBps;
@@ -1606,11 +1760,9 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@return currentBtcBorrow amount of btc currently borrowed from AAVE
     ///@return currentEthBorrow amount of eth currently borrowed from AAVE
-    function getCurrentBorrows(State storage state)
-        external
-        view
-        returns (uint256 currentBtcBorrow, uint256 currentEthBorrow)
-    {
+    function getCurrentBorrows(
+        State storage state
+    ) external view returns (uint256 currentBtcBorrow, uint256 currentEthBorrow) {
         return _getCurrentBorrows(state);
     }
 
@@ -1618,11 +1770,9 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@return currentBtcBorrow amount of btc currently borrowed from AAVE
     ///@return currentEthBorrow amount of eth currently borrowed from AAVE
-    function _getCurrentBorrows(State storage state)
-        private
-        view
-        returns (uint256 currentBtcBorrow, uint256 currentEthBorrow)
-    {
+    function _getCurrentBorrows(
+        State storage state
+    ) private view returns (uint256 currentBtcBorrow, uint256 currentEthBorrow) {
         return (state.vWbtc.balanceOf(address(this)), state.vWeth.balanceOf(address(this)));
     }
 
@@ -1631,11 +1781,10 @@ library DnGmxJuniorVaultManager {
     ///@param glpDeposited amount of glp for which optimal borrow needs to be calculated
     ///@return optimalBtcBorrow optimal amount of btc borrowed from AAVE
     ///@return optimalEthBorrow optimal amount of eth borrowed from AAVE
-    function getOptimalBorrows(State storage state, uint256 glpDeposited)
-        external
-        view
-        returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow)
-    {
+    function getOptimalBorrows(
+        State storage state,
+        uint256 glpDeposited
+    ) external view returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) {
         return _getOptimalBorrows(state, glpDeposited);
     }
 
@@ -1644,11 +1793,10 @@ library DnGmxJuniorVaultManager {
     ///@param glpDeposited amount of glp for which optimal borrow needs to be calculated
     ///@return optimalBtcBorrow optimal amount of btc borrowed from AAVE
     ///@return optimalEthBorrow optimal amount of eth borrowed from AAVE
-    function _getOptimalBorrows(State storage state, uint256 glpDeposited)
-        private
-        view
-        returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow)
-    {
+    function _getOptimalBorrows(
+        State storage state,
+        uint256 glpDeposited
+    ) private view returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) {
         optimalBtcBorrow = _getTokenReservesInGlp(state, address(state.wbtc), glpDeposited);
         optimalEthBorrow = _getTokenReservesInGlp(state, address(state.weth), glpDeposited);
     }
@@ -1879,4 +2027,29 @@ library DnGmxJuniorVaultManager {
     function WBTC_TO_USDC(State storage state) internal view returns (bytes memory) {
         return abi.encodePacked(state.wbtc, state.feeTierWethWbtcPool, state.weth, uint24(500), state.usdc);
     }
+}
+
+interface consolex {
+    function logg(string memory str, Simulate.State memory simulatestate) external view;
+
+    function logg1(
+        string memory str,
+        Simulate.State memory simulatestate,
+        Simulate.State memory simulatestate1
+    ) external view;
+
+    function logg2(
+        string memory str,
+        Simulate.State memory simulatestate,
+        Simulate.State memory simulatestate1,
+        Simulate.State memory simulatestate2
+    ) external view;
+
+    function logg3(
+        string memory str,
+        Simulate.State memory simulatestate,
+        Simulate.State memory simulatestate1,
+        Simulate.State memory simulatestate2,
+        Simulate.State memory simulatestate3
+    ) external view;
 }
