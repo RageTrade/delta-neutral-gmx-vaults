@@ -108,7 +108,11 @@ export default {
     ],
   },
   dependencyCompiler: {
-    paths: ['@uniswap/v3-periphery/contracts/lens/QuoterV3.sol', '@uniswap/v3-periphery/contracts/SwapRouter.sol'],
+    paths: [
+      '@uniswap/v3-periphery/contracts/SwapRouter.sol',
+      '@uniswap/v3-periphery/contracts/lens/QuoterV3.sol',
+      '@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol',
+    ],
   },
   typechain: {
     target: 'ethers-v5',

@@ -26,6 +26,7 @@ interface IDnGmxBatchingManager {
     event VaultDeposit(uint256 vaultGlpAmount);
 
     event KeeperUpdated(address newKeeper);
+    event ParamsV1Updated(address rewardsHarvestingRouter, address weth);
     event ThresholdsUpdated(uint256 newSlippageThresholdGmx, uint256 minUsdcConversionAmount);
 
     event BatchStake(uint256 indexed round, uint256 userUsdcAmount, uint256 userGlpAmount);

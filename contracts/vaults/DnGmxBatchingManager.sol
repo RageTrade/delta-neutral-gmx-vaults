@@ -83,8 +83,14 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     // batching manager's state
     VaultBatchingState public vaultBatchingState;
 
+    // wrapped eth
+    IERC20 private weth;
+
+    // gmx's reward router used for harvesting rewards
+    IRewardRouterV2 private rewardsHarvestingRouter;
+
     // these gaps are added to allow adding new variables without shifting down inheritance chain
-    uint256[50] private __gaps;
+    uint256[48] private __gaps;
 
     /// @dev ensures caller is junior vault
     modifier onlyDnGmxJuniorVault() {
@@ -159,6 +165,12 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     function setKeeper(address _keeper) external onlyOwner {
         keeper = _keeper;
         emit KeeperUpdated(_keeper);
+    }
+
+    function setParamsV1(address _weth, address _rewardsHarvestingRouter) external onlyOwner {
+        weth = IERC20(_weth);
+        rewardsHarvestingRouter = IRewardRouterV2(_rewardsHarvestingRouter);
+        emit ParamsV1Updated(_rewardsHarvestingRouter, _weth);
     }
 
     /// @notice sets the slippage (in bps) to use while staking on gmx
@@ -255,6 +267,28 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
             // unpause when batch is executed
             _unpause();
         }
+    }
+
+    function rescueFees() external onlyOwner {
+        rewardsHarvestingRouter.handleRewards({
+            shouldClaimGmx: false,
+            shouldStakeGmx: false,
+            shouldClaimEsGmx: true,
+            shouldStakeEsGmx: true,
+            shouldStakeMultiplierPoints: true,
+            shouldClaimWeth: true,
+            shouldConvertWethToEth: false
+        });
+
+        uint256 wethHarvested = weth.balanceOf(address(this));
+
+        uint256 price = gmxUnderlyingVault.getMinPrice(address(weth));
+
+        uint256 usdgAmount = wethHarvested.mulDiv(price * (MAX_BPS - slippageThresholdGmxBps), 1e30 * MAX_BPS);
+
+        uint256 glpReceived = _stakeGlp(address(weth), wethHarvested, usdgAmount);
+
+        sGlp.transfer(address(dnGmxJuniorVault), glpReceived);
     }
 
     /// @notice claim the shares received from depositing batch
