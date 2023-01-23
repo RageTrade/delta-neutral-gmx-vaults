@@ -4,19 +4,21 @@ pragma solidity ^0.8.0;
 
 import { IPriceOracle } from '@aave/core-v3/contracts/interfaces/IPriceOracle.sol';
 import { IERC20Metadata } from '@openzeppelin/contracts/interfaces/IERC20Metadata.sol';
-import { IQuoterV3 } from '@uniswap/v3-periphery/contracts/interfaces/IQuoterV3.sol';
 
 import '../libraries/DnGmxJuniorVaultManager.sol';
 
 contract DnGmxJuniorVaultManagerTest {
     DnGmxJuniorVaultManager.State state;
 
-    constructor(IERC20Metadata usdc, IERC20Metadata weth, IERC20Metadata wbtc, IQuoterV3 quoter) {
+    constructor(
+        IERC20Metadata usdc,
+        IERC20Metadata weth,
+        IERC20Metadata wbtc
+    ) {
         state.usdc = usdc;
         state.weth = weth;
         state.wbtc = wbtc;
 
-        state.uniswapV3Quoter = quoter;
         state.feeTierWethWbtcPool = 3000;
         state.oracle = IPriceOracle(0xb56c2F0B653B2e0b10C9b928C8580Ac5Df02C7C7);
     }

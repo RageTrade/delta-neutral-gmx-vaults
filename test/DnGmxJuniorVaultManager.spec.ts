@@ -39,7 +39,7 @@ describe('DnGmxJuniorVaultManager', () => {
 
     const test = (await hre.ethers.deployContract(
       'DnGmxJuniorVaultManagerTest',
-      [usdc.address, weth.address, wbtc.address, quoter.address],
+      [usdc.address, weth.address, wbtc.address],
       { libraries: { QuoterLib: quoterLib.address } },
     )) as DnGmxJuniorVaultManagerTest;
 

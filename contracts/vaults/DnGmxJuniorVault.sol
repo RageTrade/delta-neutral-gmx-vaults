@@ -20,8 +20,6 @@ import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMat
 import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 
-import { IQuoterV3 } from '@uniswap/v3-periphery/contracts/interfaces/IQuoterV3.sol';
-
 import { IBalancerVault } from '../interfaces/balancer/IBalancerVault.sol';
 import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
 import { IDnGmxJuniorVault, IERC4626 } from '../interfaces/IDnGmxJuniorVault.sol';
@@ -234,11 +232,10 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
 
     /// @notice set thresholds
     /// @param rebalanceProfitUsdcAmountThreshold (BPS) slippage threshold on btc swaps
-    function setParamsV1(uint128 rebalanceProfitUsdcAmountThreshold, IQuoterV3 _uniswapV3Quoter) external onlyOwner {
+    function setParamsV1(uint128 rebalanceProfitUsdcAmountThreshold) external onlyOwner {
         state.rebalanceProfitUsdcAmountThreshold = rebalanceProfitUsdcAmountThreshold;
-        state.uniswapV3Quoter = _uniswapV3Quoter;
 
-        emit ParamsV1Updated(rebalanceProfitUsdcAmountThreshold, _uniswapV3Quoter);
+        emit ParamsV1Updated(rebalanceProfitUsdcAmountThreshold);
     }
 
     /// @notice set rebalance paramters
