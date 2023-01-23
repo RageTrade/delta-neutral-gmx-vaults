@@ -1144,17 +1144,18 @@
   version "1.0.2-solc-0.8-simulate"
   resolved "https://github.com/uniswap/v3-core.git#d55e297b938e5b56fd1cf9fe668f5bd385be85b5"
 
-"@uniswap/v3-core@https://github.com/RageTrade/uniswap-v3-core.git#1dd0e50f8ca32aebe98257865d7c84fc6174ff67":
+"@uniswap/v3-core@1.0.2-solc-0.8-simulate":
   version "1.0.2-solc-0.8-simulate"
-  resolved "https://github.com/RageTrade/uniswap-v3-core.git#1dd0e50f8ca32aebe98257865d7c84fc6174ff67"
+  resolved "https://registry.yarnpkg.com/@uniswap/v3-core/-/v3-core-1.0.2-solc-0.8-simulate.tgz#77fb42f2b502b4fec81844736d039fc059e8688c"
+  integrity sha512-ALAZbsb3wvUrRzeAjrTKjv1fH7UrueJ/+D8uX4yintXHxxzbnnp78Kis2pa4D26cFQ72rwM3DrZpUES9rhsEuQ==
 
-"@uniswap/v3-periphery@https://github.com/RageTrade/uniswap-v3-periphery.git#efa1d58df39d04473a5c7b90797113c4576e0cd3":
+"@uniswap/v3-periphery@https://github.com/Uniswap/uniswap-v3-periphery.git#b325bb0905d922ae61fcc7df85ee802e8df5e96c":
   version "1.4.2-solc-0.8"
-  resolved "https://github.com/RageTrade/uniswap-v3-periphery.git#efa1d58df39d04473a5c7b90797113c4576e0cd3"
+  resolved "https://github.com/Uniswap/uniswap-v3-periphery.git#b325bb0905d922ae61fcc7df85ee802e8df5e96c"
   dependencies:
     "@openzeppelin/contracts" "4.6.0"
     "@uniswap/v2-core" "1.0.1"
-    "@uniswap/v3-core" "https://github.com/RageTrade/uniswap-v3-core.git#1dd0e50f8ca32aebe98257865d7c84fc6174ff67"
+    "@uniswap/v3-core" "1.0.2-solc-0.8-simulate"
     base64-sol "1.1.0"
     hardhat-watcher "^2.1.1"
 

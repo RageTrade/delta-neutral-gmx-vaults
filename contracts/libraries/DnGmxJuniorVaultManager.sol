@@ -27,6 +27,7 @@ import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
 import { SafeCast } from '../libraries/SafeCast.sol';
 import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
 import { SignedFixedPointMathLib } from '../libraries/SignedFixedPointMathLib.sol';
+import { QuoterLib } from '../libraries/QuoterLib.sol';
 
 import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMathLib.sol';
 
@@ -1358,29 +1359,6 @@ library DnGmxJuniorVaultManager {
         return _quoteSwapSlippageLoss(state, btcAmount, ethAmount);
     }
 
-    function _getQuote(
-        State storage state,
-        int256 tokenAmount,
-        bytes memory swapPath,
-        Simulate.State[] memory swapStates
-    ) internal view returns (int256, int256, Simulate.State[] memory) {
-        if (tokenAmount > 0) {
-            // swap wbtc to usdc
-            (uint256[] memory otherTokenAmounts, Simulate.State[] memory swapStatesEnd) = state
-                .uniswapV3Quoter
-                .quoteExactInputV3(swapPath, uint256(tokenAmount), swapStates);
-            return (-int256(otherTokenAmounts[0]), int256(otherTokenAmounts[1]), swapStatesEnd); // pool looses usdc hence negative
-        } else if (tokenAmount < 0) {
-            // swap usdc to wbtc
-            (uint256[] memory otherTokenAmounts, Simulate.State[] memory swapStatesEnd) = state
-                .uniswapV3Quoter
-                .quoteExactOutputV3(swapPath, uint256(-tokenAmount), swapStates);
-            return (int256(otherTokenAmounts[0]), -int256(otherTokenAmounts[1]), swapStatesEnd); // pool gains usdc hence positive
-        } else {
-            return (0, 0, swapStates);
-        }
-    }
-
     function _calculateSwapLoss(
         int256 tokenAmount,
         int256 otherTokenAmount,
@@ -1399,34 +1377,6 @@ library DnGmxJuniorVaultManager {
         return (dollarsPaid > dollarsReceived) ? uint256(dollarsPaid - dollarsReceived) : 0;
     }
 
-    function _quoteCombinedSwap(
-        State storage state,
-        int256 btcAmountInBtcSwap,
-        int256 ethAmountInEthSwap
-    ) internal view returns (int256 usdcAmountInBtcSwap, int256 usdcAmountInEthSwap) {
-        // btc swap
-        int ethAmountInBtcSwap;
-        Simulate.State[] memory swapStates;
-        (usdcAmountInBtcSwap, ethAmountInBtcSwap, swapStates) = _getQuote(
-            state,
-            btcAmountInBtcSwap,
-            WBTC_TO_USDC(state),
-            swapStates
-        );
-
-        // eth swap (also accounting for price change in btc swap)
-        Simulate.State[] memory swapStates2 = new Simulate.State[](1);
-        if (ethAmountInBtcSwap != 0) {
-            swapStates2[0] = swapStates[0];
-        }
-        (usdcAmountInEthSwap, , ) = _getQuote(state, ethAmountInEthSwap, WETH_TO_USDC(state), swapStates2);
-
-        // ensure ethAmountInEthSwap and usdcAmountInEthSwap are of opposite sign when they are both non-zero
-        assert(
-            ethAmountInEthSwap == 0 || usdcAmountInEthSwap == 0 || ethAmountInEthSwap > 0 != usdcAmountInEthSwap > 0
-        );
-    }
-
     /// @notice returns the amount of glp to be charged as slippage loss
     /// @param state set of all state variables of vault
     /// @param btcAmountInBtcSwap if positive btc sell amount else if negative btc buy amount
@@ -1440,10 +1390,11 @@ library DnGmxJuniorVaultManager {
         uint256 ethPrice = _getTokenPriceInUsdc(state, state.weth);
         uint256 usdcPrice = _getTokenPriceInUsdc(state, state.usdc);
 
-        (int256 usdcAmountInBtcSwap, int256 usdcAmountInEthSwap) = _quoteCombinedSwap(
-            state,
+        (int256 usdcAmountInBtcSwap, int256 usdcAmountInEthSwap) = QuoterLib.quoteCombinedSwap(
             btcAmountInBtcSwap,
-            ethAmountInEthSwap
+            ethAmountInEthSwap,
+            WBTC_TO_USDC(state),
+            WETH_TO_USDC(state)
         );
 
         return
