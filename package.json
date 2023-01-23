@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "clean": "hardhat clean",
-    "compile": "hardhat compile",
+    "compile": "yarn patch-package && hardhat compile",
     "coverage": "COVERAGE_CHECK=true hardhat coverage",
     "deploy": "TS_NODE_SKIP_IGNORE=true hardhat deploy",
     "deploy:arbtest": "yarn deploy --network arbtest",
