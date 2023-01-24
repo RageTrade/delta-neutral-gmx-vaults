@@ -1652,18 +1652,13 @@ library DnGmxJuniorVaultManager {
         address token,
         uint256 glpDeposited
     ) private view returns (uint256) {
-        // target weight of token in GLP
-        uint256 targetWeight = state.gmxVault.tokenWeights(token);
-        // total weight of all tokens combined in GLP
-        uint256 totalTokenWeights = state.gmxVault.totalTokenWeights();
+        uint256 totalSupply = state.glp.totalSupply();
+        uint8 decimals = IERC20Metadata(token).decimals();
 
-        // glp price in usd
-        uint256 glpPrice = _getGlpPrice(state, false);
-        // token price in usd
+        uint256 tokenUsdgAmount = state.gmxVault.usdgAmounts(token);
         uint256 tokenPrice = _getTokenPrice(state, IERC20Metadata(token));
 
-        // underlying tokens in glp = (glp deposit value in usd) * targetWeight / totalTokenWeights / tokenPriceUsd
-        return targetWeight.mulDivDown(glpDeposited * glpPrice, totalTokenWeights * tokenPrice);
+        return tokenUsdgAmount.mulDivDown(glpDeposited * 1e18, totalSupply * tokenPrice);
     }
 
     ///@notice returns token amount underlying glp amount deposited
