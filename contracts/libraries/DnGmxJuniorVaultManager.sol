@@ -203,6 +203,7 @@ library DnGmxJuniorVaultManager {
         // !!! STORAGE EXTENSIONS !!! (reduced gaps by no. of slots added here)
         uint128 rebalanceProfitUsdcAmountThreshold;
 
+        uint16 traderOIHedgeBps;
         // gaps for extending struct (if required during upgrade)
         uint256[49] __gaps;
     }
@@ -1653,12 +1654,17 @@ library DnGmxJuniorVaultManager {
         uint256 glpDeposited
     ) private view returns (uint256) {
         uint256 totalSupply = state.glp.totalSupply();
-        uint8 decimals = IERC20Metadata(token).decimals();
+        IVault gmxVault = state.gmxVault;
+        uint16 traderOIHedgeBps = state.traderOIHedgeBps;
 
-        uint256 tokenUsdgAmount = state.gmxVault.usdgAmounts(token);
-        uint256 tokenPrice = _getTokenPrice(state, IERC20Metadata(token));
+        uint256 globalShort = gmxVault.globalShortSizes(token).mulDivDown(traderOIHedgeBps, MAX_BPS);
+        uint256 globalAveragePrice = gmxVault.globalShortAveragePrices(token);
+        uint256 reservedAmount = gmxVault.reservedAmounts(token).mulDivDown(traderOIHedgeBps, MAX_BPS);
+        uint256 poolAmount = gmxVault.poolAmounts(token);
 
-        return tokenUsdgAmount.mulDivDown(glpDeposited * 1e18, totalSupply * tokenPrice);
+        uint256 tokenReserve = poolAmount - reservedAmount + globalShort / globalAveragePrice;
+
+        return tokenReserve.mulDivDown(glpDeposited, totalSupply);
     }
 
     ///@notice returns token amount underlying glp amount deposited
