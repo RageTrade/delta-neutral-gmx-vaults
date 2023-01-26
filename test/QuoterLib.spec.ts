@@ -39,7 +39,6 @@ describe('QuoterLib', () => {
       usdc.address,
       weth.address,
       wbtc.address,
-      uniswapQuoter.address,
     ])) as QuoterLibTest;
 
     return { test, uniswapQuoter };
