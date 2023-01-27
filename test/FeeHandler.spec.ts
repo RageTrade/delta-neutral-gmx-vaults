@@ -1,23 +1,25 @@
+import hre from 'hardhat';
 import { expect } from 'chai';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
-import { activateMainnetFork } from './utils/mainnet-fork';
 import { increaseBlockTimestamp } from './utils/shared';
+import { BigNumber } from 'ethers';
+import { IRewardTracker__factory } from '../typechain-types';
 
 describe('Fee Handlers', () => {
-  before(async () => {
-    // Set mainnet to recent block
-    await activateMainnetFork({ blockNumber: 29650000 });
-  });
-
-  after(async () => {
-    // Reset to default block
-    await activateMainnetFork();
-  });
-
   it('Protocol EsGmx Handlers & EsGmx Harvest', async () => {
-    const { dnGmxJuniorVault, dnGmxSeniorVault, feeRecipient, gmx, esGmx, stakedGmxTracker, glpVester, users } =
+    const { dnGmxJuniorVault, dnGmxSeniorVault, feeRecipient, gmx, esGmx, stakedGmxTracker, fsGlp, glpVester, users } =
       await dnGmxJuniorVaultFixture();
+
+    const distributor = '0x60519b48ec4183a61ca2b8e37869e675fd203b34';
+
+    // set "tokensPerInterval" non-zero, since fork block has it 0
+    await hre.ethers.provider.send('hardhat_setStorageAt', [
+      distributor,
+      '0x3',
+      hre.ethers.utils.hexZeroPad(BigNumber.from(10n ** 13n).toHexString(), 32),
+    ]);
+
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     const amount = parseEther('100');

@@ -35,7 +35,7 @@ export class Changer {
     console.log(Changer.seperator);
   };
 
-  changeWeight = async (asset: Asset, weight: number) => {
+  changeTargetWeight = async (asset: Asset, weight: number) => {
     const [tokenAddr, tokenDecimals] = asset === 'WBTC' ? [this.opts.wbtc.address, 8] : [this.opts.weth.address, 18];
 
     const [minProfitBasisPoints, maxUsdgAmounts] = await Promise.resolve([

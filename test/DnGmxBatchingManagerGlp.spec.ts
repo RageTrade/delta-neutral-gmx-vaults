@@ -17,7 +17,7 @@ import { BigNumber } from 'ethers';
 describe('Dn Gmx Batching Manager Glp', () => {
   let dnGmxJuniorVault: DnGmxJuniorVaultMock;
   let gmxBatchingManagerGlp: DnGmxBatchingManagerGlp;
-  let rewardRouter: IRewardRouterV2;
+  let mintBurnRouter: IRewardRouterV2;
   let users: SignerWithAddress[];
   let sGlp: ERC20Upgradeable;
   let usdc: ERC20Upgradeable;
@@ -28,7 +28,7 @@ describe('Dn Gmx Batching Manager Glp', () => {
   let MAX_CONVERSION_BPS = 10_000;
 
   beforeEach(async () => {
-    ({ dnGmxJuniorVault, dnGmxSeniorVault, gmxBatchingManagerGlp, users, fsGlp, usdc, sGlp, rewardRouter } =
+    ({ dnGmxJuniorVault, dnGmxSeniorVault, gmxBatchingManagerGlp, users, fsGlp, usdc, sGlp, mintBurnRouter } =
       await dnGmxJuniorVaultFixture());
   });
 
@@ -85,7 +85,7 @@ describe('Dn Gmx Batching Manager Glp', () => {
     });
 
     it('Multiple User Deposit', async () => {
-      await rewardRouter.connect(users[2]).mintAndStakeGlpETH(0, 0, {
+      await mintBurnRouter.connect(users[2]).mintAndStakeGlpETH(0, 0, {
         value: parseEther('10'),
       });
 
@@ -311,7 +311,7 @@ describe('Dn Gmx Batching Manager Glp', () => {
     });
 
     it('Multiple User Deposit + executeBatch', async () => {
-      await rewardRouter.connect(users[2]).mintAndStakeGlpETH(0, 0, {
+      await mintBurnRouter.connect(users[2]).mintAndStakeGlpETH(0, 0, {
         value: parseEther('10'),
       });
 
@@ -555,7 +555,7 @@ describe('Dn Gmx Batching Manager Glp', () => {
       const unclaimedShares = await gmxBatchingManagerGlp.unclaimedShares(users[1].address);
       expect(unclaimedShares).to.gt(0);
 
-      await rewardRouter.connect(users[1]).mintAndStakeGlpETH(0, 0, {
+      await mintBurnRouter.connect(users[1]).mintAndStakeGlpETH(0, 0, {
         value: parseEther('0.5'),
       });
       await sGlp.connect(users[1]).approve(dnGmxJuniorVault.address, ethers.constants.MaxUint256);
@@ -593,7 +593,7 @@ describe('Dn Gmx Batching Manager Glp', () => {
 
       const glpAmount = parseEther('100');
 
-      await rewardRouter.connect(users[1]).mintAndStakeGlpETH(0, 0, {
+      await mintBurnRouter.connect(users[1]).mintAndStakeGlpETH(0, 0, {
         value: parseEther('0.5'),
       });
 
@@ -625,7 +625,7 @@ describe('Dn Gmx Batching Manager Glp', () => {
       const unclaimedShares = await gmxBatchingManagerGlp.unclaimedShares(users[1].address);
       expect(unclaimedShares).to.gt(0);
 
-      await rewardRouter.connect(users[1]).mintAndStakeGlpETH(0, 0, {
+      await mintBurnRouter.connect(users[1]).mintAndStakeGlpETH(0, 0, {
         value: parseEther('0.5'),
       });
 
