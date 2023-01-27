@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { BigNumber } from 'ethers';
-import { FeeSplitStrategyMock } from '../typechain-types';
+import { FeeSplitStrategyMock } from '../typechain-types/contracts/mocks/FeeSplitStrategyMock';
 
 describe('Fee Split Strategy', () => {
   let feeSplitStrategy: FeeSplitStrategyMock;

@@ -5552,10 +5552,10 @@ hardhat-storage-layout-changes@^0.1.2:
   resolved "https://registry.yarnpkg.com/hardhat-storage-layout-changes/-/hardhat-storage-layout-changes-0.1.2.tgz#348ff5cb767d7a1c28f033fcc20312456b5c983e"
   integrity sha512-fWX2jykXoRha6vCDD21NkbrrjKJ8U9juCodf8PTMEDjTjpb+rfUzgZdFOVHpo9DHQTnobMGY5HlrmtEdwgFlTw==
 
-hardhat-tracer@^2.0.0-beta.4:
-  version "2.0.0-beta.4"
-  resolved "https://registry.yarnpkg.com/hardhat-tracer/-/hardhat-tracer-2.0.0-beta.4.tgz#ff2c90727d1c49412ee8a8f15e74287ac6af83f0"
-  integrity sha512-A+GI60RCxSX9UwJRKfprlEksUI2oh5bLLKQppmeFv6da2r/ziveWX+zE+B1f6YnrBNW2Rmt8tE1ljae6a3jqdA==
+hardhat-tracer@^2.0.0-beta.6:
+  version "2.0.0-beta.6"
+  resolved "https://registry.yarnpkg.com/hardhat-tracer/-/hardhat-tracer-2.0.0-beta.6.tgz#f922dc039685887f60ab5384e6530feab6d28466"
+  integrity sha512-mu0zug+BQ8xX/89V9C8zKr2km+LpTA8GeEB+TWf9t63RAy802vJGthYzxafmHBJ1jCaH8+np/ocBTJEgMSS8lw==
   dependencies:
     ethers "^5.6.1"
 
