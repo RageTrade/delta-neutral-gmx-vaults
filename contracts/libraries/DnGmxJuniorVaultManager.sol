@@ -773,7 +773,7 @@ library DnGmxJuniorVaultManager {
         uint256 minUSDG
     ) internal returns (uint256 glpStaked) {
         // will revert if notional output is less than minUSDG
-        glpStaked = state.rewardRouter.mintAndStakeGlp(token, amount, minUSDG, 0);
+        glpStaked = state.mintBurnRewardRouter.mintAndStakeGlp(token, amount, minUSDG, 0);
     }
 
     ///@notice rebalances unhedged glp amount
