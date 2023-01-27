@@ -1,0 +1,13 @@
+diff --git a/node_modules/hardhat/internal/hardhat-network/provider/node.js b/node_modules/hardhat/internal/hardhat-network/provider/node.js
+index d51bccb..36941fa 100644
+--- a/node_modules/hardhat/internal/hardhat-network/provider/node.js
++++ b/node_modules/hardhat/internal/hardhat-network/provider/node.js
+@@ -1547,7 +1547,7 @@ Hardhat Network's forking functionality only works with blocks from at least spu
+             originalCommon = this._vm._common;
+             this._vm._common = ethereumjs_common_1.Common.custom({
+                 chainId: this._forkBlockNumber === undefined ||
+-                    blockContext.header.number >= this._forkBlockNumber
++                    blockContext.header.number > this._forkBlockNumber
+                     ? this._configChainId
+                     : this._forkNetworkId,
+                 networkId: this._forkNetworkId ?? this._configNetworkId,
