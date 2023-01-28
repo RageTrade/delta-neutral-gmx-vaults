@@ -231,12 +231,4 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         state.weth.approve(address(_batchingManager), type(uint256).max);
         state.usdc.approve(address(_batchingManager), type(uint256).max);
     }
-
-    function depositToken(
-        address token,
-        uint256 amount,
-        uint256 minUsdg
-    ) external {
-        batchingManager.depositToken(token, amount, minUsdg);
-    }
 }
