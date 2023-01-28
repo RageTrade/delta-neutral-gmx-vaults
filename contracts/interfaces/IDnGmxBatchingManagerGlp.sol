@@ -4,8 +4,8 @@ import { IERC4626 } from './IERC4626.sol';
 
 pragma solidity ^0.8.0;
 
-interface IDnGmxBatchingManager {
-    error NoUsdcBalance();
+interface IDnGmxBatchingManagerGlp {
+    error NoAssetBalance();
 
     error CallerNotVault();
     error CallerNotKeeper();
@@ -26,7 +26,7 @@ interface IDnGmxBatchingManager {
     event VaultDeposit(uint256 vaultGlpAmount);
 
     event KeeperUpdated(address newKeeper);
-    event ThresholdsUpdated(uint256 newSlippageThresholdGmx, uint256 minUsdcConversionAmount);
+    event ThresholdsUpdated(uint256 minUsdcConversionAmount);
 
     event BatchStake(uint256 indexed round, uint256 userUsdcAmount, uint256 userGlpAmount);
     event SharesClaimed(address indexed from, address indexed receiver, uint256 claimAmount);
@@ -38,11 +38,11 @@ interface IDnGmxBatchingManager {
 
     struct UserDeposit {
         uint256 round;
-        uint128 usdcBalance;
+        uint128 assetBalance;
         uint128 unclaimedShares;
     }
     struct RoundDeposit {
-        uint128 totalUsdc;
+        uint128 totalAssets;
         uint128 totalShares;
     }
 
@@ -52,13 +52,11 @@ interface IDnGmxBatchingManager {
 
     function claim(address receiver, uint256 amount) external;
 
-    function usdcBalance(address account) external view returns (uint256 balance);
-
-    function dnGmxJuniorVaultGlpBalance() external view returns (uint256 balance);
+    function assetBalance(address account) external view returns (uint256 balance);
 
     function unclaimedShares(address account) external view returns (uint256 shares);
 
     function roundDeposits(uint256 round) external view returns (RoundDeposit memory);
 
-    function depositUsdc(uint256 amount, address receiver) external;
+    function deposit(uint256 amount, address receiver) external;
 }
