@@ -11,6 +11,48 @@ import 'hardhat-storage-layout-changes';
 
 import { config } from 'dotenv';
 import { ethers } from 'ethers';
+import { Fragment } from 'ethers/lib/utils';
+import { readJsonSync, writeJsonSync } from 'fs-extra';
+import { TASK_COMPILE } from 'hardhat/builtin-tasks/task-names';
+import { task } from 'hardhat/config';
+import nodePath from 'path';
+
+// this compile task override is needed to copy missing abi fragments to respective artifacts (note its not aval to typechain)
+task(TASK_COMPILE, 'Compiles the entire project, building all artifacts').setAction(async (taskArgs, _, runSuper) => {
+  const compileSolOutput = await runSuper(taskArgs);
+
+  copyEventErrorAbis(
+    ['artifacts/contracts/libraries/DnGmxJuniorVaultManager.sol/DnGmxJuniorVaultManager.json'],
+    'artifacts/contracts/vaults/DnGmxJuniorVault.sol/DnGmxJuniorVault.json',
+  );
+
+  function copyEventErrorAbis(froms: string[], to: string) {
+    for (const from of froms) {
+      copyEventErrorAbi(from, to);
+    }
+  }
+
+  function copyEventErrorAbi(from: string, to: string) {
+    const fromArtifact = readJsonSync(nodePath.resolve(__dirname, from));
+    const toArtifact = readJsonSync(nodePath.resolve(__dirname, to));
+    fromArtifact.abi.forEach((fromFragment: Fragment) => {
+      if (
+        // only copy error and event fragments
+        (fromFragment.type === 'error' || fromFragment.type === 'event') &&
+        // if fragment is already in the toArtifact, don't copy it
+        !toArtifact.abi.find(
+          ({ name, type }: Fragment) => name + '-' + type === fromFragment.name + '-' + fromFragment.type,
+        )
+      ) {
+        toArtifact.abi.push(fromFragment);
+      }
+    });
+
+    writeJsonSync(nodePath.resolve(__dirname, to), toArtifact, { spaces: 2 });
+  }
+
+  return compileSolOutput;
+});
 
 config();
 const { ALCHEMY_KEY, LEDGER_ADDRESS } = process.env;
@@ -56,6 +98,11 @@ export default {
       url: `https://rinkeby.arbitrum.io/rpc`,
       accounts: [pk],
       chainId: 421611,
+    },
+    arbgoerli: {
+      url: `https://goerli-rollup.arbitrum.io/rpc`,
+      accounts: [pk],
+      chainId: 421613,
     },
   },
   solidity: {
@@ -109,10 +156,14 @@ export default {
     target: 'ethers-v5',
     alwaysGenerateOverloads: false,
   },
+  dependencyCompiler: {
+    paths: [
+      '@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol',
+      '@ragetrade/core/contracts/utils/TimelockControllerWithMinDelayOverride.sol',
+    ],
+  },
   etherscan: {
-    apiKey: {
-      arbitrumTestnet: process.env.ETHERSCAN_KEY,
-    },
+    apiKey: process.env.ETHERSCAN_KEY,
   },
   mocha: {
     timeout: 4000000,
