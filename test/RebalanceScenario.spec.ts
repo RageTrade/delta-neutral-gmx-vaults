@@ -18,7 +18,7 @@ describe('Rebalance Scenarios', () => {
     const checker = new Checker(opts);
 
     const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, mocks, aUSDC, gmxVault, lendingPool } = opts;
-    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
+    // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
     // becauses price are not changed on uniswap
@@ -107,7 +107,7 @@ describe('Rebalance Scenarios', () => {
     const checker = new Checker(opts);
 
     const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC, gmxVault, lendingPool, mocks } = opts;
-    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
+    // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
     // becauses price are not changed on uniswap
@@ -194,7 +194,7 @@ describe('Rebalance Scenarios', () => {
     const checker = new Checker(opts);
 
     const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC, gmxVault, lendingPool, mocks } = opts;
-    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
+    // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
     // becauses price are not changed on uniswap
@@ -291,7 +291,7 @@ describe('Rebalance Scenarios', () => {
       lendingPool,
       mocks,
     } = opts;
-    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
+    // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
     await dnGmxJuniorVault.setAdminParams(
@@ -382,7 +382,7 @@ describe('Rebalance Scenarios', () => {
     const checker = new Checker(opts);
 
     const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, mocks, aUSDC, gmxVault, lendingPool } = opts;
-    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
+    // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
     // becauses price are not changed on uniswap
@@ -473,7 +473,7 @@ describe('Rebalance Scenarios', () => {
     const checker = new Checker(opts);
 
     const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, mocks, aUSDC, gmxVault, lendingPool } = opts;
-    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
+    // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
     // becauses price are not changed on uniswap
@@ -564,7 +564,7 @@ describe('Rebalance Scenarios', () => {
     const checker = new Checker(opts);
 
     const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, mocks, aUSDC, gmxVault, lendingPool } = opts;
-    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
+    // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
     // becauses price are not changed on uniswap
@@ -656,7 +656,7 @@ describe('Rebalance Scenarios', () => {
     const checker = new Checker(opts);
 
     const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, mocks, aUSDC, gmxVault, lendingPool } = opts;
-    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
+    // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
     // becauses price are not changed on uniswap
@@ -745,7 +745,7 @@ describe('Rebalance Scenarios', () => {
     const checker = new Checker(opts);
 
     const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, mocks, aUSDC, gmxVault, lendingPool } = opts;
-    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
+    // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
     // becauses price are not changed on uniswap
@@ -836,7 +836,7 @@ describe('Rebalance Scenarios', () => {
     const checker = new Checker(opts);
 
     const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC, gmxVault, lendingPool, mocks } = opts;
-    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
+    // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
     // becauses price are not changed on uniswap
@@ -964,7 +964,7 @@ describe('Rebalance Scenarios', () => {
     const checker = new Checker(opts);
 
     const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC, gmxVault, lendingPool, mocks } = opts;
-    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
+    // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
     // becauses price are not changed on uniswap
@@ -1087,7 +1087,7 @@ describe('Rebalance Scenarios', () => {
     const checker = new Checker(opts);
 
     const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, mocks, aUSDC, gmxVault, lendingPool } = opts;
-    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
+    // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
     // becauses price are not changed on uniswap
@@ -1186,7 +1186,7 @@ describe('Rebalance Scenarios', () => {
       lendingPool,
       rewardRouter,
     } = opts;
-    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
+    // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
     await rewardRouter.connect(users[0]).mintAndStakeGlpETH(0, 0, {
       value: parseEther('1000'),
@@ -1277,7 +1277,7 @@ describe('Rebalance Scenarios', () => {
     const checker = new Checker(opts);
 
     const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, mocks, aUSDC, gmxVault, lendingPool } = opts;
-    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
+    // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
     // becauses price are not changed on uniswap
@@ -1415,7 +1415,7 @@ describe('Rebalance Scenarios', () => {
       mocks,
       rewardRouter,
     } = opts;
-    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
+    // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
     await dnGmxJuniorVault.setAdminParams(
