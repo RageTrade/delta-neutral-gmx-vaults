@@ -651,7 +651,7 @@ describe('Rebalance & its utils', () => {
     const changer = new Changer(opts);
     const { dnGmxJuniorVault, dnGmxSeniorVault, lendingPool, users, aUSDC, mocks, fsGlp } = opts;
 
-    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
+    // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
     const PRICE_PRECISION = BigNumber.from(10).pow(30);
@@ -727,7 +727,7 @@ describe('Rebalance & its utils', () => {
     const changer = new Changer(opts);
     const { glpBatchingManager, dnGmxJuniorVault, dnGmxSeniorVault, lendingPool, users, mocks, aUSDC, fsGlp } = opts;
 
-    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
+    // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
 
     const PRICE_PRECISION = BigNumber.from(10).pow(30);

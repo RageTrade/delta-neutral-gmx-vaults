@@ -1,4 +1,5 @@
-import '@nomiclabs/hardhat-waffle';
+import '@nomicfoundation/hardhat-chai-matchers';
+import '@nomiclabs/hardhat-ethers';
 import 'hardhat-tracer';
 import '@typechain/hardhat';
 import 'hardhat-gas-reporter';
@@ -107,6 +108,7 @@ export default {
   },
   solidity: {
     compilers: [
+      { version: '0.8.15' },
       {
         version: '0.8.17',
         settings: {
@@ -151,6 +153,9 @@ export default {
         },
       },
     ],
+  },
+  dependencyCompiler: {
+    paths: ['@uniswap/v3-periphery/contracts/lens/Quoter.sol', '@uniswap/v3-periphery/contracts/SwapRouter.sol'],
   },
   typechain: {
     target: 'ethers-v5',

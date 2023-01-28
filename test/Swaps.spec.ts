@@ -92,35 +92,6 @@ describe('Swaps', () => {
     expect(await weth.balanceOf(dnGmxJuniorVault.address)).to.eq(parseUnits('1', 18));
   });
 
-  it('swaps with mock', async () => {
-    const { dnGmxJuniorVault, usdc, wbtc, weth, mocks } = await dnGmxJuniorVaultFixture();
-
-    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
-    await dnGmxJuniorVault.grantAllowances();
-
-    await generateErc20Balance(usdc, parseUnits('200000', 6), dnGmxJuniorVault.address);
-
-    expect(await wbtc.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
-    expect(await weth.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
-
-    const swapToWBTC = await dnGmxJuniorVault.callStatic.swapUSDC(
-      wbtc.address,
-      parseUnits('1', 8),
-      parseUnits('100000', 6),
-    );
-    const swapToWETH = await dnGmxJuniorVault.callStatic.swapUSDC(
-      weth.address,
-      parseUnits('1', 18),
-      parseUnits('100000', 6),
-    );
-
-    await dnGmxJuniorVault.swapUSDC(wbtc.address, parseUnits('1', 8), parseUnits('100000', 6));
-    await dnGmxJuniorVault.swapUSDC(weth.address, parseUnits('1', 18), parseUnits('100000', 6));
-
-    expect(await wbtc.balanceOf(dnGmxJuniorVault.address)).to.eq(swapToWBTC.tokensReceived);
-    expect(await weth.balanceOf(dnGmxJuniorVault.address)).to.eq(swapToWETH.tokensReceived);
-  });
-
   it('convert asset to aUSDC', async () => {
     const { dnGmxJuniorVault, usdc, aUSDC, users, sGlp, gmxVault } = await dnGmxJuniorVaultFixture();
 
@@ -191,9 +162,7 @@ describe('Swaps', () => {
     expect(await dnGmxJuniorVault.totalAssets()).to.eq(assets);
 
     // slippageThresholdGmxBps = 0.1%
-    expect(dnGmxJuniorVault.convertAssetToAUsdc(usdcAmount)).to.be.revertedWith(
-      `VM Exception while processing transaction: reverted with reason string 'GlpManager: insufficient output'`,
-    );
+    expect(dnGmxJuniorVault.convertAssetToAUsdc(usdcAmount)).to.be.revertedWith('GlpManager: insufficient output');
   });
 
   it('convert aUSDC to asset', async () => {
@@ -275,8 +244,6 @@ describe('Swaps', () => {
     expect(await dnGmxJuniorVault.totalAssets()).to.eq(0);
 
     // slippageThresholdGmxBps = 0.1%
-    expect(dnGmxJuniorVault.convertAssetToAUsdc(aUSDCAmount)).to.be.revertedWith(
-      `VM Exception while processing transaction: reverted with reason string 'GlpManager: insufficient output'`,
-    );
+    expect(dnGmxJuniorVault.convertAssetToAUsdc(aUSDCAmount)).to.be.revertedWith('GlpManager: insufficient output');
   });
 });

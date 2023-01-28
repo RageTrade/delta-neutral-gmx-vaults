@@ -26,9 +26,12 @@ import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
 import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
 import { SafeCast } from '../libraries/SafeCast.sol';
 import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
+import { SignedFixedPointMathLib } from '../libraries/SignedFixedPointMathLib.sol';
+import { QuoterLib } from '../libraries/QuoterLib.sol';
 
 import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMathLib.sol';
 
+import { Simulate } from '@uniswap/v3-core/contracts/libraries/Simulate.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 
 /**
@@ -56,6 +59,7 @@ library DnGmxJuniorVaultManager {
 
     using FixedPointMathLib for uint256;
     using SafeCast for uint256;
+    using SignedFixedPointMathLib for int256;
 
     uint256 internal constant MAX_BPS = 10_000;
 
@@ -181,6 +185,7 @@ library DnGmxJuniorVaultManager {
         // batching manager address
         IDnGmxBatchingManager batchingManager;
 
+        // !!! STORAGE EXTENSIONS !!! (reduced gaps by no. of slots added here)
         uint128 rebalanceProfitUsdcAmountThreshold;
 
         // gaps for extending struct (if required during upgrade)
@@ -512,28 +517,26 @@ library DnGmxJuniorVaultManager {
         }
     }
 
-    ///@notice rebalances btc and eth hedges according to underlying glp token weights
-    ///@notice updates the borrowed amount from senior tranche basis the target health factor
-    ///@notice if the amount of swap for a token > theshold then a partial hedge is taken and remaining is taken separately
-    ///@notice if the amount of swap for a token < threshold complete hedge is taken
-    ///@notice in case there is not enough money in senior tranche then relevant amount of glp is converted into usdc
-    ///@dev to be called after settle profits only (since vaultMarketValue if after settlement of profits)
-    ///@param state set of all state variables of vault
-    ///@param currentBtcBorrow The amount of USDC collateral token deposited to LB Protocol
-    ///@param currentEthBorrow The market value of ETH/BTC part in sGLP
-    ///@param glpDeposited amount of glp deposited into the vault
-    ///@param isPartialAllowed true if partial hedge is allowed
-    ///@return isPartialHedge true if partial hedge is executed
-    function rebalanceHedge(
+    function _getOptimalBorrowsFinal(
         State storage state,
         uint256 currentBtcBorrow,
         uint256 currentEthBorrow,
         uint256 glpDeposited,
         bool isPartialAllowed
-    ) external returns (bool isPartialHedge) {
+    )
+        internal
+        view
+        returns (
+            uint256 optimalBtcBorrow,
+            uint256 optimalEthBorrow,
+            uint256 targetDnGmxSeniorVaultAmount,
+            uint256 optimalUncappedEthBorrow,
+            bool isPartialHedge
+        )
+    {
         // optimal btc and eth borrows
         // calculated basis the underlying token weights in glp
-        (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrows(state, glpDeposited);
+        (optimalBtcBorrow, optimalEthBorrow) = _getOptimalBorrows(state, glpDeposited);
 
         if (isPartialAllowed) {
             // if partial hedges are allowed (i.e. rebalance call and not deposit/withdraw)
@@ -572,7 +575,7 @@ library DnGmxJuniorVaultManager {
         // usdc supply value = usdc borrowed from senior tranche + borrow value
         // replacing usdc supply value formula above in AAVE target health factor formula
         // we can derive usdc amount to borrow from senior tranche i.e. targetDnGmxSeniorVaultAmount
-        uint256 targetDnGmxSeniorVaultAmount = (state.targetHealthFactor - usdcLiquidationThreshold).mulDivDown(
+        targetDnGmxSeniorVaultAmount = (state.targetHealthFactor - usdcLiquidationThreshold).mulDivDown(
             optimalBorrowValue,
             usdcLiquidationThreshold
         );
@@ -591,7 +594,7 @@ library DnGmxJuniorVaultManager {
                     // we won't be able to hedge glp completely
                     // convert some glp into usdc to keep the vault delta neutral
                     // hedge the btc/eth of remaining amount
-                    uint256 optimalUncappedEthBorrow = optimalEthBorrow;
+                    optimalUncappedEthBorrow = optimalEthBorrow;
 
                     // optimal btc and eth borrows basis the hedged part of glp
                     (optimalBtcBorrow, optimalEthBorrow) = _getOptimalCappedBorrows(
@@ -599,6 +602,56 @@ library DnGmxJuniorVaultManager {
                         currentDnGmxSeniorVaultAmount + availableBorrow,
                         usdcLiquidationThreshold
                     );
+                }
+            }
+        }
+    }
+
+    ///@notice rebalances btc and eth hedges according to underlying glp token weights
+    ///@notice updates the borrowed amount from senior tranche basis the target health factor
+    ///@notice if the amount of swap for a token > theshold then a partial hedge is taken and remaining is taken separately
+    ///@notice if the amount of swap for a token < threshold complete hedge is taken
+    ///@notice in case there is not enough money in senior tranche then relevant amount of glp is converted into usdc
+    ///@dev to be called after settle profits only (since vaultMarketValue if after settlement of profits)
+    ///@param state set of all state variables of vault
+    ///@param currentBtcBorrow The amount of USDC collateral token deposited to LB Protocol
+    ///@param currentEthBorrow The market value of ETH/BTC part in sGLP
+    ///@param glpDeposited amount of glp deposited into the vault
+    ///@param isPartialAllowed true if partial hedge is allowed
+    ///@return isPartialHedge true if partial hedge is executed
+    function rebalanceHedge(
+        State storage state,
+        uint256 currentBtcBorrow,
+        uint256 currentEthBorrow,
+        uint256 glpDeposited,
+        bool isPartialAllowed
+    ) external returns (bool isPartialHedge) {
+        uint256 optimalBtcBorrow;
+        uint256 optimalEthBorrow;
+        uint256 targetDnGmxSeniorVaultAmount;
+        uint256 currentDnGmxSeniorVaultAmount;
+        uint256 optimalUncappedEthBorrow;
+        (
+            optimalBtcBorrow,
+            optimalEthBorrow,
+            targetDnGmxSeniorVaultAmount,
+            optimalUncappedEthBorrow,
+            isPartialHedge
+        ) = _getOptimalBorrowsFinal(state, currentBtcBorrow, currentEthBorrow, glpDeposited, isPartialAllowed);
+        // current usdc borrowed from senior tranche
+        currentDnGmxSeniorVaultAmount = _getUsdcBorrowed(state);
+        if (targetDnGmxSeniorVaultAmount > currentDnGmxSeniorVaultAmount) {
+            // case where we need to borrow more usdc
+            // To get more usdc from senior tranche, so usdc is borrowed first and then hedge is updated on AAVE
+            {
+                uint256 amountToBorrow = targetDnGmxSeniorVaultAmount - currentDnGmxSeniorVaultAmount;
+                uint256 availableBorrow = state.dnGmxSeniorVault.availableBorrow(address(this));
+
+                if (amountToBorrow > availableBorrow) {
+                    // if amount to borrow > available borrow amount
+                    // we won't be able to hedge glp completely
+                    // convert some glp into usdc to keep the vault delta neutral
+                    // hedge the btc/eth of remaining amount
 
                     // rebalance the unhedged glp (increase/decrease basis the capped optimal token hedges)
                     _rebalanceUnhedgedGlp(state, optimalUncappedEthBorrow, optimalEthBorrow);
@@ -1203,7 +1256,7 @@ library DnGmxJuniorVaultManager {
     ///@param token the token for which price is expected
     ///@return scaledPrice token price in usdc
     function _getTokenPriceInUsdc(State storage state, IERC20Metadata token)
-        private
+        internal
         view
         returns (uint256 scaledPrice)
     {
@@ -1252,6 +1305,121 @@ library DnGmxJuniorVaultManager {
             btcAmount.mulDivDown(_getTokenPrice(state, state.wbtc), PRICE_PRECISION) +
             ethAmount.mulDivDown(_getTokenPrice(state, state.weth), PRICE_PRECISION);
         borrowValue = borrowValue.mulDivDown(PRICE_PRECISION, _getTokenPrice(state, state.usdc));
+    }
+
+    function getSlippageAdjustedAssets(
+        State storage state,
+        uint256 assets,
+        bool isDeposit
+    ) external view returns (uint256) {
+        return _getSlippageAdjustedAssets(state, assets, isDeposit);
+    }
+
+    function _getSlippageAdjustedAssets(
+        State storage state,
+        uint256 assets,
+        bool isDeposit
+    ) private view returns (uint256) {
+        // get change in borrow positions to calculate amount to swap on uniswap
+        (int256 netBtcBorrowChange, int256 netEthBorrowChange) = _getNetPositionChange(state, assets, isDeposit);
+
+        uint256 dollarsLostDueToSlippage = _quoteSwapSlippageLoss(state, netBtcBorrowChange, netEthBorrowChange);
+
+        // netSlippage returned is in glp (asset) terms
+        uint256 glpPrice = _getGlpPrice(state, false);
+        uint256 netSlippage = dollarsLostDueToSlippage.mulDivUp(PRICE_PRECISION, glpPrice);
+
+        // subtract slippage from assets, and calculate shares basis that slippage adjusted asset amount
+        assets -= uint256(netSlippage);
+
+        return assets;
+    }
+
+    function getNetPositionChange(
+        State storage state,
+        uint256 assetAmount,
+        bool isDeposit
+    ) external view returns (int256, int256) {
+        return _getNetPositionChange(state, assetAmount, isDeposit);
+    }
+
+    function _getNetPositionChange(
+        State storage state,
+        uint256 assetAmount,
+        bool isDeposit
+    ) private view returns (int256 netBtcBorrowChange, int256 netEthBorrowChange) {
+        // get current borrows
+        (uint256 currentBtcBorrow, uint256 currentEthBorrow) = _getCurrentBorrows(state);
+
+        // calculate new total assets basis assetAmount
+        uint256 total = _totalAssets(state, true);
+        uint256 totalAssetsAfter = isDeposit ? total + assetAmount : total - assetAmount;
+
+        // get optimal borrows accounting for incoming glp deposit
+        (uint256 optimalBtcBorrow, uint256 optimalEthBorrow, , , ) = _getOptimalBorrowsFinal(
+            state,
+            currentBtcBorrow,
+            currentEthBorrow,
+            totalAssetsAfter,
+            false
+        );
+
+        // calculate the diff, i.e token amounts to be swapped on uniswap
+        // if optimal > current, swapping token to usdc
+        // if optimal < current, swapping usdc to token
+        netBtcBorrowChange = optimalBtcBorrow.toInt256() - currentBtcBorrow.toInt256();
+        netEthBorrowChange = optimalEthBorrow.toInt256() - currentEthBorrow.toInt256();
+    }
+
+    function quoteSwapSlippageLoss(
+        State storage state,
+        int256 btcAmount,
+        int256 ethAmount
+    ) external view returns (uint256) {
+        return _quoteSwapSlippageLoss(state, btcAmount, ethAmount);
+    }
+
+    function _calculateSwapLoss(
+        int256 tokenAmount,
+        int256 otherTokenAmount,
+        uint256 tokenPrice,
+        uint256 otherTokenPrice
+    ) internal pure returns (uint256) {
+        uint256 dollarsPaid;
+        uint256 dollarsReceived;
+        if (tokenAmount > 0) {
+            dollarsPaid = uint256(tokenAmount).mulDivUp(tokenPrice, PRICE_PRECISION);
+            dollarsReceived = uint256(-otherTokenAmount).mulDivDown(otherTokenPrice, PRICE_PRECISION);
+        } else if (tokenAmount < 0) {
+            dollarsPaid = uint256(otherTokenAmount).mulDivUp(otherTokenPrice, PRICE_PRECISION);
+            dollarsReceived = uint256(-tokenAmount).mulDivDown(tokenPrice, PRICE_PRECISION);
+        }
+        return (dollarsPaid > dollarsReceived) ? uint256(dollarsPaid - dollarsReceived) : 0;
+    }
+
+    /// @notice returns the amount of glp to be charged as slippage loss
+    /// @param state set of all state variables of vault
+    /// @param btcAmountInBtcSwap if positive btc sell amount else if negative btc buy amount
+    /// @param ethAmountInEthSwap if positive eth sell amount else if negative eth buy amount
+    function _quoteSwapSlippageLoss(
+        State storage state,
+        int256 btcAmountInBtcSwap,
+        int256 ethAmountInEthSwap
+    ) internal view returns (uint256 dollarsLostDueToSlippage) {
+        uint256 btcPrice = _getTokenPriceInUsdc(state, state.wbtc);
+        uint256 ethPrice = _getTokenPriceInUsdc(state, state.weth);
+        uint256 usdcPrice = _getTokenPriceInUsdc(state, state.usdc);
+
+        (int256 usdcAmountInBtcSwap, int256 usdcAmountInEthSwap) = QuoterLib.quoteCombinedSwap(
+            btcAmountInBtcSwap,
+            ethAmountInEthSwap,
+            WBTC_TO_USDC(state),
+            WETH_TO_USDC(state)
+        );
+
+        return
+            _calculateSwapLoss(btcAmountInBtcSwap, usdcAmountInBtcSwap, btcPrice, usdcPrice) +
+            _calculateSwapLoss(ethAmountInEthSwap, usdcAmountInEthSwap, ethPrice, usdcPrice);
     }
 
     ///@notice returns the amount of flashloan for a given token
@@ -1588,6 +1756,10 @@ library DnGmxJuniorVaultManager {
     ///@return the path bytes
     function USDC_TO_WETH(State storage state) internal view returns (bytes memory) {
         return abi.encodePacked(state.weth, uint24(500), state.usdc);
+    }
+
+    function USDC_TO_WETH_(State storage state) internal view returns (bytes memory) {
+        return abi.encodePacked(state.usdc, uint24(500), state.weth);
     }
 
     ///@notice returns usdc to wbtc swap path
