@@ -42,16 +42,16 @@ describe('Dn Gmx Batching Manager', () => {
     it('Fails - Amount 0', async () => {
       const depositAmount = parseUnits('100', 6);
 
-      await expect(glpBatchingManager.connect(users[1]).depositUsdc(0, users[1].address)).to.be.revertedWith(
-        'InvalidInput(33)',
-      );
+      await expect(glpBatchingManager.connect(users[1]).depositUsdc(0, users[1].address))
+        .to.be.revertedWithCustomError(glpBatchingManager, 'InvalidInput')
+        .withArgs(33);
     });
     it('Fails - Receiver Address 0', async () => {
       const depositAmount = parseUnits('100', 6);
 
-      await expect(
-        glpBatchingManager.connect(users[1]).depositUsdc(depositAmount, ethers.constants.AddressZero),
-      ).to.be.revertedWith('InvalidInput(34)');
+      await expect(glpBatchingManager.connect(users[1]).depositUsdc(depositAmount, ethers.constants.AddressZero))
+        .to.be.revertedWithCustomError(glpBatchingManager, 'InvalidInput')
+        .withArgs(34);
     });
 
     it('Single User Deposit', async () => {
@@ -142,27 +142,34 @@ describe('Dn Gmx Batching Manager', () => {
      * pause statuses
      */
     it('fails - No usdc deposits when executing batch', async () => {
-      await expect(glpBatchingManager.executeBatch(MAX_CONVERSION_BPS)).to.revertedWith('NoUsdcBalance()');
+      await expect(glpBatchingManager.executeBatch(MAX_CONVERSION_BPS)).to.revertedWithCustomError(
+        glpBatchingManager,
+        'NoUsdcBalance',
+      );
     });
     it('fails - Zero amount when depositing usdc', async () => {
       const depositAmount = 0;
       await usdc.connect(users[1]).approve(glpBatchingManager.address, ethers.constants.MaxUint256);
-      await expect(
-        glpBatchingManager.connect(users[1]).depositUsdc(depositAmount, users[1].address),
-      ).to.be.revertedWith('InvalidInput(33)');
+      await expect(glpBatchingManager.connect(users[1]).depositUsdc(depositAmount, users[1].address))
+        .to.be.revertedWithCustomError(glpBatchingManager, 'InvalidInput')
+        .withArgs(33);
     });
     it('fails - zero conversion bps', async () => {
-      await expect(glpBatchingManager.executeBatch(0)).to.revertedWith('InvalidInput(64)');
+      await expect(glpBatchingManager.executeBatch(0))
+        .to.be.revertedWithCustomError(glpBatchingManager, 'InvalidInput')
+        .withArgs(64);
     });
     it('fails - conversion bps more than MAX_BPS', async () => {
-      await expect(glpBatchingManager.executeBatch(MAX_CONVERSION_BPS + 1)).to.revertedWith('InvalidInput(64)');
+      await expect(glpBatchingManager.executeBatch(MAX_CONVERSION_BPS + 1))
+        .to.be.revertedWithCustomError(glpBatchingManager, 'InvalidInput')
+        .withArgs(64);
     });
     it('fails - Less than threshold amount when depositing usdc', async () => {
       const depositAmount = parseUnits('9', 6);
       await usdc.connect(users[1]).approve(glpBatchingManager.address, ethers.constants.MaxUint256);
-      await expect(
-        glpBatchingManager.connect(users[1]).depositUsdc(depositAmount, users[1].address),
-      ).to.be.revertedWith('InvalidInput(35)');
+      await expect(glpBatchingManager.connect(users[1]).depositUsdc(depositAmount, users[1].address))
+        .to.be.revertedWithCustomError(glpBatchingManager, 'InvalidInput')
+        .withArgs(35);
     });
     it('Single User Deposit (multiple times) + full executeBatch', async () => {
       expect(await glpBatchingManager.currentRound()).to.eq(1);
@@ -287,7 +294,11 @@ describe('Dn Gmx Batching Manager', () => {
 
       // complete rest of the batch
       await expect(glpBatchingManager.executeBatch(MAX_CONVERSION_BPS))
-        .to.changeTokenBalance(usdc, glpBatchingManager, roundUsdcBalance.mul(-CONVERSION_BPS).div(MAX_CONVERSION_BPS))
+        .to.changeTokenBalance(
+          usdc,
+          glpBatchingManager,
+          roundUsdcBalance.mul(-MAX_CONVERSION_BPS + CONVERSION_BPS).div(MAX_CONVERSION_BPS),
+        )
         .to.emit(glpBatchingManager, 'BatchStake')
         .to.emit(glpBatchingManager, 'BatchDeposit')
         .to.emit(glpBatchingManager, 'PartialBatchDeposit');
@@ -382,14 +393,14 @@ describe('Dn Gmx Batching Manager', () => {
     it('Fails - Receiver Address 0', async () => {
       const claimAmount = parseUnits('100', 6);
 
-      await expect(
-        glpBatchingManager.connect(users[1]).claim(ethers.constants.AddressZero, claimAmount),
-      ).to.be.revertedWith('InvalidInput(16)');
+      await expect(glpBatchingManager.connect(users[1]).claim(ethers.constants.AddressZero, claimAmount))
+        .to.be.revertedWithCustomError(glpBatchingManager, 'InvalidInput')
+        .withArgs(16);
     });
     it('Fails - Amount 0', async () => {
-      await expect(glpBatchingManager.connect(users[1]).claim(users[1].address, 0)).to.be.revertedWith(
-        'InvalidInput(17)',
-      );
+      await expect(glpBatchingManager.connect(users[1]).claim(users[1].address, 0))
+        .to.be.revertedWithCustomError(glpBatchingManager, 'InvalidInput')
+        .withArgs(17);
     });
     it('Single User Claim', async () => {
       await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('10000', 6), users[1].address);
@@ -405,9 +416,9 @@ describe('Dn Gmx Batching Manager', () => {
 
       const roundDeposit = await glpBatchingManager.roundDeposits(1);
 
-      await expect(
-        glpBatchingManager.connect(users[1]).claim(users[1].address, roundDeposit.totalShares.add(1)),
-      ).to.be.revertedWith(`InsufficientShares(${roundDeposit.totalShares})`);
+      await expect(glpBatchingManager.connect(users[1]).claim(users[1].address, roundDeposit.totalShares.add(1)))
+        .to.be.revertedWithCustomError(glpBatchingManager, 'InsufficientShares')
+        .withArgs(roundDeposit.totalShares);
 
       await expect(() =>
         glpBatchingManager.connect(users[1]).claim(users[1].address, roundDeposit.totalShares),
@@ -473,9 +484,9 @@ describe('Dn Gmx Batching Manager', () => {
 
       const roundDeposit = await glpBatchingManager.roundDeposits(1);
 
-      await expect(
-        glpBatchingManager.connect(users[1]).claim(users[1].address, roundDeposit.totalShares.add(1)),
-      ).to.be.revertedWith(`InsufficientShares(${roundDeposit.totalShares})`);
+      await expect(glpBatchingManager.connect(users[1]).claim(users[1].address, roundDeposit.totalShares.add(1)))
+        .to.be.revertedWithCustomError(glpBatchingManager, 'InsufficientShares')
+        .withArgs(roundDeposit.totalShares);
 
       await expect(() =>
         glpBatchingManager.connect(users[1]).claim(users[1].address, roundDeposit.totalShares),
@@ -595,9 +606,9 @@ describe('Dn Gmx Batching Manager', () => {
 
       await dnGmxJuniorVault.connect(users[1]).deposit(glpAmount, users[1].address);
 
-      await expect(glpBatchingManager.connect(users[1]).claimAndRedeem(users[1].address)).to.be.revertedWith(
-        `VM Exception while processing transaction: reverted with custom error 'InvalidInput(17)'`,
-      );
+      await expect(glpBatchingManager.connect(users[1]).claimAndRedeem(users[1].address))
+        .to.be.revertedWithCustomError(glpBatchingManager, 'InvalidInput')
+        .withArgs(17);
     });
 
     it('claimAndRedeem - receiver different than msg.sender', async () => {
