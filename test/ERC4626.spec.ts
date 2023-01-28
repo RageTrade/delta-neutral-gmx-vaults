@@ -438,9 +438,9 @@ describe('Junior Vault ERC4646 functions', () => {
       1,
     );
 
-    await expect(dnGmxSeniorVault.connect(users[2]).deposit(remaining.add(2), users[2].address)).to.be.revertedWith(
-      `VM Exception while processing transaction: reverted with custom error 'DepositCapExceeded()'`,
-    );
+    await expect(
+      dnGmxSeniorVault.connect(users[2]).deposit(remaining.add(2), users[2].address),
+    ).to.be.revertedWithCustomError(dnGmxSeniorVault, 'DepositCapExceeded');
   });
 
   it('maxDeposit overflow', async () => {

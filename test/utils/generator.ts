@@ -8,7 +8,7 @@ export const generateErc20Balance = async (contract: ERC20, amount: BigNumberish
 
   await hre.network.provider.send('hardhat_setStorageAt', [
     contract.address,
-    '0x' + slotKey,
+    ethers.utils.hexValue('0x' + slotKey),
     ethers.utils.hexZeroPad(BigNumber.from(amount).toHexString(), 32),
   ]);
 

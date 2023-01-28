@@ -95,7 +95,7 @@ describe('DnGmx Senior Vault', () => {
           10_001, // bad withdrawFeeBps
           3000,
         ),
-      ).to.be.revertedWith('InvalidWithdrawFeeBps()');
+      ).to.be.revertedWithCustomError(dnGmxJuniorVault, 'InvalidWithdrawFeeBps');
     });
 
     it('setThresholds', async () => {
@@ -133,7 +133,7 @@ describe('DnGmx Senior Vault', () => {
           parseUnits('1000000', 6), // partialBtcHedgeUsdcAmountThreshold
           parseUnits('1000000', 6), // partialEthHedgeUsdcAmountThreshold
         ),
-      ).to.be.revertedWith('InvalidSlippageThresholdSwapBtc()');
+      ).to.be.revertedWithCustomError(dnGmxJuniorVault, 'InvalidSlippageThresholdSwapBtc');
     });
     it('setThresholds bad slippageThresholdSwapEthBps', async () => {
       await expect(
@@ -147,7 +147,7 @@ describe('DnGmx Senior Vault', () => {
           parseUnits('1000000', 6), // partialBtcHedgeUsdcAmountThreshold
           parseUnits('1000000', 6), // partialEthHedgeUsdcAmountThreshold
         ),
-      ).to.be.revertedWith('InvalidSlippageThresholdSwapEth()');
+      ).to.be.revertedWithCustomError(dnGmxJuniorVault, 'InvalidSlippageThresholdSwapEth');
     });
     it('setThresholds bad slippageThresholdGmxBps', async () => {
       await expect(
@@ -161,7 +161,7 @@ describe('DnGmx Senior Vault', () => {
           parseUnits('1000000', 6), // partialBtcHedgeUsdcAmountThreshold
           parseUnits('1000000', 6), // partialEthHedgeUsdcAmountThreshold
         ),
-      ).to.be.revertedWith('InvalidSlippageThresholdGmx()');
+      ).to.be.revertedWithCustomError(dnGmxJuniorVault, 'InvalidSlippageThresholdGmx');
     });
 
     it('setRebalanceParams', async () => {
@@ -184,7 +184,7 @@ describe('DnGmx Senior Vault', () => {
           500, // 5% in bps | rebalanceDeltaThreshold
           10_000, // rebalanceHfThresholdBps
         ),
-      ).to.be.revertedWith('InvalidRebalanceTimeThreshold()');
+      ).to.be.revertedWithCustomError(dnGmxJuniorVault, 'InvalidRebalanceTimeThreshold');
     });
     it('setRebalanceParams bad rebalanceTimeThreshold', async () => {
       await expect(
@@ -193,7 +193,7 @@ describe('DnGmx Senior Vault', () => {
           10_001, // bad rebalanceDeltaThreshold
           10_000, // rebalanceHfThresholdBps
         ),
-      ).to.be.revertedWith('InvalidRebalanceDeltaThresholdBps()');
+      ).to.be.revertedWithCustomError(dnGmxJuniorVault, 'InvalidRebalanceDeltaThresholdBps');
     });
     it('setRebalanceParams bad rebalanceTimeThreshold 1', async () => {
       await expect(
@@ -202,7 +202,7 @@ describe('DnGmx Senior Vault', () => {
           500, // rebalanceDeltaThreshold
           9999, // bad rebalanceHfThresholdBps
         ),
-      ).to.be.revertedWith('InvalidRebalanceHfThresholdBps()');
+      ).to.be.revertedWithCustomError(dnGmxJuniorVault, 'InvalidRebalanceHfThresholdBps');
     });
     it('setRebalanceParams bad rebalanceTimeThreshold 2', async () => {
       await expect(
@@ -211,7 +211,7 @@ describe('DnGmx Senior Vault', () => {
           500, // rebalanceDeltaThreshold
           20_001, // bad rebalanceHfThresholdBps
         ),
-      ).to.be.revertedWith('InvalidRebalanceHfThresholdBps()');
+      ).to.be.revertedWithCustomError(dnGmxJuniorVault, 'InvalidRebalanceHfThresholdBps');
     });
 
     it('setHedgeParams', async () => {
@@ -255,11 +255,17 @@ describe('DnGmx Senior Vault', () => {
     });
 
     it('Borrow fails for non whitelisted borrower', async () => {
-      await expect(dnGmxSeniorVault.borrow(parseUnits('100', 6n))).to.be.revertedWith('CallerNotBorrower()');
+      await expect(dnGmxSeniorVault.borrow(parseUnits('100', 6n))).to.be.revertedWithCustomError(
+        dnGmxSeniorVault,
+        'CallerNotBorrower',
+      );
     });
 
     it('Repay fails for non whitelisted borrower', async () => {
-      await expect(dnGmxSeniorVault.repay(parseUnits('100', 6n))).to.be.revertedWith('CallerNotBorrower()');
+      await expect(dnGmxSeniorVault.repay(parseUnits('100', 6n))).to.be.revertedWithCustomError(
+        dnGmxSeniorVault,
+        'CallerNotBorrower',
+      );
     });
 
     it('Borrow fails if deposited amount < borrowed amount', async () => {
@@ -273,8 +279,9 @@ describe('DnGmx Senior Vault', () => {
 
       await dnGmxSeniorVault.updateBorrowCap(dnGmxJuniorVault.address, borrowCap);
       await dnGmxSeniorVault.connect(users[1]).deposit(depositAmount, users[1].address);
-      await expect(dnGmxJuniorVault.executeBorrowFromDnGmxSeniorVault(borrowAmount)).to.be.revertedWith(
-        'InvalidBorrowAmount()',
+      await expect(dnGmxJuniorVault.executeBorrowFromDnGmxSeniorVault(borrowAmount)).to.be.revertedWithCustomError(
+        dnGmxSeniorVault,
+        'InvalidBorrowAmount',
       );
     });
 
@@ -310,7 +317,7 @@ describe('DnGmx Senior Vault', () => {
       await dnGmxJuniorVault.executeBorrowFromDnGmxSeniorVault(amount);
       await expect(
         dnGmxSeniorVault.connect(users[1]).withdraw(amount, users[1].address, users[1].address),
-      ).to.be.revertedWith('MaxUtilizationBreached()');
+      ).to.be.revertedWithCustomError(dnGmxSeniorVault, 'MaxUtilizationBreached');
     });
   });
 

@@ -8,6 +8,7 @@ import {
   IPool__factory,
   IVault__factory,
   DnGmxJuniorVaultManager,
+  QuoterLib,
 } from '../../typechain-types';
 import { generateErc20Balance } from '../utils/generator';
 import { increaseBlockTimestamp } from '../utils/shared';
@@ -35,8 +36,14 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   const gmx = await hre.ethers.getContractAt('ERC20Upgradeable', await rewardRouter.gmx());
   const esGmx = await hre.ethers.getContractAt('ERC20Upgradeable', await rewardRouter.esGmx());
 
+  const quoterLib = (await (
+    await hre.ethers.getContractFactory('contracts/libraries/QuoterLib.sol:QuoterLib')
+  ).deploy()) as QuoterLib;
+
   const dnGmxJuniorVaultManager = (await (
-    await hre.ethers.getContractFactory('contracts/libraries/DnGmxJuniorVaultManager.sol:DnGmxJuniorVaultManager')
+    await hre.ethers.getContractFactory('contracts/libraries/DnGmxJuniorVaultManager.sol:DnGmxJuniorVaultManager', {
+      libraries: { ['contracts/libraries/QuoterLib.sol:QuoterLib']: quoterLib.address },
+    })
   ).deploy()) as DnGmxJuniorVaultManager;
 
   const dnGmxJuniorVault = await (
@@ -64,7 +71,9 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     addresses.AAVE_POOL_ADDRESS_PROVIDER, // _poolAddressesProvider
   );
 
-  dnGmxJuniorVault.setDirectConversion(true);
+  await dnGmxJuniorVault.setDirectConversion(true);
+
+  await dnGmxJuniorVault.setParamsV1(BigNumber.from(2).pow(128).sub(1));
 
   const bypass = await (await hre.ethers.getContractFactory('BatchingManagerBypass')).deploy();
 
