@@ -72,6 +72,12 @@ interface IDnGmxJuniorVault is IERC4626, IBorrower {
         IPriceOracle oracle
     );
 
+    event EsGmxVested(uint256 amount);
+
+    event EsGmxStaked(uint256 amount);
+
+    event GmxClaimed(uint256 amount);
+
     function harvestFees() external;
 
     function depositCap() external view returns (uint256);
