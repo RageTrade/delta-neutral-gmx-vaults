@@ -50,9 +50,24 @@ library DnGmxJuniorVaultManager {
         uint256 seniorVaultAUsdc
     );
 
+    event ProtocolFeeAccrued(uint256 fees);
+
     event GlpSwapped(uint256 glpQuantity, uint256 usdcQuantity, bool fromGlpToUsdc);
 
     event TokenSwapped(address indexed fromToken, address indexed toToken, uint256 fromQuantity, uint256 toQuantity);
+
+    event VaultState(
+        uint256 indexed eventType,
+        uint256 btcBorrows,
+        uint256 ethBorrows,
+        uint256 glpPrice,
+        uint256 glpBalance,
+        uint256 totalAssets,
+        int256 dnUsdcDeposited,
+        uint256 unhedgedGlpInUsdc,
+        uint256 juniorVaultAusdc,
+        uint256 seniorVaultAusdc
+    );
 
     using DnGmxJuniorVaultManager for State;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
@@ -232,6 +247,7 @@ library DnGmxJuniorVaultManager {
             uint256 protocolFeeHarvested = (wethHarvested * state.feeBps) / MAX_BPS;
             // protocol fee incremented
             state.protocolFee += protocolFeeHarvested;
+            emit ProtocolFeeAccrued(protocolFeeHarvested);
 
             // protocol fee to be kept in weth
             // remaining amount needs to be compounded
@@ -626,66 +642,68 @@ library DnGmxJuniorVaultManager {
         uint256 glpDeposited,
         bool isPartialAllowed
     ) external returns (bool isPartialHedge) {
-        uint256 optimalBtcBorrow;
-        uint256 optimalEthBorrow;
-        uint256 targetDnGmxSeniorVaultAmount;
-        uint256 currentDnGmxSeniorVaultAmount;
-        uint256 optimalUncappedEthBorrow;
-        (
-            optimalBtcBorrow,
-            optimalEthBorrow,
-            targetDnGmxSeniorVaultAmount,
-            optimalUncappedEthBorrow,
-            isPartialHedge
-        ) = _getOptimalBorrowsFinal(state, currentBtcBorrow, currentEthBorrow, glpDeposited, isPartialAllowed);
-        // current usdc borrowed from senior tranche
-        currentDnGmxSeniorVaultAmount = _getUsdcBorrowed(state);
-        if (targetDnGmxSeniorVaultAmount > currentDnGmxSeniorVaultAmount) {
-            // case where we need to borrow more usdc
-            // To get more usdc from senior tranche, so usdc is borrowed first and then hedge is updated on AAVE
-            {
-                uint256 amountToBorrow = targetDnGmxSeniorVaultAmount - currentDnGmxSeniorVaultAmount;
-                uint256 availableBorrow = state.dnGmxSeniorVault.availableBorrow(address(this));
+        {
+            uint256 optimalBtcBorrow;
+            uint256 optimalEthBorrow;
+            uint256 targetDnGmxSeniorVaultAmount;
+            uint256 currentDnGmxSeniorVaultAmount;
+            uint256 optimalUncappedEthBorrow;
+            (
+                optimalBtcBorrow,
+                optimalEthBorrow,
+                targetDnGmxSeniorVaultAmount,
+                optimalUncappedEthBorrow,
+                isPartialHedge
+            ) = _getOptimalBorrowsFinal(state, currentBtcBorrow, currentEthBorrow, glpDeposited, isPartialAllowed);
+            // current usdc borrowed from senior tranche
+            currentDnGmxSeniorVaultAmount = _getUsdcBorrowed(state);
+            if (targetDnGmxSeniorVaultAmount > currentDnGmxSeniorVaultAmount) {
+                // case where we need to borrow more usdc
+                // To get more usdc from senior tranche, so usdc is borrowed first and then hedge is updated on AAVE
+                {
+                    uint256 amountToBorrow = targetDnGmxSeniorVaultAmount - currentDnGmxSeniorVaultAmount;
+                    uint256 availableBorrow = state.dnGmxSeniorVault.availableBorrow(address(this));
 
-                if (amountToBorrow > availableBorrow) {
-                    // if amount to borrow > available borrow amount
-                    // we won't be able to hedge glp completely
-                    // convert some glp into usdc to keep the vault delta neutral
-                    // hedge the btc/eth of remaining amount
+                    if (amountToBorrow > availableBorrow) {
+                        // if amount to borrow > available borrow amount
+                        // we won't be able to hedge glp completely
+                        // convert some glp into usdc to keep the vault delta neutral
+                        // hedge the btc/eth of remaining amount
 
-                    // rebalance the unhedged glp (increase/decrease basis the capped optimal token hedges)
-                    _rebalanceUnhedgedGlp(state, optimalUncappedEthBorrow, optimalEthBorrow);
+                        // rebalance the unhedged glp (increase/decrease basis the capped optimal token hedges)
+                        _rebalanceUnhedgedGlp(state, optimalUncappedEthBorrow, optimalEthBorrow);
 
-                    if (availableBorrow > 0) {
-                        // borrow whatever is available since required > available
-                        state.dnGmxSeniorVault.borrow(availableBorrow);
+                        if (availableBorrow > 0) {
+                            // borrow whatever is available since required > available
+                            state.dnGmxSeniorVault.borrow(availableBorrow);
+                        }
+                    } else {
+                        //No unhedged glp remaining so just pass same value in capped and uncapped (should convert back any ausdc back to sglp)
+                        _rebalanceUnhedgedGlp(state, optimalEthBorrow, optimalEthBorrow);
+
+                        // Take from LB Vault
+                        state.dnGmxSeniorVault.borrow(targetDnGmxSeniorVaultAmount - currentDnGmxSeniorVaultAmount);
                     }
-                } else {
-                    //No unhedged glp remaining so just pass same value in capped and uncapped (should convert back any ausdc back to sglp)
-                    _rebalanceUnhedgedGlp(state, optimalEthBorrow, optimalEthBorrow);
-
-                    // Take from LB Vault
-                    state.dnGmxSeniorVault.borrow(targetDnGmxSeniorVaultAmount - currentDnGmxSeniorVaultAmount);
                 }
-            }
 
-            // Rebalance Position
-            // Executes a flashloan from balancer and btc/eth borrow updates on AAVE
-            _rebalanceBorrow(state, optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
-        } else {
-            // Executes a flashloan from balancer and btc/eth borrow updates on AAVE
-            // To repay usdc to senior tranche so update the hedges on AAVE first
-            // then remove usdc to pay back to senior tranche
-            _rebalanceBorrow(state, optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
-            uint256 totalCurrentBorrowValue;
-            {
-                (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows(state);
-                totalCurrentBorrowValue = _getBorrowValue(state, currentBtc, currentEth);
-            }
-            _rebalanceProfit(state, totalCurrentBorrowValue);
-            // Deposit to LB Vault
+                // Rebalance Position
+                // Executes a flashloan from balancer and btc/eth borrow updates on AAVE
+                _rebalanceBorrow(state, optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
+            } else {
+                // Executes a flashloan from balancer and btc/eth borrow updates on AAVE
+                // To repay usdc to senior tranche so update the hedges on AAVE first
+                // then remove usdc to pay back to senior tranche
+                _rebalanceBorrow(state, optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
+                uint256 totalCurrentBorrowValue;
+                {
+                    (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows(state);
+                    totalCurrentBorrowValue = _getBorrowValue(state, currentBtc, currentEth);
+                }
+                _rebalanceProfit(state, totalCurrentBorrowValue);
+                // Deposit to LB Vault
 
-            state.dnGmxSeniorVault.repay(currentDnGmxSeniorVaultAmount - targetDnGmxSeniorVaultAmount);
+                state.dnGmxSeniorVault.repay(currentDnGmxSeniorVaultAmount - targetDnGmxSeniorVaultAmount);
+            }
         }
     }
 
@@ -1748,6 +1766,23 @@ library DnGmxJuniorVaultManager {
         usdcPaid = swapRouter.exactOutput(params);
 
         emit TokenSwapped(address(state.usdc), token, usdcPaid, tokensReceived);
+    }
+
+    function emitVaultState(State storage state, uint256 eventType) external {
+        (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows(state);
+
+        emit VaultState(
+            eventType,
+            currentBtc,
+            currentEth,
+            _getGlpPriceInUsdc(state, false),
+            _totalAssets(state, false),
+            state.fsGlp.balanceOf(address(this)),
+            state.dnUsdcDeposited,
+            state.unhedgedGlpInUsdc,
+            state.aUsdc.balanceOf(address(this)),
+            state.aUsdc.balanceOf(address(state.dnGmxSeniorVault))
+        );
     }
 
     /* solhint-disable func-name-mixedcase */

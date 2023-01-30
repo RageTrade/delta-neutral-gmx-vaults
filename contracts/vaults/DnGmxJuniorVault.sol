@@ -332,8 +332,13 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         // unstakes the protocol esGMX and starts vesting it
         // this encumbers some glp deposits
         // can stop vesting to enable glp withdraws
-        state.rewardRouter.unstakeEsGmx(state.protocolEsGmx);
-        IVester(state.rewardRouter.glpVester()).deposit(state.protocolEsGmx);
+        uint256 amount = state.protocolEsGmx;
+
+        state.rewardRouter.unstakeEsGmx(amount);
+        IVester(state.rewardRouter.glpVester()).deposit(amount);
+
+        emit EsGmxVested(amount);
+
         state.protocolEsGmx = 0;
     }
 
@@ -345,6 +350,9 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         IVester(state.rewardRouter.glpVester()).withdraw();
         uint256 esGmxWithdrawn = IERC20(state.rewardRouter.esGmx()).balanceOf(address(this));
         state.rewardRouter.stakeEsGmx(esGmxWithdrawn);
+
+        emit EsGmxStaked(esGmxWithdrawn);
+
         state.protocolEsGmx += esGmxWithdrawn;
     }
 
@@ -354,6 +362,8 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         // stops vesting and stakes the remaining esGMX
         // this can be used in case glp withdraws are hampered
         uint256 gmxClaimed = IVester(state.rewardRouter.glpVester()).claim();
+
+        emit GmxClaimed(gmxClaimed);
 
         //Transfer all of the gmx received to fee recipient
         IERC20Metadata(state.rewardRouter.gmx()).safeTransfer(state.feeRecipient, gmxClaimed);
@@ -377,11 +387,15 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     function rebalance() external onlyKeeper {
         if (!isValidRebalance()) revert InvalidRebalance();
 
-        // harvest fees
-        state.harvestFees();
+        emit Rebalanced();
 
         (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
         uint256 totalCurrentBorrowValue = state.getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
+
+        _emitVaultState(0);
+
+        // harvest fees
+        state.harvestFees();
 
         // rebalance profit
         state.rebalanceProfit(totalCurrentBorrowValue);
@@ -392,10 +406,13 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         bool isPartialHedge = state.rebalanceHedge(currentBtc, currentEth, totalAssets(), true);
 
         if (!isPartialHedge) state.lastRebalanceTS = uint48(block.timestamp);
-        emit Rebalanced();
+
+        (currentBtc, currentEth) = state.getCurrentBorrows();
+
+        _emitVaultState(1);
     }
 
-    /* ################################################################## 
+    /* ##################################################################
                                 USER FUNCTIONS
     ################################################################## */
     /// @notice deposits sGlp token and returns vault shares
@@ -411,6 +428,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     {
         _rebalanceBeforeShareAllocation();
         shares = super.deposit(amount, to);
+        _emitVaultState(1);
     }
 
     /// @notice mints "shares" amount of vault shares and pull relevant amount of sGlp tokens
@@ -426,6 +444,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     {
         _rebalanceBeforeShareAllocation();
         amount = super.mint(shares, to);
+        _emitVaultState(1);
     }
 
     ///@notice withdraws "assets" amount of sGlp tokens and burns relevant amount of vault shares
@@ -441,6 +460,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     ) public override(IERC4626, ERC4626Upgradeable) whenNotPaused returns (uint256 shares) {
         _rebalanceBeforeShareAllocation();
         shares = super.withdraw(assets, receiver, owner);
+        _emitVaultState(1);
     }
 
     ///@notice burns "shares" amount of vault shares and withdraws relevant amount of sGlp tokens
@@ -456,6 +476,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     ) public override(IERC4626, ERC4626Upgradeable) whenNotPaused returns (uint256 assets) {
         _rebalanceBeforeShareAllocation();
         assets = super.redeem(shares, receiver, owner);
+        _emitVaultState(1);
     }
 
     /* ##################################################################
@@ -729,6 +750,10 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
                             INTERNAL FUNCTIONS
     ################################################################## */
 
+    function _emitVaultState(uint256 eventType) internal {
+        state.emitVaultState(eventType);
+    }
+
     /*
         DEPOSIT/WITHDRAW HELPERS
     */
@@ -736,11 +761,13 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @notice harvests fees and rebalances profits before deposits and withdrawals
     /// @dev called first on any deposit/withdrawals
     function _rebalanceBeforeShareAllocation() internal {
-        // harvest fees
-        state.harvestFees();
-
         (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
         uint256 totalCurrentBorrowValue = state.getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
+
+        _emitVaultState(0);
+
+        // harvest fees
+        state.harvestFees();
 
         // rebalance profit
         state.rebalanceProfit(totalCurrentBorrowValue);
