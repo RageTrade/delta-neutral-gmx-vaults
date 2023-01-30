@@ -232,14 +232,24 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
 
     /// @notice set thresholds
     /// @param rebalanceProfitUsdcAmountThreshold (BPS) slippage threshold on btc swaps
-    function setParamsV1(
-        uint128 rebalanceProfitUsdcAmountThreshold,
-        uint16 traderOIHedgeBps
-    ) external onlyOwner {
+    function setParamsV1(uint128 rebalanceProfitUsdcAmountThreshold, uint16 traderOIHedgeBps) external onlyOwner {
         state.rebalanceProfitUsdcAmountThreshold = rebalanceProfitUsdcAmountThreshold;
         state.traderOIHedgeBps = traderOIHedgeBps;
 
         emit ParamsV1Updated(rebalanceProfitUsdcAmountThreshold);
+    }
+
+    /// @notice set hedge adjustments basis trader OIs
+    /// @param btcTraderOIHedge btc trader OI hedge
+    /// @param ethTraderOIHedge eth trader OI hedge
+    function setTraderOIHedges(int128 btcTraderOIHedge, int128 ethTraderOIHedge) external onlyOwner {
+        if (!state.checkHedgeAmounts(btcTraderOIHedge, ethTraderOIHedge, totalAssets()))
+            revert InvalidTraderOIHedges(btcTraderOIHedge, ethTraderOIHedge);
+
+        state.btcTraderOIHedge = btcTraderOIHedge;
+        state.ethTraderOIHedge = ethTraderOIHedge;
+
+        emit TraderOIHedgesUpdated(btcTraderOIHedge, ethTraderOIHedge);
     }
 
     /// @notice set rebalance paramters

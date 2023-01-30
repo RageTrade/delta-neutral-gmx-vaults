@@ -34,6 +34,8 @@ interface IDnGmxJuniorVault is IERC4626, IBorrower {
     error InvalidFeeRecipient();
     error InvalidFeeBps();
 
+    error InvalidTraderOIHedges(int128 btcTraderOIHedge, int128 ethTraderOIHedge);
+
     event Rebalanced();
     event AllowancesGranted();
 
@@ -77,6 +79,8 @@ interface IDnGmxJuniorVault is IERC4626, IBorrower {
     event EsGmxStaked(uint256 amount);
 
     event GmxClaimed(uint256 amount);
+
+    event TraderOIHedgesUpdated(int256 btcTraderOIHedge, int256 ethTraderOIHedge);
 
     function harvestFees() external;
 
