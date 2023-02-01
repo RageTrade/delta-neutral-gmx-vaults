@@ -6,7 +6,7 @@ import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import { PausableUpgradeable } from '@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol';
 
-import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
+import { FullMath } from '@uniswap/v3-core/contracts/libraries/FullMath.sol';
 
 import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
 import { IDnGmxBatchingManagerGlp } from '../interfaces/IDnGmxBatchingManagerGlp.sol';
