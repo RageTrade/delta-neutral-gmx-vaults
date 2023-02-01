@@ -87,7 +87,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     addresses.WBTC,
   );
 
-  await dnGmxJuniorVault.setParamsV1(BigNumber.from(2).pow(128).sub(1), dnGmxTraderHedgeStrategy.address);
+  await dnGmxJuniorVault.setParamsV1(0n, dnGmxTraderHedgeStrategy.address);
 
   // withdraw periphery
   const withdrawPeriphery = await (await hre.ethers.getContractFactory('WithdrawPeriphery')).deploy();
@@ -281,7 +281,8 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     targetHealthFactor,
     dnGmxJuniorVaultSigner,
     usdcLiquidationThreshold,
-    mocks: { swapRouterMock, quoterMock },
+    dnGmxTraderHedgeStrategy,
+    mocks: { swapRouterMock },
     glpBatchingManager: glpBatchingStakingManagerFixtures.gmxBatchingManager,
     gmxBatchingManagerGlp: glpBatchingStakingManagerFixtures.gmxBatchingManagerGlp,
   };
