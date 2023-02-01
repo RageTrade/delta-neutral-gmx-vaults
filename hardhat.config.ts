@@ -156,17 +156,16 @@ export default {
     ],
   },
   dependencyCompiler: {
-    paths: ['@uniswap/v3-periphery/contracts/lens/Quoter.sol', '@uniswap/v3-periphery/contracts/SwapRouter.sol'],
+    paths: [
+      '@uniswap/v3-periphery/contracts/lens/Quoter.sol',
+      '@uniswap/v3-periphery/contracts/SwapRouter.sol',
+      '@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol',
+      '@ragetrade/core/contracts/utils/TimelockControllerWithMinDelayOverride.sol'
+    ]
   },
   typechain: {
     target: 'ethers-v5',
     alwaysGenerateOverloads: false,
-  },
-  dependencyCompiler: {
-    paths: [
-      '@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol',
-      '@ragetrade/core/contracts/utils/TimelockControllerWithMinDelayOverride.sol',
-    ],
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_KEY,
