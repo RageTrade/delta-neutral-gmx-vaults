@@ -13,7 +13,7 @@ import { IERC20Metadata } from '@openzeppelin/contracts/interfaces/IERC20Metadat
 
 import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
 
-import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
+import { FullMath } from '@uniswap/v3-core/contracts/libraries/FullMath.sol';
 
 /**
  * @title Periphery to convert tokens to junior vault shares

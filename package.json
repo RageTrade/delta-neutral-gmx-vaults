@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "clean": "rm -rf artifacts && hardhat clean",
-    "compile": "yarn patch-package && hardhat compile",
+    "compile": "hardhat compile",
     "coverage": "COVERAGE_CHECK=true hardhat coverage",
     "deploy": "TS_NODE_SKIP_IGNORE=true hardhat deploy",
     "deploy:arbtest": "yarn deploy --network arbtest",
@@ -28,12 +28,12 @@
   "dependencies": {
     "@aave/core-v3": "^1.16.2",
     "@aave/periphery-v3": "^1.19.2",
-    "@openzeppelin/contracts": "^4.7.3",
-    "@openzeppelin/contracts-upgradeable": "^4.7.3",
+    "@openzeppelin/contracts": "4.7.3",
+    "@openzeppelin/contracts-upgradeable": "4.7.3",
     "@ragetrade/core": "^1.0.4-arbgoerli.5",
     "@rari-capital/solmate": "https://github.com/Rari-Capital/solmate.git#25015a1d18e75921f8cb1bacd4beb9f364e788a9",
     "@solidity-parser/parser": "^0.14.3",
-    "@uniswap/v3-core-0.8-support": "https://github.com/uniswap/v3-core.git#d55e297b938e5b56fd1cf9fe668f5bd385be85b5",
+    "@uniswap/v3-core": "https://github.com/uniswap/v3-core.git#d55e297b938e5b56fd1cf9fe668f5bd385be85b5",
     "@uniswap/v3-periphery": "https://github.com/Uniswap/uniswap-v3-periphery.git#b325bb0905d922ae61fcc7df85ee802e8df5e96c"
   },
   "devDependencies": {
