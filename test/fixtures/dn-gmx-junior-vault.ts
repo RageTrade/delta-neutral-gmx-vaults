@@ -14,6 +14,7 @@ import { generateErc20Balance } from '../utils/generator';
 import { increaseBlockTimestamp } from '../utils/shared';
 import addresses, { GMX_ECOSYSTEM_ADDRESSES } from './addresses';
 import { dnGmxSeniorVaultFixture } from './dn-gmx-senior-vault';
+import { dnGmxTraderHedgeStrategyFixture } from './dn-gmx-trader-hedge-strategy';
 import { glpBatchingStakingManagerFixture } from './glp-batching-staking-manager';
 
 export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
@@ -74,7 +75,19 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     addresses.AAVE_POOL_ADDRESS_PROVIDER, // _poolAddressesProvider
   );
 
-  await dnGmxJuniorVault.setParamsV1(BigNumber.from(2).pow(128).sub(1), 0);
+  const dnGmxTraderHedgeStrategy = await dnGmxTraderHedgeStrategyFixture();
+
+  await dnGmxTraderHedgeStrategy.initialize(
+    admin.address,
+    GMX_ECOSYSTEM_ADDRESSES.Vault,
+    GMX_ECOSYSTEM_ADDRESSES.GlpManager,
+    dnGmxJuniorVault.address,
+    GMX_ECOSYSTEM_ADDRESSES.GLP,
+    addresses.WETH,
+    addresses.WBTC,
+  );
+
+  await dnGmxJuniorVault.setParamsV1(BigNumber.from(2).pow(128).sub(1), dnGmxTraderHedgeStrategy.address);
 
   // withdraw periphery
   const withdrawPeriphery = await (await hre.ethers.getContractFactory('WithdrawPeriphery')).deploy();
