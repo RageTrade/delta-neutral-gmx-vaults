@@ -207,7 +207,7 @@ library DnGmxJuniorVaultManager {
 
         IDnGmxTraderHedgeStrategy dnGmxTraderHedgeStrategy;
         // gaps for extending struct (if required during upgrade)
-        uint256[49] __gaps;
+        uint256[48] __gaps;
     }
 
     /// @notice stakes the rewards from the staked Glp and claims WETH to buy glp
