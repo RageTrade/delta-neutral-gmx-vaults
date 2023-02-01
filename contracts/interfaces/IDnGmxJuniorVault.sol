@@ -10,6 +10,7 @@ import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRou
 import { IERC4626 } from './IERC4626.sol';
 import { IBorrower } from './IBorrower.sol';
 import { IBalancerVault } from './balancer/IBalancerVault.sol';
+import { IDnGmxTraderHedgeStrategy } from './IDnGmxTraderHedgeStrategy.sol';
 
 interface IDnGmxJuniorVault is IERC4626, IBorrower {
     error InvalidWithdrawFeeBps();
@@ -24,7 +25,7 @@ interface IDnGmxJuniorVault is IERC4626, IBorrower {
     error InvalidRebalance();
     error DepositCapExceeded();
     error OnlyKeeperAllowed(address msgSender, address authorisedKeeperAddress);
-
+    error OnlyTraderHedgeStrategyAllowed(address msgSender, address authorisedKeeperAddress);
     error NotDnGmxSeniorVault();
     error NotBalancerVault();
 
@@ -58,7 +59,11 @@ interface IDnGmxJuniorVault is IERC4626, IBorrower {
         uint128 partialBtcHedgeUsdcAmountThreshold,
         uint128 partialEthHedgeUsdcAmountThreshold
     );
-    event ParamsV1Updated(uint128 rebalanceProfitUsdcAmountThreshold);
+
+    event ParamsV1Updated(
+        uint128 rebalanceProfitUsdcAmountThreshold,
+        IDnGmxTraderHedgeStrategy dnGmxTraderHedgeStrategy
+    );
     event RebalanceParamsUpdated(
         uint32 rebalanceTimeThreshold,
         uint16 rebalanceDeltaThresholdBps,

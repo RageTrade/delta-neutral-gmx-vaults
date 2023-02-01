@@ -24,6 +24,8 @@ import { IERC20Metadata } from '@openzeppelin/contracts/interfaces/IERC20Metadat
 import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
 import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
 import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
+import { IDnGmxTraderHedgeStrategy } from '../interfaces/IDnGmxTraderHedgeStrategy.sol';
+
 import { SafeCast } from '../libraries/SafeCast.sol';
 import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
 import { SignedFixedPointMathLib } from '../libraries/SignedFixedPointMathLib.sol';
@@ -202,11 +204,10 @@ library DnGmxJuniorVaultManager {
 
         // !!! STORAGE EXTENSIONS !!! (reduced gaps by no. of slots added here)
         uint128 rebalanceProfitUsdcAmountThreshold;
-        uint16 traderOIHedgeBps;
-        int128 btcTraderOIHedge; // wbtc token decimals (8 decimals)
-        int128 ethTraderOIHedge; // weth token deceimals (18 decimals)
+
+        IDnGmxTraderHedgeStrategy dnGmxTraderHedgeStrategy;
         // gaps for extending struct (if required during upgrade)
-        uint256[48] __gaps;
+        uint256[49] __gaps;
     }
 
     /// @notice stakes the rewards from the staked Glp and claims WETH to buy glp
@@ -1657,7 +1658,9 @@ library DnGmxJuniorVaultManager {
         uint256 totalSupply = state.glp.totalSupply();
         uint256 poolAmount = state.gmxVault.poolAmounts(token);
 
-        int128 tokenTraderOIHedge = token == address(state.wbtc) ? state.btcTraderOIHedge : state.ethTraderOIHedge;
+        int128 tokenTraderOIHedge = token == address(state.wbtc)
+            ? state.dnGmxTraderHedgeStrategy.btcTraderOIHedge()
+            : state.dnGmxTraderHedgeStrategy.ethTraderOIHedge();
         // token reserve is the amount we short
         // tokenTraderOIHedge if >0 then we need to go long because of OI hence less short (i.e. subtract if value +ve)
         // tokenTraderOIHedge if <0 then we need to go short because of OI hence more long (i.e. add if value -ve)
@@ -1666,59 +1669,6 @@ library DnGmxJuniorVaultManager {
             : poolAmount + uint256(int256(-tokenTraderOIHedge));
 
         return tokenReserve.mulDivDown(glpDeposited, totalSupply);
-    }
-
-    function checkHedgeAmounts(
-        State storage state,
-        int128 btcTraderOIHedge,
-        int128 ethTraderOIHedge,
-        uint256 glpDeposited
-    ) external view returns (bool) {
-        int256 btcTraderOIMax = _getTokenHedgeAmount(state, address(state.wbtc), glpDeposited);
-        int256 ethTraderOIMax = _getTokenHedgeAmount(state, address(state.weth), glpDeposited);
-
-        if (
-            !(_checkTokenHedgeAmount(btcTraderOIHedge, btcTraderOIMax) &&
-                _checkTokenHedgeAmount(ethTraderOIHedge, ethTraderOIMax))
-        ) return false;
-        else return true;
-    }
-
-    function _checkTokenHedgeAmount(int256 tokenTraderOIHedge, int256 tokenTraderOIMax) private view returns (bool) {
-        if (tokenTraderOIHedge.sign() * tokenTraderOIMax.sign() < 0) return false;
-
-        if (tokenTraderOIHedge.abs() > tokenTraderOIMax.abs()) return false;
-
-        return true;
-    }
-
-    ///@notice returns token amount underlying glp amount deposited
-    ///@param state set of all state variables of vault
-    ///@param token address of token
-    ///@param glpDeposited amount of glp for which underlying token amount is being calculated
-    ///@return amount of tokens of the supplied address underlying the given amount of glp
-    function _getTokenHedgeAmount(
-        State storage state,
-        address token,
-        uint256 glpDeposited
-    ) private view returns (int256) {
-        uint256 totalSupply = state.glp.totalSupply();
-        IVault gmxVault = state.gmxVault;
-        uint16 traderOIHedgeBps = state.traderOIHedgeBps;
-
-        uint256 globalShort = gmxVault.globalShortSizes(token).mulDivDown(traderOIHedgeBps, MAX_BPS);
-        uint256 globalAveragePrice = gmxVault.globalShortAveragePrices(token);
-        uint256 reservedAmount = gmxVault.reservedAmounts(token).mulDivDown(traderOIHedgeBps, MAX_BPS);
-        // uint256 poolAmount = gmxVault.poolAmounts(token);
-
-        int256 tokenReserve = globalShort.mulDivDown(PRICE_PRECISION, globalAveragePrice).toInt256() -
-            (reservedAmount * PRICE_PRECISION).toInt256();
-
-        return
-            tokenReserve.mulDivDown(
-                glpDeposited * (10**IERC20Metadata(token).decimals()),
-                totalSupply * PRICE_PRECISION
-            );
     }
 
     ///@notice returns token amount underlying glp amount deposited
