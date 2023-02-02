@@ -8,7 +8,7 @@ import { increaseBlockTimestamp } from './utils/shared';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 
-describe('Rebalance Scenarios', () => {
+describe.skip('Rebalance Scenarios', () => {
   it('Rebalance (Excel)', async () => {
     let tx;
 

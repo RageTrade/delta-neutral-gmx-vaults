@@ -20,8 +20,8 @@ export class Changer {
 
     const slot =
       asset == 'WBTC'
-        ? '0xefc52eb5bcce9ceaaebf0054002d7e364b5b15977eb33576623ae2e3d120addb'
-        : '0x12f79f2c07f3244fa8d6a85e976563a6abab49e9ff994b701b665f333f8a0e6b';
+        ? '0xa5c78c6509e472525490c2b0ff2459c307d7b604b01075c4f9ac7885888b2ea4'
+        : '0xf06beb13170e449f12e8666db7687134d704bb840ae1096a61582a93ea5b8795';
 
     await hre.network.provider.send('hardhat_setStorageAt', [
       contractAddr, // address

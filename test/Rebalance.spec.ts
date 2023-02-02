@@ -111,10 +111,7 @@ describe('Rebalance & its utils', () => {
 
     expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.eq(0);
     await dnGmxJuniorVault.executeBorrowFromDnGmxSeniorVault(borrowAmount);
-    expect((await dnGmxJuniorVault.getUsdcBorrowed()).toBigInt()).to.oneOf([
-      borrowAmount.toBigInt(),
-      borrowAmount.add(1).toBigInt(),
-    ]);
+    expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.closeTo(borrowAmount, 1);
 
     tx = await dnGmxJuniorVault.rebalanceBorrow(optimalBtc, currentBtc, optimalEth, currentEth);
 
@@ -126,20 +123,20 @@ describe('Rebalance & its utils', () => {
     );
 
     // increase price => loss on aave => both repayDebt are true
-    await changer.changePriceToken('WETH', 1700);
-    await changer.changePriceToken('WBTC', 22500);
+    await changer.changePriceToken('WETH', 2000);
+    await changer.changePriceToken('WBTC', 30000);
 
     const [currentBtc_, currentEth_] = await dnGmxJuniorVault.getCurrentBorrows();
     const [optimalBtc_, optimalEth_] = await dnGmxJuniorVault.getOptimalBorrows(amount);
 
-    // console.log('current borrows', currentBtc_, currentEth_);
-    // console.log('optimal borrows', optimalBtc_, optimalEth_);
+    console.log('current borrows', currentBtc_, currentEth_);
+    console.log('optimal borrows', optimalBtc_, optimalEth_);
 
     const currentBorrowValue = await dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_);
     const optimalBorrowValue = await dnGmxJuniorVault.getBorrowValue(optimalBtc_, optimalEth_);
 
-    // console.log('currentBorrowValue', currentBorrowValue);
-    // console.log('optimalBorrowValue', optimalBorrowValue);
+    console.log('currentBorrowValue', currentBorrowValue);
+    console.log('optimalBorrowValue', optimalBorrowValue);
 
     expect(currentBtc_).gt(optimalBtc_);
     expect(currentEth_).gt(optimalEth_);
@@ -455,8 +452,8 @@ describe('Rebalance & its utils', () => {
 
     expect(await dnGmxJuniorVault.isValidRebalanceHF()).to.be.false;
 
-    await changer.changePriceToken('WBTC', 25000);
-    await changer.changePriceToken('WETH', 2000);
+    await changer.changePriceToken('WBTC', 40000);
+    await changer.changePriceToken('WETH', 3500);
 
     expect(await dnGmxJuniorVault.isValidRebalanceHF()).to.be.true;
   });
