@@ -23,13 +23,7 @@ contract StableSwapMock {
         coins[2] = IERC20(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1);
     }
 
-    function exchange(
-        uint256 i,
-        uint256 j,
-        uint256 dx,
-        uint256 min_dy,
-        bool use_eth
-    ) external {
+    function exchange(uint256 i, uint256 j, uint256 dx, uint256 min_dy, bool use_eth) external {
         if (use_eth) revert SwapNotAllowed();
         if (!((i == 0 && j == 1) || (i == 1 && j == 0))) revert SwapNotAllowed();
 

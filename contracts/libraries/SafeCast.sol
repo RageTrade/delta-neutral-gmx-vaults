@@ -45,7 +45,7 @@ library SafeCast {
     /// @return z The casted integer, now type int256
     function toInt256(uint256 y) internal pure returns (int256 z) {
         unchecked {
-            require(y < 2**255, 'Overflow');
+            require(y < 2 ** 255, 'Overflow');
             z = int256(y);
         }
     }

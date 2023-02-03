@@ -353,11 +353,7 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
         emit PartialBatchDeposit(vaultBatchingState.currentRound, depositAmount, _sharesReceived);
     }
 
-    function _claim(
-        address claimer,
-        address receiver,
-        uint256 amount
-    ) internal {
+    function _claim(address claimer, address receiver, uint256 amount) internal {
         // revert for zero values
         if (receiver == address(0)) revert InvalidInput(0x10);
         if (amount == 0) revert InvalidInput(0x11);

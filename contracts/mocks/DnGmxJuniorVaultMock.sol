@@ -152,15 +152,7 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         address token,
         uint256 optimalBorrow,
         uint256 currentBorrow
-    )
-        external
-        view
-        returns (
-            uint256 tokenAmount,
-            uint256 usdcAmount,
-            bool repayDebt
-        )
-    {
+    ) external view returns (uint256 tokenAmount, uint256 usdcAmount, bool repayDebt) {
         return state.flashloanAmounts(token, optimalBorrow, currentBorrow);
     }
 
@@ -197,11 +189,10 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         return state.getTokenPriceInUsdc(token);
     }
 
-    function getOptimalCappedBorrows(uint256 availableBorrowAmount, uint256 usdcLiquidationThreshold)
-        external
-        view
-        returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow)
-    {
+    function getOptimalCappedBorrows(
+        uint256 availableBorrowAmount,
+        uint256 usdcLiquidationThreshold
+    ) external view returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) {
         return state.getOptimalCappedBorrows(availableBorrowAmount, usdcLiquidationThreshold);
     }
 
@@ -221,16 +212,9 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         return state.totalAssets(true);
     }
 
-    function totalAssetsComponents(bool maximize)
-        external
-        view
-        returns (
-            uint256 fsGlpBal,
-            uint256 aaveProfitGlp,
-            uint256 aaveLossGlp,
-            uint256 unhedgedGlp
-        )
-    {
+    function totalAssetsComponents(
+        bool maximize
+    ) external view returns (uint256 fsGlpBal, uint256 aaveProfitGlp, uint256 aaveLossGlp, uint256 unhedgedGlp) {
         fsGlpBal = state.fsGlp.balanceOf(address(this));
 
         int256 dnUsdcDeposited = state.dnUsdcDeposited;

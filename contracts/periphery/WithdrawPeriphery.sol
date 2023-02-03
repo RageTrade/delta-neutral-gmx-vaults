@@ -112,11 +112,7 @@ contract WithdrawPeriphery is Ownable {
     /// @param receiver address of the receiver
     /// @param sGlpAmount amount of sGLP(asset) to withdraw
     /// @return amountOut tokens received in exchange of glp
-    function withdrawToken(
-        address token,
-        address receiver,
-        uint256 sGlpAmount
-    ) external returns (uint256 amountOut) {
+    function withdrawToken(address token, address receiver, uint256 sGlpAmount) external returns (uint256 amountOut) {
         // user has approved periphery to use junior vault shares
         uint256 shares = dnGmxJuniorVault.withdraw(sGlpAmount, address(this), msg.sender);
 
@@ -130,11 +126,7 @@ contract WithdrawPeriphery is Ownable {
     /// @param receiver address of the receiver
     /// @param sharesAmount amount of shares to burn
     /// @return amountOut tokens received in exchange of glp
-    function redeemToken(
-        address token,
-        address receiver,
-        uint256 sharesAmount
-    ) external returns (uint256 amountOut) {
+    function redeemToken(address token, address receiver, uint256 sharesAmount) external returns (uint256 amountOut) {
         // user has approved periphery to use junior vault shares
         uint256 assets = dnGmxJuniorVault.redeem(sharesAmount, address(this), msg.sender);
 
@@ -154,7 +146,7 @@ contract WithdrawPeriphery is Ownable {
 
         // apply slippage threshold on top of estimated output amount
         uint256 minTokenOut = outputGlp.mulDiv(glpPrice * (MAX_BPS - slippageThreshold), tokenPrice * MAX_BPS);
-        minTokenOut = minTokenOut * 10**(IERC20Metadata(token).decimals() - 6);
+        minTokenOut = minTokenOut * 10 ** (IERC20Metadata(token).decimals() - 6);
 
         // will revert if atleast minTokenOut is not received
         amountOut = rewardRouter.unstakeAndRedeemGlp(address(token), outputGlp, minTokenOut, receiver);

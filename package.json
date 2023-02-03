@@ -23,7 +23,7 @@
     "storage:update": "yarn clean && hardhat storage-layout --update"
   },
   "resolutions": {
-    "solidity-coverage/@solidity-parser/parser": "^0.14.0"
+    "solidity-coverage/@solidity-parser/parser": "^0.15.0"
   },
   "dependencies": {
     "@aave/core-v3": "^1.16.2",
@@ -37,7 +37,7 @@
     "@uniswap/v3-periphery": "https://github.com/Uniswap/uniswap-v3-periphery.git#b325bb0905d922ae61fcc7df85ee802e8df5e96c"
   },
   "devDependencies": {
-    "@134dd3v/prettier-plugin-solidity": "^1.0.0-beta.18",
+    "@134dd3v/prettier-plugin-solidity": "^1.1.1",
     "@anders-t/ethers-ledger": "^1.0.4",
     "@defi-wonderland/smock": "^2.3.0",
     "@ethersproject/experimental": "^5.7.0",

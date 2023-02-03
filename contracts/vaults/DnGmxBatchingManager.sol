@@ -339,21 +339,16 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
                              INTERNAL LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    function _stakeGlp(
-        address token,
-        uint256 amount,
-        uint256 minUSDG
-    ) internal returns (uint256 glpStaked) {
+    function _stakeGlp(address token, uint256 amount, uint256 minUSDG) internal returns (uint256 glpStaked) {
         // swap token to obtain sGLP
         IERC20(token).approve(address(glpManager), amount);
         // will revert if notional output is less than minUSDG
         glpStaked = rewardRouter.mintAndStakeGlp(token, amount, minUSDG, 0);
     }
 
-    function _executeVaultUserBatchStake(uint128 usdcAmountToConvert)
-        internal
-        returns (uint128 _roundGlpStaked, uint128 _usdcToConvert)
-    {
+    function _executeVaultUserBatchStake(
+        uint128 usdcAmountToConvert
+    ) internal returns (uint128 _roundGlpStaked, uint128 _usdcToConvert) {
         uint128 _roundUsdcBalance = vaultBatchingState.roundUsdcBalance.toUint128();
 
         _usdcToConvert = usdcAmountToConvert < _roundUsdcBalance ? usdcAmountToConvert : _roundUsdcBalance;
@@ -395,11 +390,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         emit PartialBatchDeposit(vaultBatchingState.currentRound, depositAmount, _sharesReceived);
     }
 
-    function _claim(
-        address claimer,
-        address receiver,
-        uint256 amount
-    ) internal {
+    function _claim(address claimer, address receiver, uint256 amount) internal {
         // revert for zero values
         if (receiver == address(0)) revert InvalidInput(0x10);
         if (amount == 0) revert InvalidInput(0x11);
