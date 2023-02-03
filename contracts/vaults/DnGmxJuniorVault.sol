@@ -184,7 +184,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
 
         state.dnGmxSeniorVault = IDnGmxSeniorVault(dnGmxSeniorVault);
 
-        emit AdminParamsUpdated(newKeeper, dnGmxSeniorVault, newDepositCap, withdrawFeeBps);
+        emit AdminParamsUpdated(newKeeper, dnGmxSeniorVault, newDepositCap, address(0), withdrawFeeBps);
     }
 
     /// @notice set thresholds
