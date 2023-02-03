@@ -6,6 +6,7 @@ import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 import { generateErc20Balance } from './utils/generator';
 
 describe('Junior Vault ERC4646 functions', () => {
+  const MAX_BPS = BigNumber.from(10_000);
   it('Deposit', async () => {
     const opts = await dnGmxJuniorVaultFixture();
     const { dnGmxJuniorVault, dnGmxSeniorVault, dnGmxJuniorVaultManager, wbtc, weth, fsGlp, users, admin } = opts;
@@ -18,10 +19,12 @@ describe('Junior Vault ERC4646 functions', () => {
     const amount = parseEther('100');
     const preview = await dnGmxJuniorVault.previewDeposit(amount);
 
+    // const glpPriceBeforeDeposit = await dnGmxJuniorVault.getPriceExternal();
+
     const tx = await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
     const slippageAmount = await calculateSlippage(tx, dnGmxJuniorVaultManager, dnGmxJuniorVault, wbtc, weth);
 
-    const glpPrice = await dnGmxJuniorVault.getPriceExternal();
+    const glpPrice = await dnGmxJuniorVault.getGlpPriceInUsdc(false);
     const glpBalance = await fsGlp.balanceOf(dnGmxJuniorVault.address);
 
     const dnUsdcDeposited = await dnGmxJuniorVault.dnUsdcDeposited();
@@ -29,22 +32,39 @@ describe('Junior Vault ERC4646 functions', () => {
     let vmv;
     const borrowValues = await dnGmxJuniorVault.getCurrentBorrows();
 
+    const thresholds = await dnGmxJuniorVault.getThresholds();
+
     // glp notional value
     vmv = glpBalance.mul(glpPrice).div(PRICE_PRECISION);
     // dn usdc deposited
     vmv = vmv.add(dnUsdcDeposited);
     // borrowed notional from aave
-    vmv = vmv.sub(await dnGmxJuniorVault.getBorrowValue(borrowValues[0], borrowValues[1]));
+    const borrowValueInUsd = await dnGmxJuniorVault.getBorrowValue(borrowValues[0], borrowValues[1]);
+    vmv = vmv.sub(borrowValueInUsd);
     // batching manager glp & unHedgedGlp components are 0
 
     console.log('amount', amount);
     console.log('slippageAmount', slippageAmount);
     console.log('diff', amount.sub(slippageAmount));
 
-    const amountAfterSlippage = amount.sub(slippageAmount);
+    const totalSupply = await dnGmxJuniorVault.totalSupply();
+    // console.log("### Total Assets Min ###");
+    const totalAssets = await dnGmxJuniorVault.totalAssets();
+    // console.log("### Total Assets Max ###");
+    // const totalAssetsMax = await dnGmxJuniorVault.totalAssetsMax();
+    
+    // const slippageAmountWithGmxThreshold = slippageAmount.mul(MAX_BPS.add(thresholds.slippageThresholdGmxBps)).div(MAX_BPS);
 
-    expect(await dnGmxJuniorVault.totalSupply()).to.eq(amountAfterSlippage);
-    expect(await dnGmxJuniorVault.totalAssets()).to.gt(amountAfterSlippage);
+    const aaveLossGlp = (borrowValueInUsd.sub(dnUsdcDeposited)).mul(PRICE_PRECISION).div(glpPrice);
+    const aaveLossGlpWithGmxThreshold = aaveLossGlp.mul(MAX_BPS.add(thresholds.slippageThresholdGmxBps)).div(MAX_BPS);
+    // const totalAssetsMaxExpected = glpBalance.sub(aaveLossGlp);
+    const totalAssetsMinExpected = glpBalance.sub(aaveLossGlpWithGmxThreshold);
+
+    const amountAfterSlippage = amount.sub(slippageAmount);
+    // console.log({amountAfterSlippage, totalSupply, totalAssets, totalAssetsMax,glpPrice, slippageAmountWithGmxThreshold,glpBalance, dnUsdcDeposited,borrowValues, borrowValueInUsd, aaveLossGlp,aaveLossGlpWithGmxThreshold ,totalAssetsMaxExpected, totalAssetsMinExpected});
+
+    expect(totalSupply).to.eq(amountAfterSlippage);
+    expect(totalAssets).to.eq(totalAssetsMinExpected);
 
     expect(await dnGmxJuniorVault.unhedgedGlpInUsdc()).to.eq(0);
     expect(await dnGmxJuniorVault.getVaultMarketValue()).to.eq(vmv);
@@ -68,7 +88,7 @@ describe('Junior Vault ERC4646 functions', () => {
 
     await dnGmxJuniorVault.connect(users[0]).mint(amount, users[0].address);
 
-    const glpPrice = await dnGmxJuniorVault.getPriceExternal();
+    const glpPrice = await dnGmxJuniorVault.getGlpPriceInUsdc(false);
     const glpBalance = await fsGlp.balanceOf(dnGmxJuniorVault.address);
 
     const dnUsdcDeposited = await dnGmxJuniorVault.dnUsdcDeposited();
@@ -96,15 +116,27 @@ describe('Junior Vault ERC4646 functions', () => {
   it('Full Withdraw', async () => {
     const opts = await dnGmxJuniorVaultFixture();
     const { dnGmxJuniorVault, dnGmxSeniorVault, dnGmxJuniorVaultManager, admin, users, weth, wbtc } = opts;
+
+    await dnGmxJuniorVault.setThresholds(
+      100, //_slippageThresholdSwapBtcBps
+      100, //_slippageThresholdSwapEthBps
+      100, //_slippageThresholdGmxBps
+      0n, //_usdcConversionThreshold
+      0n, //_wethConversionThreshold
+      0n, //_hedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
+    );
+    await dnGmxJuniorVault.setAdminParams(admin.address, dnGmxSeniorVault.address, constants.MaxUint256, 50, 3000);
+
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
-    await dnGmxJuniorVault.setAdminParams(admin.address, dnGmxSeniorVault.address, constants.MaxUint256, 100, 3000);
 
     const amount = parseEther('100');
 
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
 
-    const userAssets = await dnGmxJuniorVault.convertToAssets(dnGmxJuniorVault.balanceOf(users[0].address));
+    const userAssets = await (await dnGmxJuniorVault.convertToAssets(dnGmxJuniorVault.balanceOf(users[0].address))).mul(MAX_BPS.sub(50)).div(MAX_BPS);
     const totalAssetsBeforeRedeem = await dnGmxJuniorVault.totalAssets();
 
     const preview = await dnGmxJuniorVault.previewRedeem(dnGmxJuniorVault.balanceOf(users[0].address));
@@ -115,10 +147,10 @@ describe('Junior Vault ERC4646 functions', () => {
     const slippageAmount = await calculateSlippage(tx, dnGmxJuniorVaultManager, dnGmxJuniorVault, wbtc, weth);
 
     expect(await dnGmxJuniorVault.balanceOf(users[0].address)).to.eq(0);
-
     expect(await dnGmxJuniorVault.totalSupply()).to.eq(0);
     expect(await dnGmxJuniorVault.totalAssets()).to.gt(totalAssetsBeforeRedeem.sub(preview));
-
+    
+    console.log({userAssets, preview, slippageAmount});
     expect(userAssets.sub(slippageAmount)).to.eq(preview);
   });
 
@@ -321,6 +353,8 @@ describe('Junior Vault ERC4646 functions', () => {
         if (args.fromToken.toLowerCase() == wbtc.address.toLowerCase()) {
           const btcPrice = await dnGmxJuniorVault['getPrice(address,bool)'](wbtc.address, true);
           console.log('btcPrice', btcPrice);
+
+          //Adding 1 to roundUp the slippage
           slippage = BigNumber.from(args.fromQuantity)
             .mul(btcPrice)
             .div(PRICE_PRECISION)
@@ -331,16 +365,18 @@ describe('Junior Vault ERC4646 functions', () => {
           const ethPrice = await dnGmxJuniorVault['getPrice(address,bool)'](weth.address, true);
           console.log('ethPrice', ethPrice);
 
-          slippage = BigNumber.from(args.fromQuantity)
+          //Adding 1 to roundUp the slippage
+          slippage = (BigNumber.from(args.fromQuantity)
             .mul(ethPrice)
-            .div(PRICE_PRECISION)
+            .div(PRICE_PRECISION))
             .sub(BigNumber.from(args.toQuantity))
-            .abs();
+            ;
         }
 
         if (args.toToken.toLowerCase() == wbtc.address.toLowerCase()) {
           const btcPrice = await dnGmxJuniorVault['getPrice(address,bool)'](wbtc.address, true);
           console.log('btcPrice', btcPrice);
+          //Adding 1 to roundUp the slippage
           slippage = BigNumber.from(args.fromQuantity).sub(
             BigNumber.from(args.toQuantity).mul(btcPrice).div(PRICE_PRECISION),
           );
@@ -350,19 +386,21 @@ describe('Junior Vault ERC4646 functions', () => {
           const ethPrice = await dnGmxJuniorVault['getPrice(address,bool)'](weth.address, true);
           console.log('ethPrice', ethPrice);
 
+          //Adding 1 to roundUp the slippage
           slippage = BigNumber.from(args.fromQuantity).sub(
             BigNumber.from(args.toQuantity).mul(ethPrice).div(PRICE_PRECISION),
           );
         }
 
-        totalSlippage = totalSlippage.add(slippage);
+        totalSlippage = slippage.gt(0)?totalSlippage.add(slippage).add(1n):totalSlippage;
 
         console.log('slippage', slippage);
       }
     }
 
-    const glpPrice = await dnGmxJuniorVault.getPriceExternal();
-    // total slippage in terms of asset
-    return totalSlippage.mul(PRICE_PRECISION).div(glpPrice);
+    const glpPrice = await dnGmxJuniorVault.getGlpPriceInUsdc(false);
+    console.log({slippageInDollars:totalSlippage, glpPrice,slippageInGlp: totalSlippage.mul(PRICE_PRECISION).div(glpPrice)});
+    // total slippage in terms of asset (adding 1 to round up)
+    return totalSlippage.eq(0n)?BigNumber.from(0):totalSlippage.mul(PRICE_PRECISION).div(glpPrice).add(1);
   }
 });
