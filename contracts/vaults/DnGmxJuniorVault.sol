@@ -540,7 +540,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     ///@param assetAmount amount of sGlp tokens
     ///@return marketValue of given amount of glp assets
     function getMarketValue(uint256 assetAmount) public view returns (uint256 marketValue) {
-        marketValue = assetAmount.mulDivDown(getPrice(false), PRICE_PRECISION);
+        marketValue = assetAmount.mulDivDown(state.getGlpPriceInUsdc(false), PRICE_PRECISION);
     }
 
     ///@notice returns vault market value (USD terms & 6 decimals) basis glp and usdc tokens in vault
