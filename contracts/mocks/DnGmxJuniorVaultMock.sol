@@ -9,10 +9,13 @@ import { DnGmxJuniorVaultManager } from '../libraries/DnGmxJuniorVaultManager.so
 import { DnGmxJuniorVault } from '../vaults/DnGmxJuniorVault.sol';
 
 import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
+import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMathLib.sol';
 
 contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
     uint256 internal constant VARIABLE_INTEREST_MODE = 2;
     IDnGmxBatchingManager batchingManager;
+
+    using FixedPointMathLib for uint256;
 
     using DnGmxJuniorVaultManager for DnGmxJuniorVaultManager.State;
 
@@ -212,6 +215,52 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
 
     function totalAssetsMax() external view returns (uint256) {
         return state.totalAssets(true);
+    }
+
+    function totalAssetsComponents(bool maximize)
+        external
+        view
+        returns (
+            uint256 fsGlpBal,
+            uint256 aaveProfitGlp,
+            uint256 aaveLossGlp,
+            uint256 unhedgedGlp
+        )
+    {
+        fsGlpBal = state.fsGlp.balanceOf(address(this));
+
+        int256 dnUsdcDeposited = state.dnUsdcDeposited;
+
+        // calculate current borrow amounts
+        (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
+
+        // total borrow value is the value of ETH and BTC required to be paid off
+        uint256 totalCurrentBorrowValue = state.getBorrowValue(currentBtc, currentEth);
+
+        uint256 glpPrice = state.getGlpPriceInUsdc(maximize);
+
+        {
+            // convert it into two uints basis the sign
+            uint256 aaveProfit = dnUsdcDeposited > int256(0) ? uint256(dnUsdcDeposited) : 0;
+            uint256 aaveLoss = dnUsdcDeposited < int256(0)
+                ? uint256(-dnUsdcDeposited) + totalCurrentBorrowValue
+                : totalCurrentBorrowValue;
+
+            if (aaveProfit > aaveLoss) {
+                aaveProfitGlp = (aaveProfit - aaveLoss).mulDivDown(PRICE_PRECISION, glpPrice);
+                if (!maximize)
+                    aaveProfitGlp = aaveProfitGlp.mulDivDown(MAX_BPS - state.slippageThresholdGmxBps, MAX_BPS);
+                aaveLossGlp = 0;
+            } else {
+                aaveLossGlp = (aaveLoss - aaveProfit).mulDivDown(PRICE_PRECISION, glpPrice);
+                if (!maximize) aaveLossGlp = aaveLossGlp.mulDivDown(MAX_BPS + state.slippageThresholdGmxBps, MAX_BPS);
+                aaveProfitGlp = 0;
+            }
+        }
+
+        unhedgedGlp = (state.unhedgedGlpInUsdc).mulDivDown(PRICE_PRECISION, state.getGlpPriceInUsdc(!maximize));
+
+        if (!maximize) unhedgedGlp = unhedgedGlp.mulDivDown(MAX_BPS - state.slippageThresholdGmxBps, MAX_BPS);
     }
 
     function convertAssetToAUsdc(uint256 usdcAmountDesired) external returns (uint256 usdcAmount) {

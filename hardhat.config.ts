@@ -159,6 +159,7 @@ export default {
       '@uniswap/v3-periphery/contracts/lens/Quoter.sol',
       '@uniswap/v3-periphery/contracts/SwapRouter.sol',
       '@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol',
+      '@uniswap/v3-periphery/contracts/NonfungiblePositionManager.sol',
       '@ragetrade/core/contracts/utils/TimelockControllerWithMinDelayOverride.sol'
     ]
   },

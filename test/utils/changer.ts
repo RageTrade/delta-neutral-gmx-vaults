@@ -1,9 +1,11 @@
 import hre, { ethers } from 'hardhat';
 import addresses from '../fixtures/addresses';
 import { increaseBlockTimestamp } from './shared';
-import { AggregatorV3Interface__factory } from '../../typechain-types';
-import { formatUnits, parseEther, parseUnits } from 'ethers/lib/utils';
+import { AggregatorV3Interface__factory, NonfungiblePositionManager__factory } from '../../typechain-types';
+import { formatUnits, parseUnits } from 'ethers/lib/utils';
 import { dnGmxJuniorVaultFixture } from '../fixtures/dn-gmx-junior-vault';
+import { tickToNearestInitializableTick, priceToTick } from '@ragetrade/sdk';
+import { generateErc20Balance } from './generator';
 
 type Asset = 'WETH' | 'WBTC';
 
@@ -13,6 +15,104 @@ export class Changer {
   constructor(public opts: Awaited<ReturnType<typeof dnGmxJuniorVaultFixture>>) {
     opts = opts;
   }
+
+  addLiquidity = async () => {
+    const nfpm = NonfungiblePositionManager__factory.connect(
+      '0xC36442b4a4522E871399CD717aBDD847Ab11FE88',
+      this.opts.users[0],
+    );
+
+    let decimals1 = 6;
+    let decimals0 = 18;
+
+    let amount1 = 100_000_000;
+    let amount0 = 100_000_000 / 1_600;
+
+    await generateErc20Balance(
+      this.opts.weth,
+      parseUnits(amount0.toFixed(decimals0), decimals0),
+      this.opts.users[0].address,
+    );
+    await generateErc20Balance(
+      this.opts.usdc,
+      parseUnits(amount1.toFixed(decimals1), decimals1),
+      this.opts.users[0].address,
+    );
+
+    await this.opts.usdc.connect(this.opts.users[0]).approve(nfpm.address, ethers.constants.MaxUint256);
+    await this.opts.weth.connect(this.opts.users[0]).approve(nfpm.address, ethers.constants.MaxUint256);
+
+    let tickLower = tickToNearestInitializableTick(
+      await priceToTick((amount1 / amount0) * 100, decimals1, decimals0, true),
+      10,
+    );
+
+    let tickUpper = tickToNearestInitializableTick(
+      await priceToTick((amount1 / amount0) * 0.01, decimals1, decimals0, true),
+      10,
+    );
+
+    let tx = await nfpm.connect(this.opts.users[0]).mint({
+      token0: this.opts.weth.address,
+      token1: this.opts.usdc.address,
+      fee: 500,
+      tickLower: Math.min(tickLower, tickUpper),
+      tickUpper: Math.max(tickLower, tickUpper),
+      amount0Desired: parseUnits(amount0.toFixed(decimals0), decimals0),
+      amount1Desired: parseUnits(amount1.toFixed(decimals1), decimals1),
+      amount0Min: 0,
+      amount1Min: 0,
+      recipient: this.opts.users[0].address,
+      deadline: (await ethers.provider.getBlock('latest')).timestamp + 1000,
+    });
+
+    decimals0 = 8;
+    decimals1 = 18;
+
+    amount1 = 100_000_000 / 21_000;
+    amount0 = 100_000_000 / 1_600;
+
+    await generateErc20Balance(
+      this.opts.wbtc,
+      parseUnits(amount0.toFixed(decimals0), decimals0),
+      this.opts.users[0].address,
+    );
+    await generateErc20Balance(
+      this.opts.weth,
+      parseUnits(amount1.toFixed(decimals1), decimals1),
+      this.opts.users[0].address,
+    );
+
+    await this.opts.usdc.connect(this.opts.users[0]).approve(nfpm.address, ethers.constants.MaxUint256);
+    await this.opts.weth.connect(this.opts.users[0]).approve(nfpm.address, ethers.constants.MaxUint256);
+
+    tickLower = tickToNearestInitializableTick(
+      await priceToTick((amount1 / amount0) * 100, decimals1, decimals0, true),
+      10,
+    );
+
+    tickUpper = tickToNearestInitializableTick(
+      await priceToTick((amount1 / amount0) * 0.01, decimals1, decimals0, true),
+      10,
+    );
+
+    tx = await nfpm.connect(this.opts.users[0]).mint({
+      token0: this.opts.wbtc.address,
+      token1: this.opts.weth.address,
+      fee: 500,
+      tickLower: Math.min(tickLower, tickUpper),
+      tickUpper: Math.max(tickLower, tickUpper),
+      amount0Desired: parseUnits(amount0.toFixed(decimals0), decimals0),
+      amount1Desired: parseUnits(amount1.toFixed(decimals1), decimals1),
+      amount0Min: 0,
+      amount1Min: 0,
+      recipient: this.opts.users[0].address,
+      deadline: (await ethers.provider.getBlock('latest')).timestamp + 1000,
+    });
+
+    console.log('liquidity added successfully');
+    console.log(Changer.seperator);
+  };
 
   changePriceToken = async (asset: Asset, price: number) => {
     const contractAddr =
