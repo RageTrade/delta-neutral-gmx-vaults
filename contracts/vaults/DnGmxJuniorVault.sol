@@ -606,7 +606,13 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @notice preview function for using assets to mint shares
     /// @param assets number of assets to be deposited
     /// @return shares that would be minted to the user
-    function previewDeposit(uint256 assets) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
+    function previewDeposit(uint256 assets)
+        public
+        view
+        virtual
+        override(IERC4626, ERC4626Upgradeable)
+        returns (uint256)
+    {
         uint256 netAssets = state.getSlippageAdjustedAssets({ assets: assets, isDeposit: true });
         return convertToShares(netAssets);
     }
@@ -614,7 +620,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @notice preview function for minting of shares
     /// @param shares number of shares to mint
     /// @return assets that would be taken from the user
-    function previewMint(uint256 shares) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
+    function previewMint(uint256 shares) public view virtual override(IERC4626, ERC4626Upgradeable) returns (uint256) {
         uint256 supply = totalSupply();
 
         if (supply == 0) return shares;
@@ -628,7 +634,13 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @notice preview function for withdrawal of assets
     /// @param assets that would be given to the user
     /// @return shares that would be burnt
-    function previewWithdraw(uint256 assets) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
+    function previewWithdraw(uint256 assets)
+        public
+        view
+        virtual
+        override(IERC4626, ERC4626Upgradeable)
+        returns (uint256)
+    {
         uint256 supply = totalSupply();
 
         if (supply == 0) return assets;
@@ -641,7 +653,13 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @notice preview function for redeeming shares
     /// @param shares that would be taken from the user
     /// @return assets that user would get
-    function previewRedeem(uint256 shares) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
+    function previewRedeem(uint256 shares)
+        public
+        view
+        virtual
+        override(IERC4626, ERC4626Upgradeable)
+        returns (uint256)
+    {
         uint256 supply = totalSupply();
 
         if (supply == 0) return shares;

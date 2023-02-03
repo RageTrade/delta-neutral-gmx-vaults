@@ -11,6 +11,9 @@ import { DnGmxJuniorVault } from '../vaults/DnGmxJuniorVault.sol';
 import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
 import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMathLib.sol';
 
+import { IERC4626 } from '../interfaces/IERC4626.sol';
+import { ERC4626Upgradeable } from '../ERC4626/ERC4626Upgradeable.sol';
+
 contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
     uint256 internal constant VARIABLE_INTEREST_MODE = 2;
     IDnGmxBatchingManager batchingManager;
@@ -275,9 +278,87 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         state.swapRouter = _swapRouter;
     }
 
+    function _quoteSwapSlippageLoss(int256 btcAmount, int256 ethAmount) internal view returns (uint256) {
+        uint256 btcPrice = state.getTokenPriceInUsdc(state.wbtc);
+        uint256 ethPrice = state.getTokenPriceInUsdc(state.weth);
+
+        uint256 netUsdc = (uint256(btcAmount) * btcPrice * (MAX_BPS - state.slippageThresholdSwapBtcBps)) /
+            MAX_BPS /
+            PRICE_PRECISION /
+            100;
+        netUsdc +=
+            (uint256(ethAmount) * ethPrice * (MAX_BPS - state.slippageThresholdSwapEthBps)) /
+            MAX_BPS /
+            PRICE_PRECISION /
+            100;
+        return netUsdc;
+    }
+
+    function getSlippageAdjustedAssets(uint256 assets, bool isDeposit) public view returns (uint256) {
+        // get change in borrow positions to calculate amount to swap on uniswap
+        (int256 netBtcBorrowChange, int256 netEthBorrowChange) = state.getNetPositionChange(assets, isDeposit);
+
+        uint256 dollarsLostDueToSlippage = _quoteSwapSlippageLoss(netBtcBorrowChange, netEthBorrowChange);
+
+        // netSlippage returned is in glp (asset) terms
+        uint256 glpPrice = state.getGlpPriceInUsdc(false);
+        uint256 netSlippage = dollarsLostDueToSlippage.mulDivUp(PRICE_PRECISION, glpPrice);
+
+        // subtract slippage from assets, and calculate shares basis that slippage adjusted asset amount
+        assets -= uint256(netSlippage);
+
+        return assets;
+    }
+
     function setBatchingManager(IDnGmxBatchingManager _batchingManager) external {
         batchingManager = _batchingManager;
         state.weth.approve(address(_batchingManager), type(uint256).max);
         state.usdc.approve(address(_batchingManager), type(uint256).max);
+    }
+
+    function previewDeposit(uint256 assets) public view override(DnGmxJuniorVault) returns (uint256) {
+        uint256 netAssets = getSlippageAdjustedAssets({ assets: assets, isDeposit: true });
+        return convertToShares(netAssets);
+    }
+
+    /// @notice preview function for minting of shares
+    /// @param shares number of shares to mint
+    /// @return assets that would be taken from the user
+    function previewMint(uint256 shares) public view virtual override(DnGmxJuniorVault) returns (uint256) {
+        uint256 supply = totalSupply();
+
+        if (supply == 0) return shares;
+
+        uint256 assets = convertToAssets(shares);
+        uint256 netAssets = getSlippageAdjustedAssets({ assets: assets, isDeposit: true });
+
+        return netAssets;
+    }
+
+    /// @notice preview function for withdrawal of assets
+    /// @param assets that would be given to the user
+    /// @return shares that would be burnt
+    function previewWithdraw(uint256 assets) public view virtual override(DnGmxJuniorVault) returns (uint256) {
+        uint256 supply = totalSupply();
+
+        if (supply == 0) return assets;
+
+        uint256 netAssets = getSlippageAdjustedAssets({ assets: assets, isDeposit: false });
+
+        return netAssets.mulDivUp(supply * MAX_BPS, state.totalAssets(false) * (MAX_BPS - state.withdrawFeeBps));
+    }
+
+    /// @notice preview function for redeeming shares
+    /// @param shares that would be taken from the user
+    /// @return assets that user would get
+    function previewRedeem(uint256 shares) public view virtual override(DnGmxJuniorVault) returns (uint256) {
+        uint256 supply = totalSupply();
+
+        if (supply == 0) return shares;
+
+        uint256 assets = convertToAssets(shares);
+        uint256 netAssets = getSlippageAdjustedAssets({ assets: assets, isDeposit: false });
+
+        return netAssets.mulDivDown(MAX_BPS - state.withdrawFeeBps, MAX_BPS);
     }
 }
