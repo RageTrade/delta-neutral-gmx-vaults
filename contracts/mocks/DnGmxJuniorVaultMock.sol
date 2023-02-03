@@ -19,6 +19,7 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
     IDnGmxBatchingManager batchingManager;
 
     using FixedPointMathLib for uint256;
+    bool useMocks = false;
 
     using DnGmxJuniorVaultManager for DnGmxJuniorVaultManager.State;
 
@@ -276,6 +277,7 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
 
     function setMocks(ISwapRouter _swapRouter) external {
         state.swapRouter = _swapRouter;
+        useMocks = true;
     }
 
     function _quoteSwapSlippageLoss(int256 btcAmount, int256 ethAmount) internal view returns (uint256) {
@@ -298,7 +300,9 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         // get change in borrow positions to calculate amount to swap on uniswap
         (int256 netBtcBorrowChange, int256 netEthBorrowChange) = state.getNetPositionChange(assets, isDeposit);
 
-        uint256 dollarsLostDueToSlippage = _quoteSwapSlippageLoss(netBtcBorrowChange, netEthBorrowChange);
+        uint256 dollarsLostDueToSlippage = useMocks
+            ? _quoteSwapSlippageLoss(netBtcBorrowChange, netEthBorrowChange)
+            : state.quoteSwapSlippageLoss(netBtcBorrowChange, netEthBorrowChange);
 
         // netSlippage returned is in glp (asset) terms
         uint256 glpPrice = state.getGlpPriceInUsdc(false);
