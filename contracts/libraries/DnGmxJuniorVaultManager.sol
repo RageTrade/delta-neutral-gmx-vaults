@@ -30,6 +30,7 @@ import { SafeCast } from '../libraries/SafeCast.sol';
 import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
 import { SignedFixedPointMathLib } from '../libraries/SignedFixedPointMathLib.sol';
 import { QuoterLib } from '../libraries/QuoterLib.sol';
+import { SwapPath } from '../libraries/SwapPath.sol';
 
 import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMathLib.sol';
 
@@ -1427,16 +1428,23 @@ library DnGmxJuniorVaultManager {
         int256 btcAmountInBtcSwap,
         int256 ethAmountInEthSwap
     ) internal view returns (uint256 dollarsLostDueToSlippage) {
-        uint256 btcPrice = _getTokenPriceInUsdc(state, state.wbtc);
-        uint256 ethPrice = _getTokenPriceInUsdc(state, state.weth);
-        uint256 usdcPrice = _getTokenPriceInUsdc(state, state.usdc);
-
         (int256 usdcAmountInBtcSwap, int256 usdcAmountInEthSwap) = QuoterLib.quoteCombinedSwap(
             btcAmountInBtcSwap,
             ethAmountInEthSwap,
-            WBTC_TO_USDC(state),
-            WETH_TO_USDC(state)
+            SwapPath.generate({
+                tokenIn: state.wbtc,
+                feeIn: state.feeTierWethWbtcPool,
+                tokenIntermediate: state.weth,
+                feeOut: 500,
+                tokenOut: state.usdc,
+                isExactIn: true
+            }),
+            SwapPath.generate({ tokenIn: state.weth, fee: 500, tokenOut: state.usdc, isExactIn: true })
         );
+
+        uint256 btcPrice = _getTokenPriceInUsdc(state, state.wbtc);
+        uint256 ethPrice = _getTokenPriceInUsdc(state, state.weth);
+        uint256 usdcPrice = _getTokenPriceInUsdc(state, state.usdc);
 
         return
             _calculateSwapLoss(btcAmountInBtcSwap, usdcAmountInBtcSwap, btcPrice, usdcPrice) +
@@ -1743,7 +1751,16 @@ library DnGmxJuniorVaultManager {
         ISwapRouter swapRouter = state.swapRouter;
 
         // path of the token swap
-        bytes memory path = token == address(state.weth) ? WETH_TO_USDC(state) : WBTC_TO_USDC(state);
+        bytes memory path = token == address(state.weth)
+            ? SwapPath.generate({ tokenIn: state.weth, fee: 500, tokenOut: state.usdc, isExactIn: true })
+            : SwapPath.generate({
+                tokenIn: state.wbtc,
+                feeIn: state.feeTierWethWbtcPool,
+                tokenIntermediate: state.weth,
+                feeOut: 500,
+                tokenOut: state.usdc,
+                isExactIn: true
+            });
 
         // executes the swap on uniswap pool
         // exact input swap to convert exact amount of tokens into usdc
@@ -1777,7 +1794,16 @@ library DnGmxJuniorVaultManager {
     ) internal returns (uint256 usdcPaid, uint256 tokensReceived) {
         ISwapRouter swapRouter = state.swapRouter;
 
-        bytes memory path = token == address(state.weth) ? USDC_TO_WETH(state) : USDC_TO_WBTC(state);
+        bytes memory path = token == address(state.weth)
+            ? SwapPath.generate({ tokenIn: state.usdc, fee: 500, tokenOut: state.weth, isExactIn: false })
+            : SwapPath.generate({
+                tokenIn: state.usdc,
+                feeIn: 500,
+                tokenIntermediate: state.weth,
+                feeOut: state.feeTierWethWbtcPool,
+                tokenOut: state.wbtc,
+                isExactIn: false
+            });
 
         // exact output swap to ensure exact amount of tokens are received
         ISwapRouter.ExactOutputParams memory params = ISwapRouter.ExactOutputParams({
@@ -1810,38 +1836,5 @@ library DnGmxJuniorVaultManager {
             state.aUsdc.balanceOf(address(this)),
             state.aUsdc.balanceOf(address(state.dnGmxSeniorVault))
         );
-    }
-
-    /* solhint-disable func-name-mixedcase */
-    ///@notice returns usdc to weth swap path
-    ///@param state set of all state variables of vault
-    ///@return the path bytes
-    function USDC_TO_WETH(State storage state) internal view returns (bytes memory) {
-        return abi.encodePacked(state.weth, uint24(500), state.usdc);
-    }
-
-    function USDC_TO_WETH_(State storage state) internal view returns (bytes memory) {
-        return abi.encodePacked(state.usdc, uint24(500), state.weth);
-    }
-
-    ///@notice returns usdc to wbtc swap path
-    ///@param state set of all state variables of vault
-    ///@return the path bytes
-    function USDC_TO_WBTC(State storage state) internal view returns (bytes memory) {
-        return abi.encodePacked(state.wbtc, state.feeTierWethWbtcPool, state.weth, uint24(500), state.usdc);
-    }
-
-    ///@notice returns weth to usdc swap path
-    ///@param state set of all state variables of vault
-    ///@return the path bytes
-    function WETH_TO_USDC(State storage state) internal view returns (bytes memory) {
-        return abi.encodePacked(state.weth, uint24(500), state.usdc);
-    }
-
-    ///@notice returns wbtc to usdc swap path
-    ///@param state set of all state variables of vault
-    ///@return the path bytes
-    function WBTC_TO_USDC(State storage state) internal view returns (bytes memory) {
-        return abi.encodePacked(state.wbtc, state.feeTierWethWbtcPool, state.weth, uint24(500), state.usdc);
     }
 }
