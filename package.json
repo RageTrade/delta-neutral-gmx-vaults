@@ -26,7 +26,7 @@
     "solidity-coverage/@solidity-parser/parser": "^0.15.0"
   },
   "dependencies": {
-    "@aave/core-v3": "^1.16.2",
+    "@aave/core-v3": "^1.17.2",
     "@aave/periphery-v3": "^1.19.2",
     "@openzeppelin/contracts": "4.7.3",
     "@openzeppelin/contracts-upgradeable": "4.7.3",

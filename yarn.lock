@@ -16,7 +16,7 @@
   resolved "https://registry.yarnpkg.com/@aave/core-v3/-/core-v3-1.17.0.tgz#9b6569900c66e16971054f8f70f3d1856cc9c477"
   integrity sha512-vcGEPcoDILN1ZBXeqRsK+TXp1VGDvYxaiq/ZJ2XT2/134PbmXAlNlZIrGw1b4WIwIG4egNu8OW6whyWjp/aLlA==
 
-"@aave/core-v3@^1.16.2":
+"@aave/core-v3@^1.17.2":
   version "1.17.2"
   resolved "https://registry.yarnpkg.com/@aave/core-v3/-/core-v3-1.17.2.tgz#dfb543da87d4d6429e0c277b46b84057349f590f"
   integrity sha512-ztCyKTALoeOQy6MlWVRCvHgilh6vT+d6lwjXhIsmlEYlA0v3L6dQBIyTFIzHBUfcpEjs0T3tSmcVxGY+GAUZ1g==

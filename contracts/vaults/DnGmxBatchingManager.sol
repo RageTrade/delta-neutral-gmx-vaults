@@ -42,9 +42,9 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         // amount of usdc recieved in current round
         uint256 roundUsdcBalance;
         // stores junior vault shares accumuated for user
-        mapping(address => UserDeposit) userDeposits;
+        mapping(address user => UserDeposit) userDeposits;
         // stores total glp received in a given round
-        mapping(uint256 => RoundDeposit) roundDeposits;
+        mapping(uint256 roundId => RoundDeposit) roundDeposits;
     }
 
     uint256 private constant MAX_BPS = 10_000;

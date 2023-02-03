@@ -57,7 +57,7 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     // AAVE pool address provider
     IPoolAddressesProvider internal poolAddressProvider;
     // Borrow caps on leverage pool and junior tranche
-    mapping(address => uint256) public borrowCaps;
+    mapping(address borrower => uint256 cap) public borrowCaps;
 
     // these gaps are added to allow adding new variables without shifting down inheritance chain
     uint256[50] private __gaps;

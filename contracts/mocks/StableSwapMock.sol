@@ -10,7 +10,7 @@ contract StableSwapMock {
 
     uint256 price; // usd per 1e8 wbtc;
 
-    mapping(uint256 => IERC20) public coins;
+    mapping(uint256 index => IERC20) public coins;
 
     function setPrice(uint256 _price) external {
         price = _price;
