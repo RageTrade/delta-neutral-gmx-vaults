@@ -1616,13 +1616,35 @@ library DnGmxJuniorVaultManager {
             state.targetHealthFactor - usdcLiquidationThreshold
         );
 
-        // calculate the borrow value of eth & btc using their weights
-        uint256 btcWeight = state.gmxVault.tokenWeights(address(state.wbtc));
-        uint256 ethWeight = state.gmxVault.tokenWeights(address(state.weth));
+        uint256 btcWeight;
+        uint256 ethWeight;
 
         // get eth and btc price in usdc
         uint256 btcPrice = _getTokenPriceInUsdc(state, state.wbtc);
         uint256 ethPrice = _getTokenPriceInUsdc(state, state.weth);
+
+        {
+            int128 btcTokenTraderOIHedge = state.dnGmxTraderHedgeStrategy.btcTraderOIHedge();
+            int128 ethTokenTraderOIHedge = state.dnGmxTraderHedgeStrategy.ethTraderOIHedge();
+
+            uint256 btcPoolAmount = state.gmxVault.poolAmounts(address(state.wbtc));
+            uint256 ethPoolAmount = state.gmxVault.poolAmounts(address(state.weth));
+
+            // token reserve is the amount we short
+            // tokenTraderOIHedge if >0 then we need to go long because of OI hence less short (i.e. subtract if value +ve)
+            // tokenTraderOIHedge if <0 then we need to go short because of OI hence more long (i.e. add if value -ve)
+            uint256 btcTokenReserve = btcTokenTraderOIHedge > 0
+                ? btcPoolAmount - uint256(int256(btcTokenTraderOIHedge))
+                : btcPoolAmount + uint256(int256(-btcTokenTraderOIHedge));
+
+            uint256 ethTokenReserve = ethTokenTraderOIHedge > 0
+                ? ethPoolAmount - uint256(int256(ethTokenTraderOIHedge))
+                : ethPoolAmount + uint256(int256(-ethTokenTraderOIHedge));
+
+            // calculate the borrow value of eth & btc using their weights
+            btcWeight = btcTokenReserve.mulDivDown(btcPrice, PRICE_PRECISION);
+            ethWeight = ethTokenReserve.mulDivDown(ethPrice, PRICE_PRECISION);
+        }
 
         // get token amounts from usdc amount
         // total borrow should be divided basis the token weights
