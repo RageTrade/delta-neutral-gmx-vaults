@@ -46,6 +46,7 @@ contract DnGmxTraderHedgeStrategy is OwnableUpgradeable, IDnGmxTraderHedgeStrate
     // these gaps are added to allow adding new variables without shifting down inheritance chain
     uint256[50] private __gaps;
 
+    error InvalidTraderOIHedgeBps(uint256 traderOIHedgeBps);
     error InvalidTraderOIHedges(int128 btcTraderOIHedge, int128 ethTraderOIHedge);
     error OnlyKeeperAllowed(address msgSender, address authorisedKeeperAddress);
 
@@ -101,6 +102,7 @@ contract DnGmxTraderHedgeStrategy is OwnableUpgradeable, IDnGmxTraderHedgeStrate
     }
 
     function setTraderOIHedgeBps(uint16 _traderOIHedgeBps) external onlyOwner {
+        if (_traderOIHedgeBps > MAX_BPS) revert InvalidTraderOIHedgeBps(_traderOIHedgeBps);
         traderOIHedgeBps = _traderOIHedgeBps;
         emit TraderOIHedgeBpsUpdated(_traderOIHedgeBps);
     }
