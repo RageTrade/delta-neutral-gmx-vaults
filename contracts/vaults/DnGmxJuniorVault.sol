@@ -184,7 +184,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
 
         state.dnGmxSeniorVault = IDnGmxSeniorVault(dnGmxSeniorVault);
 
-        emit AdminParamsUpdated(newKeeper, dnGmxSeniorVault, newDepositCap, withdrawFeeBps);
+        emit AdminParamsUpdated(newKeeper, dnGmxSeniorVault, newDepositCap, address(0), withdrawFeeBps);
     }
 
     /// @notice set thresholds
@@ -234,10 +234,10 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @notice set thresholds
     /// @param rebalanceProfitUsdcAmountThreshold (BPS) slippage threshold on btc swaps
     /// @param dnGmxTraderHedgeStrategy (BPS) slippage threshold on btc swaps
-    function setParamsV1(uint128 rebalanceProfitUsdcAmountThreshold, IDnGmxTraderHedgeStrategy dnGmxTraderHedgeStrategy)
-        external
-        onlyOwner
-    {
+    function setParamsV1(
+        uint128 rebalanceProfitUsdcAmountThreshold,
+        IDnGmxTraderHedgeStrategy dnGmxTraderHedgeStrategy
+    ) external onlyOwner {
         state.rebalanceProfitUsdcAmountThreshold = rebalanceProfitUsdcAmountThreshold;
         state.dnGmxTraderHedgeStrategy = dnGmxTraderHedgeStrategy;
 
@@ -437,13 +437,10 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @param amount amount of sGlp (asset) tokens to deposit
     /// @param to receiver address for share allocation
     /// @return shares amount of shares allocated for deposit
-    function deposit(uint256 amount, address to)
-        public
-        virtual
-        override(IERC4626, ERC4626Upgradeable)
-        whenNotPaused
-        returns (uint256 shares)
-    {
+    function deposit(
+        uint256 amount,
+        address to
+    ) public virtual override(IERC4626, ERC4626Upgradeable) whenNotPaused returns (uint256 shares) {
         _rebalanceBeforeShareAllocation();
         shares = super.deposit(amount, to);
         _emitVaultState(1);
@@ -453,13 +450,10 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @param shares amount of vault shares to mint
     /// @param to receiver address for share allocation
     /// @return amount amount of sGlp tokens required for given number of shares
-    function mint(uint256 shares, address to)
-        public
-        virtual
-        override(IERC4626, ERC4626Upgradeable)
-        whenNotPaused
-        returns (uint256 amount)
-    {
+    function mint(
+        uint256 shares,
+        address to
+    ) public virtual override(IERC4626, ERC4626Upgradeable) whenNotPaused returns (uint256 amount) {
         _rebalanceBeforeShareAllocation();
         amount = super.mint(shares, to);
         _emitVaultState(1);
@@ -618,13 +612,9 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @notice preview function for using assets to mint shares
     /// @param assets number of assets to be deposited
     /// @return shares that would be minted to the user
-    function previewDeposit(uint256 assets)
-        public
-        view
-        virtual
-        override(IERC4626, ERC4626Upgradeable)
-        returns (uint256)
-    {
+    function previewDeposit(
+        uint256 assets
+    ) public view virtual override(IERC4626, ERC4626Upgradeable) returns (uint256) {
         uint256 netAssets = state.getSlippageAdjustedAssets({ assets: assets, isDeposit: true });
         return convertToShares(netAssets);
     }
@@ -646,13 +636,9 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @notice preview function for withdrawal of assets
     /// @param assets that would be given to the user
     /// @return shares that would be burnt
-    function previewWithdraw(uint256 assets)
-        public
-        view
-        virtual
-        override(IERC4626, ERC4626Upgradeable)
-        returns (uint256)
-    {
+    function previewWithdraw(
+        uint256 assets
+    ) public view virtual override(IERC4626, ERC4626Upgradeable) returns (uint256) {
         uint256 supply = totalSupply();
 
         if (supply == 0) return assets;
@@ -665,13 +651,9 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @notice preview function for redeeming shares
     /// @param shares that would be taken from the user
     /// @return assets that user would get
-    function previewRedeem(uint256 shares)
-        public
-        view
-        virtual
-        override(IERC4626, ERC4626Upgradeable)
-        returns (uint256)
-    {
+    function previewRedeem(
+        uint256 shares
+    ) public view virtual override(IERC4626, ERC4626Upgradeable) returns (uint256) {
         uint256 supply = totalSupply();
 
         if (supply == 0) return shares;
@@ -698,11 +680,9 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @param glpDeposited amount of glp for which optimal borrow needs to be calculated
     /// @return optimalBtcBorrow optimal amount of btc borrowed from AAVE
     /// @return optimalEthBorrow optimal amount of eth borrowed from AAVE
-    function getOptimalBorrows(uint256 glpDeposited)
-        external
-        view
-        returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow)
-    {
+    function getOptimalBorrows(
+        uint256 glpDeposited
+    ) external view returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) {
         return state.getOptimalBorrows(glpDeposited);
     }
 
@@ -760,11 +740,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     function getRebalanceParams()
         external
         view
-        returns (
-            uint32 rebalanceTimeThreshold,
-            uint16 rebalanceDeltaThresholdBps,
-            uint16 rebalanceHfThresholdBps
-        )
+        returns (uint32 rebalanceTimeThreshold, uint16 rebalanceDeltaThresholdBps, uint16 rebalanceHfThresholdBps)
     {
         return (state.rebalanceTimeThreshold, state.rebalanceDeltaThresholdBps, state.rebalanceHfThresholdBps);
     }
@@ -809,22 +785,14 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         state.rebalanceProfit(totalCurrentBorrowValue);
     }
 
-    function beforeWithdraw(
-        uint256 assets,
-        uint256,
-        address
-    ) internal override {
+    function beforeWithdraw(uint256 assets, uint256, address) internal override {
         (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
 
         //rebalance of hedge based on assets after withdraw (before withdraw assets - withdrawn assets)
         state.rebalanceHedge(currentBtc, currentEth, totalAssets() - assets, false);
     }
 
-    function afterDeposit(
-        uint256,
-        uint256,
-        address
-    ) internal override {
+    function afterDeposit(uint256, uint256, address) internal override {
         if (totalAssets() > state.depositCap) revert DepositCapExceeded();
         (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
 

@@ -57,7 +57,7 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     // AAVE pool address provider
     IPoolAddressesProvider internal poolAddressProvider;
     // Borrow caps on leverage pool and junior tranche
-    mapping(address => uint256) public borrowCaps;
+    mapping(address borrower => uint256 cap) public borrowCaps;
 
     // these gaps are added to allow adding new variables without shifting down inheritance chain
     uint256[50] private __gaps;
@@ -224,13 +224,10 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @param amount amount of usdc to be deposited
     /// @param to receiver of shares
     /// @return shares minted to receiver
-    function deposit(uint256 amount, address to)
-        public
-        virtual
-        override(IERC4626, ERC4626Upgradeable)
-        whenNotPaused
-        returns (uint256 shares)
-    {
+    function deposit(
+        uint256 amount,
+        address to
+    ) public virtual override(IERC4626, ERC4626Upgradeable) whenNotPaused returns (uint256 shares) {
         _emitVaultState(0);
         // harvesting fees so asset to shares conversion rate is not stale
         dnGmxJuniorVault.harvestFees();
@@ -244,13 +241,10 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @param shares amount of shares to be minted
     /// @param to receiver of shares
     /// @return amount of asset used to mint shares
-    function mint(uint256 shares, address to)
-        public
-        virtual
-        override(IERC4626, ERC4626Upgradeable)
-        whenNotPaused
-        returns (uint256 amount)
-    {
+    function mint(
+        uint256 shares,
+        address to
+    ) public virtual override(IERC4626, ERC4626Upgradeable) whenNotPaused returns (uint256 amount) {
         _emitVaultState(0);
 
         // harvesting fees so asset to shares conversion rate is not stale
@@ -305,11 +299,7 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
 
     /// @notice converts aUSDC to USDC before assets are withdrawn to receiver
     /// @notice also check if the maxUtilization is not being breached (reverts if it does)
-    function beforeWithdraw(
-        uint256 assets,
-        uint256,
-        address
-    ) internal override {
+    function beforeWithdraw(uint256 assets, uint256, address) internal override {
         /// @dev withdrawal will fail if the utilization goes above maxUtilization value due to a withdrawal
         // totalUsdcBorrowed will reduce when borrower (junior vault) repays
         if (totalUsdcBorrowed() > ((totalAssets() - assets) * maxUtilizationBps) / MAX_BPS)
@@ -321,11 +311,7 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
 
     /// @notice converts USDC to aUSDC after assets are taken from depositor
     /// @notice also check if the depositCap is not being breached (reverts if it does)
-    function afterDeposit(
-        uint256 assets,
-        uint256,
-        address
-    ) internal override {
+    function afterDeposit(uint256 assets, uint256, address) internal override {
         // assets are not counted in 'totalAssets' yet because they are not supplied to aave pool
         if ((totalAssets() + assets) > depositCap) revert DepositCapExceeded();
 

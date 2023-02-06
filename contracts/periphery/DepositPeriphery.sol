@@ -120,7 +120,7 @@ contract DepositPeriphery is Ownable {
 
         // USDG has 18 decimals
         uint256 minUsdgOut = tokenAmount.mulDiv(
-            price * (MAX_BPS - slippageThreshold) * 10**(18 - decimals),
+            price * (MAX_BPS - slippageThreshold) * 10 ** (18 - decimals),
             PRICE_PRECISION * MAX_BPS
         );
 

@@ -40,9 +40,9 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
         // amount of usdc recieved in current round
         uint256 roundAssetBalance;
         // stores junior vault shares accumuated for user
-        mapping(address => UserDeposit) userDeposits;
+        mapping(address user => UserDeposit) userDeposits;
         // stores total glp received in a given round
-        mapping(uint256 => RoundDeposit) roundDeposits;
+        mapping(uint256 roundId => RoundDeposit) roundDeposits;
     }
 
     uint256 private constant MAX_BPS = 10_000;
@@ -353,11 +353,7 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
         emit PartialBatchDeposit(vaultBatchingState.currentRound, depositAmount, _sharesReceived);
     }
 
-    function _claim(
-        address claimer,
-        address receiver,
-        uint256 amount
-    ) internal {
+    function _claim(address claimer, address receiver, uint256 amount) internal {
         // revert for zero values
         if (receiver == address(0)) revert InvalidInput(0x10);
         if (amount == 0) revert InvalidInput(0x11);

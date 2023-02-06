@@ -30,6 +30,7 @@ import { SafeCast } from '../libraries/SafeCast.sol';
 import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
 import { SignedFixedPointMathLib } from '../libraries/SignedFixedPointMathLib.sol';
 import { QuoterLib } from '../libraries/QuoterLib.sol';
+import { SwapPath } from '../libraries/SwapPath.sol';
 
 import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMathLib.sol';
 
@@ -717,10 +718,10 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@param usdcAmountDesired amount of USDC desired
     ///@return usdcAmountOut usdc amount returned by gmx
-    function _convertAssetToAUsdc(State storage state, uint256 usdcAmountDesired)
-        internal
-        returns (uint256 usdcAmountOut)
-    {
+    function _convertAssetToAUsdc(
+        State storage state,
+        uint256 usdcAmountDesired
+    ) internal returns (uint256 usdcAmountOut) {
         ///@dev if usdcAmountDesired < 10, then there is precision issue in gmx contracts while redeeming for usdg
 
         if (usdcAmountDesired < state.usdcConversionThreshold) return 0;
@@ -811,11 +812,7 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@param uncappedTokenHedge token hedge if there was no asset cap
     ///@param cappedTokenHedge token hedge if given there is limited about of assets available in senior tranche
-    function _rebalanceUnhedgedGlp(
-        State storage state,
-        uint256 uncappedTokenHedge,
-        uint256 cappedTokenHedge
-    ) private {
+    function _rebalanceUnhedgedGlp(State storage state, uint256 uncappedTokenHedge, uint256 cappedTokenHedge) private {
         // part of glp assets to be kept unhedged
         // calculated basis the uncapped amount (assumes unlimited borrow availability)
         // and capped amount (basis available borrow)
@@ -937,11 +934,7 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@param token address of token to borrow
     ///@param amount amount of token to borrow
-    function _executeBorrow(
-        State storage state,
-        address token,
-        uint256 amount
-    ) internal {
+    function _executeBorrow(State storage state, address token, uint256 amount) internal {
         state.pool.borrow(token, amount, VARIABLE_INTEREST_MODE, 0, address(this));
     }
 
@@ -949,11 +942,7 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@param token address of token to borrow
     ///@param amount amount of token to borrow
-    function _executeRepay(
-        State storage state,
-        address token,
-        uint256 amount
-    ) internal {
+    function _executeRepay(State storage state, address token, uint256 amount) internal {
         state.pool.repay(token, amount, VARIABLE_INTEREST_MODE, address(this));
     }
 
@@ -961,11 +950,7 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@param token address of token to borrow
     ///@param amount amount of token to borrow
-    function _executeSupply(
-        State storage state,
-        address token,
-        uint256 amount
-    ) internal {
+    function _executeSupply(State storage state, address token, uint256 amount) internal {
         state.pool.supply(token, amount, address(this), 0);
     }
 
@@ -974,12 +959,7 @@ library DnGmxJuniorVaultManager {
     ///@param token address of token to borrow
     ///@param amount amount of token to borrow
     ///@param receiver address to which withdrawn tokens should be sent
-    function _executeWithdraw(
-        State storage state,
-        address token,
-        uint256 amount,
-        address receiver
-    ) internal {
+    function _executeWithdraw(State storage state, address token, uint256 amount, address receiver) internal {
         state.pool.withdraw(token, amount, receiver);
     }
 
@@ -1239,7 +1219,7 @@ library DnGmxJuniorVaultManager {
         uint256 price = state.oracle.getAssetPrice(address(token));
 
         // @dev aave returns from same source as chainlink (which is 8 decimals)
-        return price.mulDivDown(PRICE_PRECISION, 10**(decimals + 2));
+        return price.mulDivDown(PRICE_PRECISION, 10 ** (decimals + 2));
     }
 
     ///@notice returns the price of glp token
@@ -1290,11 +1270,10 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@param token the token for which price is expected
     ///@return scaledPrice token price in usdc
-    function getTokenPriceInUsdc(State storage state, IERC20Metadata token)
-        external
-        view
-        returns (uint256 scaledPrice)
-    {
+    function getTokenPriceInUsdc(
+        State storage state,
+        IERC20Metadata token
+    ) external view returns (uint256 scaledPrice) {
         return _getTokenPriceInUsdc(state, token);
     }
 
@@ -1302,11 +1281,10 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@param token the token for which price is expected
     ///@return scaledPrice token price in usdc
-    function _getTokenPriceInUsdc(State storage state, IERC20Metadata token)
-        internal
-        view
-        returns (uint256 scaledPrice)
-    {
+    function _getTokenPriceInUsdc(
+        State storage state,
+        IERC20Metadata token
+    ) internal view returns (uint256 scaledPrice) {
         uint256 decimals = token.decimals();
         uint256 price = state.oracle.getAssetPrice(address(token));
 
@@ -1314,7 +1292,7 @@ library DnGmxJuniorVaultManager {
         uint256 quotePrice = state.oracle.getAssetPrice(address(state.usdc));
 
         // token price / usdc price
-        scaledPrice = price.mulDivDown(PRICE_PRECISION, quotePrice * 10**(decimals - 6));
+        scaledPrice = price.mulDivDown(PRICE_PRECISION, quotePrice * 10 ** (decimals - 6));
     }
 
     ///@notice returns liquidation threshold of the selected asset's AAVE pool
@@ -1453,16 +1431,23 @@ library DnGmxJuniorVaultManager {
         int256 btcAmountInBtcSwap,
         int256 ethAmountInEthSwap
     ) internal view returns (uint256 dollarsLostDueToSlippage) {
-        uint256 btcPrice = _getTokenPriceInUsdc(state, state.wbtc);
-        uint256 ethPrice = _getTokenPriceInUsdc(state, state.weth);
-        uint256 usdcPrice = _getTokenPriceInUsdc(state, state.usdc);
-
         (int256 usdcAmountInBtcSwap, int256 usdcAmountInEthSwap) = QuoterLib.quoteCombinedSwap(
             btcAmountInBtcSwap,
             ethAmountInEthSwap,
-            WBTC_TO_USDC(state),
-            WETH_TO_USDC(state)
+            SwapPath.generate({
+                tokenIn: state.wbtc,
+                feeIn: state.feeTierWethWbtcPool,
+                tokenIntermediate: state.weth,
+                feeOut: 500,
+                tokenOut: state.usdc,
+                isExactIn: true
+            }),
+            SwapPath.generate({ tokenIn: state.weth, fee: 500, tokenOut: state.usdc, isExactIn: true })
         );
+
+        uint256 btcPrice = _getTokenPriceInUsdc(state, state.wbtc);
+        uint256 ethPrice = _getTokenPriceInUsdc(state, state.weth);
+        uint256 usdcPrice = _getTokenPriceInUsdc(state, state.usdc);
 
         return
             _calculateSwapLoss(btcAmountInBtcSwap, usdcAmountInBtcSwap, btcPrice, usdcPrice) +
@@ -1484,15 +1469,7 @@ library DnGmxJuniorVaultManager {
         address token,
         uint256 optimalBorrow,
         uint256 currentBorrow
-    )
-        external
-        view
-        returns (
-            uint256 tokenAmount,
-            uint256 usdcAmount,
-            bool repayDebt
-        )
-    {
+    ) external view returns (uint256 tokenAmount, uint256 usdcAmount, bool repayDebt) {
         return _flashloanAmounts(state, token, optimalBorrow, currentBorrow);
     }
 
@@ -1511,15 +1488,7 @@ library DnGmxJuniorVaultManager {
         address token,
         uint256 optimalBorrow,
         uint256 currentBorrow
-    )
-        private
-        view
-        returns (
-            uint256 tokenAmount,
-            uint256 usdcAmount,
-            bool repayDebt
-        )
-    {
+    ) private view returns (uint256 tokenAmount, uint256 usdcAmount, bool repayDebt) {
         uint256 slippageThresholdSwap = token == address(state.wbtc)
             ? state.slippageThresholdSwapBtcBps
             : state.slippageThresholdSwapEthBps;
@@ -1556,11 +1525,9 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@return currentBtcBorrow amount of btc currently borrowed from AAVE
     ///@return currentEthBorrow amount of eth currently borrowed from AAVE
-    function getCurrentBorrows(State storage state)
-        external
-        view
-        returns (uint256 currentBtcBorrow, uint256 currentEthBorrow)
-    {
+    function getCurrentBorrows(
+        State storage state
+    ) external view returns (uint256 currentBtcBorrow, uint256 currentEthBorrow) {
         return _getCurrentBorrows(state);
     }
 
@@ -1568,11 +1535,9 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@return currentBtcBorrow amount of btc currently borrowed from AAVE
     ///@return currentEthBorrow amount of eth currently borrowed from AAVE
-    function _getCurrentBorrows(State storage state)
-        private
-        view
-        returns (uint256 currentBtcBorrow, uint256 currentEthBorrow)
-    {
+    function _getCurrentBorrows(
+        State storage state
+    ) private view returns (uint256 currentBtcBorrow, uint256 currentEthBorrow) {
         return (state.vWbtc.balanceOf(address(this)), state.vWeth.balanceOf(address(this)));
     }
 
@@ -1581,11 +1546,10 @@ library DnGmxJuniorVaultManager {
     ///@param glpDeposited amount of glp for which optimal borrow needs to be calculated
     ///@return optimalBtcBorrow optimal amount of btc borrowed from AAVE
     ///@return optimalEthBorrow optimal amount of eth borrowed from AAVE
-    function getOptimalBorrows(State storage state, uint256 glpDeposited)
-        external
-        view
-        returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow)
-    {
+    function getOptimalBorrows(
+        State storage state,
+        uint256 glpDeposited
+    ) external view returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) {
         return _getOptimalBorrows(state, glpDeposited);
     }
 
@@ -1594,11 +1558,10 @@ library DnGmxJuniorVaultManager {
     ///@param glpDeposited amount of glp for which optimal borrow needs to be calculated
     ///@return optimalBtcBorrow optimal amount of btc borrowed from AAVE
     ///@return optimalEthBorrow optimal amount of eth borrowed from AAVE
-    function _getOptimalBorrows(State storage state, uint256 glpDeposited)
-        private
-        view
-        returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow)
-    {
+    function _getOptimalBorrows(
+        State storage state,
+        uint256 glpDeposited
+    ) private view returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) {
         optimalBtcBorrow = _getTokenReservesInGlp(state, address(state.wbtc), glpDeposited);
         optimalEthBorrow = _getTokenReservesInGlp(state, address(state.weth), glpDeposited);
     }
@@ -1769,7 +1732,16 @@ library DnGmxJuniorVaultManager {
         ISwapRouter swapRouter = state.swapRouter;
 
         // path of the token swap
-        bytes memory path = token == address(state.weth) ? WETH_TO_USDC(state) : WBTC_TO_USDC(state);
+        bytes memory path = token == address(state.weth)
+            ? SwapPath.generate({ tokenIn: state.weth, fee: 500, tokenOut: state.usdc, isExactIn: true })
+            : SwapPath.generate({
+                tokenIn: state.wbtc,
+                feeIn: state.feeTierWethWbtcPool,
+                tokenIntermediate: state.weth,
+                feeOut: 500,
+                tokenOut: state.usdc,
+                isExactIn: true
+            });
 
         // executes the swap on uniswap pool
         // exact input swap to convert exact amount of tokens into usdc
@@ -1803,7 +1775,16 @@ library DnGmxJuniorVaultManager {
     ) internal returns (uint256 usdcPaid, uint256 tokensReceived) {
         ISwapRouter swapRouter = state.swapRouter;
 
-        bytes memory path = token == address(state.weth) ? USDC_TO_WETH(state) : USDC_TO_WBTC(state);
+        bytes memory path = token == address(state.weth)
+            ? SwapPath.generate({ tokenIn: state.usdc, fee: 500, tokenOut: state.weth, isExactIn: false })
+            : SwapPath.generate({
+                tokenIn: state.usdc,
+                feeIn: 500,
+                tokenIntermediate: state.weth,
+                feeOut: state.feeTierWethWbtcPool,
+                tokenOut: state.wbtc,
+                isExactIn: false
+            });
 
         // exact output swap to ensure exact amount of tokens are received
         ISwapRouter.ExactOutputParams memory params = ISwapRouter.ExactOutputParams({
@@ -1836,38 +1817,5 @@ library DnGmxJuniorVaultManager {
             state.aUsdc.balanceOf(address(this)),
             state.aUsdc.balanceOf(address(state.dnGmxSeniorVault))
         );
-    }
-
-    /* solhint-disable func-name-mixedcase */
-    ///@notice returns usdc to weth swap path
-    ///@param state set of all state variables of vault
-    ///@return the path bytes
-    function USDC_TO_WETH(State storage state) internal view returns (bytes memory) {
-        return abi.encodePacked(state.weth, uint24(500), state.usdc);
-    }
-
-    function USDC_TO_WETH_(State storage state) internal view returns (bytes memory) {
-        return abi.encodePacked(state.usdc, uint24(500), state.weth);
-    }
-
-    ///@notice returns usdc to wbtc swap path
-    ///@param state set of all state variables of vault
-    ///@return the path bytes
-    function USDC_TO_WBTC(State storage state) internal view returns (bytes memory) {
-        return abi.encodePacked(state.wbtc, state.feeTierWethWbtcPool, state.weth, uint24(500), state.usdc);
-    }
-
-    ///@notice returns weth to usdc swap path
-    ///@param state set of all state variables of vault
-    ///@return the path bytes
-    function WETH_TO_USDC(State storage state) internal view returns (bytes memory) {
-        return abi.encodePacked(state.weth, uint24(500), state.usdc);
-    }
-
-    ///@notice returns wbtc to usdc swap path
-    ///@param state set of all state variables of vault
-    ///@return the path bytes
-    function WBTC_TO_USDC(State storage state) internal view returns (bytes memory) {
-        return abi.encodePacked(state.wbtc, state.feeTierWethWbtcPool, state.weth, uint24(500), state.usdc);
     }
 }

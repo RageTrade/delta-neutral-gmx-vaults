@@ -7,15 +7,12 @@ import { IERC20Metadata } from '@openzeppelin/contracts/interfaces/IERC20Metadat
 
 import { DnGmxJuniorVaultManager } from '../libraries/DnGmxJuniorVaultManager.sol';
 import '../libraries/QuoterLib.sol';
+import '../libraries/SwapPath.sol';
 
 contract QuoterLibTest {
     DnGmxJuniorVaultManager.State state;
 
-    constructor(
-        IERC20Metadata usdc,
-        IERC20Metadata weth,
-        IERC20Metadata wbtc
-    ) {
+    constructor(IERC20Metadata usdc, IERC20Metadata weth, IERC20Metadata wbtc) {
         state.usdc = usdc;
         state.weth = weth;
         state.wbtc = wbtc;
@@ -29,11 +26,10 @@ contract QuoterLibTest {
         (otherTokenAmount, , ) = QuoterLib._getQuote(tokenAmount, swapPath, states);
     }
 
-    function quoteCombinedSwap(int256 btcAmountInBtcSwap, int256 ethAmountInEthSwap)
-        public
-        view
-        returns (int256 usdcAmountInBtcSwap, int256 usdcAmountInEthSwap)
-    {
+    function quoteCombinedSwap(
+        int256 btcAmountInBtcSwap,
+        int256 ethAmountInEthSwap
+    ) public view returns (int256 usdcAmountInBtcSwap, int256 usdcAmountInEthSwap) {
         return QuoterLib._quoteCombinedSwap(btcAmountInBtcSwap, ethAmountInEthSwap, WBTC_TO_USDC(), WETH_TO_USDC());
     }
 
@@ -42,18 +38,34 @@ contract QuoterLibTest {
     }
 
     function USDC_TO_WETH() public view returns (bytes memory) {
-        return abi.encodePacked(state.usdc, uint24(500), state.weth);
+        return SwapPath.generate({ tokenIn: state.usdc, fee: 500, tokenOut: state.weth, isExactIn: true });
     }
 
     function WETH_TO_USDC() public view returns (bytes memory) {
-        return abi.encodePacked(state.weth, uint24(500), state.usdc);
+        return SwapPath.generate({ tokenIn: state.weth, fee: 500, tokenOut: state.usdc, isExactIn: true });
     }
 
     function USDC_TO_WBTC() public view returns (bytes memory) {
-        return abi.encodePacked(state.usdc, uint24(500), state.weth, state.feeTierWethWbtcPool, state.wbtc);
+        return
+            SwapPath.generate({
+                tokenIn: state.usdc,
+                feeIn: 500,
+                tokenIntermediate: state.weth,
+                feeOut: state.feeTierWethWbtcPool,
+                tokenOut: state.wbtc,
+                isExactIn: true
+            });
     }
 
     function WBTC_TO_USDC() public view returns (bytes memory) {
-        return abi.encodePacked(state.wbtc, state.feeTierWethWbtcPool, state.weth, uint24(500), state.usdc);
+        return
+            SwapPath.generate({
+                tokenIn: state.wbtc,
+                feeIn: state.feeTierWethWbtcPool,
+                tokenIntermediate: state.weth,
+                feeOut: 500,
+                tokenOut: state.usdc,
+                isExactIn: true
+            });
     }
 }

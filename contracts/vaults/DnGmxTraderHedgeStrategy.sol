@@ -140,7 +140,7 @@ contract DnGmxTraderHedgeStrategy is OwnableUpgradeable, IDnGmxTraderHedgeStrate
 
         return
             tokenReserve.mulDivDown(
-                glpDeposited * (10**IERC20Metadata(token).decimals()),
+                glpDeposited * (10 ** IERC20Metadata(token).decimals()),
                 glpTotalSupply * PRICE_PRECISION
             );
     }
@@ -184,7 +184,7 @@ contract DnGmxTraderHedgeStrategy is OwnableUpgradeable, IDnGmxTraderHedgeStrate
 
         return
             tokenReserve.mulDivDown(
-                glpDeposited * (10**IERC20Metadata(token).decimals()),
+                glpDeposited * (10 ** IERC20Metadata(token).decimals()),
                 totalSupply * PRICE_PRECISION
             );
     }
