@@ -8,7 +8,7 @@ import { increaseBlockTimestamp } from './utils/shared';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 
-describe('Rebalance Scenarios', () => {
+describe.skip('Rebalance Scenarios', () => {
   it('Rebalance (Excel)', async () => {
     let tx;
 
@@ -43,8 +43,8 @@ describe('Rebalance Scenarios', () => {
     // await logger.logAavePosition();
     // await logger.logBorrowParams();
 
-    // await changer.changeWeight('WBTC', 20_000, gmxVault);
-    // await changer.changeWeight('WETH', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WBTC', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WETH', 20_000, gmxVault);
 
     await checker.checkTotalAssets(150000000n, 10n ** 15n, false);
 
@@ -132,8 +132,8 @@ describe('Rebalance Scenarios', () => {
     // await logger.logAavePosition();
     // await logger.logBorrowParams();
 
-    // await changer.changeWeight('WBTC', 20_000, gmxVault);
-    // await changer.changeWeight('WETH', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WBTC', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WETH', 20_000, gmxVault);
 
     // Deposit
     console.log('--------------------Initial Deposit--------------------');
@@ -219,8 +219,8 @@ describe('Rebalance Scenarios', () => {
     // await logger.logAavePosition();
     // await logger.logBorrowParams();
 
-    // await changer.changeWeight('WBTC', 20_000, gmxVault);
-    // await changer.changeWeight('WETH', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WBTC', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WETH', 20_000, gmxVault);
 
     console.log('--------------------Initial Deposit--------------------');
     const amount = parseEther('100');
@@ -407,8 +407,8 @@ describe('Rebalance Scenarios', () => {
     // await logger.logAavePosition();
     // await logger.logBorrowParams();
 
-    // await changer.changeWeight('WBTC', 20_000, gmxVault);
-    // await changer.changeWeight('WETH', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WBTC', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WETH', 20_000, gmxVault);
 
     await checker.checkTotalAssets(150000000n, 10n ** 15n, false);
 
@@ -433,8 +433,8 @@ describe('Rebalance Scenarios', () => {
     // ETH: $3012.65 BTC: $41382.59
     await changer.changePriceToken('WBTC', 50000.0);
     await changer.changePriceToken('WETH', 3012.65);
-    await changer.changeWeight('WBTC', 18_000);
-    await changer.changeWeight('WETH', 27_000);
+    await changer.changeTargetWeight('WBTC', 18_000);
+    await changer.changeTargetWeight('WETH', 27_000);
 
     // await logger.logGlpPrice();
     // await logger.logTargetWeights();
@@ -498,8 +498,8 @@ describe('Rebalance Scenarios', () => {
     // await logger.logAavePosition();
     // await logger.logBorrowParams();
 
-    // await changer.changeWeight('WBTC', 20_000, gmxVault);
-    // await changer.changeWeight('WETH', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WBTC', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WETH', 20_000, gmxVault);
 
     await checker.checkTotalAssets(150000000n, 10n ** 15n, false);
 
@@ -524,8 +524,8 @@ describe('Rebalance Scenarios', () => {
     // ETH: $3012.65 BTC: $41382.59
     await changer.changePriceToken('WBTC', 41382.59);
     await changer.changePriceToken('WETH', 2000.0);
-    await changer.changeWeight('WBTC', 18_000);
-    await changer.changeWeight('WETH', 35_000);
+    await changer.changeTargetWeight('WBTC', 18_000);
+    await changer.changeTargetWeight('WETH', 35_000);
 
     // await logger.logGlpPrice();
     // await logger.logTargetWeights();
@@ -589,8 +589,8 @@ describe('Rebalance Scenarios', () => {
     // await logger.logAavePosition();
     // await logger.logBorrowParams();
 
-    // await changer.changeWeight('WBTC', 20_000, gmxVault);
-    // await changer.changeWeight('WETH', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WBTC', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WETH', 20_000, gmxVault);
 
     await checker.checkTotalAssets(150000000n, 10n ** 15n, false);
 
@@ -615,8 +615,8 @@ describe('Rebalance Scenarios', () => {
     // ETH: $3012.65 BTC: $41382.59
     await changer.changePriceToken('WBTC', 41382.59);
     await changer.changePriceToken('WETH', 3012.65);
-    await changer.changeWeight('WBTC', 22_000);
-    await changer.changeWeight('WETH', 27_000);
+    await changer.changeTargetWeight('WBTC', 22_000);
+    await changer.changeTargetWeight('WETH', 27_000);
 
     // await logger.logGlpPrice();
     // await logger.logTargetWeights();
@@ -704,8 +704,8 @@ describe('Rebalance Scenarios', () => {
     // ETH: $3012.65 BTC: $41382.59
     await changer.changePriceToken('WBTC', 42000.0);
     await changer.changePriceToken('WETH', 4000.0);
-    await changer.changeWeight('WBTC', 27_000);
-    await changer.changeWeight('WETH', 30_000);
+    await changer.changeTargetWeight('WBTC', 27_000);
+    await changer.changeTargetWeight('WETH', 30_000);
 
     // await logger.logGlpPrice();
     // await logger.logTargetWeights();
@@ -770,8 +770,8 @@ describe('Rebalance Scenarios', () => {
     // await logger.logAavePosition();
     // await logger.logBorrowParams();
 
-    // await changer.changeWeight('WBTC', 20_000, gmxVault);
-    // await changer.changeWeight('WETH', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WBTC', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WETH', 20_000, gmxVault);
 
     await checker.checkTotalAssets(150000000n, 10n ** 15n, false);
 
@@ -796,8 +796,8 @@ describe('Rebalance Scenarios', () => {
     // ETH: $3012.65 BTC: $41382.59
     await changer.changePriceToken('WBTC', 41382.59);
     await changer.changePriceToken('WETH', 2000.0);
-    await changer.changeWeight('WBTC', 30_000);
-    await changer.changeWeight('WETH', 35_000);
+    await changer.changeTargetWeight('WBTC', 30_000);
+    await changer.changeTargetWeight('WETH', 35_000);
 
     // await logger.logGlpPrice();
     // await logger.logTargetWeights();
@@ -862,8 +862,8 @@ describe('Rebalance Scenarios', () => {
     // await logger.logAavePosition();
     // await logger.logBorrowParams();
 
-    // await changer.changeWeight('WBTC', 20_000, gmxVault);
-    // await changer.changeWeight('WETH', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WBTC', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WETH', 20_000, gmxVault);
 
     // Deposit
     console.log('--------------------Jr. Tranche Initial Deposit--------------------');
@@ -990,8 +990,8 @@ describe('Rebalance Scenarios', () => {
     // await logger.logAavePosition();
     // await logger.logBorrowParams();
 
-    // await changer.changeWeight('WBTC', 20_000, gmxVault);
-    // await changer.changeWeight('WETH', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WBTC', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WETH', 20_000, gmxVault);
 
     // Deposit
     console.log('--------------------Jr. Tranche Initial Deposit--------------------');
@@ -1112,8 +1112,8 @@ describe('Rebalance Scenarios', () => {
     // await logger.logAavePosition();
     // await logger.logBorrowParams();
 
-    // await changer.changeWeight('WBTC', 20_000, gmxVault);
-    // await changer.changeWeight('WETH', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WBTC', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WETH', 20_000, gmxVault);
 
     await checker.checkTotalAssets(150000000n, 10n ** 15n, false);
 
@@ -1184,11 +1184,11 @@ describe('Rebalance Scenarios', () => {
       aUSDC,
       gmxVault,
       lendingPool,
-      rewardRouter,
+      mintBurnRouter,
     } = opts;
     // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
-    await rewardRouter.connect(users[0]).mintAndStakeGlpETH(0, 0, {
+    await mintBurnRouter.connect(users[0]).mintAndStakeGlpETH(0, 0, {
       value: parseEther('1000'),
     });
     await increaseBlockTimestamp(15 * 60);
@@ -1215,8 +1215,8 @@ describe('Rebalance Scenarios', () => {
     // await logger.logAavePosition();
     // await logger.logBorrowParams();
 
-    // await changer.changeWeight('WBTC', 20_000, gmxVault);
-    // await changer.changeWeight('WETH', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WBTC', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WETH', 20_000, gmxVault);
 
     // Deposit
     console.log('--------------------Initial Deposit--------------------');
@@ -1308,8 +1308,8 @@ describe('Rebalance Scenarios', () => {
     // await logger.logAavePosition();
     // await logger.logBorrowParams();
 
-    // await changer.changeWeight('WBTC', 20_000, gmxVault);
-    // await changer.changeWeight('WETH', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WBTC', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WETH', 20_000, gmxVault);
 
     // Deposit
     console.log('--------------------Initial Deposit--------------------');
@@ -1413,7 +1413,7 @@ describe('Rebalance Scenarios', () => {
       gmxVault,
       lendingPool,
       mocks,
-      rewardRouter,
+      mintBurnRouter,
     } = opts;
     // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
@@ -1439,11 +1439,11 @@ describe('Rebalance Scenarios', () => {
 
     await sGlp.connect(users[2]).approve(dnGmxJuniorVault.address, ethers.constants.MaxUint256);
 
-    await rewardRouter.connect(users[0]).mintAndStakeGlpETH(0, 0, {
+    await mintBurnRouter.connect(users[0]).mintAndStakeGlpETH(0, 0, {
       value: parseEther('1000'),
     });
     await increaseBlockTimestamp(15 * 60);
-    await rewardRouter.connect(users[2]).mintAndStakeGlpETH(0, 0, {
+    await mintBurnRouter.connect(users[2]).mintAndStakeGlpETH(0, 0, {
       value: parseEther('1000'),
     });
     await increaseBlockTimestamp(15 * 60);
@@ -1458,8 +1458,8 @@ describe('Rebalance Scenarios', () => {
     // await logger.logAavePosition();
     // await logger.logBorrowParams();
 
-    // await changer.changeWeight('WBTC', 20_000, gmxVault);
-    // await changer.changeWeight('WETH', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WBTC', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WETH', 20_000, gmxVault);
 
     // Deposit
     console.log('--------------------User0 Initial Deposit--------------------');

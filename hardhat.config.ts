@@ -76,7 +76,7 @@ export default {
     hardhat: {
       forking: {
         url: `https://arb-mainnet.alchemyapi.io/v2/${ALCHEMY_KEY}`,
-        blockNumber: 22049346,
+        blockNumber: 56878000,
       },
       blockGasLimit: 0x1fffffffffff,
       gasPrice: 0,
@@ -160,6 +160,7 @@ export default {
       '@uniswap/v3-periphery/contracts/lens/Quoter.sol',
       '@uniswap/v3-periphery/contracts/SwapRouter.sol',
       '@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol',
+      '@uniswap/v3-periphery/contracts/NonfungiblePositionManager.sol',
       '@ragetrade/core/contracts/utils/TimelockControllerWithMinDelayOverride.sol'
     ]
   },

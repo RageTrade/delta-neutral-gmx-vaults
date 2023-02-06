@@ -14,6 +14,7 @@ import { generateErc20Balance } from '../utils/generator';
 import { increaseBlockTimestamp } from '../utils/shared';
 import addresses, { GMX_ECOSYSTEM_ADDRESSES } from './addresses';
 import { dnGmxSeniorVaultFixture } from './dn-gmx-senior-vault';
+import { dnGmxTraderHedgeStrategyFixture } from './dn-gmx-trader-hedge-strategy';
 import { glpBatchingStakingManagerFixture } from './glp-batching-staking-manager';
 
 export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
@@ -31,7 +32,10 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   const sGlp = await hre.ethers.getContractAt('ERC20Upgradeable', GMX_ECOSYSTEM_ADDRESSES.StakedGlp);
 
   const rewardRouter = await hre.ethers.getContractAt('IRewardRouterV2', GMX_ECOSYSTEM_ADDRESSES.RewardRouter);
+  const mintBurnRouter = await hre.ethers.getContractAt('IRewardRouterV2', GMX_ECOSYSTEM_ADDRESSES.MintBurnRouter);
+
   const stakedGmxTracker = await hre.ethers.getContractAt('IRewardTracker', await rewardRouter.stakedGmxTracker());
+
   const glpVester = await hre.ethers.getContractAt('IVester', await rewardRouter.glpVester());
   const gmx = await hre.ethers.getContractAt('ERC20Upgradeable', await rewardRouter.gmx());
   const esGmx = await hre.ethers.getContractAt('ERC20Upgradeable', await rewardRouter.esGmx());
@@ -61,7 +65,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     'DN_GMX', // _symbol
     addresses.UNI_V3_SWAP_ROUTER, // _swapRouter
     GMX_ECOSYSTEM_ADDRESSES.RewardRouter, // _rewardRouter
-    GMX_ECOSYSTEM_ADDRESSES.RewardRouter, // _mintBurnRewardRouter
+    GMX_ECOSYSTEM_ADDRESSES.MintBurnRouter, // _mintBurnRewardRouter
     {
       weth: addresses.WETH,
       wbtc: addresses.WBTC,
@@ -74,17 +78,25 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   await dnGmxJuniorVault.setDirectConversion(true);
 
   await dnGmxJuniorVault.setParamsV1(BigNumber.from(2).pow(128).sub(1));
+  const dnGmxTraderHedgeStrategy = await dnGmxTraderHedgeStrategyFixture();
 
-  const bypass = await (await hre.ethers.getContractFactory('BatchingManagerBypass')).deploy();
+  await dnGmxTraderHedgeStrategy.initialize(
+    admin.address,
+    GMX_ECOSYSTEM_ADDRESSES.Vault,
+    GMX_ECOSYSTEM_ADDRESSES.GlpManager,
+    dnGmxJuniorVault.address,
+    GMX_ECOSYSTEM_ADDRESSES.GLP,
+    addresses.WETH,
+    addresses.WBTC,
+  );
 
-  await bypass.setJuniorVault(dnGmxJuniorVault.address);
-  await bypass.setSglp(GMX_ECOSYSTEM_ADDRESSES.StakedGlp);
+  await dnGmxJuniorVault.setParamsV1(0n, dnGmxTraderHedgeStrategy.address);
 
   // withdraw periphery
   const withdrawPeriphery = await (await hre.ethers.getContractFactory('WithdrawPeriphery')).deploy();
 
   await withdrawPeriphery.setSlippageThreshold(100);
-  await withdrawPeriphery.setAddresses(dnGmxJuniorVault.address, rewardRouter.address);
+  await withdrawPeriphery.setAddresses(dnGmxJuniorVault.address, mintBurnRouter.address);
 
   // deposit periphery
   const depositPeriphery = await (await hre.ethers.getContractFactory('DepositPeriphery')).deploy();
@@ -93,8 +105,8 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   ///@dev setting JIT router as junior vault since JIT router is not available in current fork state
   await depositPeriphery.setAddresses(
     dnGmxJuniorVault.address,
-    rewardRouter.address,
-    GMX_ECOSYSTEM_ADDRESSES.GlpManager,
+    mintBurnRouter.address,
+    GMX_ECOSYSTEM_ADDRESSES.NewGlpManager,
   );
 
   await dnGmxJuniorVault.setFeeParams(1000, feeRecipient.address);
@@ -113,8 +125,8 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   await glpBatchingStakingManagerFixtures.gmxBatchingManager.initialize(
     GMX_ECOSYSTEM_ADDRESSES.StakedGlp,
     usdc.address,
-    GMX_ECOSYSTEM_ADDRESSES.RewardRouter,
-    GMX_ECOSYSTEM_ADDRESSES.GlpManager,
+    GMX_ECOSYSTEM_ADDRESSES.MintBurnRouter,
+    GMX_ECOSYSTEM_ADDRESSES.NewGlpManager,
     dnGmxJuniorVault.address,
     admin.address,
   );
@@ -126,8 +138,8 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
 
   await glpBatchingStakingManagerFixtures.gmxBatchingManagerGlp.initialize(
     GMX_ECOSYSTEM_ADDRESSES.StakedGlp,
-    GMX_ECOSYSTEM_ADDRESSES.RewardRouter,
-    GMX_ECOSYSTEM_ADDRESSES.GlpManager,
+    GMX_ECOSYSTEM_ADDRESSES.MintBurnRouter,
+    GMX_ECOSYSTEM_ADDRESSES.NewGlpManager,
     dnGmxJuniorVault.address,
     admin.address,
   );
@@ -137,7 +149,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   await glpBatchingStakingManagerFixtures.gmxBatchingManagerGlp.grantAllowances();
   await glpBatchingStakingManagerFixtures.gmxBatchingManagerGlp.setThresholds(parseUnits('10', 18));
 
-  await dnGmxJuniorVault.setAdminParams(admin.address, dnGmxSeniorVault.address, ethers.constants.MaxUint256, 50, 3000);
+  await dnGmxJuniorVault.setAdminParams(admin.address, dnGmxSeniorVault.address, ethers.constants.MaxUint256, 50, 500);
   await dnGmxJuniorVault.setBatchingManager(glpBatchingStakingManagerFixtures.gmxBatchingManager.address);
 
   await dnGmxJuniorVault.setThresholds(
@@ -174,10 +186,10 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
 
   await generateErc20Balance(usdc, parseUnits('10000', 6), users[0].address);
 
-  await rewardRouter.connect(users[0]).mintAndStakeGlpETH(0, 0, {
+  await mintBurnRouter.connect(users[0]).mintAndStakeGlpETH(0, 0, {
     value: parseEther('10'),
   });
-  await rewardRouter.connect(users[1]).mintAndStakeGlpETH(0, 0, {
+  await mintBurnRouter.connect(users[1]).mintAndStakeGlpETH(0, 0, {
     value: parseEther('5'),
   });
   await increaseBlockTimestamp(15 * 60); // GLP cooldown
@@ -186,14 +198,13 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   // deposit 1.5 mil in aave-vault with 1mil borrowcap
   await generateErc20Balance(usdc, parseUnits('1500000', 6), users[1].address);
   await usdc.connect(users[1]).approve(dnGmxSeniorVault.address, ethers.constants.MaxUint256);
-  // await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
   const poolAddressProvider = IPoolAddressesProvider__factory.connect(addresses.AAVE_POOL_ADDRESS_PROVIDER, admin);
   const lendingPool = IPool__factory.connect(await poolAddressProvider.getPool(), admin);
 
   const gov = GMX_ECOSYSTEM_ADDRESSES.GOV;
 
-  const glpManager = IGlpManager__factory.connect(GMX_ECOSYSTEM_ADDRESSES.GlpManager, admin);
+  const glpManager = IGlpManager__factory.connect(GMX_ECOSYSTEM_ADDRESSES.NewGlpManager, admin);
 
   const vdWBTC = await hre.ethers.getContractAt(
     'contracts/interfaces/IDebtToken.sol:IDebtToken',
@@ -231,15 +242,6 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     '0x1000000000000',
   ]);
 
-  const govSigner = await hre.ethers.getSigner('0x7b1FFdDEEc3C4797079C7ed91057e399e9D43a8B');
-
-  const IVaultPriceFeed = ['function setMaxStrictPriceDeviation(uint256 _maxStrictPriceDeviation) external'];
-
-  const priceFeed = new ethers.Contract(await gmxVault.priceFeed(), IVaultPriceFeed, govSigner);
-
-  /// @dev changing price of USDC on gmx to be 1$, currently on mainnet it is 1$ with 0.01 deviation threshold
-  await priceFeed.setMaxStrictPriceDeviation(ethers.constants.MaxUint256);
-
   const dnGmxJuniorVaultSigner = await hre.ethers.getSigner(dnGmxJuniorVault.address);
 
   const swapRouterMockFactory = await hre.ethers.getContractFactory('SwapRouterMock');
@@ -249,15 +251,14 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   await generateErc20Balance(usdc, BigNumber.from(10).pow(6 + 10), swapRouterMock.address);
   await generateErc20Balance(weth, BigNumber.from(10).pow(18 + 10), swapRouterMock.address);
 
-  const govAddr = await glpManager.gov();
+  const govSigner = await hre.ethers.getSigner('0x7b1FFdDEEc3C4797079C7ed91057e399e9D43a8B');
 
-  await hre.network.provider.request({
-    method: 'hardhat_impersonateAccount',
-    params: [govAddr],
-  });
+  const IVaultPriceFeed = ['function setMaxStrictPriceDeviation(uint256 _maxStrictPriceDeviation) external'];
 
-  const gov_glpManager = await ethers.getSigner(govAddr);
-  await glpManager.connect(gov_glpManager).setCooldownDuration(0);
+  const priceFeed = new ethers.Contract(await gmxVault.priceFeed(), IVaultPriceFeed, govSigner);
+  /// @dev changing price of USDC on gmx to be 1$
+  // because we are minting lot of glp with eth to give to users[1,2, 3] and redeeming it for usdc in scenarios
+  await priceFeed.setMaxStrictPriceDeviation(ethers.constants.MaxUint256);
 
   return {
     glp,
@@ -288,9 +289,11 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     dnGmxJuniorVault,
     dnGmxJuniorVaultManager,
     rewardRouter,
+    mintBurnRouter,
     targetHealthFactor,
     dnGmxJuniorVaultSigner,
     usdcLiquidationThreshold,
+    dnGmxTraderHedgeStrategy,
     mocks: { swapRouterMock },
     glpBatchingManager: glpBatchingStakingManagerFixtures.gmxBatchingManager,
     gmxBatchingManagerGlp: glpBatchingStakingManagerFixtures.gmxBatchingManagerGlp,

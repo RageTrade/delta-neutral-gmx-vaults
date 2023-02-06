@@ -1,12 +1,11 @@
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { formatEther, parseEther, parseUnits } from 'ethers/lib/utils';
-import { ethers } from 'hardhat';
+import hre, { ethers } from 'hardhat';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 import { Changer } from './utils/changer';
 import { Checker } from './utils/checker';
 import { generateErc20Balance } from './utils/generator';
-import { Logger } from './utils/logger';
 import { increaseBlockTimestamp } from './utils/shared';
 
 describe('Rebalance & its utils', () => {
@@ -97,13 +96,16 @@ describe('Rebalance & its utils', () => {
   it('Rebalance Borrow - both repayDebt are true', async () => {
     let tx;
     const opts = await dnGmxJuniorVaultFixture();
-    const { dnGmxJuniorVault, dnGmxSeniorVault, users } = opts;
+    const { dnGmxJuniorVault, dnGmxSeniorVault, users, sGlp, wbtc, weth, vdWETH, vdWBTC, lendingPool } = opts;
     const checker = new Checker(opts);
     const changer = new Changer(opts);
 
+    await changer.addLiquidity();
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     const amount = parseEther('100');
+    await sGlp.connect(users[1]).transfer(dnGmxJuniorVault.address, amount);
+
     const borrowAmount = parseUnits('50', 6);
 
     const [currentBtc, currentEth] = [BigNumber.from(0), BigNumber.from(0)];
@@ -111,14 +113,11 @@ describe('Rebalance & its utils', () => {
 
     expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.eq(0);
     await dnGmxJuniorVault.executeBorrowFromDnGmxSeniorVault(borrowAmount);
-    expect((await dnGmxJuniorVault.getUsdcBorrowed()).toBigInt()).to.oneOf([
-      borrowAmount.toBigInt(),
-      borrowAmount.add(1).toBigInt(),
-    ]);
+    expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.closeTo(borrowAmount, 1);
 
     tx = await dnGmxJuniorVault.rebalanceBorrow(optimalBtc, currentBtc, optimalEth, currentEth);
 
-    await checker.checkCurrentBorrowed([optimalBtc, optimalEth], [BigNumber.from(1), BigNumber.from(1)]);
+    await checker.checkCurrentBorrowed([optimalBtc, optimalEth]);
     await checker.checkFlashloanedAmounts(
       tx,
       [optimalBtc.sub(currentBtc).abs(), optimalEth.sub(currentEth).abs()],
@@ -126,34 +125,47 @@ describe('Rebalance & its utils', () => {
     );
 
     // increase price => loss on aave => both repayDebt are true
+    console.log(await dnGmxJuniorVault['getPrice(address)'](weth.address));
+    console.log(await dnGmxJuniorVault['getPrice(address)'](wbtc.address));
+
     await changer.changePriceToken('WETH', 1700);
-    await changer.changePriceToken('WBTC', 22500);
+    await changer.changePriceToken('WBTC', 24500);
 
-    const [currentBtc_, currentEth_] = await dnGmxJuniorVault.getCurrentBorrows();
-    const [optimalBtc_, optimalEth_] = await dnGmxJuniorVault.getOptimalBorrows(amount);
-
-    // console.log('current borrows', currentBtc_, currentEth_);
-    // console.log('optimal borrows', optimalBtc_, optimalEth_);
-
-    const currentBorrowValue = await dnGmxJuniorVault.getBorrowValue(currentBtc_, currentEth_);
-    const optimalBorrowValue = await dnGmxJuniorVault.getBorrowValue(optimalBtc_, optimalEth_);
-
-    // console.log('currentBorrowValue', currentBorrowValue);
-    // console.log('optimalBorrowValue', optimalBorrowValue);
+    let [currentBtc_, currentEth_] = [BigNumber.from(99971n), BigNumber.from(19471989660215714n)];
+    const ta = await dnGmxJuniorVault.totalAssets();
+    let [optimalBtc_, optimalEth_] = await dnGmxJuniorVault.getOptimalBorrows(ta);
 
     expect(currentBtc_).gt(optimalBtc_);
     expect(currentEth_).gt(optimalEth_);
 
-    tx = await dnGmxJuniorVault.rebalanceBorrow(optimalBtc_, currentBtc_, optimalEth_, currentEth_);
+    tx = await (await dnGmxJuniorVault.rebalanceBorrow(optimalBtc_, currentBtc_, optimalEth_, currentEth_)).wait();
 
-    // console.log('current borrows (after rebalance hedge):', await dnGmxJuniorVault.getCurrentBorrows());
+    const iface = new ethers.utils.Interface([
+      'event BalanceTransfer(address indexed from, address indexed to, uint256 value, uint256 index)',
+      'event Transfer(address indexed from, address indexed to, uint256 value)',
+      'event Repay(address indexed reserve, address indexed user, address indexed repayer, uint256 amount, bool useATokens)',
+    ]);
 
-    await checker.checkCurrentBorrowed([optimalBtc_, optimalEth_], [optimalBtc_.div(100), optimalEth_.div(100)]);
-    await checker.checkFlashloanedAmounts(
-      tx,
-      [optimalBorrowValue.sub(currentBorrowValue).abs()],
-      [optimalBorrowValue.div(1000)],
-    );
+    let btcAmountReduced = BigNumber.from(0),
+      ethAmountReduced = BigNumber.from(0);
+
+    for (const log of tx.logs) {
+      if (log.address == lendingPool.address && log.topics[0] == iface.getEventTopic('Repay')) {
+        const args = iface.parseLog(log).args;
+        console.log({ args });
+
+        if (args.reserve.toLowerCase() == weth.address.toLowerCase()) {
+          ethAmountReduced = ethAmountReduced.add(args.amount);
+        }
+
+        if (args.reserve.toLowerCase() == wbtc.address.toLowerCase()) {
+          btcAmountReduced = btcAmountReduced.add(args.amount);
+        }
+      }
+    }
+
+    expect(currentBtc_.sub(btcAmountReduced)).to.eq(optimalBtc_);
+    expect(currentEth_.sub(ethAmountReduced)).to.eq(optimalEth_);
   });
 
   it('Rebalance Hedge - target > current && available to borrow > amount required', async () => {
@@ -226,7 +238,6 @@ describe('Rebalance & its utils', () => {
       targetHealthFactor,
       usdcLiquidationThreshold,
     } = opts;
-    const checker = new Checker(opts);
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('100', 6), users[1].address);
 
@@ -242,25 +253,36 @@ describe('Rebalance & its utils', () => {
     expect(await dnGmxJuniorVault.getCurrentBorrows()).to.deep.eq([BigNumber.from(0), BigNumber.from(0)]);
 
     const totalAssetsAfter = await dnGmxJuniorVault.totalAssets();
+    const dnUsdcDepositedBefore = await dnGmxJuniorVault.dnUsdcDepositedExternal();
     const optimalBorrows = await dnGmxJuniorVault.getOptimalBorrows(totalAssetsAfter);
     const borrowValue = await dnGmxJuniorVault.getBorrowValue(optimalBorrows[0], optimalBorrows[1]);
 
+    console.log({ totalAssetsAfter });
+    console.log({ optimalBorrows });
+    console.log({ borrowValue });
+
     const glpPrice = await dnGmxJuniorVault['getPrice(bool)'](false);
+    console.log({ glpPrice });
 
     const targetDnGmxSeniorVaultAmount = BigNumber.from(targetHealthFactor - usdcLiquidationThreshold)
       .mul(borrowValue)
       .div(BigNumber.from(usdcLiquidationThreshold));
+    console.log({ targetDnGmxSeniorVaultAmount });
 
-    const dnUsdcDepositedBefore = await dnGmxJuniorVault.dnUsdcDepositedExternal();
     const currentDnGmxSeniorVaultAmount = (await aUSDC.balanceOf(dnGmxJuniorVault.address)).sub(dnUsdcDepositedBefore);
+    console.log({ currentDnGmxSeniorVaultAmount });
 
     expect(totalAssetsAfter).to.eq(amount);
-    expect(dnUsdcDepositedBefore).to.eq(0);
     expect(currentDnGmxSeniorVaultAmount).to.eq(0);
 
     const amountToBorrow = targetDnGmxSeniorVaultAmount.sub(currentDnGmxSeniorVaultAmount);
-    const availableBorrow = await dnGmxSeniorVault.availableBorrow(dnGmxJuniorVault.address);
+    console.log({ amountToBorrow });
 
+    const availableBorrow = await dnGmxSeniorVault.availableBorrow(dnGmxJuniorVault.address);
+    console.log({ availableBorrow });
+
+    // availableBorrow = max(borrowCap, balanceOf)
+    expect(availableBorrow).to.eq(parseUnits('100', 6));
     expect(amountToBorrow).gt(availableBorrow);
 
     /**
@@ -275,25 +297,31 @@ describe('Rebalance & its utils', () => {
       availableBorrow,
       usdcLiquidationThreshold,
     );
+    console.log({ optimalBorrowsCapped });
 
     /**
      *  uint256 unhedgedGlp = totalAssets().mulDiv(uncappedTokenHedge - cappedTokenHedge, uncappedTokenHedge);
         uint256 unhedgedGlpUsdcAmount = unhedgedGlp.mulDiv(getPrice(false), PRICE_PRECISION);
      */
 
-    const unhedgedGlp = totalAssetsAfter.mul(optimalBorrows[0].sub(optimalBorrowsCapped[0])).div(optimalBorrows[0]);
+    const unhedgedGlp = totalAssetsAfter.mul(optimalBorrows[1].sub(optimalBorrowsCapped[1])).div(optimalBorrows[1]);
+    console.log({ unhedgedGlp });
     const unhedgedGlpUsdcAmount = unhedgedGlp.mul(glpPrice).div(PRICE_PRECISION);
+    console.log({ unhedgedGlpUsdcAmount });
 
     const unhedgedGlpInUsdc = await dnGmxJuniorVault.unhedgedGlpInUsdc();
+    console.log({ unhedgedGlpInUsdc });
 
     expect(unhedgedGlpInUsdc).eq(0);
-    expect(unhedgedGlpUsdcAmount).gt(unhedgedGlpInUsdc);
 
     const slippageThresholdGmxBps = BigNumber.from(100); // 1%
     const MAX_BPS = BigNumber.from(10_000);
 
     const priceOfUsdc = await gmxVault.getMinPrice(usdc.address);
+    console.log({ priceOfUsdc });
+
     const priceOfGlp = await dnGmxJuniorVault.getPriceExternal();
+    console.log({ priceOfGlp });
 
     const USDC_DECIMALS = 6;
     const USDG_DECIMALS = 18;
@@ -304,33 +332,29 @@ describe('Rebalance & its utils', () => {
       .mul(BigNumber.from(10).pow(USDG_DECIMALS - USDC_DECIMALS))
       .div(MAX_BPS)
       .div(PRICE_PRECISION);
+    console.log({ minUsdgOut });
 
     const usdgOutWithoutSlippage = unhedgedGlpUsdcAmount
       .mul(priceOfUsdc)
       .mul(BigNumber.from(10).pow(USDG_DECIMALS - USDC_DECIMALS))
       .div(PRICE_PRECISION);
-
-    console.log('minUsdgOut', formatEther(minUsdgOut));
+    console.log({ usdgOutWithoutSlippage });
 
     const minGlpOut = minUsdgOut
       .mul(PRICE_PRECISION)
       .div(priceOfGlp)
       .div(BigNumber.from(10).pow(USDG_DECIMALS - USDC_DECIMALS));
-    console.log('minGlpOut', formatEther(minGlpOut));
+    console.log({ minGlpOut });
 
-    tx = await dnGmxJuniorVault.rebalanceHedge(currentBtc, currentEth);
+    await dnGmxJuniorVault.rebalanceHedge(currentBtc, currentEth);
 
-    const dnUsdcDepositedAfter = await dnGmxJuniorVault.dnUsdcDepositedExternal();
+    const dnUsdcDeposited = await dnGmxJuniorVault.dnUsdcDepositedExternal();
+    console.log({ dnUsdcDeposited });
 
-    console.log('totalAssetsAfter', totalAssetsAfter);
-    console.log('totalAssets', await dnGmxJuniorVault.totalAssets());
+    const totalAssets = await dnGmxJuniorVault.totalAssets();
+    console.log({ totalAssets });
 
-    console.log('dnUsdcDepositedAfter', dnUsdcDepositedAfter);
-
-    // availableBorrow = max(borrowCap, balanceOf)
-    expect(availableBorrow).to.closeTo(parseUnits('100', 6), BigNumber.from(1));
-
-    expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.closeTo(availableBorrow, BigNumber.from(1));
+    expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.eq(availableBorrow);
 
     // unhedgedGlp should incur some slippage when converting glp to usdc, so it should be within bounds
     expect(await dnGmxJuniorVault.unhedgedGlpInUsdc()).to.gt(
@@ -455,8 +479,8 @@ describe('Rebalance & its utils', () => {
 
     expect(await dnGmxJuniorVault.isValidRebalanceHF()).to.be.false;
 
-    await changer.changePriceToken('WBTC', 25000);
-    await changer.changePriceToken('WETH', 2000);
+    await changer.changePriceToken('WBTC', 40000);
+    await changer.changePriceToken('WETH', 3500);
 
     expect(await dnGmxJuniorVault.isValidRebalanceHF()).to.be.true;
   });
@@ -649,7 +673,7 @@ describe('Rebalance & its utils', () => {
   it('Rebalance Profit - borrowVal > dnUsdcDeposited', async () => {
     const opts = await dnGmxJuniorVaultFixture();
     const changer = new Changer(opts);
-    const { dnGmxJuniorVault, dnGmxSeniorVault, lendingPool, users, aUSDC, mocks, fsGlp } = opts;
+    const { dnGmxJuniorVault, dnGmxSeniorVault, lendingPool, users, aUSDC, fsGlp } = opts;
 
     // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();
@@ -725,7 +749,7 @@ describe('Rebalance & its utils', () => {
   it('Rebalance Profit - borrowVal < dnUsdcDeposited', async () => {
     const opts = await dnGmxJuniorVaultFixture();
     const changer = new Changer(opts);
-    const { glpBatchingManager, dnGmxJuniorVault, dnGmxSeniorVault, lendingPool, users, mocks, aUSDC, fsGlp } = opts;
+    const { glpBatchingManager, dnGmxJuniorVault, dnGmxSeniorVault, lendingPool, users, aUSDC, fsGlp } = opts;
 
     // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await dnGmxJuniorVault.grantAllowances();

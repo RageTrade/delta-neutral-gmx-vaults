@@ -49,4 +49,6 @@ interface IGlpManager {
     function getAumInUsdg(bool maximise) external view returns (uint256);
 
     function getAum(bool maximise) external view returns (uint256);
+
+    function getGlobalShortAveragePrice(address token) external view returns (uint256);
 }

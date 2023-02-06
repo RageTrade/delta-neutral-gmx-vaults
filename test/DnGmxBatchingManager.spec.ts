@@ -11,15 +11,13 @@ import {
   IVault,
 } from '../typechain-types';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
-import { Changer } from './utils/changer';
 import { generateErc20Balance } from './utils/generator';
-import { increaseBlockTimestamp } from './utils/shared';
 import { BigNumber } from 'ethers';
 
 describe('Dn Gmx Batching Manager', () => {
   let dnGmxJuniorVault: DnGmxJuniorVaultMock;
   let glpBatchingManager: DnGmxBatchingManager;
-  let rewardRouter: IRewardRouterV2;
+  let mintBurnRouter: IRewardRouterV2;
   let users: SignerWithAddress[];
   let sGlp: ERC20Upgradeable;
   let usdc: ERC20Upgradeable;
@@ -30,7 +28,7 @@ describe('Dn Gmx Batching Manager', () => {
   let MAX_CONVERSION_BPS = 10_000;
 
   beforeEach(async () => {
-    ({ dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, fsGlp, usdc, sGlp, rewardRouter } =
+    ({ dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, fsGlp, usdc, sGlp, mintBurnRouter } =
       await dnGmxJuniorVaultFixture());
   });
 
@@ -554,7 +552,7 @@ describe('Dn Gmx Batching Manager', () => {
       const unclaimedShares = await glpBatchingManager.unclaimedShares(users[1].address);
       expect(unclaimedShares).to.gt(0);
 
-      await rewardRouter.connect(users[1]).mintAndStakeGlpETH(0, 0, {
+      await mintBurnRouter.connect(users[1]).mintAndStakeGlpETH(0, 0, {
         value: parseEther('0.5'),
       });
       await sGlp.connect(users[1]).approve(dnGmxJuniorVault.address, ethers.constants.MaxUint256);
@@ -592,7 +590,7 @@ describe('Dn Gmx Batching Manager', () => {
 
       const glpAmount = parseEther('100');
 
-      await rewardRouter.connect(users[1]).mintAndStakeGlpETH(0, 0, {
+      await mintBurnRouter.connect(users[1]).mintAndStakeGlpETH(0, 0, {
         value: parseEther('0.5'),
       });
 
@@ -624,7 +622,7 @@ describe('Dn Gmx Batching Manager', () => {
       const unclaimedShares = await glpBatchingManager.unclaimedShares(users[1].address);
       expect(unclaimedShares).to.gt(0);
 
-      await rewardRouter.connect(users[1]).mintAndStakeGlpETH(0, 0, {
+      await mintBurnRouter.connect(users[1]).mintAndStakeGlpETH(0, 0, {
         value: parseEther('0.5'),
       });
 
