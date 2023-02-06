@@ -248,6 +248,15 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   await generateErc20Balance(usdc, BigNumber.from(10).pow(6 + 10), swapRouterMock.address);
   await generateErc20Balance(weth, BigNumber.from(10).pow(18 + 10), swapRouterMock.address);
 
+  const govSigner = await hre.ethers.getSigner('0x7b1FFdDEEc3C4797079C7ed91057e399e9D43a8B');
+
+  const IVaultPriceFeed = ['function setMaxStrictPriceDeviation(uint256 _maxStrictPriceDeviation) external'];
+
+  const priceFeed = new ethers.Contract(await gmxVault.priceFeed(), IVaultPriceFeed, govSigner);
+  /// @dev changing price of USDC on gmx to be 1$
+  // because we are minting lot of glp with eth to give to users[1,2, 3] and redeeming it for usdc in scenarios
+  await priceFeed.setMaxStrictPriceDeviation(ethers.constants.MaxUint256);
+
   return {
     glp,
     gov,
