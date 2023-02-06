@@ -121,8 +121,8 @@ describe('Junior Vault ERC4646 functions', () => {
       100, //_slippageThresholdSwapBtcBps
       100, //_slippageThresholdSwapEthBps
       100, //_slippageThresholdGmxBps
-      0n, //_usdcConversionThreshold
-      0n, //_wethConversionThreshold
+      100n, //_usdcConversionThreshold
+      10n ** 8n, //_wethConversionThreshold
       0n, //_hedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
       parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
