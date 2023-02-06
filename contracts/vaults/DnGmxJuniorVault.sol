@@ -30,6 +30,7 @@ import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
 import { IRewardTracker } from '../interfaces/gmx/IRewardTracker.sol';
 import { IVault } from '../interfaces/gmx/IVault.sol';
 import { IVester } from '../interfaces/gmx/IVester.sol';
+import { IDnGmxTraderHedgeStrategy } from '../interfaces/IDnGmxTraderHedgeStrategy.sol';
 
 import { DnGmxJuniorVaultManager } from '../libraries/DnGmxJuniorVaultManager.sol';
 import { SafeCast } from '../libraries/SafeCast.sol';
@@ -232,10 +233,15 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
 
     /// @notice set thresholds
     /// @param rebalanceProfitUsdcAmountThreshold (BPS) slippage threshold on btc swaps
-    function setParamsV1(uint128 rebalanceProfitUsdcAmountThreshold) external onlyOwner {
+    /// @param dnGmxTraderHedgeStrategy (BPS) slippage threshold on btc swaps
+    function setParamsV1(uint128 rebalanceProfitUsdcAmountThreshold, IDnGmxTraderHedgeStrategy dnGmxTraderHedgeStrategy)
+        external
+        onlyOwner
+    {
         state.rebalanceProfitUsdcAmountThreshold = rebalanceProfitUsdcAmountThreshold;
+        state.dnGmxTraderHedgeStrategy = dnGmxTraderHedgeStrategy;
 
-        emit ParamsV1Updated(rebalanceProfitUsdcAmountThreshold);
+        emit ParamsV1Updated(rebalanceProfitUsdcAmountThreshold, dnGmxTraderHedgeStrategy);
     }
 
     /// @notice set rebalance paramters
@@ -534,7 +540,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     ///@param assetAmount amount of sGlp tokens
     ///@return marketValue of given amount of glp assets
     function getMarketValue(uint256 assetAmount) public view returns (uint256 marketValue) {
-        marketValue = assetAmount.mulDivDown(getPrice(false), PRICE_PRECISION);
+        marketValue = assetAmount.mulDivDown(state.getGlpPriceInUsdc(false), PRICE_PRECISION);
     }
 
     ///@notice returns vault market value (USD terms & 6 decimals) basis glp and usdc tokens in vault
@@ -600,7 +606,13 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @notice preview function for using assets to mint shares
     /// @param assets number of assets to be deposited
     /// @return shares that would be minted to the user
-    function previewDeposit(uint256 assets) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
+    function previewDeposit(uint256 assets)
+        public
+        view
+        virtual
+        override(IERC4626, ERC4626Upgradeable)
+        returns (uint256)
+    {
         uint256 netAssets = state.getSlippageAdjustedAssets({ assets: assets, isDeposit: true });
         return convertToShares(netAssets);
     }
@@ -608,7 +620,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @notice preview function for minting of shares
     /// @param shares number of shares to mint
     /// @return assets that would be taken from the user
-    function previewMint(uint256 shares) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
+    function previewMint(uint256 shares) public view virtual override(IERC4626, ERC4626Upgradeable) returns (uint256) {
         uint256 supply = totalSupply();
 
         if (supply == 0) return shares;
@@ -622,7 +634,13 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @notice preview function for withdrawal of assets
     /// @param assets that would be given to the user
     /// @return shares that would be burnt
-    function previewWithdraw(uint256 assets) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
+    function previewWithdraw(uint256 assets)
+        public
+        view
+        virtual
+        override(IERC4626, ERC4626Upgradeable)
+        returns (uint256)
+    {
         uint256 supply = totalSupply();
 
         if (supply == 0) return assets;
@@ -635,7 +653,13 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @notice preview function for redeeming shares
     /// @param shares that would be taken from the user
     /// @return assets that user would get
-    function previewRedeem(uint256 shares) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
+    function previewRedeem(uint256 shares)
+        public
+        view
+        virtual
+        override(IERC4626, ERC4626Upgradeable)
+        returns (uint256)
+    {
         uint256 supply = totalSupply();
 
         if (supply == 0) return shares;

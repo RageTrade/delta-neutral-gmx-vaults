@@ -288,7 +288,7 @@ describe('QuoterLib', () => {
       const params: ISwapRouter.ExactInputParamsStruct = {
         path,
         recipient: signer.address,
-        deadline: Math.floor(Date.now() / 1000) + 60,
+        deadline: BigNumber.from(2).pow(40),
         amountIn: tokenAmount,
         amountOutMinimum: 0,
       };
@@ -304,7 +304,7 @@ describe('QuoterLib', () => {
       const params: ISwapRouter.ExactOutputParamsStruct = {
         path,
         recipient: signer.address,
-        deadline: Math.floor(Date.now() / 1000) + 60,
+        deadline: BigNumber.from(2).pow(40),
         amountOut: tokenAmount.abs(),
         amountInMaximum: ethers.constants.MaxUint256,
       };

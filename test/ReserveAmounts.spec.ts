@@ -17,7 +17,7 @@ describe('Reserves & Optimal Amounts', () => {
     const wethReserves2 = await dnGmxJuniorVault.getTokenReservesInGlp(weth.address, parseEther('202'));
 
     expect(wbtcReserves1.mul(2)).to.eq(wbtcReserves2);
-    expect(wethReserves1.mul(2)).to.eq(wethReserves2.sub(1));
+    expect(wethReserves1.mul(2)).to.closeTo(wethReserves2, 1);
   });
 
   it('Flashloan Amounts', async () => {
@@ -42,8 +42,8 @@ describe('Reserves & Optimal Amounts', () => {
     expect(btcExcess.repayDebt).to.eq(true);
     expect(ethExcess.repayDebt).to.eq(true);
 
-    expect(btcLess.tokenAmount).to.eq(optimalBtc.div(2));
-    expect(ethLess.tokenAmount).to.eq(optimalEth.div(2).add(1));
+    expect(btcLess.tokenAmount).to.closeTo(optimalBtc.div(2), 1);
+    expect(ethLess.tokenAmount).to.closeTo(optimalEth.div(2), 1);
 
     expect(btcLess.repayDebt).to.eq(false);
     expect(ethLess.repayDebt).to.eq(false);

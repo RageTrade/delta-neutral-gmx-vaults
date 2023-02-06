@@ -24,6 +24,8 @@ import { IERC20Metadata } from '@openzeppelin/contracts/interfaces/IERC20Metadat
 import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
 import { IDnGmxSeniorVault } from '../interfaces/IDnGmxSeniorVault.sol';
 import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
+import { IDnGmxTraderHedgeStrategy } from '../interfaces/IDnGmxTraderHedgeStrategy.sol';
+
 import { SafeCast } from '../libraries/SafeCast.sol';
 import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
 import { SignedFixedPointMathLib } from '../libraries/SignedFixedPointMathLib.sol';
@@ -203,8 +205,9 @@ library DnGmxJuniorVaultManager {
         // !!! STORAGE EXTENSIONS !!! (reduced gaps by no. of slots added here)
         uint128 rebalanceProfitUsdcAmountThreshold;
 
+        IDnGmxTraderHedgeStrategy dnGmxTraderHedgeStrategy;
         // gaps for extending struct (if required during upgrade)
-        uint256[49] __gaps;
+        uint256[48] __gaps;
     }
 
     /// @notice stakes the rewards from the staked Glp and claims WETH to buy glp
@@ -772,7 +775,7 @@ library DnGmxJuniorVaultManager {
         uint256 minUSDG
     ) internal returns (uint256 glpStaked) {
         // will revert if notional output is less than minUSDG
-        glpStaked = state.rewardRouter.mintAndStakeGlp(token, amount, minUSDG, 0);
+        glpStaked = state.mintBurnRewardRouter.mintAndStakeGlp(token, amount, minUSDG, 0);
     }
 
     ///@notice rebalances unhedged glp amount
@@ -1344,7 +1347,7 @@ library DnGmxJuniorVaultManager {
         uint256 dollarsLostDueToSlippage = _quoteSwapSlippageLoss(state, netBtcBorrowChange, netEthBorrowChange);
 
         // netSlippage returned is in glp (asset) terms
-        uint256 glpPrice = _getGlpPrice(state, false);
+        uint256 glpPrice = _getGlpPriceInUsdc(state, false);
         uint256 netSlippage = dollarsLostDueToSlippage.mulDivUp(PRICE_PRECISION, glpPrice);
 
         // subtract slippage from assets, and calculate shares basis that slippage adjusted asset amount
@@ -1613,13 +1616,35 @@ library DnGmxJuniorVaultManager {
             state.targetHealthFactor - usdcLiquidationThreshold
         );
 
-        // calculate the borrow value of eth & btc using their weights
-        uint256 btcWeight = state.gmxVault.tokenWeights(address(state.wbtc));
-        uint256 ethWeight = state.gmxVault.tokenWeights(address(state.weth));
+        uint256 btcWeight;
+        uint256 ethWeight;
 
         // get eth and btc price in usdc
         uint256 btcPrice = _getTokenPriceInUsdc(state, state.wbtc);
         uint256 ethPrice = _getTokenPriceInUsdc(state, state.weth);
+
+        {
+            int128 btcTokenTraderOIHedge = state.dnGmxTraderHedgeStrategy.btcTraderOIHedge();
+            int128 ethTokenTraderOIHedge = state.dnGmxTraderHedgeStrategy.ethTraderOIHedge();
+
+            uint256 btcPoolAmount = state.gmxVault.poolAmounts(address(state.wbtc));
+            uint256 ethPoolAmount = state.gmxVault.poolAmounts(address(state.weth));
+
+            // token reserve is the amount we short
+            // tokenTraderOIHedge if >0 then we need to go long because of OI hence less short (i.e. subtract if value +ve)
+            // tokenTraderOIHedge if <0 then we need to go short because of OI hence more long (i.e. add if value -ve)
+            uint256 btcTokenReserve = btcTokenTraderOIHedge > 0
+                ? btcPoolAmount - uint256(int256(btcTokenTraderOIHedge))
+                : btcPoolAmount + uint256(int256(-btcTokenTraderOIHedge));
+
+            uint256 ethTokenReserve = ethTokenTraderOIHedge > 0
+                ? ethPoolAmount - uint256(int256(ethTokenTraderOIHedge))
+                : ethPoolAmount + uint256(int256(-ethTokenTraderOIHedge));
+
+            // calculate the borrow value of eth & btc using their weights
+            btcWeight = btcTokenReserve.mulDivDown(btcPrice, PRICE_PRECISION);
+            ethWeight = ethTokenReserve.mulDivDown(ethPrice, PRICE_PRECISION);
+        }
 
         // get token amounts from usdc amount
         // total borrow should be divided basis the token weights
@@ -1652,18 +1677,20 @@ library DnGmxJuniorVaultManager {
         address token,
         uint256 glpDeposited
     ) private view returns (uint256) {
-        // target weight of token in GLP
-        uint256 targetWeight = state.gmxVault.tokenWeights(token);
-        // total weight of all tokens combined in GLP
-        uint256 totalTokenWeights = state.gmxVault.totalTokenWeights();
+        uint256 totalSupply = state.glp.totalSupply();
+        uint256 poolAmount = state.gmxVault.poolAmounts(token);
 
-        // glp price in usd
-        uint256 glpPrice = _getGlpPrice(state, false);
-        // token price in usd
-        uint256 tokenPrice = _getTokenPrice(state, IERC20Metadata(token));
+        int128 tokenTraderOIHedge = token == address(state.wbtc)
+            ? state.dnGmxTraderHedgeStrategy.btcTraderOIHedge()
+            : state.dnGmxTraderHedgeStrategy.ethTraderOIHedge();
+        // token reserve is the amount we short
+        // tokenTraderOIHedge if >0 then we need to go long because of OI hence less short (i.e. subtract if value +ve)
+        // tokenTraderOIHedge if <0 then we need to go short because of OI hence more long (i.e. add if value -ve)
+        uint256 tokenReserve = tokenTraderOIHedge > 0
+            ? poolAmount - uint256(int256(tokenTraderOIHedge))
+            : poolAmount + uint256(int256(-tokenTraderOIHedge));
 
-        // underlying tokens in glp = (glp deposit value in usd) * targetWeight / totalTokenWeights / tokenPriceUsd
-        return targetWeight.mulDivDown(glpDeposited * glpPrice, totalTokenWeights * tokenPrice);
+        return tokenReserve.mulDivDown(glpDeposited, totalSupply);
     }
 
     ///@notice returns token amount underlying glp amount deposited
