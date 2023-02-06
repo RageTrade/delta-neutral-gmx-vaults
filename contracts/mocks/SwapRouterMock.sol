@@ -18,10 +18,9 @@ contract SwapRouterMock {
     bytes internal constant WETH_TO_USDC = abi.encodePacked(weth, uint24(500), usdc);
     bytes internal constant WBTC_TO_USDC = abi.encodePacked(wbtc, uint24(500), weth, uint24(500), usdc);
 
-    function exactOutputSingle(ISwapRouter.ExactOutputSingleParams calldata params)
-        external
-        returns (uint256 amountIn)
-    {
+    function exactOutputSingle(
+        ISwapRouter.ExactOutputSingleParams calldata params
+    ) external returns (uint256 amountIn) {
         IERC20(params.tokenIn).transferFrom(msg.sender, address(this), params.amountInMaximum);
         IERC20(params.tokenOut).transfer(msg.sender, params.amountOut);
         return params.amountInMaximum;

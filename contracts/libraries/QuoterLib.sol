@@ -23,19 +23,14 @@ library QuoterLib {
 
     address constant factory = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
 
-    function _getPool(
-        address tokenA,
-        address tokenB,
-        uint24 fee
-    ) internal pure returns (IUniswapV3Pool) {
+    function _getPool(address tokenA, address tokenB, uint24 fee) internal pure returns (IUniswapV3Pool) {
         return IUniswapV3Pool(PoolAddress.computeAddress(factory, PoolAddress.getPoolKey(tokenA, tokenB, fee)));
     }
 
-    function _decodeFirstPool(bytes memory path, bool exactIn)
-        internal
-        pure
-        returns (IUniswapV3Pool pool, bool zeroForOne)
-    {
+    function _decodeFirstPool(
+        bytes memory path,
+        bool exactIn
+    ) internal pure returns (IUniswapV3Pool pool, bool zeroForOne) {
         (address tokenA, address tokenB, uint24 fee) = path.decodeFirstPool();
         pool = _getPool(tokenA, tokenB, fee);
         zeroForOne = exactIn == (tokenA < tokenB);
@@ -137,15 +132,7 @@ library QuoterLib {
         int256 tokenAmount,
         bytes memory swapPath,
         Simulate.State[] memory swapStates
-    )
-        internal
-        view
-        returns (
-            int256,
-            int256,
-            Simulate.State[] memory
-        )
-    {
+    ) internal view returns (int256, int256, Simulate.State[] memory) {
         if (tokenAmount > 0) {
             // swap wbtc to usdc
             (uint256[] memory otherTokenAmounts, Simulate.State[] memory swapStatesEnd) = _quoteExactInput(

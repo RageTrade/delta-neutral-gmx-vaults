@@ -32,11 +32,7 @@ abstract contract ERC4626Upgradeable is IERC4626, ERC20Upgradeable {
     uint256[50] private __gaps;
 
     /* solhint-disable func-name-mixedcase */
-    function __ERC4626Upgradeable_init(
-        address _asset,
-        string memory _name,
-        string memory _symbol
-    ) internal {
+    function __ERC4626Upgradeable_init(address _asset, string memory _name, string memory _symbol) internal {
         __ERC20_init(_name, _symbol);
         asset = _asset;
     }
@@ -106,11 +102,7 @@ abstract contract ERC4626Upgradeable is IERC4626, ERC20Upgradeable {
      * Note that some implementations will require pre-requesting to the Vault before a withdrawal may be performed.
      * Those methods should be performed separately.
      */
-    function withdraw(
-        uint256 assets,
-        address receiver,
-        address owner
-    ) public virtual returns (uint256 shares) {
+    function withdraw(uint256 assets, address receiver, address owner) public virtual returns (uint256 shares) {
         shares = previewWithdraw(assets); // No need to check for rounding error, previewWithdraw rounds up.
 
         if (msg.sender != owner) {
@@ -140,11 +132,7 @@ abstract contract ERC4626Upgradeable is IERC4626, ERC20Upgradeable {
      * NOTE: some implementations will require pre-requesting to the Vault before a withdrawal may be performed.
      * Those methods should be performed separately.
      */
-    function redeem(
-        uint256 shares,
-        address receiver,
-        address owner
-    ) public virtual returns (uint256 assets) {
+    function redeem(uint256 shares, address receiver, address owner) public virtual returns (uint256 assets) {
         if (msg.sender != owner) {
             uint256 allowed = allowance(owner, msg.sender); // Saves gas for limited approvals.
 
@@ -349,16 +337,8 @@ abstract contract ERC4626Upgradeable is IERC4626, ERC20Upgradeable {
     //////////////////////////////////////////////////////////////*/
 
     /* solhint-disable no-empty-blocks */
-    function beforeWithdraw(
-        uint256 assets,
-        uint256 shares,
-        address receiver
-    ) internal virtual {}
+    function beforeWithdraw(uint256 assets, uint256 shares, address receiver) internal virtual {}
 
     /* solhint-disable no-empty-blocks */
-    function afterDeposit(
-        uint256 assets,
-        uint256 shares,
-        address receiver
-    ) internal virtual {}
+    function afterDeposit(uint256 assets, uint256 shares, address receiver) internal virtual {}
 }
