@@ -2,13 +2,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber, ethers } from 'ethers';
 import { hexlify, parseUnits, randomBytes } from 'ethers/lib/utils';
-import {
-  DnGmxBatchingManager,
-  DnGmxJuniorVaultMock,
-  DnGmxSeniorVault,
-  ERC20Upgradeable,
-  IAToken,
-} from '../typechain-types';
+import { DnGmxJuniorVaultMock, DnGmxSeniorVault, ERC20Upgradeable, IAToken } from '../typechain-types';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 import addresses from './fixtures/addresses';
 
@@ -19,12 +13,10 @@ describe('DnGmx Senior Vault', () => {
   let admin: SignerWithAddress;
 
   let dnGmxSeniorVault: DnGmxSeniorVault;
-  let glpBatchingManager: DnGmxBatchingManager;
   let dnGmxJuniorVault: DnGmxJuniorVaultMock;
 
   beforeEach(async () => {
-    ({ dnGmxJuniorVault, dnGmxSeniorVault, users, aUSDC, usdc, admin, glpBatchingManager } =
-      await dnGmxJuniorVaultFixture());
+    ({ dnGmxJuniorVault, dnGmxSeniorVault, users, aUSDC, usdc, admin } = await dnGmxJuniorVaultFixture());
   });
 
   describe('Setters senior vault', () => {
@@ -294,7 +286,7 @@ describe('DnGmx Senior Vault', () => {
 
       // Can slightly vary because of the interest accrued on AAVE
       expect(await dnGmxSeniorVault.totalAssets()).to.closeTo(depositAmount, 1n);
-      expect(await aUSDC.balanceOf(dnGmxSeniorVault.address)).to.eq(depositAmount.sub(borrowAmount));
+      expect(await aUSDC.balanceOf(dnGmxSeniorVault.address)).to.closeTo(depositAmount.sub(borrowAmount), 1);
       expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.eq(borrowAmount);
     });
 

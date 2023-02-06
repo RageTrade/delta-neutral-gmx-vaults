@@ -13,10 +13,10 @@ contract SwapRouterMock {
     address internal constant usdc = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
 
     bytes internal constant USDC_TO_WETH = abi.encodePacked(weth, uint24(500), usdc);
-    bytes internal constant USDC_TO_WBTC = abi.encodePacked(wbtc, uint24(3000), weth, uint24(500), usdc);
+    bytes internal constant USDC_TO_WBTC = abi.encodePacked(wbtc, uint24(500), weth, uint24(500), usdc);
 
     bytes internal constant WETH_TO_USDC = abi.encodePacked(weth, uint24(500), usdc);
-    bytes internal constant WBTC_TO_USDC = abi.encodePacked(wbtc, uint24(3000), weth, uint24(500), usdc);
+    bytes internal constant WBTC_TO_USDC = abi.encodePacked(wbtc, uint24(500), weth, uint24(500), usdc);
 
     function exactOutputSingle(ISwapRouter.ExactOutputSingleParams calldata params)
         external
