@@ -117,16 +117,16 @@ describe('Junior Vault ERC4646 functions', () => {
     const opts = await dnGmxJuniorVaultFixture();
     const { dnGmxJuniorVault, dnGmxSeniorVault, dnGmxJuniorVaultManager, admin, users, weth, wbtc } = opts;
 
-    await dnGmxJuniorVault.setThresholds(
-      100, //_slippageThresholdSwapBtcBps
-      100, //_slippageThresholdSwapEthBps
-      100, //_slippageThresholdGmxBps
-      100n, //_usdcConversionThreshold
-      10n ** 8n, //_wethConversionThreshold
-      0n, //_hedgeUsdcAmountThreshold
-      parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
-      parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
-    );
+    // await dnGmxJuniorVault.setThresholds(
+    //   100, //_slippageThresholdSwapBtcBps
+    //   100, //_slippageThresholdSwapEthBps
+    //   100, //_slippageThresholdGmxBps
+    //   parseUnits('1', 6), //_usdcConversionThreshold
+    //   10n ** 15n, //_wethConversionThreshold
+    //   parseUnits('1', 6), //_hedgeUsdcAmountThreshold
+    //   parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
+    //   parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
+    // );
     await dnGmxJuniorVault.setAdminParams(admin.address, dnGmxSeniorVault.address, constants.MaxUint256, 50, 3000);
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
