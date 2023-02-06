@@ -125,8 +125,8 @@ describe('Junior Vault ERC4646 functions', () => {
 
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
 
-    const userAssets = await (await dnGmxJuniorVault.convertToAssets(dnGmxJuniorVault.balanceOf(users[0].address)))
-      .mul(MAX_BPS.sub(50))
+    const userAssets = (await dnGmxJuniorVault.convertToAssets(dnGmxJuniorVault.balanceOf(users[0].address)))
+      .mul(MAX_BPS.sub(100))
       .div(MAX_BPS);
     const totalAssetsBeforeRedeem = await dnGmxJuniorVault.totalAssets();
 
