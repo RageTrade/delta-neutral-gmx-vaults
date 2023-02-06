@@ -111,7 +111,7 @@ export default {
     compilers: [
       { version: '0.8.15' },
       {
-        version: '0.8.17',
+        version: '0.8.18',
         settings: {
           // use IR for in production and development
           // do not use IR for generating coverage report (to prevent compilation error)
@@ -161,8 +161,8 @@ export default {
       '@uniswap/v3-periphery/contracts/SwapRouter.sol',
       '@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol',
       '@uniswap/v3-periphery/contracts/NonfungiblePositionManager.sol',
-      '@ragetrade/core/contracts/utils/TimelockControllerWithMinDelayOverride.sol'
-    ]
+      '@ragetrade/core/contracts/utils/TimelockControllerWithMinDelayOverride.sol',
+    ],
   },
   typechain: {
     target: 'ethers-v5',

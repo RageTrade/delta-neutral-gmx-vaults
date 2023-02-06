@@ -89,11 +89,7 @@ interface IVault {
 
     function sellUSDG(address _token, address _receiver) external returns (uint256);
 
-    function swap(
-        address _tokenIn,
-        address _tokenOut,
-        address _receiver
-    ) external returns (uint256);
+    function swap(address _tokenIn, address _tokenOut, address _receiver) external returns (uint256);
 
     function increasePosition(
         address _account,
@@ -198,17 +194,5 @@ interface IVault {
         address _collateralToken,
         address _indexToken,
         bool _isLong
-    )
-        external
-        view
-        returns (
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            bool,
-            uint256
-        );
+    ) external view returns (uint256, uint256, uint256, uint256, uint256, uint256, bool, uint256);
 }

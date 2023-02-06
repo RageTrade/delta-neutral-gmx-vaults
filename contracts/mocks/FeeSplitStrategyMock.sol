@@ -17,11 +17,10 @@ contract FeeSplitStrategyMock {
         return info.getMaxVariableBorrowRate();
     }
 
-    function calculateFeeSplit(uint256 availableLiquidity, uint256 usedLiquidity)
-        external
-        view
-        returns (uint256 feeSplitRate)
-    {
+    function calculateFeeSplit(
+        uint256 availableLiquidity,
+        uint256 usedLiquidity
+    ) external view returns (uint256 feeSplitRate) {
         feeSplitRate = info.calculateFeeSplit(availableLiquidity, usedLiquidity);
     }
 }

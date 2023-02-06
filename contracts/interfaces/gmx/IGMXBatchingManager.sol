@@ -44,11 +44,7 @@ interface IGMXBatchingManager {
         uint128 totalShares;
     }
 
-    function depositToken(
-        address token,
-        uint256 amount,
-        uint256 minUSDG
-    ) external returns (uint256 glpStaked);
+    function depositToken(address token, uint256 amount, uint256 minUSDG) external returns (uint256 glpStaked);
 
     function depositToken(
         IERC4626 gmxVault,
@@ -68,11 +64,7 @@ interface IGMXBatchingManager {
 
     function unclaimedShares(IERC4626 gmxVault, address account) external view returns (uint256 shares);
 
-    function claim(
-        IERC4626 gmxVault,
-        address receiver,
-        uint256 amount
-    ) external;
+    function claim(IERC4626 gmxVault, address receiver, uint256 amount) external;
 
     function currentRound(IERC4626 gmxVault) external view returns (uint256);
 

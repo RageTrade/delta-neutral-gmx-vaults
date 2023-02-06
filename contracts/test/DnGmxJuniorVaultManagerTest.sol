@@ -10,11 +10,7 @@ import '../libraries/DnGmxJuniorVaultManager.sol';
 contract DnGmxJuniorVaultManagerTest {
     DnGmxJuniorVaultManager.State state;
 
-    constructor(
-        IERC20Metadata usdc,
-        IERC20Metadata weth,
-        IERC20Metadata wbtc
-    ) {
+    constructor(IERC20Metadata usdc, IERC20Metadata weth, IERC20Metadata wbtc) {
         state.usdc = usdc;
         state.weth = weth;
         state.wbtc = wbtc;
