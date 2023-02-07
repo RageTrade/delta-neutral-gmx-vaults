@@ -52,7 +52,7 @@ export class Changer {
       10,
     );
 
-    let tx = await nfpm.connect(this.opts.users[0]).mint({
+    await nfpm.connect(this.opts.users[0]).mint({
       token0: this.opts.weth.address,
       token1: this.opts.usdc.address,
       fee: 500,
@@ -96,7 +96,7 @@ export class Changer {
       10,
     );
 
-    tx = await nfpm.connect(this.opts.users[0]).mint({
+    await nfpm.connect(this.opts.users[0]).mint({
       token0: this.opts.wbtc.address,
       token1: this.opts.weth.address,
       fee: 500,
@@ -153,7 +153,7 @@ export class Changer {
     console.log(Changer.seperator);
   };
 
-  changeUsdgAmount = async (asset: Asset, newAmount: number) => {
+  changeCurrentWeights = async (asset: Asset, newAmount: number) => {
     const [tokenAddr, tokenDecimals] = asset === 'WBTC' ? [this.opts.wbtc.address, 8] : [this.opts.weth.address, 18];
 
     const oracle =
@@ -189,13 +189,12 @@ export class Changer {
     await hre.network.provider.send('hardhat_setStorageAt', [
       this.opts.gmxVault.address, // address
       poolAmountSlot, // slot
-      ethers.utils.hexZeroPad(
-        ethers.utils.parseUnits(poolAmount.add(additionalPoolAmount).toString(), tokenDecimals).toHexString(),
-        32,
-      ), // new value
+      ethers.utils.hexZeroPad(poolAmount.add(additionalPoolAmount).toHexString(), 32), // new value
     ]);
 
     console.log(`${asset} usdg amount changed to ${newAmount}`);
+    console.log(`${asset} pool amount changed to ${poolAmount.add(additionalPoolAmount)}`);
+
     console.log(Changer.seperator);
   };
 }
