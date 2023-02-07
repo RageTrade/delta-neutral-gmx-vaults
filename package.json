@@ -34,7 +34,7 @@
     "@rari-capital/solmate": "https://github.com/Rari-Capital/solmate.git#25015a1d18e75921f8cb1bacd4beb9f364e788a9",
     "@solidity-parser/parser": "^0.14.3",
     "@uniswap/v3-core": "https://github.com/uniswap/v3-core.git#d55e297b938e5b56fd1cf9fe668f5bd385be85b5",
-    "@uniswap/v3-periphery": "https://github.com/Uniswap/uniswap-v3-periphery.git#b325bb0905d922ae61fcc7df85ee802e8df5e96c"
+    "@uniswap/v3-periphery": "https://github.com/RageTrade/uniswap-v3-periphery.git#2b35edf766db72694a29703b2beb25b10304417d"
   },
   "devDependencies": {
     "@134dd3v/prettier-plugin-solidity": "^1.1.1",

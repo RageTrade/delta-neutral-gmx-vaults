@@ -1283,9 +1283,9 @@
     "@uniswap/v3-core" "1.0.0"
     base64-sol "1.0.1"
 
-"@uniswap/v3-periphery@https://github.com/Uniswap/uniswap-v3-periphery.git#b325bb0905d922ae61fcc7df85ee802e8df5e96c":
+"@uniswap/v3-periphery@https://github.com/RageTrade/uniswap-v3-periphery.git#2b35edf766db72694a29703b2beb25b10304417d":
   version "1.4.2-solc-0.8"
-  resolved "https://github.com/Uniswap/uniswap-v3-periphery.git#b325bb0905d922ae61fcc7df85ee802e8df5e96c"
+  resolved "https://github.com/RageTrade/uniswap-v3-periphery.git#2b35edf766db72694a29703b2beb25b10304417d"
   dependencies:
     "@openzeppelin/contracts" "4.6.0"
     "@uniswap/v2-core" "1.0.1"
