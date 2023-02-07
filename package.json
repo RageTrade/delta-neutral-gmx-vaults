@@ -6,7 +6,7 @@
   "scripts": {
     "clean": "hardhat clean",
     "compile": "hardhat compile",
-    "coverage": "COVERAGE_CHECK=true hardhat coverage",
+    "coverage": "TS_NODE_SKIP_IGNORE=true COVERAGE_CHECK=true hardhat coverage",
     "deploy": "TS_NODE_SKIP_IGNORE=true hardhat deploy",
     "deploy:arbtest": "yarn deploy --network arbtest",
     "deploy:goerli": "hardhat deploy --network goerli && yarn etherscan --network goerli",
@@ -23,7 +23,7 @@
     "storage:update": "yarn clean && hardhat storage-layout --update"
   },
   "resolutions": {
-    "solidity-coverage/@solidity-parser/parser": "^0.15.0"
+    "@solidity-parser/parser": "0.15.0"
   },
   "dependencies": {
     "@aave/core-v3": "^1.17.2",
