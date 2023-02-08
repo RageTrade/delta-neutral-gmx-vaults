@@ -1329,6 +1329,7 @@ library DnGmxJuniorVaultManager {
         uint256 netSlippage = dollarsLostDueToSlippage.mulDivUp(PRICE_PRECISION, glpPrice);
 
         // subtract slippage from assets, and calculate shares basis that slippage adjusted asset amount
+        if (netSlippage >= assets) revert IDnGmxJuniorVault.TooMuchSlippage(netSlippage, assets);
         assets -= uint256(netSlippage);
 
         return assets;
