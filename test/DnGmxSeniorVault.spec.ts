@@ -73,7 +73,7 @@ describe('DnGmx Senior Vault', () => {
       const adminParams = await dnGmxJuniorVault.getAdminParams();
       expect(adminParams.keeper).to.eq(admin.address);
       expect(adminParams.dnGmxSeniorVault).to.eq(dnGmxSeniorVault.address);
-      expect(adminParams.depositCap).to.eq(ethers.constants.MaxUint256);
+      expect(adminParams.depositCap_).to.eq(ethers.constants.MaxUint256);
       expect(adminParams.withdrawFeeBps).to.eq(100);
       expect(adminParams.feeTierWethWbtcPool).to.eq(3000);
     });

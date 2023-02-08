@@ -579,9 +579,9 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @notice returns maximum amount of shares that a user can deposit
     /// @return maximum asset amount
     function maxDeposit(address) public view override(IERC4626, ERC4626Upgradeable) returns (uint256) {
-        uint256 depositCap = state.depositCap;
-        uint256 totalAssets = state.totalAssets(true);
-        return depositCap > totalAssets ? depositCap - totalAssets : 0;
+        uint256 _depositCap = state.depositCap;
+        uint256 _totalAssets = state.totalAssets(true);
+        return _depositCap > _totalAssets ? _depositCap - _totalAssets : 0;
     }
 
     /// @notice returns maximum amount of shares that can be minted for a given user
@@ -697,7 +697,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         returns (
             address keeper,
             IDnGmxSeniorVault dnGmxSeniorVault,
-            uint256 depositCap,
+            uint256 depositCap_,
             uint16 withdrawFeeBps,
             uint24 feeTierWethWbtcPool
         )

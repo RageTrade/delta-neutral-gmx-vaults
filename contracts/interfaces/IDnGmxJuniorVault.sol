@@ -31,6 +31,7 @@ interface IDnGmxJuniorVault is IERC4626, IBorrower {
 
     error ArraysLengthMismatch();
     error FlashloanNotInitiated();
+    error TooMuchSlippage(uint netSlippage, uint assets);
 
     error InvalidFeeRecipient();
     error InvalidFeeBps();
