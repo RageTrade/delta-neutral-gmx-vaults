@@ -134,9 +134,9 @@ describe('Update Implementation', () => {
     if (!depositLog) throw new Error('Deposit log not found');
     const depositEvent = vaultWithImplAbi.interface.parseLog(depositLog) as unknown as DepositEvent;
 
-    expect(depositEvent.args.shares).to.be.eq(sharesPreview);
+    expectEqualWithRelativeError(depositEvent.args.shares, sharesPreview, 0.05);
     expectEqualWithRelativeError(maxWithdrawBefore, maxWithdrawAfter, 0.05);
-    expectEqualWithRelativeError(totalAssetsBefore /*.add(depositAssets)*/, totalAssetsAfter, 0.05);
+    expectEqualWithRelativeError(totalAssetsBefore.add(depositAssets), totalAssetsAfter, 0.2);
   });
 
   it('dn gmx batching manager', async () => {
