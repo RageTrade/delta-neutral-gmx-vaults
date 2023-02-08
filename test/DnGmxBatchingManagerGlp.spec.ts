@@ -540,14 +540,15 @@ describe('Dn Gmx Batching Manager Glp', () => {
     it('claimAndRedeem - when user has unclaimed shares', async () => {
       await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('20000', 6), users[1].address);
 
-      const amount = parseEther('10000');
       const glpAmount = parseEther('100');
       const depositAmount = parseUnits('100', 18);
 
-      await sGlp.connect(users[0]).transfer(dnGmxJuniorVault.address, amount);
+      await sGlp.connect(users[0]).approve(dnGmxJuniorVault.address, ethers.constants.MaxUint256);
+      await sGlp.connect(users[1]).approve(dnGmxJuniorVault.address, ethers.constants.MaxUint256);
 
-      await generateErc20Balance(usdc, depositAmount, users[1].address);
-      await sGlp.connect(users[1]).approve(gmxBatchingManagerGlp.address, depositAmount);
+      await dnGmxJuniorVault.connect(users[0]).deposit(depositAmount, users[0].address);
+
+      await sGlp.connect(users[1]).approve(gmxBatchingManagerGlp.address, ethers.constants.MaxUint256);
       await gmxBatchingManagerGlp.connect(users[1]).deposit(depositAmount, users[1].address);
 
       await gmxBatchingManagerGlp.executeBatch(depositAmount);
@@ -558,10 +559,10 @@ describe('Dn Gmx Batching Manager Glp', () => {
       await mintBurnRouter.connect(users[1]).mintAndStakeGlpETH(0, 0, {
         value: parseEther('0.5'),
       });
-      await sGlp.connect(users[1]).approve(dnGmxJuniorVault.address, ethers.constants.MaxUint256);
-      await dnGmxJuniorVault.connect(users[1]).approve(gmxBatchingManagerGlp.address, ethers.constants.MaxUint256);
 
+      await dnGmxJuniorVault.connect(users[1]).approve(gmxBatchingManagerGlp.address, ethers.constants.MaxUint256);
       await dnGmxJuniorVault.connect(users[1]).deposit(glpAmount, users[1].address);
+
       const sharesDirect = await dnGmxJuniorVault.balanceOf(users[1].address);
 
       const glpBalBefore = await fsGlp.balanceOf(users[1].address);
@@ -610,14 +611,15 @@ describe('Dn Gmx Batching Manager Glp', () => {
     it('claimAndRedeem - receiver different than msg.sender', async () => {
       await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('20000', 6), users[1].address);
 
-      const amount = parseEther('10000');
       const glpAmount = parseEther('100');
       const depositAmount = parseUnits('100', 18);
 
-      await sGlp.connect(users[0]).transfer(dnGmxJuniorVault.address, amount);
+      await sGlp.connect(users[0]).approve(dnGmxJuniorVault.address, ethers.constants.MaxUint256);
+      await sGlp.connect(users[1]).approve(dnGmxJuniorVault.address, ethers.constants.MaxUint256);
 
-      await generateErc20Balance(usdc, depositAmount, users[1].address);
-      await sGlp.connect(users[1]).approve(gmxBatchingManagerGlp.address, depositAmount);
+      await dnGmxJuniorVault.connect(users[0]).deposit(depositAmount, users[0].address);
+
+      await sGlp.connect(users[1]).approve(gmxBatchingManagerGlp.address, ethers.constants.MaxUint256);
       await gmxBatchingManagerGlp.connect(users[1]).deposit(depositAmount, users[1].address);
 
       await gmxBatchingManagerGlp.executeBatch(depositAmount);

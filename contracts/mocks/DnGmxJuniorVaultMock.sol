@@ -326,7 +326,9 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         uint256 assets = convertToAssets(shares);
         uint256 netAssets = getSlippageAdjustedAssets({ assets: assets, isDeposit: true });
 
-        return assets + assets - netAssets;
+        uint256 slippageInAssetTerms = assets - netAssets;
+
+        return assets + slippageInAssetTerms;
     }
 
     /// @notice preview function for withdrawal of assets
