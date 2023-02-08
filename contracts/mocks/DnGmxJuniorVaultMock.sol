@@ -8,6 +8,7 @@ import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/I
 import { DnGmxJuniorVaultManager } from '../libraries/DnGmxJuniorVaultManager.sol';
 import { DnGmxJuniorVault } from '../vaults/DnGmxJuniorVault.sol';
 
+import { FullMath } from '@uniswap/v3-core/contracts/libraries/FullMath.sol';
 import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
 import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMathLib.sol';
 
@@ -18,7 +19,9 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
     uint256 internal constant VARIABLE_INTEREST_MODE = 2;
     IDnGmxBatchingManager batchingManager;
 
+    using FullMath for uint256;
     using FixedPointMathLib for uint256;
+
     bool useMocks = false;
 
     using DnGmxJuniorVaultManager for DnGmxJuniorVaultManager.State;
@@ -268,15 +271,18 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         uint256 btcPrice = state.getTokenPriceInUsdc(state.wbtc);
         uint256 ethPrice = state.getTokenPriceInUsdc(state.weth);
 
-        uint256 netUsdc = (uint256(btcAmount) * btcPrice * (MAX_BPS - state.slippageThresholdSwapBtcBps)) /
-            MAX_BPS /
-            PRICE_PRECISION /
-            100;
-        netUsdc +=
-            (uint256(ethAmount) * ethPrice * (MAX_BPS - state.slippageThresholdSwapEthBps)) /
-            MAX_BPS /
-            PRICE_PRECISION /
-            100;
+        uint256 ethAmt = ethAmount >= 0 ? uint256(ethAmount) : uint256(-ethAmount);
+        uint256 btcAmt = btcAmount >= 0 ? uint256(btcAmount) : uint256(-btcAmount);
+
+        uint256 netUsdc = uint256(btcAmt).mulDiv(btcPrice, PRICE_PRECISION).mulDiv(
+            MAX_BPS - state.slippageThresholdSwapBtcBps,
+            MAX_BPS * 100
+        );
+        netUsdc += uint256(ethAmt).mulDiv(ethPrice, PRICE_PRECISION).mulDiv(
+            MAX_BPS - state.slippageThresholdSwapEthBps,
+            MAX_BPS * 100
+        );
+
         return netUsdc;
     }
 
@@ -320,7 +326,7 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         uint256 assets = convertToAssets(shares);
         uint256 netAssets = getSlippageAdjustedAssets({ assets: assets, isDeposit: true });
 
-        return netAssets;
+        return assets + assets - netAssets;
     }
 
     /// @notice preview function for withdrawal of assets

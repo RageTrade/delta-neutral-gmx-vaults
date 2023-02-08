@@ -80,7 +80,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   await dnGmxTraderHedgeStrategy.initialize(
     admin.address,
     GMX_ECOSYSTEM_ADDRESSES.Vault,
-    GMX_ECOSYSTEM_ADDRESSES.GlpManager,
+    GMX_ECOSYSTEM_ADDRESSES.NewGlpManager,
     dnGmxJuniorVault.address,
     GMX_ECOSYSTEM_ADDRESSES.GLP,
     addresses.WETH,
@@ -146,7 +146,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   await glpBatchingStakingManagerFixtures.gmxBatchingManagerGlp.grantAllowances();
   await glpBatchingStakingManagerFixtures.gmxBatchingManagerGlp.setThresholds(parseUnits('10', 18));
 
-  await dnGmxJuniorVault.setAdminParams(admin.address, dnGmxSeniorVault.address, ethers.constants.MaxUint256, 50, 500);
+  await dnGmxJuniorVault.setAdminParams(admin.address, dnGmxSeniorVault.address, ethers.constants.MaxUint256, 0, 500);
   await dnGmxJuniorVault.setBatchingManager(glpBatchingStakingManagerFixtures.gmxBatchingManager.address);
 
   await dnGmxJuniorVault.setThresholds(

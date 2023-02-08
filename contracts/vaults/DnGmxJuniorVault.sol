@@ -618,7 +618,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         uint256 assets = convertToAssets(shares);
         uint256 netAssets = state.getSlippageAdjustedAssets({ assets: assets, isDeposit: true });
 
-        return netAssets;
+        return assets + assets - netAssets;
     }
 
     /// @notice preview function for withdrawal of assets
