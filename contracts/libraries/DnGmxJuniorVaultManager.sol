@@ -694,6 +694,9 @@ library DnGmxJuniorVaultManager {
                 // Executes a flashloan from balancer and btc/eth borrow updates on AAVE
                 _rebalanceBorrow(state, optimalBtcBorrow, currentBtcBorrow, optimalEthBorrow, currentEthBorrow);
             } else {
+                //No unhedged glp remaining so just pass same value in capped and uncapped (should convert back any ausdc back to sglp)
+                _rebalanceUnhedgedGlp(state, optimalEthBorrow, optimalEthBorrow);
+
                 // Executes a flashloan from balancer and btc/eth borrow updates on AAVE
                 // To repay usdc to senior tranche so update the hedges on AAVE first
                 // then remove usdc to pay back to senior tranche
