@@ -219,7 +219,7 @@ describe('Rebalance & its utils', () => {
     expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.eq(currentDnGmxSeniorVaultAmountAfter);
   });
 
-  it.only('Rebalance Trial', async () => {
+  it('Rebalance Trial', async () => {
     [];
     // Both increase above threshold
     await testRebalanceHedge({
