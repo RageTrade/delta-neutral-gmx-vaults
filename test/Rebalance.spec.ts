@@ -6,6 +6,7 @@ import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 import { Changer } from './utils/changer';
 import { Checker } from './utils/checker';
 import { generateErc20Balance } from './utils/generator';
+import { Logger } from './utils/logger';
 import { increaseBlockTimestamp } from './utils/shared';
 
 describe('Rebalance & its utils', () => {
@@ -218,6 +219,138 @@ describe('Rebalance & its utils', () => {
     expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.eq(currentDnGmxSeniorVaultAmountAfter);
   });
 
+  it.only('Rebalance Trial', async () => {
+    [];
+    // Both increase above threshold
+    await testRebalanceHedge({
+      btcAmountInit: 90000000,
+      ethAmountInit: 110000000,
+      btcAmountFinal: 100000000,
+      ethAmountFinal: 120000000,
+      btcAboveThreshold: true,
+      ethAboveThreshold: true,
+    });
+
+    // both decrease above threshold
+    await testRebalanceHedge({
+      btcAmountInit: 90000000,
+      ethAmountInit: 110000000,
+      btcAmountFinal: 80000000,
+      ethAmountFinal: 100000000,
+      btcAboveThreshold: true,
+      ethAboveThreshold: true,
+    });
+
+    // btc increase above threshold, eth decrease above threshold
+    await testRebalanceHedge({
+      btcAmountInit: 90000000,
+      ethAmountInit: 110000000,
+      btcAmountFinal: 100000000,
+      ethAmountFinal: 100000000,
+      btcAboveThreshold: true,
+      ethAboveThreshold: true,
+    });
+
+    // btc decrease above threshold, eth increase above threshold
+    await testRebalanceHedge({
+      btcAmountInit: 90000000,
+      ethAmountInit: 110000000,
+      btcAmountFinal: 80000000,
+      ethAmountFinal: 120000000,
+      btcAboveThreshold: true,
+      ethAboveThreshold: true,
+    });
+
+    // btc increase above threshold, eth same
+    await testRebalanceHedge({
+      btcAmountInit: 90000000,
+      ethAmountInit: 110000000,
+      btcAmountFinal: 100000000,
+      ethAmountFinal: 110000000,
+      btcAboveThreshold: true,
+      ethAboveThreshold: false,
+    });
+
+    // btc decrease above threshold, eth same
+    await testRebalanceHedge({
+      btcAmountInit: 90000000,
+      ethAmountInit: 110000000,
+      btcAmountFinal: 80000000,
+      ethAmountFinal: 110000000,
+      btcAboveThreshold: true,
+      ethAboveThreshold: false,
+    });
+
+    // btc same, eth increase above threshold
+    await testRebalanceHedge({
+      btcAmountInit: 90000000,
+      ethAmountInit: 110000000,
+      btcAmountFinal: 90000000,
+      ethAmountFinal: 120000000,
+      btcAboveThreshold: false,
+      ethAboveThreshold: true,
+    });
+
+    // btc same, eth decrease above threshold
+    await testRebalanceHedge({
+      btcAmountInit: 90000000,
+      ethAmountInit: 110000000,
+      btcAmountFinal: 90000000,
+      ethAmountFinal: 90000000,
+      btcAboveThreshold: false,
+      ethAboveThreshold: true,
+    });
+
+    // both below threshold
+    await testRebalanceHedge({
+      btcAmountInit: 90000000,
+      ethAmountInit: 110000000,
+      btcAmountFinal: 90000100,
+      ethAmountFinal: 110000100,
+      btcAboveThreshold: false,
+      ethAboveThreshold: false,
+    });
+
+    // btc increase below threshold, eth increase above threshold
+    await testRebalanceHedge({
+      btcAmountInit: 90000000,
+      ethAmountInit: 110000000,
+      btcAmountFinal: 90000100,
+      ethAmountFinal: 120000000,
+      btcAboveThreshold: false,
+      ethAboveThreshold: true,
+    });
+
+    // btc increase below threshold, eth decrease above threshold
+    await testRebalanceHedge({
+      btcAmountInit: 90000000,
+      ethAmountInit: 110000000,
+      btcAmountFinal: 90000100,
+      ethAmountFinal: 90000000,
+      btcAboveThreshold: false,
+      ethAboveThreshold: true,
+    });
+
+    // btc increase below threshold, eth increase above threshold
+    await testRebalanceHedge({
+      btcAmountInit: 90000000,
+      ethAmountInit: 110000000,
+      btcAmountFinal: 89999900,
+      ethAmountFinal: 120000000,
+      btcAboveThreshold: false,
+      ethAboveThreshold: true,
+    });
+
+    // btc increase below threshold, eth decrease above threshold
+    await testRebalanceHedge({
+      btcAmountInit: 90000000,
+      ethAmountInit: 110000000,
+      btcAmountFinal: 89999900,
+      ethAmountFinal: 90000000,
+      btcAboveThreshold: false,
+      ethAboveThreshold: true,
+    });
+  });
   it('Rebalance Hedge - target > current && available to borrow < amount required', async () => {
     /**
      * - target > current && available to borrow > amount requred
@@ -825,4 +958,73 @@ describe('Rebalance & its utils', () => {
 
     expect(dnUsdcDepositedAfter).to.eq(borrowValue);
   });
+
+  async function testRebalanceHedge({
+    btcAmountInit,
+    ethAmountInit,
+    btcAmountFinal,
+    ethAmountFinal,
+    btcAboveThreshold,
+    ethAboveThreshold,
+  }: {
+    btcAmountInit: number;
+    ethAmountInit: number;
+    btcAmountFinal: number;
+    ethAmountFinal: number;
+    btcAboveThreshold: boolean;
+    ethAboveThreshold: boolean;
+  }) {
+    let tx;
+    const opts = await dnGmxJuniorVaultFixture();
+    const { dnGmxJuniorVault, dnGmxSeniorVault, users, sGlp, glp, targetHealthFactor, usdcLiquidationThreshold } = opts;
+
+    const changer = new Changer(opts);
+    // const logger = new Logger(opts);
+
+    await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('100', 6), users[1].address);
+
+    const amount = parseEther('100');
+
+    await sGlp.connect(users[0]).transfer(dnGmxJuniorVault.address, amount);
+
+    const [currentBtc, currentEth] = [BigNumber.from(0), BigNumber.from(0)];
+
+    let wethPoolAmount = await changer.changeCurrentWeights('WETH', ethAmountInit);
+    let wbtcPoolAmount = await changer.changeCurrentWeights('WBTC', btcAmountInit);
+
+    // await logger.logPoolAmounts();
+    // await logger.logUsdgAmounts();
+
+    let glpDeposited = await dnGmxJuniorVault.totalAssets();
+    let glpTotalSupply = await glp.totalSupply();
+
+    tx = await dnGmxJuniorVault.rebalanceHedge(currentBtc, currentEth);
+
+    const [btcInitial, ethInitial] = await dnGmxJuniorVault.getCurrentBorrows();
+
+    expect(btcInitial).to.eq(wbtcPoolAmount.mul(glpDeposited).div(glpTotalSupply));
+    expect(ethInitial).to.eq(wethPoolAmount.mul(glpDeposited).div(glpTotalSupply));
+
+    wethPoolAmount = await changer.changeCurrentWeights('WETH', ethAmountFinal);
+    wbtcPoolAmount = await changer.changeCurrentWeights('WBTC', btcAmountFinal);
+
+    // await logger.logPoolAmounts();
+    // await logger.logUsdgAmounts();
+
+    glpDeposited = await dnGmxJuniorVault.totalAssets();
+    glpTotalSupply = await glp.totalSupply();
+
+    tx = await dnGmxJuniorVault.rebalanceHedge(btcInitial, ethInitial);
+
+    const [btcFinal, ethFinal] = await dnGmxJuniorVault.getCurrentBorrows();
+
+    if (btcAboveThreshold) expect(btcFinal).to.closeTo(wbtcPoolAmount.mul(glpDeposited).div(glpTotalSupply), 1n);
+    else expect(btcFinal).to.closeTo(btcInitial, 1);
+
+    if (ethAboveThreshold)
+      expect(ethFinal).to.closeTo(wethPoolAmount.mul(glpDeposited).div(glpTotalSupply), 10n ** 10n);
+    else expect(ethFinal).to.closeTo(ethInitial, 10n ** 10n);
+
+    // console.log({ btcInitial, ethInitial, btcFinal, ethFinal });
+  }
 });

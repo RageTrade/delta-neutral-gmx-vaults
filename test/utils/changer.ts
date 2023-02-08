@@ -6,6 +6,7 @@ import { formatUnits, parseUnits } from 'ethers/lib/utils';
 import { dnGmxJuniorVaultFixture } from '../fixtures/dn-gmx-junior-vault';
 import { tickToNearestInitializableTick, priceToTick } from '@ragetrade/sdk';
 import { generateErc20Balance } from './generator';
+import { BigNumber } from 'ethers';
 
 type Asset = 'WETH' | 'WBTC';
 
@@ -196,5 +197,7 @@ export class Changer {
     console.log(`${asset} pool amount changed to ${poolAmount.add(additionalPoolAmount)}`);
 
     console.log(Changer.seperator);
+
+    return poolAmount.add(additionalPoolAmount);
   };
 }
