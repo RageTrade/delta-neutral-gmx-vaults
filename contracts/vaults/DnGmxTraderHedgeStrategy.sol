@@ -51,8 +51,10 @@ contract DnGmxTraderHedgeStrategy is OwnableUpgradeable, IDnGmxTraderHedgeStrate
     error InvalidTraderOIHedges(int128 btcTraderOIHedge, int128 ethTraderOIHedge);
     error OnlyKeeperAllowed(address msgSender, address authorisedKeeperAddress);
 
-    event TraderOIHedgesUpdated(int256 btcTraderOIHedge, int256 ethTraderOIHedge);
     event TraderOIHedgeBpsUpdated(uint256 traderOIHedgeBps);
+    event TraderOIHedgesUpdated(int256 btcTraderOIHedge, int256 ethTraderOIHedge);
+
+    event KeeperUpdated(address indexed oldKeeper, address indexed newKeeper);
 
     modifier onlyKeeper() {
         if (msg.sender != keeper) revert OnlyKeeperAllowed(msg.sender, keeper);
@@ -88,6 +90,11 @@ contract DnGmxTraderHedgeStrategy is OwnableUpgradeable, IDnGmxTraderHedgeStrate
         glp = _glp;
         weth = _weth;
         wbtc = _wbtc;
+    }
+
+    function setKeeper(address _keeper) external onlyOwner {
+        emit KeeperUpdated(keeper, _keeper);
+        keeper = _keeper;
     }
 
     /// @notice set hedge adjustments basis trader OIs
