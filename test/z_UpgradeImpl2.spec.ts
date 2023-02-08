@@ -4,7 +4,7 @@ import { formatEther, parseEther } from 'ethers/lib/utils';
 import hre from 'hardhat';
 
 import { impersonateAccount } from '@nomicfoundation/hardhat-network-helpers';
-import { deltaNeutralGmxVaults, fromQ128, parseUsdc, toQ128 } from '@ragetrade/sdk';
+import { deltaNeutralGmxVaults, fromQ128, parseUsdc, tokens, toQ128 } from '@ragetrade/sdk';
 import { DepositEvent } from '@ragetrade/sdk/dist/typechain/delta-neutral-gmx-vaults/contracts/ERC4626/ERC4626Upgradeable';
 
 import {
@@ -28,6 +28,7 @@ describe('Mainnet fork upgrade impl', () => {
     const { users } = fixtureDeployments;
 
     const mainnetContracts = deltaNeutralGmxVaults.getContractsSync('arbmain', hre.ethers.provider);
+    const { sGLP, fsGLP } = tokens.getContractsSync('arbmain', hre.ethers.provider);
 
     const ownerAddress = await mainnetContracts.proxyAdmin.owner();
     const keeperAddress = (await mainnetContracts.dnGmxJuniorVault.getAdminParams()).keeper;
@@ -83,14 +84,17 @@ describe('Mainnet fork upgrade impl', () => {
     // trigger rebalance
     await dnGmxJuniorVault.connect(keeperSigner).rebalance();
 
-    const depositAssets = parseEther('20000'); // there is an error with 2000
+    // 2000 is underflowing
+    const depositAssets = parseEther('10000'); // there is an error with 2000
     const oldDepositor = '0x04808a3aa9507f2354d3f411f86208ba9fa38093';
 
     // state before deposit
     const maxWithdrawBefore = await dnGmxJuniorVault.maxWithdraw(oldDepositor);
     const totalAssetsBefore = await dnGmxJuniorVault.totalAssets();
     console.log('totalAssetsBefore', formatEther(totalAssetsBefore));
-    await dnGmxJuniorVault.connect(fixtureDeployments.users[0]).approve(dnGmxJuniorVault.address, depositAssets);
+    await sGLP.connect(fixtureDeployments.users[0]).approve(dnGmxJuniorVault.address, depositAssets);
+    console.log('balance', formatEther(await fsGLP.balanceOf(fixtureDeployments.users[0].address)));
+
     const sharesPreview = await dnGmxJuniorVault.connect(users[0]).previewDeposit(depositAssets);
 
     // deposit
