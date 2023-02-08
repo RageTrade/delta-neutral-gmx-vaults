@@ -1,4 +1,4 @@
-import { ContractTransaction } from 'ethers';
+import { BigNumber, ContractTransaction } from 'ethers';
 import { formatUnits } from 'ethers/lib/utils';
 import { dnGmxJuniorVaultFixture } from '../fixtures/dn-gmx-junior-vault';
 
@@ -239,5 +239,28 @@ export class Logger {
     }
 
     console.log(Logger.seperator);
+  };
+
+  logReservedAndGlobalShortAmounts = async () => {
+    const { gmxVault, weth, wbtc, glpManager } = this.opts;
+
+    const wbtcReservedAmounts = await gmxVault.reservedAmounts(wbtc.address);
+    const wethReservedAmounts = await gmxVault.reservedAmounts(weth.address);
+
+    console.log('RESERVED AMOUNTS:');
+
+    console.log('WBTC: ', formatUnits(wbtcReservedAmounts, 8));
+    console.log('WETH: ', formatUnits(wethReservedAmounts, 18));
+
+    console.log('GLOBAL SHORT AMOUTNTS:');
+
+    const wbtcPrice = await glpManager.getGlobalShortAveragePrice(wbtc.address);
+    const wethPrice = await glpManager.getGlobalShortAveragePrice(weth.address);
+
+    const wbtcSize = await gmxVault.globalShortSizes(wbtc.address);
+    const wethSize = await gmxVault.globalShortSizes(weth.address);
+
+    console.log('WBTC: ', formatUnits(wbtcSize.mul(10n ** 8n).div(wbtcPrice), 8));
+    console.log('WETH: ', formatUnits(wethSize.mul(10n ** 18n).div(wethPrice), 18));
   };
 }

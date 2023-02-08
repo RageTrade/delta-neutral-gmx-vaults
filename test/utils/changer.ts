@@ -200,4 +200,17 @@ export class Changer {
 
     return poolAmount.add(additionalPoolAmount);
   };
+
+  changeReservedAmounts = async (asset: Asset, newAmount: BigNumber) => {
+    const reservedAmountSlot =
+      asset === 'WBTC'
+        ? '0x6cd2cfa3e5e0cba4a2e82a4fb796acc372e62dc768536373187130c9dd6774af'
+        : '0x36fcd9c0594c4c3f20b6dcfb075a8ad5cae40c2b7a894c8b4a4b815390f371e8';
+
+    await hre.network.provider.send('hardhat_setStorageAt', [
+      this.opts.gmxVault.address, // address
+      reservedAmountSlot, // slot
+      ethers.utils.hexZeroPad(newAmount.toHexString(), 32), // new value
+    ]);
+  };
 }
