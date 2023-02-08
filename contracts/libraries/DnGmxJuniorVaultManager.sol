@@ -724,9 +724,6 @@ library DnGmxJuniorVaultManager {
         if (usdcAmountDesired < state.usdcConversionThreshold) return 0;
         address _usdc = address(state.usdc);
 
-        // @dev using max price of usdc becausing buying usdc for glp
-        uint256 usdcPrice = state.gmxVault.getMaxPrice(_usdc);
-
         // calculate the minimum required amount basis the set slippage param
         // uses current usdc max price from GMX and adds slippage on top
         uint256 minUsdcOut = usdcAmountDesired.mulDivDown((MAX_BPS - state.slippageThresholdGmxBps), MAX_BPS);
@@ -1329,6 +1326,7 @@ library DnGmxJuniorVaultManager {
         uint256 netSlippage = dollarsLostDueToSlippage.mulDivUp(PRICE_PRECISION, glpPrice);
 
         // subtract slippage from assets, and calculate shares basis that slippage adjusted asset amount
+        if (netSlippage >= assets) revert IDnGmxJuniorVault.TooMuchSlippage(netSlippage, assets);
         assets -= uint256(netSlippage);
 
         return assets;
