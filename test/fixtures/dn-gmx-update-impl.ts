@@ -1,3 +1,4 @@
+import { setBalance } from '@nomicfoundation/hardhat-network-helpers';
 import { BigNumber } from 'ethers';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { deployments, ethers } from 'hardhat';
@@ -187,8 +188,9 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
 
   await generateErc20Balance(usdc, parseUnits('10000', 6), users[0].address);
 
+  await setBalance(users[0].address, parseEther('100000'));
   await mintBurnRewardRouter.connect(users[0]).mintAndStakeGlpETH(0, 0, {
-    value: parseEther('10'),
+    value: parseEther('100'),
   });
   await mintBurnRewardRouter.connect(users[1]).mintAndStakeGlpETH(0, 0, {
     value: parseEther('5'),

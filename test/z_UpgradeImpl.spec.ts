@@ -4,10 +4,19 @@ import { formatEther, formatUnits, parseEther, parseUnits } from 'ethers/lib/uti
 import { activateMainnetFork } from './utils/mainnet-fork';
 import addresses, { GMX_ECOSYSTEM_ADDRESSES } from './fixtures/addresses';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-update-impl';
-import { fromQ128, parseUsdc, tokens, toQ128 } from '@ragetrade/sdk';
+import {
+  deltaNeutralGmxVaults,
+  DnGmxBatchingManager__factory,
+  fromQ128,
+  parseUsdc,
+  tokens,
+  toQ128,
+} from '@ragetrade/sdk';
 import { DepositEvent } from '../typechain-types/contracts/interfaces/IERC4626';
 import { BigNumber } from 'ethers';
 import { impersonateAccount } from '@nomicfoundation/hardhat-network-helpers';
+import { arb } from './utils/arb';
+import { TransparentUpgradeableProxy__factory } from '../typechain-types';
 
 const proxyAdminAddr = '0x90066f5EeABd197433411E8dEc935a2d28BC28De';
 
@@ -21,7 +30,6 @@ const existingBMUser = '0x9f7D3CECf8F857C10fa0B1BEED96DCFE52625454';
 describe('Update Implementation', () => {
   it('dn gmx junior vault', async () => {
     const opts = await dnGmxJuniorVaultFixture();
-    // const { sGLP, fsGLP } = tokens.getContractsSync('arbmain', hre.ethers.provider);
 
     const IExecuteBatch = [
       'function executeBatchDeposit(uint256) external',
@@ -74,43 +82,58 @@ describe('Update Implementation', () => {
     await vaultWithImplAbi.connect(timelockSigner).setParamsV1(0n, opts.dnGmxTraderHedgeStrategy.address);
     await vaultWithImplAbi.connect(timelockSigner).grantAllowances();
 
-    const thresholds = await vaultWithImplAbi.getThresholds();
-
-    await vaultWithImplAbi.connect(timelockSigner).setThresholds(
-      5000, // thresholds.slippageThresholdSwapBtcBps,
-      thresholds.slippageThresholdSwapEthBps,
-      thresholds.slippageThresholdGmxBps,
-      thresholds.usdcConversionThreshold,
-      thresholds.wethConversionThreshold,
-      thresholds.hedgeUsdcAmountThreshold,
-      parseUsdc('700000'), // thresholds.partialBtcHedgeUsdcAmountThreshold,
-      parseUsdc('700000'), // thresholds.partialEthHedgeUsdcAmountThreshold,
-    );
+    const adminParams = await vaultWithImplAbi.getAdminParams();
+    await vaultWithImplAbi
+      .connect(timelockSigner)
+      .setAdminParams(
+        adminParams.keeper,
+        adminParams.dnGmxSeniorVault,
+        adminParams.depositCap.mul(10000000),
+        adminParams.withdrawFeeBps,
+        adminParams.feeTierWethWbtcPool,
+      );
 
     // rebalance; TODO add arbitrager
     await vaultWithImplAbi.connect(juniorVaultKeeperSigner).rebalance();
 
-    // for (let i = 0; i < 100; i++) {
-    //   try {
-    //     await vaultWithImplAbi.connect(juniorVaultKeeperSigner).rebalance();
-    //     console.log('rebalanced');
-    //   } catch (e) {
-    //     console.log('rebalanced for', i, 'times');
-    //     console.error(e);
-    //     break;
-    //   }
-    // }
+    for (let i = 0; i < 15; i++) {
+      try {
+        await vaultWithImplAbi.connect(juniorVaultKeeperSigner).rebalance();
+        console.log('\nRebalanced', i);
+        await arb(opts.users[0], opts.weth.address, opts.usdc.address, 500, true);
+        await arb(opts.users[0], opts.wbtc.address, opts.weth.address, 500, true);
+      } catch (e) {
+        console.log('rebalanced for', i, 'times');
+        console.error(e);
+        break;
+      }
+    }
+
+    // await arb(opts.users[0], opts.wbtc.address, opts.weth.address, 500, true);
+    // await arb(opts.users[0], opts.weth.address, opts.usdc.address, 500);
 
     await vaultWithImplAbi.connect(juniorVaultKeeperSigner).rebalance();
 
     const totalAssetsAfterRebalance = await vaultWithImplAbi.totalAssets();
     console.log('totalAssetsAfterRebalance', formatEther(totalAssetsAfterRebalance));
+    // without gmx st
+    // 10K -> 0.0008602170049 %
+    // 1.035826704139061373
+    // 1.035817793781610636
 
+    // 100K -> 0.008544901781 %
+    // 1.035829002571729652
+    // 1.035740499563332996
+
+    //
+    // 100K -> 0.008544901781 %
+    // 1.035829002571729652
+    // 1.035740499563332996
     /**
      * Deposit
      */
 
-    const depositAssets = parseEther('10000'); // there is an error with 2000
+    const depositAssets = parseEther('100000'); // there is an error with 2000
 
     // before deposit
     const maxWithdrawBefore = await vaultWithImplAbi.maxWithdraw(juniorVaultDepositor);
@@ -134,6 +157,8 @@ describe('Update Implementation', () => {
     if (!depositLog) throw new Error('Deposit log not found');
     const depositEvent = vaultWithImplAbi.interface.parseLog(depositLog) as unknown as DepositEvent;
 
+    console.log('maxWithdrawBefore', formatEther(maxWithdrawBefore));
+    console.log('maxWithdrawAfter', formatEther(maxWithdrawAfter));
     expectEqualWithRelativeError(depositEvent.args.shares, sharesPreview, 0.05);
     expectEqualWithRelativeError(maxWithdrawBefore, maxWithdrawAfter, 0.05);
     expectEqualWithRelativeError(totalAssetsBefore.add(depositAssets), totalAssetsAfter, 0.2);
@@ -152,22 +177,15 @@ describe('Update Implementation', () => {
     const proxyAdmin = await hre.ethers.getContractAt('ProxyAdmin', proxyAdminAddr);
     const owner = await proxyAdmin.owner();
 
-    await hre.network.provider.request({
-      method: 'hardhat_impersonateAccount',
-      params: [proxyAdmin.address],
-    });
-    await hre.network.provider.request({
-      method: 'hardhat_impersonateAccount',
-      params: [owner],
-    });
-    await hre.network.provider.request({
-      method: 'hardhat_impersonateAccount',
-      params: [dnGmxRouter],
-    });
+    await impersonateAccount(proxyAdmin.address);
+    await impersonateAccount(owner);
+    await impersonateAccount(dnGmxRouter);
+    await impersonateAccount(existingBMUser);
 
     const ownerSigner = await ethers.getSigner(owner);
     const keeperSigner = await ethers.getSigner(dnGmxRouter);
     const proxyAdminSigner = await ethers.getSigner(proxyAdmin.address);
+    const existingBMUserSigner = await ethers.getSigner(existingBMUser);
 
     const bmWithImplAbi = await ethers.getContractAt('DnGmxBatchingManager', usdcBatchingManager);
     const bmWithProxyAbi = await ethers.getContractAt('TransparentUpgradeableProxy', usdcBatchingManager);
@@ -206,13 +224,6 @@ describe('Update Implementation', () => {
 
     const unclaimed = await bmWithImplAbi.unclaimedShares(existingBMUser);
 
-    await hre.network.provider.request({
-      method: 'hardhat_impersonateAccount',
-      params: [existingBMUser],
-    });
-
-    const existingBMUserSigner = await ethers.getSigner(existingBMUser);
-
     expect(() => bmWithImplAbi.connect(existingBMUserSigner).claim(existingBMUser, unclaimed)).to.changeTokenBalance(
       vaultWithImplAbi,
       existingBMUser,
@@ -220,6 +231,66 @@ describe('Update Implementation', () => {
     );
 
     expect(await vaultWithImplAbi.balanceOf(existingBMUser)).to.eq(unclaimed);
+  });
+
+  it('batching manager deposit', async () => {
+    const fixtureDeployments = await dnGmxJuniorVaultFixture();
+    const { users } = fixtureDeployments;
+
+    const mainnetContracts = deltaNeutralGmxVaults.getContractsSync('arbmain', hre.ethers.provider);
+
+    const ownerAddress = await mainnetContracts.proxyAdmin.owner();
+    const keeperAddress = await mainnetContracts.dnGmxBatchingManager.keeper();
+    const timelockAddress = await mainnetContracts.dnGmxJuniorVault.owner();
+
+    await impersonateAccount(ownerAddress);
+    await impersonateAccount(keeperAddress);
+    await impersonateAccount(timelockAddress);
+    await impersonateAccount(mainnetContracts.proxyAdmin.address);
+    await impersonateAccount(mainnetContracts.proxyAdmin.address);
+    const ownerSigner = await hre.ethers.getSigner(ownerAddress);
+    const proxyAdminSigner = await hre.ethers.getSigner(mainnetContracts.proxyAdmin.address);
+    const keeperSigner = await hre.ethers.getSigner(keeperAddress);
+    const timelockSigner = await hre.ethers.getSigner(timelockAddress);
+
+    const oldDepositor = '0x04808a3aa9507f2354d3f411f86208ba9fa38093';
+
+    // state before upgrade
+    const unclaimedSharesBefore = await mainnetContracts.dnGmxBatchingManager.unclaimedShares(oldDepositor);
+    const roundIdBefore = await mainnetContracts.dnGmxBatchingManager.currentRound();
+
+    const oldImpl = await TransparentUpgradeableProxy__factory.connect(
+      mainnetContracts.dnGmxBatchingManager.address,
+      proxyAdminSigner,
+    ).callStatic.implementation();
+    expect(oldImpl).to.equal(mainnetContracts.dnGmxBatchingManagerLogic.address);
+
+    const newDnGmxBatchingManager = await hre.ethers.deployContract('DnGmxBatchingManager');
+
+    // perform upgrade
+    await mainnetContracts.dnGmxBatchingManager.connect(keeperSigner).pauseDeposit();
+    await mainnetContracts.proxyAdmin
+      .connect(ownerSigner)
+      .upgrade(mainnetContracts.dnGmxBatchingManager.address, newDnGmxBatchingManager.address);
+    await mainnetContracts.dnGmxBatchingManager.connect(keeperSigner).unpauseDeposit();
+
+    const newImplAddress = await TransparentUpgradeableProxy__factory.connect(
+      mainnetContracts.dnGmxBatchingManager.address,
+      proxyAdminSigner,
+    ).callStatic.implementation();
+    expect(newImplAddress).to.equal(newDnGmxBatchingManager.address);
+
+    // using new interface
+    const dnGmxBatchingManager = DnGmxBatchingManager__factory.connect(
+      mainnetContracts.dnGmxBatchingManager.address,
+      hre.ethers.provider,
+    );
+
+    // state before upgrade
+    const unclaimedSharesAfter = await dnGmxBatchingManager.unclaimedShares(oldDepositor);
+    const roundIdAfter = await dnGmxBatchingManager.currentRound();
+    expect(unclaimedSharesBefore).to.be.eq(unclaimedSharesAfter);
+    expect(roundIdBefore).to.be.eq(roundIdAfter);
   });
 });
 
