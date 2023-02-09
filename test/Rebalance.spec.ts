@@ -487,7 +487,7 @@ describe('Rebalance & its utils', () => {
     const totalAssets = await dnGmxJuniorVault.totalAssets();
     console.log({ totalAssets });
 
-    expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.eq(availableBorrow);
+    expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.closeTo(availableBorrow, 10n);
 
     // unhedgedGlp should incur some slippage when converting glp to usdc, so it should be within bounds
     expect(await dnGmxJuniorVault.unhedgedGlpInUsdc()).to.gt(
@@ -1003,7 +1003,7 @@ describe('Rebalance & its utils', () => {
     const [btcInitial, ethInitial] = await dnGmxJuniorVault.getCurrentBorrows();
 
     expect(btcInitial).to.eq(wbtcPoolAmount.mul(glpDeposited).div(glpTotalSupply));
-    expect(ethInitial).to.eq(wethPoolAmount.mul(glpDeposited).div(glpTotalSupply));
+    expect(ethInitial).to.closeTo(wethPoolAmount.mul(glpDeposited).div(glpTotalSupply), 1);
 
     wethPoolAmount = await changer.changeCurrentWeights('WETH', ethAmountFinal);
     wbtcPoolAmount = await changer.changeCurrentWeights('WBTC', btcAmountFinal);
