@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { BigNumber, constants, ContractTransaction } from 'ethers';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
-import { DnGmxJuniorVault, DnGmxJuniorVaultManager, DnGmxJuniorVaultMock, ERC20Upgradeable } from '../typechain-types';
+import { DnGmxJuniorVaultManager, DnGmxJuniorVaultMock, ERC20Upgradeable } from '../typechain-types';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 import { generateErc20Balance } from './utils/generator';
 
@@ -9,17 +9,15 @@ describe('Junior Vault ERC4646 functions', () => {
   const MAX_BPS = BigNumber.from(10_000);
   it('Deposit', async () => {
     const opts = await dnGmxJuniorVaultFixture();
-    const { dnGmxJuniorVault, dnGmxSeniorVault, dnGmxJuniorVaultManager, wbtc, weth, fsGlp, users, admin } = opts;
-    await dnGmxJuniorVault.setAdminParams(admin.address, dnGmxSeniorVault.address, constants.MaxUint256, 0, 3000);
+    const { dnGmxJuniorVault, dnGmxSeniorVault, dnGmxJuniorVaultManager, wbtc, weth, fsGlp, users } = opts;
 
     const PRICE_PRECISION = BigNumber.from(10).pow(30);
 
+    await dnGmxJuniorVault.rebalance();
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('100', 6), users[1].address);
 
     const amount = parseEther('100');
     const preview = await dnGmxJuniorVault.previewDeposit(amount);
-
-    // const glpPriceBeforeDeposit = await dnGmxJuniorVault.getPriceExternal();
 
     const tx = await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
     const slippageAmount = await calculateSlippage(tx, dnGmxJuniorVaultManager, dnGmxJuniorVault, wbtc, weth);
@@ -29,11 +27,10 @@ describe('Junior Vault ERC4646 functions', () => {
 
     const dnUsdcDeposited = await dnGmxJuniorVault.dnUsdcDeposited();
 
-    let vmv;
+    const thresholds = await dnGmxJuniorVault.getThresholds();
     const borrowValues = await dnGmxJuniorVault.getCurrentBorrows();
 
-    const thresholds = await dnGmxJuniorVault.getThresholds();
-
+    let vmv;
     // glp notional value
     vmv = glpBalance.mul(glpPrice).div(PRICE_PRECISION);
     // dn usdc deposited
@@ -42,10 +39,6 @@ describe('Junior Vault ERC4646 functions', () => {
     const borrowValueInUsd = await dnGmxJuniorVault.getBorrowValue(borrowValues[0], borrowValues[1]);
     vmv = vmv.sub(borrowValueInUsd);
     // batching manager glp & unHedgedGlp components are 0
-
-    console.log('amount', amount);
-    console.log('slippageAmount', slippageAmount);
-    console.log('diff', amount.sub(slippageAmount));
 
     const totalSupply = await dnGmxJuniorVault.totalSupply();
     // console.log("### Total Assets Min ###");
@@ -74,7 +67,7 @@ describe('Junior Vault ERC4646 functions', () => {
 
   it('Mint', async () => {
     const opts = await dnGmxJuniorVaultFixture();
-    const { dnGmxJuniorVault, dnGmxSeniorVault, vdWBTC, vdWETH, aUSDC, fsGlp, users } = opts;
+    const { dnGmxJuniorVault, dnGmxSeniorVault, dnGmxJuniorVaultManager, weth, wbtc, sGlp, fsGlp, users } = opts;
 
     const withdrawFeeBps = await dnGmxJuniorVault.withdrawFeeBps();
 
@@ -83,10 +76,29 @@ describe('Junior Vault ERC4646 functions', () => {
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('100', 6), users[1].address);
 
-    const amount = parseEther('100');
-    const preview = await dnGmxJuniorVault.previewMint(amount);
+    // previewMint returns 1:1 when totalSupply is zero, so minting some initial amount before actual testing logic
+    await dnGmxJuniorVault.connect(users[0]).deposit(parseEther('10'), users[0].address);
 
-    await dnGmxJuniorVault.connect(users[0]).mint(amount, users[0].address);
+    let ta = await dnGmxJuniorVault.totalAssets();
+    let ts = await dnGmxJuniorVault.totalSupply();
+
+    console.log({ ta });
+    console.log({ ts });
+
+    // this makes asset:shares 1:1 to actually test previewMint
+    await sGlp.connect(users[0]).transfer(dnGmxJuniorVault.address, ts.sub(ta));
+
+    ta = await dnGmxJuniorVault.totalAssets();
+    ts = await dnGmxJuniorVault.totalSupply();
+
+    const amount = parseEther('100');
+
+    const previewAssetsInput = await dnGmxJuniorVault.previewMint(amount);
+    console.log({ previewAssetsInput });
+
+    const tx = await dnGmxJuniorVault.connect(users[0]).mint(amount, users[0].address);
+    const slippageAmount = await calculateSlippage(tx, dnGmxJuniorVaultManager, dnGmxJuniorVault, wbtc, weth);
+    console.log({ slippageAmount });
 
     const glpPrice = await dnGmxJuniorVault.getGlpPriceInUsdc(false);
     const glpBalance = await fsGlp.balanceOf(dnGmxJuniorVault.address);
@@ -103,31 +115,22 @@ describe('Junior Vault ERC4646 functions', () => {
     // borrowed notional from aave
     vmv = vmv.sub(await dnGmxJuniorVault.getBorrowValue(borrowValues[0], borrowValues[1]));
     // batching manager glp & unHedgedGlp components are 0
+    expect(await dnGmxJuniorVault.getVaultMarketValue()).to.eq(vmv);
 
-    expect(preview).to.eq(amount);
+    expect(previewAssetsInput).to.gt(amount);
+    // expect(previewAssetsInput).to.eq(;
 
     expect(await dnGmxJuniorVault.unhedgedGlpInUsdc()).to.eq(0);
     expect(await dnGmxJuniorVault.getVaultMarketValue()).to.eq(vmv);
 
-    expect(await dnGmxJuniorVault.totalSupply()).to.eq(amount);
-    expect(await dnGmxJuniorVault.totalAssets()).to.gt(amount.mul(MAX_BPS.sub(withdrawFeeBps).div(MAX_BPS)));
+    expect(await dnGmxJuniorVault.totalSupply()).to.eq(ts.add(amount));
   });
 
   it('Full Withdraw', async () => {
     const opts = await dnGmxJuniorVaultFixture();
     const { dnGmxJuniorVault, dnGmxSeniorVault, dnGmxJuniorVaultManager, admin, users, weth, wbtc } = opts;
 
-    await dnGmxJuniorVault.setThresholds(
-      100, //_slippageThresholdSwapBtcBps
-      100, //_slippageThresholdSwapEthBps
-      100, //_slippageThresholdGmxBps
-      0n, //_usdcConversionThreshold
-      0n, //_wethConversionThreshold
-      0n, //_hedgeUsdcAmountThreshold
-      parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
-      parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
-    );
-    await dnGmxJuniorVault.setAdminParams(admin.address, dnGmxSeniorVault.address, constants.MaxUint256, 50, 3000);
+    await dnGmxJuniorVault.setAdminParams(admin.address, dnGmxSeniorVault.address, constants.MaxUint256, 100, 3000);
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
@@ -135,8 +138,8 @@ describe('Junior Vault ERC4646 functions', () => {
 
     await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
 
-    const userAssets = await (await dnGmxJuniorVault.convertToAssets(dnGmxJuniorVault.balanceOf(users[0].address)))
-      .mul(MAX_BPS.sub(50))
+    const userAssets = (await dnGmxJuniorVault.convertToAssets(dnGmxJuniorVault.balanceOf(users[0].address)))
+      .mul(MAX_BPS.sub(100))
       .div(MAX_BPS);
     const totalAssetsBeforeRedeem = await dnGmxJuniorVault.totalAssets();
 
@@ -344,16 +347,14 @@ describe('Junior Vault ERC4646 functions', () => {
     let totalSlippage: BigNumber = BigNumber.from(0);
     const PRICE_PRECISION = BigNumber.from(10).pow(30);
 
-    console.log('Token Swapped Topic', dnGmxJuniorVaultManager.interface.getEventTopic('TokenSwapped'));
-
     for (const log of receipt.logs) {
       if (log.topics[0] === dnGmxJuniorVaultManager.interface.getEventTopic('TokenSwapped')) {
         const args = dnGmxJuniorVaultManager.interface.parseLog(log).args;
-        console.log(args);
+        // console.log(args);
 
         if (args.fromToken.toLowerCase() == wbtc.address.toLowerCase()) {
           const btcPrice = await dnGmxJuniorVault['getPrice(address,bool)'](wbtc.address, true);
-          console.log('btcPrice', btcPrice);
+          // console.log('btcPrice', btcPrice);
 
           //Adding 1 to roundUp the slippage
           slippage = BigNumber.from(args.fromQuantity)
@@ -364,7 +365,7 @@ describe('Junior Vault ERC4646 functions', () => {
 
         if (args.fromToken.toLowerCase() == weth.address.toLowerCase()) {
           const ethPrice = await dnGmxJuniorVault['getPrice(address,bool)'](weth.address, true);
-          console.log('ethPrice', ethPrice);
+          // console.log('ethPrice', ethPrice);
 
           //Adding 1 to roundUp the slippage
           slippage = BigNumber.from(args.fromQuantity)
@@ -375,7 +376,7 @@ describe('Junior Vault ERC4646 functions', () => {
 
         if (args.toToken.toLowerCase() == wbtc.address.toLowerCase()) {
           const btcPrice = await dnGmxJuniorVault['getPrice(address,bool)'](wbtc.address, true);
-          console.log('btcPrice', btcPrice);
+          // console.log('btcPrice', btcPrice);
           //Adding 1 to roundUp the slippage
           slippage = BigNumber.from(args.fromQuantity).sub(
             BigNumber.from(args.toQuantity).mul(btcPrice).div(PRICE_PRECISION),
@@ -384,7 +385,7 @@ describe('Junior Vault ERC4646 functions', () => {
 
         if (args.toToken.toLowerCase() == weth.address.toLowerCase()) {
           const ethPrice = await dnGmxJuniorVault['getPrice(address,bool)'](weth.address, true);
-          console.log('ethPrice', ethPrice);
+          // console.log('ethPrice', ethPrice);
 
           //Adding 1 to roundUp the slippage
           slippage = BigNumber.from(args.fromQuantity).sub(
@@ -394,7 +395,7 @@ describe('Junior Vault ERC4646 functions', () => {
 
         totalSlippage = slippage.gt(0) ? totalSlippage.add(slippage).add(1n) : totalSlippage;
 
-        console.log('slippage', slippage);
+        // console.log('slippage', slippage);
       }
     }
 

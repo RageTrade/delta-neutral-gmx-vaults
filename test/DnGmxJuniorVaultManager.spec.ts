@@ -4,7 +4,7 @@ import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { BigNumber, BigNumberish } from 'ethers';
 import hre, { ethers } from 'hardhat';
-import { DnGmxJuniorVaultManagerTest, IERC20, ISwapRouter, Quoter, QuoterLib } from '../typechain-types';
+import { DnGmxJuniorVaultManagerTest, IERC20, ISwapRouter, QuoterLib } from '../typechain-types';
 import addresses from './fixtures/addresses';
 import { generateErc20Balance } from './utils/generator';
 
@@ -30,11 +30,6 @@ describe('DnGmxJuniorVaultManager', () => {
   });
 
   async function deployTest() {
-    const quoter = (await hre.ethers.deployContract('Quoter', [
-      '0x1F98431c8aD98523631AE4a59f267346ea31F984',
-      weth.address,
-    ])) as Quoter;
-
     const quoterLib = (await hre.ethers.deployContract('QuoterLib')) as QuoterLib;
 
     const test = (await hre.ethers.deployContract(

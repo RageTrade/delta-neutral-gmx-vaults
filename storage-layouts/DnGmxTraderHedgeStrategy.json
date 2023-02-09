@@ -1,0 +1,196 @@
+{
+  "storage": [
+    {
+      "astId": 3990,
+      "contract": "contracts/vaults/DnGmxTraderHedgeStrategy.sol:DnGmxTraderHedgeStrategy",
+      "label": "_initialized",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_uint8"
+    },
+    {
+      "astId": 3993,
+      "contract": "contracts/vaults/DnGmxTraderHedgeStrategy.sol:DnGmxTraderHedgeStrategy",
+      "label": "_initializing",
+      "offset": 1,
+      "slot": "0",
+      "type": "t_bool"
+    },
+    {
+      "astId": 5259,
+      "contract": "contracts/vaults/DnGmxTraderHedgeStrategy.sol:DnGmxTraderHedgeStrategy",
+      "label": "__gap",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_array(t_uint256)50_storage"
+    },
+    {
+      "astId": 3862,
+      "contract": "contracts/vaults/DnGmxTraderHedgeStrategy.sol:DnGmxTraderHedgeStrategy",
+      "label": "_owner",
+      "offset": 0,
+      "slot": "51",
+      "type": "t_address"
+    },
+    {
+      "astId": 3982,
+      "contract": "contracts/vaults/DnGmxTraderHedgeStrategy.sol:DnGmxTraderHedgeStrategy",
+      "label": "__gap",
+      "offset": 0,
+      "slot": "52",
+      "type": "t_array(t_uint256)49_storage"
+    },
+    {
+      "astId": 33009,
+      "contract": "contracts/vaults/DnGmxTraderHedgeStrategy.sol:DnGmxTraderHedgeStrategy",
+      "label": "traderOIHedgeBps",
+      "offset": 0,
+      "slot": "101",
+      "type": "t_uint16"
+    },
+    {
+      "astId": 33011,
+      "contract": "contracts/vaults/DnGmxTraderHedgeStrategy.sol:DnGmxTraderHedgeStrategy",
+      "label": "keeper",
+      "offset": 2,
+      "slot": "101",
+      "type": "t_address"
+    },
+    {
+      "astId": 33014,
+      "contract": "contracts/vaults/DnGmxTraderHedgeStrategy.sol:DnGmxTraderHedgeStrategy",
+      "label": "gmxVault",
+      "offset": 0,
+      "slot": "102",
+      "type": "t_contract(IVault)18045"
+    },
+    {
+      "astId": 33017,
+      "contract": "contracts/vaults/DnGmxTraderHedgeStrategy.sol:DnGmxTraderHedgeStrategy",
+      "label": "glpManager",
+      "offset": 0,
+      "slot": "103",
+      "type": "t_contract(IGlpManager)17172"
+    },
+    {
+      "astId": 33020,
+      "contract": "contracts/vaults/DnGmxTraderHedgeStrategy.sol:DnGmxTraderHedgeStrategy",
+      "label": "juniorVault",
+      "offset": 0,
+      "slot": "104",
+      "type": "t_contract(IDnGmxJuniorVault)16520"
+    },
+    {
+      "astId": 33023,
+      "contract": "contracts/vaults/DnGmxTraderHedgeStrategy.sol:DnGmxTraderHedgeStrategy",
+      "label": "glp",
+      "offset": 0,
+      "slot": "105",
+      "type": "t_contract(IERC20Metadata)7532"
+    },
+    {
+      "astId": 33026,
+      "contract": "contracts/vaults/DnGmxTraderHedgeStrategy.sol:DnGmxTraderHedgeStrategy",
+      "label": "weth",
+      "offset": 0,
+      "slot": "106",
+      "type": "t_contract(IERC20Metadata)7532"
+    },
+    {
+      "astId": 33029,
+      "contract": "contracts/vaults/DnGmxTraderHedgeStrategy.sol:DnGmxTraderHedgeStrategy",
+      "label": "wbtc",
+      "offset": 0,
+      "slot": "107",
+      "type": "t_contract(IERC20Metadata)7532"
+    },
+    {
+      "astId": 33031,
+      "contract": "contracts/vaults/DnGmxTraderHedgeStrategy.sol:DnGmxTraderHedgeStrategy",
+      "label": "btcTraderOIHedge",
+      "offset": 0,
+      "slot": "108",
+      "type": "t_int128"
+    },
+    {
+      "astId": 33033,
+      "contract": "contracts/vaults/DnGmxTraderHedgeStrategy.sol:DnGmxTraderHedgeStrategy",
+      "label": "ethTraderOIHedge",
+      "offset": 16,
+      "slot": "108",
+      "type": "t_int128"
+    },
+    {
+      "astId": 33037,
+      "contract": "contracts/vaults/DnGmxTraderHedgeStrategy.sol:DnGmxTraderHedgeStrategy",
+      "label": "__gaps",
+      "offset": 0,
+      "slot": "109",
+      "type": "t_array(t_uint256)50_storage"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_array(t_uint256)49_storage": {
+      "base": "t_uint256",
+      "encoding": "inplace",
+      "label": "uint256[49]",
+      "numberOfBytes": "1568"
+    },
+    "t_array(t_uint256)50_storage": {
+      "base": "t_uint256",
+      "encoding": "inplace",
+      "label": "uint256[50]",
+      "numberOfBytes": "1600"
+    },
+    "t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    },
+    "t_contract(IDnGmxJuniorVault)16520": {
+      "encoding": "inplace",
+      "label": "contract IDnGmxJuniorVault",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IERC20Metadata)7532": {
+      "encoding": "inplace",
+      "label": "contract IERC20Metadata",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IGlpManager)17172": {
+      "encoding": "inplace",
+      "label": "contract IGlpManager",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IVault)18045": {
+      "encoding": "inplace",
+      "label": "contract IVault",
+      "numberOfBytes": "20"
+    },
+    "t_int128": {
+      "encoding": "inplace",
+      "label": "int128",
+      "numberOfBytes": "16"
+    },
+    "t_uint16": {
+      "encoding": "inplace",
+      "label": "uint16",
+      "numberOfBytes": "2"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    },
+    "t_uint8": {
+      "encoding": "inplace",
+      "label": "uint8",
+      "numberOfBytes": "1"
+    }
+  }
+}

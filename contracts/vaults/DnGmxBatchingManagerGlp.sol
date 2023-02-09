@@ -35,17 +35,15 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
         uint256 currentRound;
         // junior vault shares minted in current roudn
         uint256 roundSharesMinted;
-        // amount of sGlp received in current round
+        // amount of sGlp converted to shares so far in current round
         uint256 roundGlpDeposited;
-        // amount of usdc recieved in current round
+        // amount of glp pending to be converted to shares in current round
         uint256 roundAssetBalance;
         // stores junior vault shares accumuated for user
         mapping(address user => UserDeposit) userDeposits;
         // stores total glp received in a given round
         mapping(uint256 roundId => RoundDeposit) roundDeposits;
     }
-
-    uint256 private constant MAX_BPS = 10_000;
 
     // keeper can be EOA or smart contracts which executes stake and batch
     address public keeper;
@@ -54,8 +52,6 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
 
     uint256 public depositCap;
 
-    // !!! previously this variable was glpDepositPendingThreshold
-    // re-using same storage slot for storing threshold on usdc (instead of glp compared to previous version)
     uint256 public minGlpDepositThreshold;
 
     // staked glp
@@ -67,9 +63,6 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
     IVault private gmxUnderlyingVault;
     // gmx's RewardRouterV2 (RewardRouterV2.sol) contract
     IRewardRouterV2 private rewardRouter;
-
-    // batching mangager bypass contract
-    IBatchingManagerBypass private bypass;
 
     // batching manager's state
     VaultBatchingState public vaultBatchingState;
@@ -148,10 +141,6 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
         emit KeeperUpdated(_keeper);
     }
 
-    function setBypass(IBatchingManagerBypass _bypass) external onlyOwner {
-        bypass = _bypass;
-    }
-
     /// @notice sets the slippage (in bps) to use while staking on gmx
     function setThresholds(uint256 _minGlpDepositThreshold) external onlyOwner {
         minGlpDepositThreshold = _minGlpDepositThreshold;
@@ -188,7 +177,7 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
 
         if (vaultBatchingState.roundAssetBalance + amount > depositCap) revert DepositCapBreached();
 
-        // user gives approval to batching manager to spend usdc
+        // user gives approval to batching manager to spend glp
         sGlp.transferFrom(msg.sender, address(this), amount);
 
         UserDeposit storage userDeposit = vaultBatchingState.userDeposits[receiver];
@@ -225,20 +214,11 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
 
         if (_sGlpToDeposit == 0) revert NoAssetBalance();
 
-        // ensure we are atleast swapping minGlpDepositThreshold units of usdc
-        //
-        // here, _roundAssetBalance will be always >= _sGlpToDeposit, because:
-        // 1) usdcConversionFractionBps <= MAX_BPS
-        //
-        // here, _roundAssetBalance will be always >= minGlpDepositThreshold because:
-        // 1) when swapping first time in round, due to checks in depositUsdc
-        // 2) when swapping subsequent times, due to checks below (which ensure remaining usdc >= minGlpDepositThreshold)
         if (_sGlpToDeposit < minGlpDepositThreshold.toUint128()) _sGlpToDeposit = minGlpDepositThreshold.toUint128();
 
         if ((_roundAssetBalance - _sGlpToDeposit) <= minGlpDepositThreshold) _sGlpToDeposit = _roundAssetBalance;
 
         // eventually, vaultBatchingState.roundAssetBalance should become 0 for current round
-        // (due to above conditions)
         vaultBatchingState.roundAssetBalance = _roundAssetBalance - _sGlpToDeposit;
 
         vaultBatchingState.roundGlpDeposited += _sGlpToDeposit;

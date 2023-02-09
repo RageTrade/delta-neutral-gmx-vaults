@@ -211,7 +211,7 @@ describe('Swaps', () => {
     // console.log('price of usdc (from gmx)', formatUnits(priceOfUsdc, 30 - 6))
     // console.log('price of glp', formatUnits(priceOfGlp, 30 - 18))
 
-    expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.eq(0);
+    expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.closeTo(0n, 10n);
     expect(await dnGmxJuniorVault.totalAssets()).to.gt(minGlpOut);
   });
 

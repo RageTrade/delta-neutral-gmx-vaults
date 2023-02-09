@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { BigNumber, constants } from 'ethers';
+import { BigNumber } from 'ethers';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
 import hre, { ethers } from 'hardhat';
 import { GMX_ECOSYSTEM_ADDRESSES } from './fixtures/addresses';
@@ -34,8 +34,7 @@ describe('Deposit Periphery', () => {
   });
 
   it('depositToken - revert due to allowance', async () => {
-    const { usdc, users, depositPeriphery, dnGmxJuniorVault, glpManager, dnGmxSeniorVault } =
-      await dnGmxJuniorVaultFixture();
+    const { usdc, users, depositPeriphery, glpManager, dnGmxSeniorVault } = await dnGmxJuniorVaultFixture();
 
     const govAddr = await glpManager.gov();
 
@@ -58,8 +57,7 @@ describe('Deposit Periphery', () => {
   });
 
   it('depositToken - non registered token', async () => {
-    const { aUSDC, users, depositPeriphery, dnGmxJuniorVault, glpManager, dnGmxSeniorVault } =
-      await dnGmxJuniorVaultFixture();
+    const { users, depositPeriphery, glpManager, dnGmxSeniorVault } = await dnGmxJuniorVaultFixture();
 
     const govAddr = await glpManager.gov();
 
@@ -155,8 +153,7 @@ describe('Deposit Periphery', () => {
   });
 
   it('depositToken -  usdc - fail slippage', async () => {
-    const { usdc, users, depositPeriphery, dnGmxJuniorVault, glpManager, dnGmxSeniorVault } =
-      await dnGmxJuniorVaultFixture();
+    const { usdc, users, depositPeriphery, glpManager, dnGmxSeniorVault } = await dnGmxJuniorVaultFixture();
 
     const govAddr = await glpManager.gov();
 

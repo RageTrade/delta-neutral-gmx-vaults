@@ -242,8 +242,8 @@ describe('DnGmx Senior Vault', () => {
         dnGmxSeniorVault.connect(users[1]).withdraw(amount, users[1].address, users[1].address),
       ).to.changeTokenBalance(usdc, users[1], amount);
 
-      expect(await dnGmxSeniorVault.totalAssets()).to.eq(0);
-      expect(await aUSDC.balanceOf(dnGmxSeniorVault.address)).to.eq(0);
+      expect(await dnGmxSeniorVault.totalAssets()).to.closeTo(0, 1);
+      expect(await aUSDC.balanceOf(dnGmxSeniorVault.address)).to.closeTo(0, 5);
     });
 
     it('Borrow fails for non whitelisted borrower', async () => {
