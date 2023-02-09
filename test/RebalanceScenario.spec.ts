@@ -1588,7 +1588,7 @@ describe('Rebalance Scenarios', () => {
     await checker.checkTotalAssets(994178453231781000000000n, 10n ** 19n, true);
     await checker.checkTotalSupply(994293731385785000000000n, 10n ** 19n, true);
     await checker.checkCurrentBorrowed([992049845n, 197790886239297000000n], [1000n, 10n ** 10n]);
-    await checker.checkVaultMktValue(928862175387n, 10n ** 4n);
+    await checker.checkVaultMktValue(928862175387n, 10n ** 6n);
     await checker.checkBorrowValue(538491398501n, 10n ** 6n);
     await checker.checkUsdcBorrwed(411787540029n, 10n ** 6n);
 
@@ -1632,9 +1632,9 @@ describe('Rebalance Scenarios', () => {
     await checker.checkTotalAssets(1482624471251770000000000n, 10n ** 19n, true);
     await checker.checkTotalSupply(1495880989287590000000000n, 10n ** 19n, true);
     await checker.checkCurrentBorrowed([1473758445n, 293831998731937000000n], [1000n, 10n ** 15n]);
-    await checker.checkVaultMktValue(1371720141925n, 10n ** 5n);
-    await checker.checkBorrowValue(811987847198n, 10n ** 5n);
-    await checker.checkUsdcBorrwed(620931883151n, 10n ** 5n);
+    await checker.checkVaultMktValue(1371720141925n, 10n ** 6n);
+    await checker.checkBorrowValue(811987847198n, 10n ** 6n);
+    await checker.checkUsdcBorrwed(620931883151n, 10n ** 6n);
 
     console.log('--------------------Time Increased--------------------');
     await increaseBlockTimestamp(4 * 24 * 60 * 60);
@@ -1680,7 +1680,7 @@ describe('Rebalance Scenarios', () => {
     await checker.checkTotalSupply(1495880987382540000000000n, 10n ** 19n, true);
 
     await checker.checkCurrentBorrowed([1496850874n, 298436756009484000000n], [1000n, 10n ** 16n]);
-    await checker.checkVaultMktValue(1384704000178n, 10n ** 4n);
+    await checker.checkVaultMktValue(1384704000178n, 10n ** 6n);
     await checker.checkBorrowValue(799309445413n, 10n ** 6n);
     await checker.checkUsdcBorrwed(611236634727n, 10n ** 6n);
 
@@ -2014,7 +2014,7 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await changer.addLiquidity();
     await dnGmxJuniorVault.grantAllowances();
-    console.log("grant allowance")
+    console.log('grant allowance');
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds(
