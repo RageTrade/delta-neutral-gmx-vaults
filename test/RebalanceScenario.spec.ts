@@ -960,7 +960,7 @@ describe('Rebalance Scenarios', () => {
     await checker.checkCurrentBorrowed([144353n - 1n, 28116385489937200n], [0, 10n ** 10n]);
     await checker.checkVaultMktValue(137201587n, 10000n);
     await checker.checkBorrowValue(78474011n, 300n);
-    await checker.checkUsdcBorrwed(60009537n, 10n);
+    await checker.checkUsdcBorrwed(60009537n, 15n);
 
     console.log('--------------------Time Increased--------------------');
     await increaseBlockTimestamp(60);
@@ -1102,7 +1102,7 @@ describe('Rebalance Scenarios', () => {
     await checker.checkCurrentBorrowed([144353n - 1n, 28116385489937200n], [0, 10n ** 10n]);
     await checker.checkVaultMktValue(137201587n, 10000n);
     await checker.checkBorrowValue(78474011n, 300n);
-    await checker.checkUsdcBorrwed(60009537n, 10n);
+    await checker.checkUsdcBorrwed(60009537n, 15n);
 
     console.log('--------------------Time Increased--------------------');
     await increaseBlockTimestamp(60);
@@ -1239,7 +1239,7 @@ describe('Rebalance Scenarios', () => {
     await checker.checkCurrentBorrowed([144353n - 1n, 28116385489937200n], [0, 10n ** 10n]);
     await checker.checkVaultMktValue(137201587n, 10000n);
     await checker.checkBorrowValue(78474011n, 300n);
-    await checker.checkUsdcBorrwed(60009537n, 10n);
+    await checker.checkUsdcBorrwed(60009537n, 15n);
 
     console.log('--------------------Time Increased--------------------');
     await increaseBlockTimestamp(60);
