@@ -218,7 +218,7 @@ describe('Rebalance & its utils', () => {
     expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.eq(currentDnGmxSeniorVaultAmountAfter);
   });
 
-  it.skip('Rebalance Trial', async () => {
+  it('Rebalance Hedge Unit Tests', async () => {
     [];
     // Both increase above threshold
     await testRebalanceHedge({
@@ -1000,6 +1000,7 @@ describe('Rebalance & its utils', () => {
     let glpDeposited = await dnGmxJuniorVault.totalAssets();
     let glpTotalSupply = await glp.totalSupply();
 
+    await dnGmxJuniorVault.setPoolAmounts();
     tx = await dnGmxJuniorVault.rebalanceHedge(currentBtc, currentEth);
 
     const [btcInitial, ethInitial] = await dnGmxJuniorVault.getCurrentBorrows();
@@ -1016,6 +1017,7 @@ describe('Rebalance & its utils', () => {
     glpDeposited = await dnGmxJuniorVault.totalAssets();
     glpTotalSupply = await glp.totalSupply();
 
+    await dnGmxJuniorVault.setPoolAmounts();
     tx = await dnGmxJuniorVault.rebalanceHedge(btcInitial, ethInitial);
 
     const [btcFinal, ethFinal] = await dnGmxJuniorVault.getCurrentBorrows();

@@ -14,11 +14,13 @@ import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMat
 
 import { IERC4626 } from '../interfaces/IERC4626.sol';
 import { ERC4626Upgradeable } from '../ERC4626/ERC4626Upgradeable.sol';
+import { SafeCast } from '../libraries/SafeCast.sol';
 
 contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
     uint256 internal constant VARIABLE_INTEREST_MODE = 2;
     IDnGmxBatchingManager batchingManager;
 
+    using SafeCast for uint256;
     using FullMath for uint256;
     using FixedPointMathLib for uint256;
 
@@ -205,6 +207,11 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
 
     function isWithinAllowedDelta(uint256 optimalBorrow, uint256 currentBorrow) external view returns (bool) {
         return state.isWithinAllowedDelta(optimalBorrow, currentBorrow);
+    }
+
+    function setPoolAmounts() external {
+        state.btcPoolAmount = (state.gmxVault.poolAmounts(address(state.wbtc))).toUint128();
+        state.ethPoolAmount = (state.gmxVault.poolAmounts(address(state.weth))).toUint128();
     }
 
     function rebalanceHedge(uint256 currentBtcBorrow, uint256 currentEthBorrow) external returns (bool) {
