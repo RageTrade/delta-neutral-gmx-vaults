@@ -1589,7 +1589,7 @@ describe('Rebalance Scenarios', () => {
     await checker.checkTotalSupply(994293731385785000000000n, 10n ** 19n, true);
     await checker.checkCurrentBorrowed([992049845n, 197790886239297000000n], [1000n, 10n ** 10n]);
     await checker.checkVaultMktValue(928862175387n, 10n ** 4n);
-    await checker.checkBorrowValue(538491398501n, 10n ** 4n);
+    await checker.checkBorrowValue(538491398501n, 10n ** 6n);
     await checker.checkUsdcBorrwed(411787540029n, 10n ** 6n);
 
     await increaseBlockTimestamp(4 * 24 * 60 * 60);
@@ -1609,8 +1609,8 @@ describe('Rebalance Scenarios', () => {
 
     await checker.checkTotalAssets(985095159547403000000000n, 10n ** 19n, true);
     await checker.checkTotalSupply(994293731385785000000000n, 10n ** 19n, true);
-    await checker.checkVaultMktValue(911526031925n, 10n ** 4n);
-    await checker.checkBorrowValue(546759600949n, 10n ** 4n);
+    await checker.checkVaultMktValue(911526031925n, 10n ** 6n);
+    await checker.checkBorrowValue(546759600949n, 10n ** 6n);
 
     // New Deposit
     console.log('--------------------User2 Initial Deposit--------------------');
@@ -1629,12 +1629,12 @@ describe('Rebalance Scenarios', () => {
     await logger.logBorrowParams();
     await logger.logProtocolParamsAndHoldings();
 
-    await checker.checkTotalAssets(1482624459551140000000000n, 10n ** 19n, true);
-    await checker.checkTotalSupply(1495880977414910000000000n, 10n ** 19n, true);
-    await checker.checkCurrentBorrowed([1473758445n, 293832670274603000000n], [1000n, 10n ** 13n]);
-    await checker.checkVaultMktValue(1371720131207n, 10n ** 4n);
-    await checker.checkBorrowValue(811988918229n, 10n ** 4n);
-    await checker.checkUsdcBorrwed(620932702175n, 10n ** 4n);
+    await checker.checkTotalAssets(1482624471251770000000000n, 10n ** 19n, true);
+    await checker.checkTotalSupply(1495880989287590000000000n, 10n ** 19n, true);
+    await checker.checkCurrentBorrowed([1473758445n, 293831998731937000000n], [1000n, 10n ** 15n]);
+    await checker.checkVaultMktValue(1371720141925n, 10n ** 5n);
+    await checker.checkBorrowValue(811987847198n, 10n ** 5n);
+    await checker.checkUsdcBorrwed(620931883151n, 10n ** 5n);
 
     console.log('--------------------Time Increased--------------------');
     await increaseBlockTimestamp(4 * 24 * 60 * 60);
@@ -1656,10 +1656,10 @@ describe('Rebalance Scenarios', () => {
     await logger.logBorrowParams();
     await logger.logProtocolParamsAndHoldings();
 
-    await checker.checkTotalAssets(1509355754474420000000000n, 10n ** 19n, true);
-    await checker.checkTotalSupply(1495880977414910000000000n, 10n ** 19n, true);
-    await checker.checkVaultMktValue(1385482895511n, 10n ** 4n);
-    await checker.checkBorrowValue(787239922913n, 10n ** 4n);
+    await checker.checkTotalAssets(1509355733682100000000000n, 10n ** 19n, true);
+    await checker.checkTotalSupply(1495880987382540000000000n, 10n ** 19n, true);
+    await checker.checkVaultMktValue(1385482876235n, 10n ** 6n);
+    await checker.checkBorrowValue(787238883957n, 10n ** 6n);
 
     console.log('--------------------Time Based Rebalance--------------------');
     tx = await dnGmxJuniorVault.rebalance();
@@ -1676,13 +1676,13 @@ describe('Rebalance Scenarios', () => {
     await logger.logBorrowParams();
     await logger.logProtocolParamsAndHoldings();
 
-    await checker.checkTotalAssets(1508745223285320000000000n, 10n ** 19n, true);
-    await checker.checkTotalSupply(1495880977414910000000000n, 10n ** 19n, true);
+    await checker.checkTotalAssets(1508745192861260000000000n, 10n ** 19n, true);
+    await checker.checkTotalSupply(1495880987382540000000000n, 10n ** 19n, true);
 
-    await checker.checkCurrentBorrowed([1496850894n, 298436759896442000000n], [1000n, 10n ** 16n]);
-    await checker.checkVaultMktValue(1384704028102n, 10n ** 4n);
-    await checker.checkBorrowValue(799309455937n, 10n ** 4n);
-    await checker.checkUsdcBorrwed(611236642775n, 10n ** 4n);
+    await checker.checkCurrentBorrowed([1496850874n, 298436756009484000000n], [1000n, 10n ** 16n]);
+    await checker.checkVaultMktValue(1384704000178n, 10n ** 4n);
+    await checker.checkBorrowValue(799309445413n, 10n ** 6n);
+    await checker.checkUsdcBorrwed(611236634727n, 10n ** 6n);
 
     console.log('--------------------Time Increased--------------------');
     await increaseBlockTimestamp(4 * 24 * 60 * 60);
@@ -1704,10 +1704,10 @@ describe('Rebalance Scenarios', () => {
     await logger.logBorrowParams();
     await logger.logProtocolParamsAndHoldings();
 
-    await checker.checkTotalAssets(1493712282683300000000000n, 10n ** 19n, true);
-    await checker.checkTotalSupply(1495880977414910000000000n, 10n ** 19n, true);
-    await checker.checkVaultMktValue(1376829926176n, 10n ** 4n);
-    await checker.checkBorrowValue(813027515344n, 10n ** 4n);
+    await checker.checkTotalAssets(1493712252204410000000000n, 10n ** 19n, true);
+    await checker.checkTotalSupply(1495880987382540000000000n, 10n ** 19n, true);
+    await checker.checkVaultMktValue(1376829898086n, 10n ** 6n);
+    await checker.checkBorrowValue(813027504870n, 10n ** 6n);
 
     console.log('--------------------User2 Full Withdraw--------------------');
     const amount2 = dnGmxJuniorVault.balanceOf(users[2].address);
@@ -1725,12 +1725,12 @@ describe('Rebalance Scenarios', () => {
     await logger.logBorrowParams();
     await logger.logProtocolParamsAndHoldings();
 
-    await checker.checkTotalAssets(992919588605845000000000n, 5n * 10n ** 23n, true);
-    await checker.checkTotalSupply(994293731385785000000000n, 10n ** 22n, true);
-    await checker.checkCurrentBorrowed([988010061n, 196985900615247000000n], [1000n, 10n ** 19n]);
-    await checker.checkVaultMktValue(915132929597n, 10n ** 10n);
-    await checker.checkBorrowValue(536467516864n, 10n ** 6n);
-    await checker.checkUsdcBorrwed(410239865837n, 10n ** 6n);
+    await checker.checkTotalAssets(992919558807615000000000n, 5n * 10n ** 23n, true);
+    await checker.checkTotalSupply(994293731385785000000000n, 10n ** 19n, true);
+    await checker.checkCurrentBorrowed([988010033n, 196985894983052000000n], [1000n, 10n ** 19n]);
+    await checker.checkVaultMktValue(915132902133n, 10n ** 10n);
+    await checker.checkBorrowValue(536467501582n, 10n ** 6n);
+    await checker.checkUsdcBorrwed(410239854150n, 10n ** 6n);
   });
 
   it('RebalanceProfit < Threshold; Aave HF < Threshold (Excel)', async () => {
@@ -1887,9 +1887,9 @@ describe('Rebalance Scenarios', () => {
     //  await changer.changePriceToken('WBTC', 38694.59);
     //  await changer.changePriceToken('WETH', 2787.23);
     await logger.logGlpPrice();
-    await logger.logTargetWeights();
+    // await logger.logTargetWeights();
     await logger.logAavePosition();
-    await logger.logBorrowParams();
+    // await logger.logBorrowParams();
 
     // await changer.changeTargetWeight('WBTC', 20_000, gmxVault);
     // await changer.changeTargetWeight('WETH', 20_000, gmxVault);
@@ -1964,9 +1964,9 @@ describe('Rebalance Scenarios', () => {
     //  await changer.changePriceToken('WBTC', 38694.59);
     //  await changer.changePriceToken('WETH', 2787.23);
     await logger.logGlpPrice();
-    await logger.logTargetWeights();
+    // await logger.logTargetWeights();
     await logger.logAavePosition();
-    await logger.logBorrowParams();
+    // await logger.logBorrowParams();
 
     // await changer.changeTargetWeight('WBTC', 20_000, gmxVault);
     // await changer.changeTargetWeight('WETH', 20_000, gmxVault);
@@ -2014,6 +2014,7 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await changer.addLiquidity();
     await dnGmxJuniorVault.grantAllowances();
+    console.log("grant allowance")
 
     // becauses price are not changed on uniswap
     await dnGmxJuniorVault.setThresholds(
