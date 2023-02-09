@@ -1,6 +1,5 @@
 // RebalanceScenario.spec.ts
 // REBALANCE SCENARIO
-import { expect } from 'chai';
 import { BigNumber, ethers } from 'ethers';
 import { Logger } from './utils/logger';
 import { Changer } from './utils/changer';
@@ -8,8 +7,6 @@ import { Checker } from './utils/checker';
 import { increaseBlockTimestamp } from './utils/shared';
 import { formatEther, parseEther, parseUnits } from 'ethers/lib/utils';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
-import hre from 'hardhat';
-import { formatError } from '@ragetrade/sdk';
 
 describe('Rebalance Scenarios', () => {
   it('Rebalance Current Weights; 0% TraderOI Hedge (Excel)', async () => {

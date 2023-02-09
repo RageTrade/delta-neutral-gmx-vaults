@@ -1,12 +1,11 @@
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { formatEther, parseEther, parseUnits } from 'ethers/lib/utils';
-import hre, { ethers } from 'hardhat';
+import { parseEther, parseUnits } from 'ethers/lib/utils';
+import { ethers } from 'hardhat';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 import { Changer } from './utils/changer';
 import { Checker } from './utils/checker';
 import { generateErc20Balance } from './utils/generator';
-import { Logger } from './utils/logger';
 import { increaseBlockTimestamp } from './utils/shared';
 
 describe('Rebalance & its utils', () => {

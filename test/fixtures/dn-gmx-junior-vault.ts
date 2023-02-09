@@ -15,7 +15,7 @@ import { increaseBlockTimestamp } from '../utils/shared';
 import addresses, { GMX_ECOSYSTEM_ADDRESSES } from './addresses';
 import { dnGmxSeniorVaultFixture } from './dn-gmx-senior-vault';
 import { dnGmxTraderHedgeStrategyFixture } from './dn-gmx-trader-hedge-strategy';
-import { glpBatchingStakingManagerFixture } from './glp-batching-staking-manager';
+import { batchingManagerFixture } from './glp-batching-staking-manager';
 
 export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   const [admin, feeRecipient, ...users] = await hre.ethers.getSigners();
@@ -61,8 +61,8 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   const gmxVault = IVault__factory.connect(GMX_ECOSYSTEM_ADDRESSES.Vault, admin);
 
   await dnGmxJuniorVault.initialize(
-    'Delta Netural GMX Vault', // _name
-    'DN_GMX', // _symbol
+    'Delta Netural GMX Vault (Junior)', // _name
+    'DN_GMX_JUNIOR', // _symbol
     addresses.UNI_V3_SWAP_ROUTER, // _swapRouter
     GMX_ECOSYSTEM_ADDRESSES.RewardRouter, // _rewardRouter
     GMX_ECOSYSTEM_ADDRESSES.MintBurnRouter, // _mintBurnRewardRouter
@@ -118,8 +118,9 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     variableRateSlope2: 5n * 10n ** 29n,
   });
 
-  const glpBatchingStakingManagerFixtures = await glpBatchingStakingManagerFixture();
-  await glpBatchingStakingManagerFixtures.gmxBatchingManager.initialize(
+  const { usdcBatchingManager, glpBatchingManager } = await batchingManagerFixture();
+
+  await usdcBatchingManager.initialize(
     GMX_ECOSYSTEM_ADDRESSES.StakedGlp,
     usdc.address,
     GMX_ECOSYSTEM_ADDRESSES.MintBurnRouter,
@@ -128,12 +129,12 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     admin.address,
   );
 
-  await glpBatchingStakingManagerFixtures.gmxBatchingManager.setDepositCap(parseUnits('1000000000', 18));
+  await usdcBatchingManager.setDepositCap(parseUnits('1000000000', 18));
 
-  await glpBatchingStakingManagerFixtures.gmxBatchingManager.grantAllowances();
-  await glpBatchingStakingManagerFixtures.gmxBatchingManager.setThresholds(100, parseUnits('10', 6));
+  await usdcBatchingManager.grantAllowances();
+  await usdcBatchingManager.setThresholds(100, parseUnits('10', 6));
 
-  await glpBatchingStakingManagerFixtures.gmxBatchingManagerGlp.initialize(
+  await glpBatchingManager.initialize(
     GMX_ECOSYSTEM_ADDRESSES.StakedGlp,
     GMX_ECOSYSTEM_ADDRESSES.MintBurnRouter,
     GMX_ECOSYSTEM_ADDRESSES.NewGlpManager,
@@ -141,13 +142,13 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     admin.address,
   );
 
-  await glpBatchingStakingManagerFixtures.gmxBatchingManagerGlp.setDepositCap(parseUnits('1000000000', 18));
+  await glpBatchingManager.setDepositCap(parseUnits('1000000000', 18));
 
-  await glpBatchingStakingManagerFixtures.gmxBatchingManagerGlp.grantAllowances();
-  await glpBatchingStakingManagerFixtures.gmxBatchingManagerGlp.setThresholds(parseUnits('10', 18));
+  await glpBatchingManager.grantAllowances();
+  await glpBatchingManager.setThresholds(parseUnits('10', 18));
 
   await dnGmxJuniorVault.setAdminParams(admin.address, dnGmxSeniorVault.address, ethers.constants.MaxUint256, 0, 500);
-  await dnGmxJuniorVault.setBatchingManager(glpBatchingStakingManagerFixtures.gmxBatchingManager.address);
+  await dnGmxJuniorVault.setBatchingManager(glpBatchingManager.address);
 
   await dnGmxJuniorVault.setThresholds(
     100, //_slippageThresholdSwapBtcBps
@@ -292,7 +293,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     usdcLiquidationThreshold,
     dnGmxTraderHedgeStrategy,
     mocks: { swapRouterMock },
-    glpBatchingManager: glpBatchingStakingManagerFixtures.gmxBatchingManager,
-    gmxBatchingManagerGlp: glpBatchingStakingManagerFixtures.gmxBatchingManagerGlp,
+    glpBatchingManager: glpBatchingManager,
+    usdcBatchingManager: usdcBatchingManager,
   };
 });

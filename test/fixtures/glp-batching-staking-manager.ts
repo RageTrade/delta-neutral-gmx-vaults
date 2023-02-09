@@ -1,7 +1,6 @@
-import { parseUnits } from 'ethers/lib/utils';
 import { deployments } from 'hardhat';
 
-export const glpBatchingStakingManagerFixture = deployments.createFixture(async hre => {
+export const batchingManagerFixture = deployments.createFixture(async hre => {
   const gmxBatchingManagerFactory = await hre.ethers.getContractFactory('DnGmxBatchingManager');
 
   const gmxBatchingManager = await gmxBatchingManagerFactory.deploy();
@@ -11,7 +10,7 @@ export const glpBatchingStakingManagerFixture = deployments.createFixture(async 
   const gmxBatchingManagerGlp = await gmxBatchingManagerGlpFactory.deploy();
 
   return {
-    gmxBatchingManager: gmxBatchingManager,
-    gmxBatchingManagerGlp: gmxBatchingManagerGlp,
+    usdcBatchingManager: gmxBatchingManager,
+    glpBatchingManager: gmxBatchingManagerGlp,
   };
 });
