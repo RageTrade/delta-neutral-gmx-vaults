@@ -1991,7 +1991,7 @@ describe('Rebalance Scenarios', () => {
     await checker.checkUsdcBorrwed(36784806n, 10n);
   });
 
-  it.only('60% setTraderOIHedgeBps Traders Net Short; Hedge Position more short (Excel)', async () => {
+  it('60% setTraderOIHedgeBps Traders Net Short; Hedge Position more short (Excel)', async () => {
     let tx;
 
     const opts = await dnGmxJuniorVaultFixture();
