@@ -83,8 +83,14 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     // batching manager's state
     VaultBatchingState public vaultBatchingState;
 
+    // wrapped eth
+    IERC20 private weth;
+
+    // gmx's reward router used for harvesting rewards
+    IRewardRouterV2 private rewardsHarvestingRouter;
+
     // these gaps are added to allow adding new variables without shifting down inheritance chain
-    uint256[50] private __gaps;
+    uint256[48] private __gaps;
 
     /// @dev ensures caller is junior vault
     modifier onlyDnGmxJuniorVault() {
@@ -278,6 +284,28 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         emit ClaimedAndRedeemed(msg.sender, receiver, shares, glpReceived);
     }
 
+    function rescueFees() external onlyOwner {
+        rewardsHarvestingRouter.handleRewards({
+            shouldClaimGmx: false,
+            shouldStakeGmx: false,
+            shouldClaimEsGmx: true,
+            shouldStakeEsGmx: true,
+            shouldStakeMultiplierPoints: true,
+            shouldClaimWeth: true,
+            shouldConvertWethToEth: false
+        });
+
+        uint256 wethHarvested = weth.balanceOf(address(this));
+
+        uint256 price = gmxUnderlyingVault.getMinPrice(address(weth));
+
+        uint256 usdgAmount = wethHarvested.mulDiv(price * (MAX_BPS - slippageThresholdGmxBps), 1e30 * MAX_BPS);
+
+        uint256 glpReceived = _stakeGlp(address(weth), wethHarvested, usdgAmount);
+
+        sGlp.transfer(address(dnGmxJuniorVault), glpReceived);
+    }
+
     /*//////////////////////////////////////////////////////////////
                                 GETTERS
     //////////////////////////////////////////////////////////////*/
@@ -358,9 +386,6 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         // ensure we are atleast swapping minUsdcConversionAmount units of usdc
         //
         // here, _roundUsdcBalance will be always >= _usdcToConvert, because:
-        // 1) usdcConversionFractionBps <= MAX_BPS
-        //
-        // here, _roundUsdcBalance will be always >= minUsdcConversionAmount because:
         // 1) when swapping first time in round, due to checks in depositUsdc
         // 2) when swapping subsequent times, due to checks below (which ensure remaining usdc >= minUsdcConversionAmount)
         if (_usdcToConvert < minUsdcConversionAmount.toUint128()) _usdcToConvert = minUsdcConversionAmount.toUint128();
