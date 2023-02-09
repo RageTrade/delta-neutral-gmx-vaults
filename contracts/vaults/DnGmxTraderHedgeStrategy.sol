@@ -150,7 +150,7 @@ contract DnGmxTraderHedgeStrategy is OwnableUpgradeable, IDnGmxTraderHedgeStrate
     ///@param token address of token
     ///@param _traderOIHedgeBps % of trader OI to hedge
     ///@return amount of tokens of the supplied address underlying the given amount of glp
-    function _getTokenHedgeAmount(address token, uint16 _traderOIHedgeBps) private view returns (int256) {
+    function _getTokenHedgeAmount(address token, uint16 _traderOIHedgeBps) internal view returns (int256) {
         uint256 tokenPrecision = 10 ** IERC20Metadata(token).decimals();
 
         uint256 globalShort = gmxVault.globalShortSizes(token);
@@ -181,7 +181,7 @@ contract DnGmxTraderHedgeStrategy is OwnableUpgradeable, IDnGmxTraderHedgeStrate
     ///@notice checks if the hedge amounts are within the correct bounds
     ///@param tokenTraderOIHedge token trader OI hedge for token
     ///@param tokenTraderOIMax token trader OI hedge maximum amount
-    function _checkTokenHedgeAmount(int256 tokenTraderOIHedge, int256 tokenTraderOIMax) private pure returns (bool) {
+    function _checkTokenHedgeAmount(int256 tokenTraderOIHedge, int256 tokenTraderOIMax) internal pure returns (bool) {
         if (tokenTraderOIHedge.sign() * tokenTraderOIMax.sign() < 0) return false;
         if (tokenTraderOIHedge.abs() > tokenTraderOIMax.abs()) return false;
 
@@ -191,7 +191,7 @@ contract DnGmxTraderHedgeStrategy is OwnableUpgradeable, IDnGmxTraderHedgeStrate
     ///@notice returns token amount underlying glp amount deposited
     ///@param token address of token
     ///@return amount of tokens of the supplied address underlying the given amount of glp
-    function _getMaxTokenHedgeAmount(address token) private view returns (int256) {
+    function _getMaxTokenHedgeAmount(address token) internal view returns (int256) {
         uint256 globalShort = gmxVault.globalShortSizes(token);
         uint256 globalAveragePrice = glpManager.getGlobalShortAveragePrice(token);
         uint256 reservedAmount = gmxVault.reservedAmounts(token);
