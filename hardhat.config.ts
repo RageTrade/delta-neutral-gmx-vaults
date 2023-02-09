@@ -184,7 +184,13 @@ export default {
     strict: true,
   },
   storageLayoutChanges: {
-    contracts: ['DnGmxJuniorVault', 'DnGmxSeniorVault', 'DnGmxBatchingManager'],
+    contracts: [
+      'DnGmxJuniorVault',
+      'DnGmxSeniorVault',
+      'DnGmxBatchingManager',
+      'DnGmxBatchingManagerGlp',
+      'DnGmxTraderHedgeStrategy',
+    ],
     fullPath: false,
   },
   namedAccounts: {

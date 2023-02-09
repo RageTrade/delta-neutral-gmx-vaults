@@ -19,8 +19,8 @@
     "test": "TS_NODE_SKIP_IGNORE=true hardhat test",
     "typechain": "hardhat typechain",
     "patch-package": "patch-package --patch-dir .patches",
-    "storage:check": "yarn clean && hardhat storage-layout --check",
-    "storage:update": "yarn clean && hardhat storage-layout --update"
+    "storage:check": "hardhat storage-layout --check",
+    "storage:update": "hardhat storage-layout --update"
   },
   "resolutions": {
     "@solidity-parser/parser": "0.15.0"

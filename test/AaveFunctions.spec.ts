@@ -43,7 +43,7 @@ describe('Aave interactions & functions', () => {
     const btcAmount = parseUnits('0.002', 8);
     const ethAmount = parseEther('0.02');
 
-    const { dnGmxJuniorVault, usdc, wbtc, weth, aUSDC, vdWBTC, vdWETH, lendingPool } = await dnGmxJuniorVaultFixture();
+    const { dnGmxJuniorVault, usdc, wbtc, weth, aUSDC, vdWBTC, vdWETH } = await dnGmxJuniorVaultFixture();
     await generateErc20Balance(usdc, amount, dnGmxJuniorVault.address);
 
     expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.eq(0);

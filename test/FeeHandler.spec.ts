@@ -4,7 +4,6 @@ import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 import { increaseBlockTimestamp } from './utils/shared';
 import { BigNumber } from 'ethers';
-import { IRewardTracker__factory } from '../typechain-types';
 
 describe('Fee Handlers', () => {
   it('Protocol EsGmx Handlers & EsGmx Harvest', async () => {

@@ -406,6 +406,8 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         if (!isValidRebalance()) revert InvalidRebalance();
 
         emit Rebalanced();
+        state.btcPoolAmount = (state.gmxVault.poolAmounts(address(state.wbtc))).toUint128();
+        state.ethPoolAmount = (state.gmxVault.poolAmounts(address(state.weth))).toUint128();
 
         (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
         uint256 totalCurrentBorrowValue = state.getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
@@ -630,7 +632,9 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         uint256 assets = convertToAssets(shares);
         uint256 netAssets = state.getSlippageAdjustedAssets({ assets: assets, isDeposit: true });
 
-        return netAssets;
+        uint256 slippageInAssetTerms = assets - netAssets;
+
+        return assets + slippageInAssetTerms;
     }
 
     /// @notice preview function for withdrawal of assets
@@ -773,6 +777,11 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @notice harvests fees and rebalances profits before deposits and withdrawals
     /// @dev called first on any deposit/withdrawals
     function _rebalanceBeforeShareAllocation() internal {
+        if (state.btcPoolAmount == 0)
+            state.btcPoolAmount = (state.gmxVault.poolAmounts(address(state.wbtc))).toUint128();
+        if (state.ethPoolAmount == 0)
+            state.ethPoolAmount = (state.gmxVault.poolAmounts(address(state.weth))).toUint128();
+
         (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
         uint256 totalCurrentBorrowValue = state.getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
 

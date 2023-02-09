@@ -7,8 +7,8 @@ export const dnGmxSeniorVaultFixture = deployments.createFixture(async hre => {
 
   await dnGmxSeniorVault.initialize(
     addresses.USDC, // _usdc
-    'Aave LP Vault', // _name
-    'Aave_LP', // _symbol
+    'Delta Netural GMX Vault (Senior)', // name
+    'DN_GMX_SENIOR', // symbol
     addresses.AAVE_POOL_ADDRESS_PROVIDER,
   );
 
