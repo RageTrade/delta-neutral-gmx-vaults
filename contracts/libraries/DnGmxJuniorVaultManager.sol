@@ -1174,7 +1174,10 @@ library DnGmxJuniorVaultManager {
     function isValidRebalanceDeviation(State storage state) external view returns (bool) {
         (uint256 currentBtcBorrow, uint256 currentEthBorrow) = _getCurrentBorrows(state);
 
-        (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrows(state, _totalAssets(state, false));
+        (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrowsUpdatedPoolAmount(
+            state,
+            _totalAssets(state, false)
+        );
 
         return
             !(_isWithinAllowedDelta(state, optimalBtcBorrow, currentBtcBorrow) &&
@@ -1523,7 +1526,7 @@ library DnGmxJuniorVaultManager {
         return (state.vWbtc.balanceOf(address(this)), state.vWeth.balanceOf(address(this)));
     }
 
-    ///@notice returns optimal borrows for BTC and ETH respectively basis glpDeposited amount
+    ///@notice returns optimal borrows for BTC and ETH respectively basis glpDeposited amount and stored pool amount
     ///@param state set of all state variables of vault
     ///@param glpDeposited amount of glp for which optimal borrow needs to be calculated
     ///@return optimalBtcBorrow optimal amount of btc borrowed from AAVE
@@ -1535,7 +1538,7 @@ library DnGmxJuniorVaultManager {
         return _getOptimalBorrows(state, glpDeposited);
     }
 
-    ///@notice returns optimal borrows for BTC and ETH respectively basis glpDeposited amount
+    ///@notice returns optimal borrows for BTC and ETH respectively basis glpDeposited amount and stored pool amount
     ///@param state set of all state variables of vault
     ///@param glpDeposited amount of glp for which optimal borrow needs to be calculated
     ///@return optimalBtcBorrow optimal amount of btc borrowed from AAVE
@@ -1546,6 +1549,19 @@ library DnGmxJuniorVaultManager {
     ) private view returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) {
         optimalBtcBorrow = _getTokenReservesInGlp(state, address(state.wbtc), glpDeposited);
         optimalEthBorrow = _getTokenReservesInGlp(state, address(state.weth), glpDeposited);
+    }
+
+    ///@notice returns optimal borrows for BTC and ETH respectively basis glpDeposited amount and current pool amounts
+    ///@param state set of all state variables of vault
+    ///@param glpDeposited amount of glp for which optimal borrow needs to be calculated
+    ///@return optimalBtcBorrow optimal amount of btc borrowed from AAVE
+    ///@return optimalEthBorrow optimal amount of eth borrowed from AAVE
+    function _getOptimalBorrowsUpdatedPoolAmount(
+        State storage state,
+        uint256 glpDeposited
+    ) private view returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) {
+        optimalBtcBorrow = _getTokenReservesInGlpUpdatedPoolAmount(state, address(state.wbtc), glpDeposited);
+        optimalEthBorrow = _getTokenReservesInGlpUpdatedPoolAmount(state, address(state.weth), glpDeposited);
     }
 
     ///@notice returns optimal borrows for BTC and ETH respectively basis available borrow amount
@@ -1625,7 +1641,7 @@ library DnGmxJuniorVaultManager {
         optimalEthBorrow = maxBorrowValue.mulDivDown(ethWeight * PRICE_PRECISION, (btcWeight + ethWeight) * ethPrice);
     }
 
-    ///@notice returns token amount underlying glp amount deposited
+    ///@notice returns token amount underlying glp amount deposited and stored pool amount
     ///@param state set of all state variables of vault
     ///@param token address of token
     ///@param glpDeposited amount of glp for which underlying token amount is being calculated
@@ -1638,7 +1654,7 @@ library DnGmxJuniorVaultManager {
         return _getTokenReservesInGlp(state, token, glpDeposited);
     }
 
-    ///@notice returns token amount underlying glp amount deposited
+    ///@notice returns token amount underlying glp amount deposited and stored pool amount
     ///@param state set of all state variables of vault
     ///@param token address of token
     ///@param glpDeposited amount of glp for which underlying token amount is being calculated
@@ -1648,8 +1664,33 @@ library DnGmxJuniorVaultManager {
         address token,
         uint256 glpDeposited
     ) private view returns (uint256) {
-        uint256 totalSupply = state.glp.totalSupply();
         uint256 poolAmount = token == address(state.wbtc) ? state.btcPoolAmount : state.ethPoolAmount;
+
+        return _getTokenReservesFromPoolAmount(state, token, glpDeposited, poolAmount);
+    }
+
+    ///@notice returns token amount underlying glp amount deposited and current pool amount
+    ///@param state set of all state variables of vault
+    ///@param token address of token
+    ///@param glpDeposited amount of glp for which underlying token amount is being calculated
+    ///@return amount of tokens of the supplied address underlying the given amount of glp
+    function _getTokenReservesInGlpUpdatedPoolAmount(
+        State storage state,
+        address token,
+        uint256 glpDeposited
+    ) private view returns (uint256) {
+        uint256 poolAmount = state.gmxVault.poolAmounts(token);
+
+        return _getTokenReservesFromPoolAmount(state, token, glpDeposited, poolAmount);
+    }
+
+    function _getTokenReservesFromPoolAmount(
+        State storage state,
+        address token,
+        uint256 glpDeposited,
+        uint256 poolAmount
+    ) internal view returns (uint256) {
+        uint256 totalSupply = state.glp.totalSupply();
 
         int128 tokenTraderOIHedge = token == address(state.wbtc)
             ? state.dnGmxTraderHedgeStrategy.btcTraderOIHedge()
