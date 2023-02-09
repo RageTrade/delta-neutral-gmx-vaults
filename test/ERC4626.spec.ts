@@ -1,4 +1,3 @@
-import hre from 'hardhat';
 import { expect } from 'chai';
 import { BigNumber, constants, ContractTransaction } from 'ethers';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
@@ -14,6 +13,7 @@ describe('Junior Vault ERC4646 functions', () => {
 
     const PRICE_PRECISION = BigNumber.from(10).pow(30);
 
+    await dnGmxJuniorVault.rebalance();
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('100', 6), users[1].address);
 
     const amount = parseEther('100');

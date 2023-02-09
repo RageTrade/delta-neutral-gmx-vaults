@@ -28,6 +28,9 @@ describe('Reserves & Optimal Amounts', () => {
       BigNumber.from(0),
     ]);
 
+    // rebalance to make pool-amounts non-zero
+    await dnGmxJuniorVault.rebalance();
+
     const [optimalBtc, optimalEth] = await dnGmxJuniorVault.getOptimalBorrows(parseEther('100'));
 
     const btcExcess = await dnGmxJuniorVault.flashloanAmounts(wbtc.address, optimalBtc, optimalBtc.mul(2));

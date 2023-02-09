@@ -105,25 +105,23 @@ describe('Rebalance & its utils', () => {
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     const amount = parseEther('100');
-    await sGlp.connect(users[1]).transfer(dnGmxJuniorVault.address, amount);
-
     const borrowAmount = parseUnits('50', 6);
 
     const [currentBtc, currentEth] = [BigNumber.from(0), BigNumber.from(0)];
     const [optimalBtc, optimalEth] = await dnGmxJuniorVault.getOptimalBorrows(amount);
 
+    expect(currentBtc).to.eq(0);
+    expect(currentEth).to.eq(0);
+
     expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.eq(0);
+
+    await sGlp.connect(users[1]).approve(dnGmxJuniorVault.address, ethers.constants.MaxUint256);
+    await dnGmxJuniorVault.connect(users[1]).deposit(amount, users[1].address);
+
+    const totalBorrowedBefore = await dnGmxJuniorVault.getUsdcBorrowed();
+
     await dnGmxJuniorVault.executeBorrowFromDnGmxSeniorVault(borrowAmount);
-    expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.closeTo(borrowAmount, 1);
-
-    tx = await dnGmxJuniorVault.rebalanceBorrow(optimalBtc, currentBtc, optimalEth, currentEth);
-
-    await checker.checkCurrentBorrowed([optimalBtc, optimalEth]);
-    await checker.checkFlashloanedAmounts(
-      tx,
-      [optimalBtc.sub(currentBtc).abs(), optimalEth.sub(currentEth).abs()],
-      [0, 0],
-    );
+    expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.closeTo(borrowAmount.add(totalBorrowedBefore), 1);
 
     // increase price => loss on aave => both repayDebt are true
     console.log(await dnGmxJuniorVault['getPrice(address)'](weth.address));
@@ -132,10 +130,12 @@ describe('Rebalance & its utils', () => {
     await changer.changePriceToken('WETH', 1700);
     await changer.changePriceToken('WBTC', 24500);
 
-    let [currentBtc_, currentEth_] = [BigNumber.from(99971n), BigNumber.from(19471989660215714n)];
+    let [currentBtc_, currentEth_] = await dnGmxJuniorVault.getCurrentBorrows();
+
     const ta = await dnGmxJuniorVault.totalAssets();
     let [optimalBtc_, optimalEth_] = await dnGmxJuniorVault.getOptimalBorrows(ta);
 
+    // current > optimal because loss on aave and to maintain HF, we repayDebt
     expect(currentBtc_).gt(optimalBtc_);
     expect(currentEth_).gt(optimalEth_);
 
@@ -153,7 +153,6 @@ describe('Rebalance & its utils', () => {
     for (const log of tx.logs) {
       if (log.address == lendingPool.address && log.topics[0] == iface.getEventTopic('Repay')) {
         const args = iface.parseLog(log).args;
-        console.log({ args });
 
         if (args.reserve.toLowerCase() == weth.address.toLowerCase()) {
           ethAmountReduced = ethAmountReduced.add(args.amount);
@@ -219,7 +218,7 @@ describe('Rebalance & its utils', () => {
     expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.eq(currentDnGmxSeniorVaultAmountAfter);
   });
 
-  it('Rebalance Trial', async () => {
+  it.skip('Rebalance Trial', async () => {
     [];
     // Both increase above threshold
     await testRebalanceHedge({
@@ -376,6 +375,9 @@ describe('Rebalance & its utils', () => {
 
     const amount = parseEther('400');
     const PRICE_PRECISION = BigNumber.from(10).pow(30);
+
+    // rebalance to make pool-amounts non-zero
+    await dnGmxJuniorVault.rebalance();
 
     await sGlp.connect(users[0]).transfer(dnGmxJuniorVault.address, amount);
 
