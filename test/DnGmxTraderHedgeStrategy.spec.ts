@@ -24,6 +24,35 @@ describe('DnGmxTraderHedgeStrategy', () => {
     return { test };
   }
 
+  describe('#getTokenHedgeAmount', () => {
+    it('gives amount as 0 if glpDeposited is 0', async () => {
+      const { test } = await loadFixture(deployTest);
+      const { glp } = gmxProtocol.getContractsSync('arbmain', hre.ethers.provider);
+      const { weth } = tokens.getContractsSync('arbmain', hre.ethers.provider);
+
+      const amount = await test.getTokenHedgeAmount(weth.address, 0, glp.totalSupply(), test.traderOIHedgeBps());
+      expect(amount).to.equal(0);
+    });
+  });
+
+  describe('#checkHedgeAmounts', () => {
+    it('gives check as true if hedges are 0', async () => {
+      const { test } = await loadFixture(deployTest);
+
+      const check = await test.checkHedgeAmounts(0, 0);
+      expect(check).to.be.true;
+    });
+  });
+
+  describe('#checkTokenHedgeAmount', () => {
+    it('gives amount as -1 if 0 is passed', async () => {
+      const { test } = await loadFixture(deployTest);
+
+      const check = await test.checkTokenHedgeAmount(0, 0);
+      expect(check).to.be.true;
+    });
+  });
+
   describe('#getMaxTokenHedgeAmount', () => {
     it('gives amount as -1 if 0 is passed', async () => {
       const { test } = await loadFixture(deployTest);

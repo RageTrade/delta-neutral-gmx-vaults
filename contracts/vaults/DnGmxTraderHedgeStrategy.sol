@@ -26,7 +26,7 @@ contract DnGmxTraderHedgeStrategy is OwnableUpgradeable, IDnGmxTraderHedgeStrate
     uint256 internal constant MAX_BPS = 10_000;
     uint256 internal constant PRICE_PRECISION = 1e30;
 
-    uint16 traderOIHedgeBps;
+    uint16 public traderOIHedgeBps;
     address public keeper;
 
     IVault public gmxVault;
