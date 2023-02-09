@@ -24,6 +24,36 @@ describe('DnGmxTraderHedgeStrategy', () => {
     return { test };
   }
 
+  describe('#setTraderOIHedgeBps', () => {
+    it('sets the value as specified', async () => {
+      const { test } = await loadFixture(deployTest);
+
+      await test.setTraderOIHedgeBps(1234);
+      expect(await test.traderOIHedgeBps()).to.equal(1234);
+    });
+
+    it('allows to re-set the value', async () => {
+      const { test } = await loadFixture(deployTest);
+
+      await test.setTraderOIHedgeBps(1234);
+      await test.setTraderOIHedgeBps(5678);
+      expect(await test.traderOIHedgeBps()).to.equal(5678);
+    });
+  });
+
+  describe('#setTraderOIHedges', () => {
+    it('sets trader OI Hedges as expected', async () => {
+      const { test } = await loadFixture(deployTest);
+
+      await test.setTraderOIHedges();
+
+      const btcTraderOIHedge = await test.btcTraderOIHedge();
+      const ethTraderOIHedge = await test.ethTraderOIHedge();
+      expect(btcTraderOIHedge).to.equal(0);
+      expect(ethTraderOIHedge).to.equal(0);
+    });
+  });
+
   describe('#getTokenHedgeAmount', () => {
     it('gives amount as 0 if glpDeposited is 0', async () => {
       const { test } = await loadFixture(deployTest);
@@ -42,6 +72,9 @@ describe('DnGmxTraderHedgeStrategy', () => {
       const check = await test.checkHedgeAmounts(0, 0);
       expect(check).to.be.true;
     });
+
+    it('first expression in if check is false, second expression is true');
+    it('both expressions in if are false');
   });
 
   describe('#checkTokenHedgeAmount', () => {
