@@ -204,11 +204,15 @@ library DnGmxJuniorVaultManager {
         IDnGmxBatchingManager batchingManager;
 
         // !!! STORAGE EXTENSIONS !!! (reduced gaps by no. of slots added here)
-        uint128 rebalanceProfitUsdcAmountThreshold;
+        uint128 btcPoolAmount;
+        uint128 ethPoolAmount;
 
         IDnGmxTraderHedgeStrategy dnGmxTraderHedgeStrategy;
+
+        uint128 rebalanceProfitUsdcAmountThreshold;
+
         // gaps for extending struct (if required during upgrade)
-        uint256[48] __gaps;
+        uint256[47] __gaps;
     }
 
     /// @notice stakes the rewards from the staked Glp and claims WETH to buy glp
@@ -1594,8 +1598,8 @@ library DnGmxJuniorVaultManager {
             int128 btcTokenTraderOIHedge = state.dnGmxTraderHedgeStrategy.btcTraderOIHedge();
             int128 ethTokenTraderOIHedge = state.dnGmxTraderHedgeStrategy.ethTraderOIHedge();
 
-            uint256 btcPoolAmount = state.gmxVault.poolAmounts(address(state.wbtc));
-            uint256 ethPoolAmount = state.gmxVault.poolAmounts(address(state.weth));
+            uint256 btcPoolAmount = state.btcPoolAmount;
+            uint256 ethPoolAmount = state.ethPoolAmount;
 
             // token reserve is the amount we short
             // tokenTraderOIHedge if >0 then we need to go long because of OI hence less short (i.e. subtract if value +ve)
@@ -1645,7 +1649,7 @@ library DnGmxJuniorVaultManager {
         uint256 glpDeposited
     ) private view returns (uint256) {
         uint256 totalSupply = state.glp.totalSupply();
-        uint256 poolAmount = state.gmxVault.poolAmounts(token);
+        uint256 poolAmount = token == address(state.wbtc) ? state.btcPoolAmount : state.ethPoolAmount;
 
         int128 tokenTraderOIHedge = token == address(state.wbtc)
             ? state.dnGmxTraderHedgeStrategy.btcTraderOIHedge()
