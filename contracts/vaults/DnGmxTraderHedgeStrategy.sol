@@ -61,6 +61,14 @@ contract DnGmxTraderHedgeStrategy is OwnableUpgradeable, IDnGmxTraderHedgeStrate
         _;
     }
 
+    /// @notice initialize hedge strategy contract
+    /// @param _keeper keeper address
+    /// @param _gmxVault gmxVault address
+    /// @param _glpManager glpManager address
+    /// @param _juniorVault juniorVault address
+    /// @param _glp glp address
+    /// @param _weth weth address
+    /// @param _wbtc wbtc address
     function initialize(
         address _keeper,
         IVault _gmxVault,
@@ -74,6 +82,14 @@ contract DnGmxTraderHedgeStrategy is OwnableUpgradeable, IDnGmxTraderHedgeStrate
         __DnGmxTraderHedgeStrategy_init(_keeper, _gmxVault, _glpManager, _juniorVault, _glp, _weth, _wbtc);
     }
 
+    /// @notice initialize hedge strategy params
+    /// @param _keeper keeper address
+    /// @param _gmxVault gmxVault address
+    /// @param _glpManager glpManager address
+    /// @param _juniorVault juniorVault address
+    /// @param _glp glp address
+    /// @param _weth weth address
+    /// @param _wbtc wbtc address
     function __DnGmxTraderHedgeStrategy_init(
         address _keeper,
         IVault _gmxVault,
@@ -92,12 +108,14 @@ contract DnGmxTraderHedgeStrategy is OwnableUpgradeable, IDnGmxTraderHedgeStrate
         wbtc = _wbtc;
     }
 
+    /// @notice set keeper address
+    /// @param _keeper keeper address
     function setKeeper(address _keeper) external onlyOwner {
         emit KeeperUpdated(keeper, _keeper);
         keeper = _keeper;
     }
 
-    /// @notice set hedge adjustments basis trader OIs
+    /// @notice set hedge adjustments basis trader OIs for whole of glp supply (this is scaled to required by vault in juniorVaultManager)
     /// @param _btcTraderOIHedge btc trader OI hedge for whole glp supply
     /// @param _ethTraderOIHedge eth trader OI hedge for whole glp supply
     function overrideTraderOIHedges(int128 _btcTraderOIHedge, int128 _ethTraderOIHedge) external onlyOwner {
@@ -109,6 +127,8 @@ contract DnGmxTraderHedgeStrategy is OwnableUpgradeable, IDnGmxTraderHedgeStrate
         emit TraderOIHedgesUpdated(_btcTraderOIHedge, _ethTraderOIHedge);
     }
 
+    /// @notice set trader OI hedge bps
+    /// @param _traderOIHedgeBps trader OI hedge bps
     function setTraderOIHedgeBps(uint16 _traderOIHedgeBps) external onlyOwner {
         if (_traderOIHedgeBps > MAX_BPS) revert InvalidTraderOIHedgeBps(_traderOIHedgeBps);
         traderOIHedgeBps = _traderOIHedgeBps;
@@ -128,6 +148,7 @@ contract DnGmxTraderHedgeStrategy is OwnableUpgradeable, IDnGmxTraderHedgeStrate
 
     ///@notice returns token amount underlying glp amount deposited
     ///@param token address of token
+    ///@param _traderOIHedgeBps % of trader OI to hedge
     ///@return amount of tokens of the supplied address underlying the given amount of glp
     function _getTokenHedgeAmount(address token, uint16 _traderOIHedgeBps) private view returns (int256) {
         uint256 tokenPrecision = 10 ** IERC20Metadata(token).decimals();
@@ -135,14 +156,16 @@ contract DnGmxTraderHedgeStrategy is OwnableUpgradeable, IDnGmxTraderHedgeStrate
         uint256 globalShort = gmxVault.globalShortSizes(token).mulDivDown(_traderOIHedgeBps, MAX_BPS);
         uint256 globalAveragePrice = glpManager.getGlobalShortAveragePrice(token);
         uint256 reservedAmount = gmxVault.reservedAmounts(token).mulDivDown(_traderOIHedgeBps, MAX_BPS);
-        // uint256 poolAmount = gmxVault.poolAmounts(token);
 
         int256 tokenReserve = (reservedAmount.mulDivDown(PRICE_PRECISION, tokenPrecision)).toInt256() -
             globalShort.mulDivDown(PRICE_PRECISION, globalAveragePrice).toInt256();
 
-        return tokenReserve.mulDivDown(traderOIHedgeBps * tokenPrecision, PRICE_PRECISION * MAX_BPS);
+        return tokenReserve.mulDivDown(_traderOIHedgeBps * tokenPrecision, PRICE_PRECISION * MAX_BPS);
     }
 
+    ///@notice checks if the hedge amounts are within the correct bounds
+    ///@param _btcTraderOIHedge trader OI hedge for BTC
+    ///@param _ethTraderOIHedge trader OI hedge for ETH
     function _checkHedgeAmounts(int128 _btcTraderOIHedge, int128 _ethTraderOIHedge) internal view returns (bool) {
         int256 btcTraderOIMax = _getMaxTokenHedgeAmount(address(wbtc));
         int256 ethTraderOIMax = _getMaxTokenHedgeAmount(address(weth));
@@ -155,6 +178,9 @@ contract DnGmxTraderHedgeStrategy is OwnableUpgradeable, IDnGmxTraderHedgeStrate
         return true;
     }
 
+    ///@notice checks if the hedge amounts are within the correct bounds
+    ///@param tokenTraderOIHedge token trader OI hedge for token
+    ///@param tokenTraderOIMax token trader OI hedge maximum amount
     function _checkTokenHedgeAmount(int256 tokenTraderOIHedge, int256 tokenTraderOIMax) private pure returns (bool) {
         if (tokenTraderOIHedge.sign() * tokenTraderOIMax.sign() < 0) return false;
         if (tokenTraderOIHedge.abs() > tokenTraderOIMax.abs()) return false;
