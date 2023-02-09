@@ -1,4 +1,4 @@
-// RebalanceScenario.spec.ts
+// RebalanceScenario.spec.ts 
 // REBALANCE SCENARIO
 import { expect } from 'chai';
 import { BigNumber, ethers } from 'ethers';
@@ -6,9 +6,10 @@ import { Logger } from './utils/logger';
 import { Changer } from './utils/changer';
 import { Checker } from './utils/checker';
 import { increaseBlockTimestamp } from './utils/shared';
-import { parseEther, parseUnits } from 'ethers/lib/utils';
+import { formatEther, parseEther, parseUnits } from 'ethers/lib/utils';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
-import hre from 'hardhat';
+import hre from "hardhat";
+import { formatError } from '@ragetrade/sdk';
 
 describe('Rebalance Scenarios', () => {
   it('Rebalance Current Weights; 0% TraderOI Hedge (Excel)', async () => {
@@ -39,8 +40,8 @@ describe('Rebalance Scenarios', () => {
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     // ETH: $2787.23 BTC: $38694.59
-    //  await changer.changePriceToken('WBTC', 38694.59);
-    //  await changer.changePriceToken('WETH', 2787.23);
+   //  await changer.changePriceToken('WBTC', 38694.59);
+   //  await changer.changePriceToken('WETH', 2787.23);
     await logger.logGlpPrice();
     await logger.logTargetWeights();
     await logger.logAavePosition();
@@ -95,7 +96,7 @@ describe('Rebalance Scenarios', () => {
     await checker.checkTotalAssets(98986816089380800000n, 10n ** 13n, true);
     await checker.checkTotalSupply(99877139590209400000n, 10n ** 10n, true);
 
-    await checker.checkCurrentBorrowed([98948n + 1n, 19272852051258200n], [0, 10n ** 10n]);
+    await checker.checkCurrentBorrowed([98948n+1n, 19272852051258200n], [0, 10n ** 10n]);
     await checker.checkVaultMktValue(91607516n, 10n);
     await checker.checkBorrowValue(53791114n, 300n);
     await checker.checkUsdcBorrwed(41134381n, 10n);
@@ -109,17 +110,7 @@ describe('Rebalance Scenarios', () => {
     const changer = new Changer(opts);
     const checker = new Checker(opts);
 
-    const {
-      dnGmxJuniorVault,
-      dnGmxSeniorVault,
-      glpBatchingManager,
-      users,
-      aUSDC,
-      gmxVault,
-      lendingPool,
-      mocks,
-      dnGmxTraderHedgeStrategy,
-    } = opts;
+    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC, gmxVault, lendingPool, mocks, dnGmxTraderHedgeStrategy } = opts;
     await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await changer.addLiquidity();
     await dnGmxJuniorVault.grantAllowances();
@@ -142,8 +133,8 @@ describe('Rebalance Scenarios', () => {
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     // ETH: $2787.23 BTC: $38694.59
-    //  await changer.changePriceToken('WBTC', 38694.59);
-    //  await changer.changePriceToken('WETH', 2787.23);
+   //  await changer.changePriceToken('WBTC', 38694.59);
+   //  await changer.changePriceToken('WETH', 2787.23);
     await logger.logGlpPrice();
     await logger.logTargetWeights();
     await logger.logAavePosition();
@@ -196,7 +187,7 @@ describe('Rebalance Scenarios', () => {
 
     await checker.checkTotalAssets(148241246556632000000n, 10n ** 15n, true);
     await checker.checkTotalSupply(149606450741327000000n, 10n ** 12n, true);
-    await checker.checkCurrentBorrowed([148486n + 1n, 28921571527231400n], [0, 10n ** 10n]);
+    await checker.checkCurrentBorrowed([148486n+1n, 28921571527231400n], [0, 10n ** 10n]);
     await checker.checkVaultMktValue(137178883n, 10n);
     await checker.checkBorrowValue(80721188n, 300n);
     await checker.checkUsdcBorrwed(61727967n, 10n);
@@ -210,17 +201,7 @@ describe('Rebalance Scenarios', () => {
     const changer = new Changer(opts);
     const checker = new Checker(opts);
 
-    const {
-      dnGmxJuniorVault,
-      dnGmxSeniorVault,
-      glpBatchingManager,
-      users,
-      aUSDC,
-      gmxVault,
-      lendingPool,
-      mocks,
-      dnGmxTraderHedgeStrategy,
-    } = opts;
+    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC, gmxVault, lendingPool, mocks, dnGmxTraderHedgeStrategy } = opts;
     // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await changer.addLiquidity();
     // await dnGmxJuniorVault.grantAllowances();
@@ -243,8 +224,8 @@ describe('Rebalance Scenarios', () => {
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     // ETH: $2787.23 BTC: $38694.59
-    //  await changer.changePriceToken('WBTC', 38694.59);
-    //  await changer.changePriceToken('WETH', 2787.23);
+   //  await changer.changePriceToken('WBTC', 38694.59);
+   //  await changer.changePriceToken('WETH', 2787.23);
     await logger.logGlpPrice();
     await logger.logTargetWeights();
     await logger.logAavePosition();
@@ -320,8 +301,8 @@ describe('Rebalance Scenarios', () => {
       aUSDC,
       gmxVault,
       lendingPool,
-      mocks,
-      dnGmxTraderHedgeStrategy,
+      mocks, 
+      dnGmxTraderHedgeStrategy
     } = opts;
     await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await changer.addLiquidity();
@@ -352,8 +333,8 @@ describe('Rebalance Scenarios', () => {
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     // ETH: $2787.23 BTC: $38694.59
-    //  await changer.changePriceToken('WBTC', 38694.59);
-    //  await changer.changePriceToken('WETH', 2787.23);
+   //  await changer.changePriceToken('WBTC', 38694.59);
+   //  await changer.changePriceToken('WETH', 2787.23);
     await logger.logGlpPrice();
     await logger.logTargetWeights();
     await logger.logAavePosition();
@@ -870,17 +851,7 @@ describe('Rebalance Scenarios', () => {
     const changer = new Changer(opts);
     const checker = new Checker(opts);
 
-    const {
-      dnGmxJuniorVault,
-      dnGmxSeniorVault,
-      glpBatchingManager,
-      users,
-      aUSDC,
-      gmxVault,
-      lendingPool,
-      mocks,
-      dnGmxTraderHedgeStrategy,
-    } = opts;
+    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC, gmxVault, lendingPool, mocks, dnGmxTraderHedgeStrategy } = opts;
     await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await changer.addLiquidity();
     await dnGmxJuniorVault.grantAllowances();
@@ -904,8 +875,8 @@ describe('Rebalance Scenarios', () => {
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('60', 6), users[1].address);
 
     // ETH: $2787.23 BTC: $38694.59
-    //  await changer.changePriceToken('WBTC', 38694.59);
-    //  await changer.changePriceToken('WETH', 2787.23);
+   //  await changer.changePriceToken('WBTC', 38694.59);
+   //  await changer.changePriceToken('WETH', 2787.23);
     await logger.logGlpPrice();
     await logger.logTargetWeights();
     await logger.logAavePosition();
@@ -929,6 +900,7 @@ describe('Rebalance Scenarios', () => {
     await checker.checkVaultMktValue(92888500n, 0n);
     await checker.checkBorrowValue(53541100n, 10n);
     await checker.checkUsdcBorrwed(40943193n, 10n);
+
 
     await increaseBlockTimestamp(4 * 24 * 60 * 60);
     console.log('--------------------Time Increased--------------------');
@@ -957,16 +929,16 @@ describe('Rebalance Scenarios', () => {
 
     await checker.checkTotalAssets(148101856672389000000n, 10n ** 15n, true);
     await checker.checkTotalSupply(149630714840408000000n, 10n ** 12n, true);
-    await checker.checkCurrentBorrowed([144353n - 1n, 28116385489937200n], [0, 10n ** 10n]);
+    await checker.checkCurrentBorrowed([144353n-1n, 28116385489937200n], [0, 10n ** 10n]);
     await checker.checkVaultMktValue(137201587n, 10000n);
     await checker.checkBorrowValue(78474011n, 300n);
-    await checker.checkUsdcBorrwed(60009537n, 15n);
+    await checker.checkUsdcBorrwed(60009537n, 10n);
 
     console.log('--------------------Time Increased--------------------');
     await increaseBlockTimestamp(60);
     // ETH: $3012.65 BTC: $41382.59
-    //  await changer.changePriceToken('WBTC', 41382.59);
-    //  await changer.changePriceToken('WETH', 3012.65);
+   //  await changer.changePriceToken('WBTC', 41382.59);
+   //  await changer.changePriceToken('WETH', 3012.65);
     await logger.logGlpPrice();
     await logger.logTargetWeights();
 
@@ -982,8 +954,8 @@ describe('Rebalance Scenarios', () => {
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('40', 6), users[1].address);
 
     // ETH: $2787.23 BTC: $38694.59
-    //  await changer.changePriceToken('WBTC', 41382.59);
-    //  await changer.changePriceToken('WETH', 3012.65);
+   //  await changer.changePriceToken('WBTC', 41382.59);
+   //  await changer.changePriceToken('WETH', 3012.65);
     await logger.logGlpPrice();
     await logger.logTargetWeights();
     await logger.logAavePosition();
@@ -1012,17 +984,7 @@ describe('Rebalance Scenarios', () => {
     const changer = new Changer(opts);
     const checker = new Checker(opts);
 
-    const {
-      dnGmxJuniorVault,
-      dnGmxSeniorVault,
-      glpBatchingManager,
-      users,
-      aUSDC,
-      gmxVault,
-      lendingPool,
-      mocks,
-      dnGmxTraderHedgeStrategy,
-    } = opts;
+    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC, gmxVault, lendingPool, mocks, dnGmxTraderHedgeStrategy } = opts;
     await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await changer.addLiquidity();
     await dnGmxJuniorVault.grantAllowances();
@@ -1046,8 +1008,8 @@ describe('Rebalance Scenarios', () => {
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('60', 6), users[1].address);
 
     // ETH: $2787.23 BTC: $38694.59
-    //  await changer.changePriceToken('WBTC', 38694.59);
-    //  await changer.changePriceToken('WETH', 2787.23);
+   //  await changer.changePriceToken('WBTC', 38694.59);
+   //  await changer.changePriceToken('WETH', 2787.23);
     await logger.logGlpPrice();
     await logger.logTargetWeights();
     await logger.logAavePosition();
@@ -1099,16 +1061,16 @@ describe('Rebalance Scenarios', () => {
 
     await checker.checkTotalAssets(148101856672389000000n, 10n ** 15n, true);
     await checker.checkTotalSupply(149630714840408000000n, 10n ** 12n, true);
-    await checker.checkCurrentBorrowed([144353n - 1n, 28116385489937200n], [0, 10n ** 10n]);
+    await checker.checkCurrentBorrowed([144353n-1n, 28116385489937200n], [0, 10n ** 10n]);
     await checker.checkVaultMktValue(137201587n, 10000n);
     await checker.checkBorrowValue(78474011n, 300n);
-    await checker.checkUsdcBorrwed(60009537n, 15n);
+    await checker.checkUsdcBorrwed(60009537n, 10n);
 
     console.log('--------------------Time Increased--------------------');
     await increaseBlockTimestamp(60);
     // ETH: $3012.65 BTC: $41382.59
-    //  await changer.changePriceToken('WBTC', 41382.59);
-    //  await changer.changePriceToken('WETH', 3012.65);
+   //  await changer.changePriceToken('WBTC', 41382.59);
+   //  await changer.changePriceToken('WETH', 3012.65);
     await logger.logGlpPrice();
     await logger.logTargetWeights();
 
@@ -1125,8 +1087,8 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.connect(users[0]).withdraw(amount2, users[0].address, users[0].address);
 
     // ETH: $2787.23 BTC: $38694.59
-    //  await changer.changePriceToken('WBTC', 41382.59);
-    //  await changer.changePriceToken('WETH', 3012.65);
+   //  await changer.changePriceToken('WBTC', 41382.59);
+   //  await changer.changePriceToken('WETH', 3012.65);
     await logger.logGlpPrice();
     await logger.logTargetWeights();
     await logger.logAavePosition();
@@ -1149,17 +1111,7 @@ describe('Rebalance Scenarios', () => {
     const changer = new Changer(opts);
     const checker = new Checker(opts);
 
-    const {
-      dnGmxJuniorVault,
-      dnGmxSeniorVault,
-      glpBatchingManager,
-      users,
-      aUSDC,
-      gmxVault,
-      lendingPool,
-      mocks,
-      dnGmxTraderHedgeStrategy,
-    } = opts;
+    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, aUSDC, gmxVault, lendingPool, mocks, dnGmxTraderHedgeStrategy } = opts;
     await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await changer.addLiquidity();
     await dnGmxJuniorVault.grantAllowances();
@@ -1183,8 +1135,8 @@ describe('Rebalance Scenarios', () => {
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('60', 6), users[1].address);
 
     // ETH: $2787.23 BTC: $38694.59
-    //  await changer.changePriceToken('WBTC', 38694.59);
-    //  await changer.changePriceToken('WETH', 2787.23);
+   //  await changer.changePriceToken('WBTC', 38694.59);
+   //  await changer.changePriceToken('WETH', 2787.23);
     await logger.logGlpPrice();
     await logger.logTargetWeights();
     await logger.logAavePosition();
@@ -1236,16 +1188,16 @@ describe('Rebalance Scenarios', () => {
 
     await checker.checkTotalAssets(148101856672389000000n, 10n ** 15n, true);
     await checker.checkTotalSupply(149630714840408000000n, 10n ** 12n, true);
-    await checker.checkCurrentBorrowed([144353n - 1n, 28116385489937200n], [0, 10n ** 10n]);
+    await checker.checkCurrentBorrowed([144353n-1n, 28116385489937200n], [0, 10n ** 10n]);
     await checker.checkVaultMktValue(137201587n, 10000n);
     await checker.checkBorrowValue(78474011n, 300n);
-    await checker.checkUsdcBorrwed(60009537n, 15n);
+    await checker.checkUsdcBorrwed(60009537n, 10n);
 
     console.log('--------------------Time Increased--------------------');
     await increaseBlockTimestamp(60);
     // ETH: $3012.65 BTC: $41382.59
-    //  await changer.changePriceToken('WBTC', 41382.59);
-    //  await changer.changePriceToken('WETH', 3012.65);
+   //  await changer.changePriceToken('WBTC', 41382.59);
+   //  await changer.changePriceToken('WETH', 3012.65);
     await logger.logGlpPrice();
     await logger.logTargetWeights();
 
@@ -1262,8 +1214,8 @@ describe('Rebalance Scenarios', () => {
     await dnGmxJuniorVault.connect(users[0]).withdraw(amount2, users[0].address, users[0].address);
 
     // ETH: $2787.23 BTC: $38694.59
-    //  await changer.changePriceToken('WBTC', 41382.59);
-    //  await changer.changePriceToken('WETH', 3012.65);
+   //  await changer.changePriceToken('WBTC', 41382.59);
+   //  await changer.changePriceToken('WETH', 3012.65);
     await logger.logGlpPrice();
     await logger.logTargetWeights();
     await logger.logAavePosition();
@@ -1272,7 +1224,7 @@ describe('Rebalance Scenarios', () => {
 
     await checker.checkTotalAssets(146119371368963000000n, 10n ** 14n, true);
     await checker.checkTotalSupply(147610068785375000000n, 10n ** 10n, true);
-    await checker.checkCurrentBorrowed([144353n - 1n, 28116387242562800n], [0, 10n ** 12n]);
+    await checker.checkCurrentBorrowed([144353n-1n, 28116387242562800n], [0, 10n ** 12n]);
     await checker.checkVaultMktValue(135284532n, 10000n);
     await checker.checkBorrowValue(78474014n, 200n);
     await checker.checkUsdcBorrwed(60009540n, 100n);
@@ -1505,193 +1457,7 @@ describe('Rebalance Scenarios', () => {
   //   await expect(dnGmxJuniorVault.rebalance()).to.be.revertedWithCustomError(dnGmxJuniorVault, 'InvalidRebalance');
   // });
 
-  // it('Multiple Users Deposit/Withdraw (Excel)', async () => {
-  //   let tx;
-
-  //   const opts = await dnGmxJuniorVaultFixture();
-  //   const logger = new Logger(opts);
-  //   const changer = new Changer(opts);
-  //   const checker = new Checker(opts);
-
-  //   const {
-  //     dnGmxJuniorVault,
-  //     dnGmxSeniorVault,
-  //     glpBatchingManager,
-  //     admin,
-  //     users,
-  //     aUSDC,
-  //     sGlp,
-  //     gmxVault,
-  //     lendingPool,
-  //     mocks,
-  //     mintBurnRouter,
-  //     dnGmxTraderHedgeStrategy
-  //   } = opts;
-  //   await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
-  //   await changer.addLiquidity();
-  //   await dnGmxJuniorVault.grantAllowances();
-
-  //   await dnGmxJuniorVault.setAdminParams(
-  //     admin.address,
-  //     dnGmxSeniorVault.address,
-  //     ethers.constants.MaxUint256,
-  //     0,
-  //     500,
-  //   );
-  //   // becauses price are not changed on uniswap
-  //   await dnGmxJuniorVault.setThresholds(
-  //     100, //slippageThresholdSwapBtcBps
-  //     100, //slippageThresholdSwapEthBps
-  //     100, //slippageThresholdGmxBps
-  //     parseUnits('1', 6), //usdcConversionThreshold
-  //     10n ** 15n, //wethConversionThreshold
-  //     0, //hedgeUsdcAmountThreshold
-  //     parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
-  //     parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
-  //   );
-
-  //   // RebalanceProfit threshold (absolute $ amount)
-  //   await dnGmxJuniorVault.setParamsV1(0n, dnGmxTraderHedgeStrategy.address);
-
-  //   await sGlp.connect(users[2]).approve(dnGmxJuniorVault.address, ethers.constants.MaxUint256);
-
-  //   await mintBurnRouter.connect(users[0]).mintAndStakeGlpETH(0, 0, {
-  //     value: parseEther('1000'),
-  //   });
-  //   await increaseBlockTimestamp(15 * 60);
-  //   await mintBurnRouter.connect(users[2]).mintAndStakeGlpETH(0, 0, {
-  //     value: parseEther('1000'),
-  //   });
-  //   await increaseBlockTimestamp(15 * 60);
-
-  //   await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('800000', 6), users[1].address);
-
-  //   // ETH: $2787.23 BTC: $38694.59
-  //  //  await changer.changePriceToken('WBTC', 38694.59);
-  //  //  await changer.changePriceToken('WETH', 2787.23);
-  //   await logger.logGlpPrice();
-  //   await logger.logTargetWeights();
-  //   await logger.logAavePosition();
-  //   await logger.logBorrowParams();
-
-  //   // await changer.changeTargetWeight('WBTC', 20_000, gmxVault);
-  //   // await changer.changeTargetWeight('WETH', 20_000, gmxVault);
-
-  //   // Deposit
-  //   console.log('--------------------User0 Initial Deposit--------------------');
-  //   const amount = parseEther('1000000');
-  //   await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
-
-  //   await logger.logAavePosition();
-  //   await logger.logBorrowParams();
-  //   await logger.logProtocolParamsAndHoldings();
-
-  //   // await checker.checkTotalAssets(980672731488727000000000n, 10n ** 20n, true);
-  //   // await checker.checkTotalSupply(1000000000000000000000000n, 0, true);
-  //   // await checker.checkCurrentBorrowed([835107100n, 129848710302986000000n], [200n, 2n * 10n ** 13n]);
-  //   // await checker.checkVaultMktValue(1285727139292n, 3n * 10n ** 5n);
-  //   // await checker.checkBorrowValue(685086070743n, 2n * 10n ** 5n);
-  //   // await checker.checkUsdcBorrwed(523889348215n, 2n * 10n ** 5n);
-
-  //   await increaseBlockTimestamp(4 * 24 * 60 * 60);
-  //   console.log('--------------------Time Increased--------------------');
-  //   // ETH: $2695.46 BTC: $37311.61
-  //  //  await changer.changePriceToken('WBTC', 37311.61);
-  //  //  await changer.changePriceToken('WETH', 2695.46);
-  //   await logger.logGlpPrice();
-  //   await logger.logTargetWeights();
-
-  //   await logger.logAavePosition();
-  //   await logger.logBorrowParams();
-  //   await logger.logProtocolParamsAndHoldings();
-
-  //   // await checker.checkTotalAssets(967493107515414000000000n, 10n ** 19n, true);
-  //   // await checker.checkTotalSupply(1000000000000000000000000n, 0, true);
-  //   // await checker.checkVaultMktValue(1242650040823n, 10n ** 6n);
-  //   // await checker.checkBorrowValue(661824169212n, 10n ** 5n);
-
-  //   // New Deposit
-  //   console.log('--------------------User2 Initial Deposit--------------------');
-  //   const amount1 = parseEther('500000');
-  //   await dnGmxJuniorVault.connect(users[2]).deposit(amount1, users[2].address);
-  //   await logger.logAavePosition();
-  //   await logger.logBorrowParams();
-  //   await logger.logProtocolParamsAndHoldings();
-
-  //   // await checker.checkTotalAssets(1445835752330860000000000n, 10n ** 19n, true);
-  //   // await checker.checkTotalSupply(1477446592183910000000000n, 10n ** 19n, true);
-  //   // await checker.checkCurrentBorrowed([1206019939n, 186975028724550000000n], [5000n, 10n ** 19n]);
-  //   // await checker.checkVaultMktValue(1852106324999n, 10n ** 7n);
-  //   // await checker.checkBorrowValue(954006182547n, 10n ** 7n);
-  //   // await checker.checkUsdcBorrwed(729534139594n, 10n ** 7n);
-
-  //   console.log('--------------------Time Increased--------------------');
-  //   await increaseBlockTimestamp(4 * 24 * 60 * 60);
-  //   // ETH: $3012.65 BTC: $41382.59
-  //  //  await changer.changePriceToken('WBTC', 41382.59);
-  //  //  await changer.changePriceToken('WETH', 3012.65);
-
-  //   await logger.logGlpPrice();
-  //   await logger.logTargetWeights();
-
-  //   await logger.logAavePosition();
-  //   await logger.logBorrowParams();
-  //   await logger.logProtocolParamsAndHoldings();
-
-  //   // await checker.checkTotalAssets(1365234280396420000000000n, 10n ** 19n, true);
-  //   // await checker.checkTotalSupply(1477446592183910000000000n, 10n ** 21n, true);
-  //   // await checker.checkVaultMktValue(1877230305748n, 10n ** 7n);
-  //   // await checker.checkBorrowValue(1062763053569n, 10n ** 7n);
-
-  //   console.log('--------------------Time Based Rebalance--------------------');
-  //   tx = await dnGmxJuniorVault.rebalance();
-  //   await logger.logGlpRewards(tx);
-  //   await logger.logAavePosition();
-  //   await logger.logBorrowParams();
-  //   await logger.logProtocolParamsAndHoldings();
-
-  //   // await checker.checkTotalAssets(1365217130345280000000000n, 10n ** 19n, true);
-  //   // await checker.checkTotalSupply(1477446592183910000000000n, 10n ** 19n, true);
-
-  //   // await checker.checkCurrentBorrowed([1079056632n, 166008853268483000000n], [3000n, 10n ** 16n]);
-  //   // await checker.checkVaultMktValue(1877225930681n, 10n ** 10n);
-  //   // await checker.checkBorrowValue(946704885911n, 10n ** 7n);
-  //   // await checker.checkUsdcBorrwed(723950795108n, 10n ** 7n);
-
-  //   console.log('--------------------Time Increased--------------------');
-  //   await increaseBlockTimestamp(4 * 24 * 60 * 60);
-  //   // ETH: $3139.77 BTC: $43839.99
-  //  //  await changer.changePriceToken('WBTC', 43839.99);
-  //  //  await changer.changePriceToken('WETH', 3139.77);
-  //   await logger.logGlpPrice();
-  //   await logger.logTargetWeights();
-
-  //   await logger.logAavePosition();
-  //   await logger.logBorrowParams();
-  //   await logger.logProtocolParamsAndHoldings();
-
-  //   // await checker.checkTotalAssets(1330835431492550000000000n, 10n ** 19n, true);
-  //   // await checker.checkTotalSupply(1477446592183910000000000n, 10n ** 19n, true);
-  //   // await checker.checkVaultMktValue(1888932727032n, 10n ** 7n);
-  //   // await checker.checkBorrowValue(994647852689n, 10n ** 7n);
-
-  //   console.log('--------------------User2 Full Withdraw--------------------');
-  //   const amount2 = dnGmxJuniorVault.balanceOf(users[2].address);
-  //   await dnGmxJuniorVault.connect(users[2]).redeem(amount2, users[2].address, users[2].address);
-
-  //   await logger.logAavePosition();
-  //   await logger.logBorrowParams();
-  //   await logger.logProtocolParamsAndHoldings();
-
-  //   // await checker.checkTotalAssets(959600972532933000000000n, 10n ** 19n, true);
-  //   // await checker.checkTotalSupply(1000000000000000000000000n, 0, true);
-  //   // await checker.checkCurrentBorrowed([729104593n, 114019850606901000000n], [1000n, 10n ** 19n]);
-  //   // await checker.checkVaultMktValue(1361249801445n, 10n ** 8n);
-  //   // await checker.checkBorrowValue(677661780277n, 10n ** 8n);
-  //   // await checker.checkUsdcBorrwed(518211949623n, 10n ** 7n);
-  // });
-
-  it('RebalanceProfit < Threshold; Aave HF < Threshold (Excel)', async () => {
+  it('Multiple Users Deposit/Withdraw (Excel)', async () => {
     let tx;
 
     const opts = await dnGmxJuniorVaultFixture();
@@ -1703,13 +1469,237 @@ describe('Rebalance Scenarios', () => {
       dnGmxJuniorVault,
       dnGmxSeniorVault,
       glpBatchingManager,
+      admin,
       users,
-      mocks,
       aUSDC,
+      sGlp,
       gmxVault,
       lendingPool,
-      dnGmxTraderHedgeStrategy,
+      mocks,
+      mintBurnRouter,
+      dnGmxTraderHedgeStrategy
     } = opts;
+    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
+    await changer.addLiquidity();
+    await dnGmxJuniorVault.grantAllowances();
+
+    await dnGmxJuniorVault.setAdminParams(
+      admin.address,
+      dnGmxSeniorVault.address,
+      ethers.constants.MaxUint256,
+      0,
+      500,
+    );
+    // becauses price are not changed on uniswap
+    await dnGmxJuniorVault.setThresholds(
+      100, //slippageThresholdSwapBtcBps
+      100, //slippageThresholdSwapEthBps
+      100, //slippageThresholdGmxBps
+      parseUnits('1', 6), //usdcConversionThreshold
+      10n ** 15n, //wethConversionThreshold
+      0, //hedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
+    );
+
+    // RebalanceProfit threshold (absolute $ amount)
+    await dnGmxJuniorVault.setParamsV1(0n, dnGmxTraderHedgeStrategy.address);
+
+    await sGlp.connect(users[2]).approve(dnGmxJuniorVault.address, ethers.constants.MaxUint256);
+
+    await mintBurnRouter.connect(users[0]).mintAndStakeGlpETH(0, 0, {
+      value: parseEther('1000'),
+    });
+    await increaseBlockTimestamp(15 * 60);
+    await mintBurnRouter.connect(users[2]).mintAndStakeGlpETH(0, 0, {
+      value: parseEther('1000'),
+    });
+    await increaseBlockTimestamp(15 * 60);
+
+    await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('800000', 6), users[1].address);
+
+    // ETH: $2787.23 BTC: $38694.59
+   //  await changer.changePriceToken('WBTC', 38694.59);
+   //  await changer.changePriceToken('WETH', 2787.23);
+    await logger.logGlpPrice();
+    await logger.logTargetWeights();
+    await logger.logAavePosition();
+    await logger.logBorrowParams();
+
+    // await changer.changeTargetWeight('WBTC', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WETH', 20_000, gmxVault);
+
+    // Deposit
+    console.log('--------------------User0 Initial Deposit--------------------');
+    const amount = parseEther('1000000');
+    await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
+    
+    let shares0 = await dnGmxJuniorVault.balanceOf(users[0].address) // gives shares of 0
+    let assets0 = await dnGmxJuniorVault.convertToAssets(shares0) // gives asset of user 0
+    console.log("User 0 : Assets & Shares ", formatEther(assets0), formatEther(shares0));
+
+    await logger.logAavePosition();
+    await logger.logBorrowParams();
+    await logger.logProtocolParamsAndHoldings();
+
+    await checker.checkTotalAssets(994178453231781000000000n, 10n ** 19n, true);
+    await checker.checkTotalSupply(994293731385785000000000n, 10n ** 19n, true);
+    await checker.checkCurrentBorrowed([992049845n, 197790886239297000000n], [1000n, 10n ** 10n]);
+    await checker.checkVaultMktValue(928862175387n, 10n ** 4n);
+    await checker.checkBorrowValue(538491398501n, 10n ** 4n);
+    await checker.checkUsdcBorrwed(411787540029n, 10n ** 6n);
+
+    await increaseBlockTimestamp(4 * 24 * 60 * 60);
+    console.log('--------------------Time Increased--------------------');
+    shares0 = await dnGmxJuniorVault.balanceOf(users[0].address) // gives shares of 0
+    assets0 = await dnGmxJuniorVault.convertToAssets(shares0) // gives asset of user 0
+    console.log("User 0 : Assets & Shares ", formatEther(assets0), formatEther(shares0));
+    
+    await changer.changePriceToken('WBTC', 23300);
+    await changer.changePriceToken('WETH', 1595);
+    await logger.logGlpPrice();
+    await logger.logTargetWeights();
+
+    await logger.logAavePosition();
+    await logger.logBorrowParams();
+    await logger.logProtocolParamsAndHoldings();
+
+    await checker.checkTotalAssets(985095159547403000000000n, 10n ** 19n, true);
+    await checker.checkTotalSupply(994293731385785000000000n, 10n ** 19n, true);
+    await checker.checkVaultMktValue(911526031925n, 10n ** 4n);
+    await checker.checkBorrowValue(546759600949n, 10n ** 4n);
+
+    // New Deposit
+    console.log('--------------------User2 Initial Deposit--------------------');
+    const amount1 = parseEther('500000');
+    await dnGmxJuniorVault.connect(users[2]).deposit(amount1, users[2].address);
+
+    shares0 = await dnGmxJuniorVault.balanceOf(users[0].address) // gives shares of 0
+    assets0 = await dnGmxJuniorVault.convertToAssets(shares0) // gives asset of user 0
+    console.log("User 0 : Assets & Shares ", formatEther(assets0), formatEther(shares0));
+   
+    let shares2 = await dnGmxJuniorVault.balanceOf(users[2].address) // gives shares of 0
+    let assets2 = await dnGmxJuniorVault.convertToAssets(shares2) // gives asset of user 0
+    console.log("User 2 : Assets & Shares ", formatEther(assets2), formatEther(shares2));
+
+    await logger.logAavePosition();
+    await logger.logBorrowParams();
+    await logger.logProtocolParamsAndHoldings();
+
+    await checker.checkTotalAssets(1482624459551140000000000n, 10n ** 19n, true);
+    await checker.checkTotalSupply(1495880977414910000000000n, 10n ** 19n, true);
+    await checker.checkCurrentBorrowed([1473758445n, 293832670274603000000n], [1000n, 10n ** 13n]);
+    await checker.checkVaultMktValue(1371720131207n, 10n ** 4n);
+    await checker.checkBorrowValue(811988918229n, 10n ** 4n);
+    await checker.checkUsdcBorrwed(620932702175n, 10n ** 4n);
+
+    console.log('--------------------Time Increased--------------------');
+    await increaseBlockTimestamp(4 * 24 * 60 * 60);
+    shares0 = await dnGmxJuniorVault.balanceOf(users[0].address) // gives shares of 0
+    assets0 = await dnGmxJuniorVault.convertToAssets(shares0) // gives asset of user 0
+    console.log("User 0 : Assets & Shares ", formatEther(assets0), formatEther(shares0));
+   
+    shares2 = await dnGmxJuniorVault.balanceOf(users[2].address) // gives shares of 0
+    assets2 = await dnGmxJuniorVault.convertToAssets(shares2) // gives asset of user 0
+    console.log("User 2 : Assets & Shares ", formatEther(assets2), formatEther(shares2));
+    
+    await changer.changePriceToken('WBTC', 22500);
+    await changer.changePriceToken('WETH', 1550);
+
+    await logger.logGlpPrice();
+    await logger.logTargetWeights();
+
+    await logger.logAavePosition();
+    await logger.logBorrowParams();
+    await logger.logProtocolParamsAndHoldings();
+
+    await checker.checkTotalAssets(1509355754474420000000000n, 10n ** 19n, true);
+    await checker.checkTotalSupply(1495880977414910000000000n, 10n ** 19n, true);
+    await checker.checkVaultMktValue(1385482895511n, 10n ** 4n);
+    await checker.checkBorrowValue(787239922913n, 10n ** 4n);
+
+    console.log('--------------------Time Based Rebalance--------------------');
+    tx = await dnGmxJuniorVault.rebalance();
+    shares0 = await dnGmxJuniorVault.balanceOf(users[0].address) // gives shares of 0
+    assets0 = await dnGmxJuniorVault.convertToAssets(shares0) // gives asset of user 0
+    console.log("User 0 : Assets & Shares ", formatEther(assets0), formatEther(shares0));
+   
+    shares2 = await dnGmxJuniorVault.balanceOf(users[2].address) // gives shares of 0
+    assets2 = await dnGmxJuniorVault.convertToAssets(shares2) // gives asset of user 0
+    console.log("User 2 : Assets & Shares ", formatEther(assets2), formatEther(shares2));
+
+    await logger.logGlpRewards(tx);
+    await logger.logAavePosition();
+    await logger.logBorrowParams();
+    await logger.logProtocolParamsAndHoldings();
+
+    await checker.checkTotalAssets(1508745223285320000000000n, 10n ** 19n, true);
+    await checker.checkTotalSupply(1495880977414910000000000n, 10n ** 19n, true);
+
+    await checker.checkCurrentBorrowed([1496850894n, 298436759896442000000n], [1000n, 10n ** 16n]);
+    await checker.checkVaultMktValue(1384704028102n, 10n ** 4n);
+    await checker.checkBorrowValue(799309455937n, 10n ** 4n);
+    await checker.checkUsdcBorrwed(611236642775n, 10n ** 4n);
+
+    console.log('--------------------Time Increased--------------------');
+    await increaseBlockTimestamp(4 * 24 * 60 * 60);
+
+    shares0 = await dnGmxJuniorVault.balanceOf(users[0].address) // gives shares of 0
+    assets0 = await dnGmxJuniorVault.convertToAssets(shares0) // gives asset of user 0
+    console.log("User 0 : Assets & Shares ", formatEther(assets0), formatEther(shares0));
+   
+    shares2 = await dnGmxJuniorVault.balanceOf(users[2].address) // gives shares of 0
+    assets2 = await dnGmxJuniorVault.convertToAssets(shares2) // gives asset of user 0
+    console.log("User 2 : Assets & Shares ", formatEther(assets2), formatEther(shares2));
+
+  
+    await changer.changePriceToken('WBTC', 22900);
+    await changer.changePriceToken('WETH', 1575);
+    await logger.logGlpPrice();
+    await logger.logTargetWeights();
+
+    await logger.logAavePosition();
+    await logger.logBorrowParams();
+    await logger.logProtocolParamsAndHoldings();
+
+    await checker.checkTotalAssets(1493712282683300000000000n, 10n ** 19n, true);
+    await checker.checkTotalSupply(1495880977414910000000000n, 10n ** 19n, true);
+    await checker.checkVaultMktValue(1376829926176n, 10n ** 4n);
+    await checker.checkBorrowValue(813027515344n, 10n ** 4n);
+
+    console.log('--------------------User2 Full Withdraw--------------------');
+    const amount2 = dnGmxJuniorVault.balanceOf(users[2].address);
+    await dnGmxJuniorVault.connect(users[2]).redeem(amount2, users[2].address, users[2].address);
+
+    shares0 = await dnGmxJuniorVault.balanceOf(users[0].address) // gives shares of 0
+    assets0 = await dnGmxJuniorVault.convertToAssets(shares0) // gives asset of user 0
+    console.log("User 0 : Assets & Shares ", formatEther(assets0), formatEther(shares0));
+   
+    shares2 = await dnGmxJuniorVault.balanceOf(users[2].address) // gives shares of 0
+    assets2 = await dnGmxJuniorVault.convertToAssets(shares2) // gives asset of user 0
+    console.log("User 2 : Assets & Shares ", formatEther(assets2), formatEther(shares2));
+
+    await logger.logAavePosition();
+    await logger.logBorrowParams();
+    await logger.logProtocolParamsAndHoldings();
+
+    await checker.checkTotalAssets(992919588605845000000000n, 5n * 10n ** 23n, true);
+    await checker.checkTotalSupply(994293731385785000000000n, 10n ** 22n, true);
+    await checker.checkCurrentBorrowed([988010061n, 196985900615247000000n], [1000n, 10n ** 19n]);
+    await checker.checkVaultMktValue(915132929597n, 10n ** 10n);
+    await checker.checkBorrowValue(536467516864n, 10n ** 6n);
+    await checker.checkUsdcBorrwed(410239865837n, 10n ** 6n);
+  });
+
+  it('RebalanceProfit < Threshold; Aave HF < Threshold (Excel)', async () => {
+    let tx;
+
+    const opts = await dnGmxJuniorVaultFixture();
+    const logger = new Logger(opts);
+    const changer = new Changer(opts);
+    const checker = new Checker(opts);
+
+    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, mocks, aUSDC, gmxVault, lendingPool, dnGmxTraderHedgeStrategy } = opts;
     await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await changer.addLiquidity();
     await dnGmxJuniorVault.grantAllowances();
@@ -1729,11 +1719,12 @@ describe('Rebalance Scenarios', () => {
     // RebalanceProfit threshold (absolute $ amount)
     await (await dnGmxJuniorVault.setParamsV1(20000000n, dnGmxTraderHedgeStrategy.address)).wait();
 
+
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     // ETH: $2787.23 BTC: $38694.59
-    //  await changer.changePriceToken('WBTC', 38694.59);
-    //  await changer.changePriceToken('WETH', 2787.23);
+   //  await changer.changePriceToken('WBTC', 38694.59);
+   //  await changer.changePriceToken('WETH', 2787.23);
     await logger.logGlpPrice();
     await logger.logTargetWeights();
     await logger.logAavePosition();
@@ -1788,7 +1779,7 @@ describe('Rebalance Scenarios', () => {
     await checker.checkTotalAssets(85595626433712500000n, 10n ** 13n, true);
     await checker.checkTotalSupply(99432633472683200000n, 10n ** 10n, true);
 
-    await checker.checkCurrentBorrowed([85670n + 1n, 16686525117999200n], [0, 10n ** 10n]);
+    await checker.checkCurrentBorrowed([85670n+1n, 16686525117999200n], [0, 10n ** 10n]);
     await checker.checkVaultMktValue(83657481n, 10n);
     await checker.checkBorrowValue(57356418n, 300n);
     await checker.checkUsdcBorrwed(43860790n, 10n);
@@ -1802,18 +1793,7 @@ describe('Rebalance Scenarios', () => {
     const changer = new Changer(opts);
     const checker = new Checker(opts);
 
-    const {
-      dnGmxJuniorVault,
-      dnGmxSeniorVault,
-      glpBatchingManager,
-      users,
-      mocks,
-      aUSDC,
-      gmxVault,
-      lendingPool,
-      dnGmxTraderHedgeStrategy,
-      admin,
-    } = opts;
+    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, mocks, aUSDC, gmxVault, lendingPool, dnGmxTraderHedgeStrategy, admin } = opts;
     await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await changer.addLiquidity();
     await dnGmxJuniorVault.grantAllowances();
@@ -1833,17 +1813,17 @@ describe('Rebalance Scenarios', () => {
     // RebalanceProfit threshold (absolute $ amount)
     await dnGmxJuniorVault.setParamsV1(20n, dnGmxTraderHedgeStrategy.address);
 
-    // Set setTraderOIHedgeBps
-    await dnGmxTraderHedgeStrategy.setTraderOIHedgeBps(6000);
-    await dnGmxTraderHedgeStrategy.setTraderOIHedges();
-    // overrideTraderOIHedge amounts in token terms
+     // Set setTraderOIHedgeBps 
+     await dnGmxTraderHedgeStrategy.setTraderOIHedgeBps(6000);
+     await dnGmxTraderHedgeStrategy.setTraderOIHedges();
+    // overrideTraderOIHedge amounts in token terms  
     // await dnGmxTraderHedgeStrategy.overrideTraderOIHedges(parseUnits('0.001', 8), parseUnits('0.02', 18));
 
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     // ETH: $2787.23 BTC: $38694.59
-    //  await changer.changePriceToken('WBTC', 38694.59);
-    //  await changer.changePriceToken('WETH', 2787.23);
+   //  await changer.changePriceToken('WBTC', 38694.59);
+   //  await changer.changePriceToken('WETH', 2787.23);
     await logger.logGlpPrice();
     await logger.logTargetWeights();
     await logger.logAavePosition();
@@ -1860,16 +1840,17 @@ describe('Rebalance Scenarios', () => {
     console.log('--------------------Initial Deposit--------------------');
     tx = await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
 
+
     await logger.logAavePosition(tx);
     await logger.logBorrowParams(tx);
     await logger.logProtocolParamsAndHoldings();
 
-    await checker.checkTotalAssets(99536669183826700000n, 10n ** 12n, true);
-    await checker.checkTotalSupply(99545844318571600000n, 10n ** 6n, true);
-    await checker.checkCurrentBorrowed([84168n, 14983683445933000n], [0n, 10n ** 10n]);
-    await checker.checkVaultMktValue(92995335n, 10n);
-    await checker.checkBorrowValue(42857645n, 10n);
-    await checker.checkUsdcBorrwed(32773493n, 10n);
+    await checker.checkTotalAssets(99613666843675200000n, 10n ** 12n, true);
+    await checker.checkTotalSupply(99621317502237300000n, 10n ** 6n, true);
+    await checker.checkCurrentBorrowed([73633n, 11991486914753800n], [0n, 10n ** 10n]);
+    await checker.checkVaultMktValue(93066557n, 10n);
+    await checker.checkBorrowValue(35735418n, 10n);
+    await checker.checkUsdcBorrwed(27327084n, 10n);
   });
 
   it('0.001BTC & 0.02ETH overrideTraderOIHedges; Traders Net Long; Hedge Position less short (Excel)', async () => {
@@ -1880,18 +1861,7 @@ describe('Rebalance Scenarios', () => {
     const changer = new Changer(opts);
     const checker = new Checker(opts);
 
-    const {
-      dnGmxJuniorVault,
-      dnGmxSeniorVault,
-      glpBatchingManager,
-      users,
-      mocks,
-      aUSDC,
-      gmxVault,
-      lendingPool,
-      dnGmxTraderHedgeStrategy,
-      admin,
-    } = opts;
+    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, mocks, aUSDC, gmxVault, lendingPool, dnGmxTraderHedgeStrategy, admin } = opts;
     await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
     await changer.addLiquidity();
     await dnGmxJuniorVault.grantAllowances();
@@ -1911,16 +1881,16 @@ describe('Rebalance Scenarios', () => {
     // RebalanceProfit threshold (absolute $ amount)
     await dnGmxJuniorVault.setParamsV1(20n, dnGmxTraderHedgeStrategy.address);
 
-    // Set setTraderOIHedgeBps
+     // Set setTraderOIHedgeBps 
     //  await dnGmxTraderHedgeStrategy.setTraderOIHedgeBps(6000);
-    // overrideTraderOIHedge amounts in token terms
+    // overrideTraderOIHedge amounts in token terms  
     await dnGmxTraderHedgeStrategy.overrideTraderOIHedges(43422308823n, 8684461764552920000000n);
-
+    
     await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
     // ETH: $2787.23 BTC: $38694.59
-    //  await changer.changePriceToken('WBTC', 38694.59);
-    //  await changer.changePriceToken('WETH', 2787.23);
+   //  await changer.changePriceToken('WBTC', 38694.59);
+   //  await changer.changePriceToken('WETH', 2787.23);
     await logger.logGlpPrice();
     await logger.logTargetWeights();
     await logger.logAavePosition();
@@ -1947,38 +1917,79 @@ describe('Rebalance Scenarios', () => {
     await checker.checkVaultMktValue(92942880n, 10n);
     await checker.checkBorrowValue(48103208n, 10n);
     await checker.checkUsdcBorrwed(36784806n, 10n);
+  });
 
-    // console.log('--------------------Time Increased--------------------');
-    // await increaseBlockTimestamp(4 * 24 * 60 * 60);
-    // // ETH: $3012.65 BTC: $41382.59
-    // await changer.changePriceToken('WBTC', 23300);
-    // await changer.changePriceToken('WETH', 1595);
+  it.only('60% setTraderOIHedgeBps Traders Net Short; Hedge Position more short (Excel)', async () => {
+    let tx;
 
-    // await logger.logGlpPrice();
-    // await logger.logTargetWeights();
+    const opts = await dnGmxJuniorVaultFixture();
+    const logger = new Logger(opts);
+    const changer = new Changer(opts);
+    const checker = new Checker(opts);
 
-    // await logger.logAavePosition();
-    // await logger.logBorrowParams();
-    // await logger.logProtocolParamsAndHoldings();
+    const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, mocks, aUSDC, gmxVault, lendingPool, dnGmxTraderHedgeStrategy, admin } = opts;
+    await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
+    await changer.addLiquidity();
+    await dnGmxJuniorVault.grantAllowances();
 
-    // await checker.checkTotalAssets(98977370511811300000n, 10n ** 10n, true);
-    // await checker.checkTotalSupply(99877139590209400000n, 10n ** 6n, true);
-    // await checker.checkVaultMktValue(91598862n, 10n);
-    // await checker.checkBorrowValue(54363249n, 10n);
+    // becauses price are not changed on uniswap
+    await dnGmxJuniorVault.setThresholds(
+      100, //slippageThresholdSwapBtcBps
+      100, //slippageThresholdSwapEthBps
+      100, //slippageThresholdGmxBps
+      parseUnits('20', 6), //usdcConversionThreshold
+      10n ** 15n, //wethConversionThreshold
+      0, //hedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
+    );
 
-    // console.log('--------------------Rebalance--------------------');
-    // tx = await dnGmxJuniorVault.rebalance();
-    // await logger.logGlpRewards(tx);
-    // await logger.logAavePosition();
-    // await logger.logBorrowParams();
-    // await logger.logProtocolParamsAndHoldings();
+    // RebalanceProfit threshold (absolute $ amount)
+    await dnGmxJuniorVault.setParamsV1(20n, dnGmxTraderHedgeStrategy.address);
 
-    // await checker.checkTotalAssets(98986816089380800000n, 10n ** 13n, true);
-    // await checker.checkTotalSupply(99877139590209400000n, 10n ** 10n, true);
+    // Set TraderOI Short 
+    await logger.logReservedAndGlobalShortAmounts();
 
-    // await checker.checkCurrentBorrowed([98948n+1n, 19272852051258200n], [0, 10n ** 10n]);
-    // await checker.checkVaultMktValue(91607516n, 10n);
-    // await checker.checkBorrowValue(53791114n, 300n);
-    // await checker.checkUsdcBorrwed(41134381n, 10n);
+    await changer.changeReservedAmounts('WBTC', parseUnits('400', 8));
+    await changer.changeReservedAmounts('WETH', parseUnits('10000'));
+
+    await logger.logReservedAndGlobalShortAmounts();
+
+    // Set setTraderOIHedgeBps 
+    await dnGmxTraderHedgeStrategy.setTraderOIHedgeBps(6_000);
+    await dnGmxTraderHedgeStrategy.setTraderOIHedges();
+
+    
+    await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
+
+    // ETH: $2787.23 BTC: $38694.59
+   //  await changer.changePriceToken('WBTC', 38694.59);
+   //  await changer.changePriceToken('WETH', 2787.23);
+    await logger.logGlpPrice();
+    await logger.logTargetWeights();
+    await logger.logAavePosition();
+    await logger.logBorrowParams();
+
+    // await changer.changeTargetWeight('WBTC', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WETH', 20_000, gmxVault);
+
+    // // await checker.checkTotalAssets(150000000n, 10n ** 15n, false);
+
+    // Deposit
+    const amount = parseEther('100');
+    // console.log("1. Optimal Values : ", await dnGmxJuniorVault.getOptimalBorrows(await dnGmxJuniorVault.totalAssets()));
+    console.log('--------------------Initial Deposit--------------------');
+    tx = await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
+
+    await logger.logAavePosition(tx);
+    await logger.logBorrowParams(tx);
+    await logger.logProtocolParamsAndHoldings();
+
+    await checker.checkTotalAssets(99559080962328700000n, 10n ** 13n, true);
+    await checker.checkTotalSupply(99567811872646400000n, 10n ** 6n, true);
+    await checker.checkCurrentBorrowed([100969n, 19727691893787900n], [0n, 10n ** 3n]);
+    await checker.checkVaultMktValue(123548454n, 10n);
+    await checker.checkBorrowValue(54172130n, 10n);
+    await checker.checkUsdcBorrwed(41425746n, 10n);
   });
 });
