@@ -1,8 +1,6 @@
 import { expect } from 'chai';
 import hre, { ethers } from 'hardhat';
 import { formatEther, formatUnits, parseEther, parseUnits } from 'ethers/lib/utils';
-import { activateMainnetFork } from './utils/mainnet-fork';
-import addresses, { GMX_ECOSYSTEM_ADDRESSES } from './fixtures/addresses';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-update-impl';
 import {
   deltaNeutralGmxVaults,
@@ -88,7 +86,7 @@ describe('Update Implementation', () => {
       .setAdminParams(
         adminParams.keeper,
         adminParams.dnGmxSeniorVault,
-        adminParams.depositCap.mul(10000000),
+        adminParams.depositCap_.mul(10000000),
         adminParams.withdrawFeeBps,
         adminParams.feeTierWethWbtcPool,
       );
