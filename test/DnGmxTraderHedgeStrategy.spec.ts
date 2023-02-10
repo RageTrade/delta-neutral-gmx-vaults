@@ -2,14 +2,16 @@ import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { deltaNeutralGmxVaults, gmxProtocol, tokens } from '@ragetrade/sdk';
 import { expect } from 'chai';
 import hre from 'hardhat';
-import { DnGmxTraderHedgeStrategyTest } from '../typechain-types';
+import { DnGmxTraderHedgeStrategyTest, IGlpManager, IGlpManager__factory } from '../typechain-types';
+import { GMX_ECOSYSTEM_ADDRESSES } from './fixtures/addresses';
 
 describe('DnGmxTraderHedgeStrategy', () => {
   async function deployTest() {
     const signers = await hre.ethers.getSigners();
-    const { gmxUnderlyingVault, glpManager, glp } = gmxProtocol.getContractsSync('arbmain', hre.ethers.provider);
+    const { gmxUnderlyingVault, glp } = gmxProtocol.getContractsSync('arbmain', hre.ethers.provider);
     const { dnGmxJuniorVault } = deltaNeutralGmxVaults.getContractsSync('arbmain', hre.ethers.provider);
     const { weth, wbtc } = tokens.getContractsSync('arbmain', hre.ethers.provider);
+    const glpManager = IGlpManager__factory.connect(GMX_ECOSYSTEM_ADDRESSES.NewGlpManager, signers[0]);
 
     const test = (await hre.ethers.deployContract('DnGmxTraderHedgeStrategyTest')) as DnGmxTraderHedgeStrategyTest;
     await test.initialize(
@@ -21,7 +23,7 @@ describe('DnGmxTraderHedgeStrategy', () => {
       weth.address,
       wbtc.address,
     );
-    return { test };
+    return { test, glpManager };
   }
 
   describe('#setTraderOIHedgeBps', () => {
@@ -73,8 +75,19 @@ describe('DnGmxTraderHedgeStrategy', () => {
       expect(check).to.be.true;
     });
 
-    it('first expression in if check is false, second expression is true');
-    it('both expressions in if are false');
+    it('gives check as false if btc hedge has different sign', async () => {
+      const { test } = await loadFixture(deployTest);
+
+      const check = await test.checkHedgeAmounts(-1, 10);
+      expect(check).to.be.false;
+    });
+
+    it('gives check as false if etb hedge has different sign', async () => {
+      const { test } = await loadFixture(deployTest);
+
+      const check = await test.checkHedgeAmounts(1, -1);
+      expect(check).to.be.false;
+    });
   });
 
   describe('#checkTokenHedgeAmount', () => {
@@ -84,15 +97,65 @@ describe('DnGmxTraderHedgeStrategy', () => {
       const check = await test.checkTokenHedgeAmount(0, 0);
       expect(check).to.be.true;
     });
+
+    it('gives false if hedge is opposite sign to max hedge', async () => {
+      const { test } = await loadFixture(deployTest);
+
+      const check = await test.checkTokenHedgeAmount(-1, 11);
+      expect(check).to.be.false;
+    });
+
+    it('gives false if hedge > max hedge', async () => {
+      const { test } = await loadFixture(deployTest);
+
+      const check = await test.checkTokenHedgeAmount(10, 1);
+      expect(check).to.be.false;
+    });
   });
 
-  describe('#getMaxTokenHedgeAmount', () => {
-    it('gives amount as -1 if 0 is passed', async () => {
-      const { test } = await loadFixture(deployTest);
+  describe('#getTokenHedgeAmount', () => {
+    it('gives correct token hedge amount for 50% traderOIHedge', async () => {
+      const { test, glpManager } = await loadFixture(deployTest);
+      const { gmxUnderlyingVault, glp } = gmxProtocol.getContractsSync('arbmain', hre.ethers.provider);
       const { weth } = tokens.getContractsSync('arbmain', hre.ethers.provider);
 
+      const longSize = await gmxUnderlyingVault.reservedAmounts(weth.address);
+      const shortSize = await gmxUnderlyingVault.globalShortSizes(weth.address);
+      const shortAveragePrice = await glpManager.getGlobalShortAveragePrice(weth.address);
+
+      const amountExpected = longSize
+        .mul(10n ** 30n)
+        .div(10n ** 18n)
+        .sub(shortSize.mul(10n ** 30n).div(shortAveragePrice))
+        .mul(10n ** 18n)
+        .div(10n ** 30n);
+
+      await test.setTraderOIHedgeBps(5000);
+      // await test.setTraderOIHedges();
+      const amount = await test.getTokenHedgeAmount(weth.address, 5000);
+
+      expect(amount).to.equal(amountExpected.mul(5000).div(10000));
+    });
+  });
+  describe('#getMaxTokenHedgeAmount', () => {
+    it('gives correct token hedge amount for 50% traderOIHedge', async () => {
+      const { test, glpManager } = await loadFixture(deployTest);
+      const { gmxUnderlyingVault, glp } = gmxProtocol.getContractsSync('arbmain', hre.ethers.provider);
+      const { weth } = tokens.getContractsSync('arbmain', hre.ethers.provider);
+
+      const longSize = await gmxUnderlyingVault.reservedAmounts(weth.address);
+      const shortSize = await gmxUnderlyingVault.globalShortSizes(weth.address);
+      const shortAveragePrice = await glpManager.getGlobalShortAveragePrice(weth.address);
+
+      const amountExpected = longSize
+        .mul(10n ** 30n)
+        .div(10n ** 18n)
+        .sub(shortSize.mul(10n ** 30n).div(shortAveragePrice))
+        .mul(10n ** 18n)
+        .div(10n ** 30n);
       const amount = await test.getMaxTokenHedgeAmount(weth.address);
-      expect(amount).to.equal(-1);
+
+      expect(amount).to.equal(amountExpected);
     });
   });
 });
