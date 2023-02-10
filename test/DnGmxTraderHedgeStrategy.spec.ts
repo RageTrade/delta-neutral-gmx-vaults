@@ -60,7 +60,7 @@ describe('DnGmxTraderHedgeStrategy', () => {
       const { glp } = gmxProtocol.getContractsSync('arbmain', hre.ethers.provider);
       const { weth } = tokens.getContractsSync('arbmain', hre.ethers.provider);
 
-      const amount = await test.getTokenHedgeAmount(weth.address, 0, glp.totalSupply(), test.traderOIHedgeBps());
+      const amount = await test.getTokenHedgeAmount(weth.address, test.traderOIHedgeBps());
       expect(amount).to.equal(0);
     });
   });
@@ -91,7 +91,7 @@ describe('DnGmxTraderHedgeStrategy', () => {
       const { test } = await loadFixture(deployTest);
       const { weth } = tokens.getContractsSync('arbmain', hre.ethers.provider);
 
-      const amount = await test.getMaxTokenHedgeAmount(weth.address, 0);
+      const amount = await test.getMaxTokenHedgeAmount(weth.address);
       expect(amount).to.equal(-1);
     });
   });
