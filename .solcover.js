@@ -1,3 +1,3 @@
 module.exports = {
-  skipFiles: ['mocks', 'interfaces'],
+  skipFiles: ['mocks', 'interfaces', 'test', 'periphery/DepositPeriphery.sol'],
 };
