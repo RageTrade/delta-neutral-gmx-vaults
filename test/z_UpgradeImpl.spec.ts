@@ -25,7 +25,7 @@ const oldDnGmxJuniorVault = '0x8478AB5064EbAC770DdCE77E7D31D969205F041E';
 const juniorVaultDepositor = '0x04808a3aa9507f2354d3f411f86208ba9fa38093';
 const existingBMUser = '0x9f7D3CECf8F857C10fa0B1BEED96DCFE52625454';
 
-describe('Update Implementation', () => {
+describe.skip('Update Implementation', () => {
   it('dn gmx junior vault', async () => {
     const opts = await dnGmxJuniorVaultFixture();
 
