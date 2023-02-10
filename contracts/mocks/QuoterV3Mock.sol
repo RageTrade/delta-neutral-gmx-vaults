@@ -5,6 +5,7 @@ pragma solidity ^0.8.9;
 import { IERC20Metadata } from '@openzeppelin/contracts/interfaces/IERC20Metadata.sol';
 
 import { DnGmxJuniorVaultManager } from '../libraries/DnGmxJuniorVaultManager.sol';
+import { SwapPath } from '../libraries/SwapPath.sol';
 
 import { IPriceOracle } from '@aave/core-v3/contracts/interfaces/IPriceOracle.sol';
 import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol';
@@ -34,24 +35,26 @@ contract QuoterV3Mock {
         state.weth = IERC20Metadata(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1);
         state.usdc = IERC20Metadata(0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8);
 
-        USDC_TO_WETH = abi.encodePacked(address(state.weth), uint24(500), address(state.usdc));
-        USDC_TO_WETH_ = abi.encodePacked(address(state.usdc), uint24(500), address(state.weth));
-        USDC_TO_WBTC = abi.encodePacked(
-            address(state.wbtc),
-            uint24(3000),
-            address(state.weth),
-            uint24(500),
-            address(state.usdc)
-        );
+        USDC_TO_WETH = SwapPath.generate({ tokenIn: state.usdc, fee: 500, tokenOut: state.weth, isExactIn: false });
+        USDC_TO_WETH_ = SwapPath.generate({ tokenIn: state.usdc, fee: 500, tokenOut: state.weth, isExactIn: true });
+        USDC_TO_WBTC = SwapPath.generate({
+            tokenIn: state.usdc,
+            feeIn: 500,
+            tokenIntermediate: state.weth,
+            feeOut: 3000,
+            tokenOut: state.wbtc,
+            isExactIn: false
+        });
 
-        WETH_TO_USDC = abi.encodePacked(address(state.weth), uint24(500), address(state.usdc));
-        WBTC_TO_USDC = abi.encodePacked(
-            address(state.wbtc),
-            uint24(3000),
-            address(state.weth),
-            uint24(500),
-            address(state.usdc)
-        );
+        WETH_TO_USDC = SwapPath.generate({ tokenIn: state.weth, fee: 500, tokenOut: state.usdc, isExactIn: true });
+        WBTC_TO_USDC = SwapPath.generate({
+            tokenIn: state.wbtc,
+            feeIn: 3000,
+            tokenIntermediate: state.weth,
+            feeOut: 500,
+            tokenOut: state.usdc,
+            isExactIn: true
+        });
 
         state.poolAddressProvider = IPoolAddressesProvider(0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb);
         state.oracle = IPriceOracle(state.poolAddressProvider.getPriceOracle());
