@@ -192,14 +192,16 @@ contract DnGmxTraderHedgeStrategy is OwnableUpgradeable, IDnGmxTraderHedgeStrate
     ///@param token address of token
     ///@return amount of tokens of the supplied address underlying the given amount of glp
     function _getMaxTokenHedgeAmount(address token) internal view returns (int256) {
+        uint256 tokenPrecision = 10 ** IERC20Metadata(token).decimals();
+
         uint256 globalShort = gmxVault.globalShortSizes(token);
         uint256 globalAveragePrice = glpManager.getGlobalShortAveragePrice(token);
         uint256 reservedAmount = gmxVault.reservedAmounts(token);
         // uint256 poolAmount = gmxVault.poolAmounts(token);
 
-        int256 tokenReserve = (reservedAmount * PRICE_PRECISION).toInt256() -
+        int256 tokenReserve = (reservedAmount.mulDivDown(PRICE_PRECISION, tokenPrecision)).toInt256() -
             globalShort.mulDivDown(PRICE_PRECISION, globalAveragePrice).toInt256();
 
-        return tokenReserve.mulDivDown((10 ** IERC20Metadata(token).decimals()), PRICE_PRECISION);
+        return tokenReserve.mulDivDown(tokenPrecision, PRICE_PRECISION);
     }
 }
