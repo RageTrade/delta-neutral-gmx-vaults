@@ -28,18 +28,34 @@ contract DnGmxJuniorVaultManagerTest {
     }
 
     function USDC_TO_WETH() public view returns (bytes memory) {
-        return abi.encodePacked(state.usdc, uint24(500), state.weth);
+        return SwapPath.generate({ tokenIn: state.usdc, fee: 500, tokenOut: state.weth, isExactIn: true });
     }
 
     function WETH_TO_USDC() public view returns (bytes memory) {
-        return abi.encodePacked(state.weth, uint24(500), state.usdc);
+        return SwapPath.generate({ tokenIn: state.weth, fee: 500, tokenOut: state.usdc, isExactIn: true });
     }
 
     function USDC_TO_WBTC() public view returns (bytes memory) {
-        return abi.encodePacked(state.usdc, uint24(500), state.weth, state.feeTierWethWbtcPool, state.wbtc);
+        return
+            SwapPath.generate({
+                tokenIn: state.wbtc,
+                feeIn: state.feeTierWethWbtcPool,
+                tokenIntermediate: state.weth,
+                feeOut: 500,
+                tokenOut: state.usdc,
+                isExactIn: true
+            });
     }
 
     function WBTC_TO_USDC() public view returns (bytes memory) {
-        return abi.encodePacked(state.wbtc, state.feeTierWethWbtcPool, state.weth, uint24(500), state.usdc);
+        return
+            SwapPath.generate({
+                tokenIn: state.wbtc,
+                feeIn: state.feeTierWethWbtcPool,
+                tokenIntermediate: state.weth,
+                feeOut: 500,
+                tokenOut: state.usdc,
+                isExactIn: true
+            });
     }
 }
