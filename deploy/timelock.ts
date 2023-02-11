@@ -33,6 +33,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         '0xc30603461Be4C49CF8076797C18F48292fFDe03A',
       ],
     ],
+    skipIfAlreadyDeployed: true,
   });
 };
 
