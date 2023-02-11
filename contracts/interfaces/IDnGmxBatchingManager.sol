@@ -23,8 +23,6 @@ interface IDnGmxBatchingManager {
         uint256 glpStaked
     );
 
-    event VaultDeposit(uint256 vaultGlpAmount);
-
     event KeeperUpdated(address newKeeper);
     event ThresholdsUpdated(uint256 newSlippageThresholdGmx, uint256 minUsdcConversionAmount);
 
@@ -46,7 +44,7 @@ interface IDnGmxBatchingManager {
         uint128 totalShares;
     }
 
-    function executeBatch(uint128 usdcConversionFractionBps) external;
+    function executeBatch(uint128 usdcAmountToConvert) external;
 
     function currentRound() external view returns (uint256);
 
