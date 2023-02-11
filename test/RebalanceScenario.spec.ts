@@ -1,5 +1,6 @@
 // RebalanceScenario.spec.ts
 // REBALANCE SCENARIO
+import { expect } from 'chai';
 import { BigNumber, ethers } from 'ethers';
 import { Logger } from './utils/logger';
 import { Changer } from './utils/changer';
@@ -7,6 +8,8 @@ import { Checker } from './utils/checker';
 import { increaseBlockTimestamp } from './utils/shared';
 import { formatEther, parseEther, parseUnits } from 'ethers/lib/utils';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
+import hre from 'hardhat';
+import { formatError } from '@ragetrade/sdk';
 
 describe('Rebalance Scenarios', () => {
   it('Rebalance Current Weights; 0% TraderOI Hedge (Excel)', async () => {
@@ -1276,232 +1279,130 @@ describe('Rebalance Scenarios', () => {
     await checker.checkUsdcBorrwed(60009540n, 100n);
   });
 
-  // it('Large TVL : Swap Liquidity (Excel)', async () => {
-  //   let tx;
+  it('Rebalance Partial (Excel)', async () => {
+    let tx;
 
-  //   const opts = await dnGmxJuniorVaultFixture();
-  //   const logger = new Logger(opts);
-  //   const changer = new Changer(opts);
-  //   const checker = new Checker(opts);
+    const opts = await dnGmxJuniorVaultFixture();
+    const logger = new Logger(opts);
+    const changer = new Changer(opts);
+    const checker = new Checker(opts);
 
-  //   const {
-  //     dnGmxJuniorVault,
-  //     dnGmxSeniorVault,
-  //     glpBatchingManager,
-  //     users,
-  //     mocks,
-  //     aUSDC,
-  //     gmxVault,
-  //     lendingPool,
-  //     mintBurnRouter,
-  //   } = opts;
-  //   // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
-  //   // await dnGmxJuniorVault.grantAllowances();
-  //   await mintBurnRouter.connect(users[0]).mintAndStakeGlpETH(0, 0, {
-  //     value: parseEther('1000'),
-  //   });
-  //   await increaseBlockTimestamp(15 * 60);
+    const {
+      dnGmxJuniorVault,
+      dnGmxSeniorVault,
+      glpBatchingManager,
+      users,
+      mocks,
+      aUSDC,
+      gmxVault,
+      lendingPool,
+      dnGmxTraderHedgeStrategy,
+    } = opts;
+    // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
+    // await changer.addLiquidity();
+    // await dnGmxJuniorVault.grantAllowances();
 
-  //   // becauses price are not changed on uniswap
-  //   await dnGmxJuniorVault.setThresholds(
-  //     100, //slippageThresholdSwapBtcBps
-  //     100, //slippageThresholdSwapEthBps
-  //     100, //slippageThresholdGmxBps
-  //     parseUnits('1', 6), //usdcConversionThreshold
-  //     10n ** 15n, //wethConversionThreshold
-  //     0, //hedgeUsdcAmountThreshold
-  //     parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
-  //     parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
-  //   );
+    // becauses price are not changed on uniswap
+    await dnGmxJuniorVault.setThresholds(
+      100, //slippageThresholdSwapBtcBps
+      100, //slippageThresholdSwapEthBps
+      100, //slippageThresholdGmxBps
+      parseUnits('1', 6), //usdcConversionThreshold
+      10n ** 15n, //wethConversionThreshold
+      0, //hedgeUsdcAmountThreshold
+      parseUnits('5', 6), //partialBtcHedgeUsdcAmountThreshold
+      parseUnits('5', 6), //partialEthHedgeUsdcAmountThreshold
+    );
 
-  //   await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('800000', 6), users[1].address);
+    await dnGmxJuniorVault.setRebalanceParams(
+      86400, // rebalanceTimeThreshold
+      500, // 5% in bps | rebalanceDeltaThresholdBps
+      10_000,
+    );
 
-  //   // ETH: $2787.23 BTC: $38694.59
-  //  //  await changer.changePriceToken('WBTC', 38694.59);
-  //  //  await changer.changePriceToken('WETH', 2787.23);
-  //   await logger.logGlpPrice();
-  //   await logger.logTargetWeights();
-  //   await logger.logAavePosition();
-  //   await logger.logBorrowParams();
+    // RebalanceProfit threshold (absolute $ amount)
+    await dnGmxJuniorVault.setParamsV1(0n, dnGmxTraderHedgeStrategy.address);
 
-  //   // await changer.changeTargetWeight('WBTC', 20_000, gmxVault);
-  //   // await changer.changeTargetWeight('WETH', 20_000, gmxVault);
+    await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
 
-  //   // Deposit
-  //   console.log('--------------------Initial Deposit--------------------');
-  //   const amount = parseEther('1000000');
-  //   tx = await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
+    // ETH: $2787.23 BTC: $38694.59
+    //  await changer.changePriceToken('WBTC', 38694.59);
+    //  await changer.changePriceToken('WETH', 2787.23);
+    await logger.logGlpPrice();
+    await logger.logTargetWeights();
+    await logger.logAavePosition();
+    await logger.logBorrowParams();
 
-  //   await logger.logAavePosition(tx);
-  //   await logger.logBorrowParams(tx);
-  //   await logger.logProtocolParamsAndHoldings();
+    // await changer.changeTargetWeight('WBTC', 20_000, gmxVault);
+    // await changer.changeTargetWeight('WETH', 20_000, gmxVault);
 
-  //   // await checker.checkTotalAssets(980684840574419000000000n, 10n ** 20n, true);
-  //   // await checker.checkTotalSupply(1000000000000000000000000n, 0, true);
-  //   // await checker.checkCurrentBorrowed([833855646n, 129654124791043000000n], [200n, 3n * 10n ** 13n]);
-  //   // await checker.checkVaultMktValue(1283800405689n, 3n * 10n ** 5n);
-  //   // await checker.checkBorrowValue(684059431175, 2n * 10n ** 5n);
-  //   // await checker.checkUsdcBorrwed(523104270898n, 3n * 10n ** 5n);
+    // Deposit
+    console.log('--------------------Initial Deposit--------------------');
+    const amount = parseEther('100');
+    tx = await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
 
-  //   await increaseBlockTimestamp(4 * 24 * 60 * 60);
-  //   console.log('--------------------Time Increased--------------------');
-  //   // ETH: $3012.65 BTC: $41382.59
-  //   // await changer.changePriceToken('WBTC', 22900);
-  //   // await changer.changePriceToken('WETH', 1580);
+    await logger.logAavePosition(tx);
+    await logger.logBorrowParams(tx);
+    await logger.logProtocolParamsAndHoldings();
 
-  //   await logger.logGlpPrice();
-  //   await logger.logTargetWeights();
+    await checker.checkTotalAssets(99875905578933400000n, 10n ** 10n, true);
+    await checker.checkTotalSupply(99877132097480900000n, 10n ** 6n, true);
+    await checker.checkCurrentBorrowed([99971n, 19471978242701800n], [0n, 100n]);
+    await checker.checkVaultMktValue(93309125n, 10n);
+    await checker.checkBorrowValue(53541100n, 10n);
+    await checker.checkUsdcBorrwed(40943193n, 10n);
 
-  //   await logger.logAavePosition();
-  //   await logger.logBorrowParams();
-  //   await logger.logProtocolParamsAndHoldings();
+    console.log('--------------------Time Increased--------------------');
+    await increaseBlockTimestamp(4 * 24 * 60 * 60);
 
-  //   // await checker.checkTotalAssets(910895125295437000000000n, 10n ** 21n, true);
-  //   // await checker.checkTotalSupply(1000000000000000000000000n, 0, true);
-  //   // await checker.checkVaultMktValue(1253921555799n, 4n * 10n ** 5n);
-  //   // await checker.checkBorrowValue(735929281065n, 2n * 10n ** 5n);
+    await changer.changePriceToken('WBTC', 30900);
+    await changer.changePriceToken('WETH', 2125);
 
-  //   console.log('--------------------Rebalance--------------------');
-  //   tx = await dnGmxJuniorVault.rebalance();
-  //   await logger.logGlpRewards(tx);
-  //   await logger.logAavePosition();
-  //   await logger.logBorrowParams();
-  //   await logger.logProtocolParamsAndHoldings();
+    await logger.logGlpPrice();
+    await logger.logTargetWeights();
 
-  //   // await checker.checkTotalAssets(913670117425551000000000n, 10n ** 18n, true);
-  //   // await checker.checkTotalSupply(1000000000000000000000000n, 0, true);
+    await logger.logAavePosition();
+    await logger.logBorrowParams();
+    await logger.logProtocolParamsAndHoldings();
 
-  //   // await checker.checkCurrentBorrowed([719786961n, 110736549409321000000n], [2000n, 10n ** 16n]);
-  //   // await checker.checkVaultMktValue(1252703518944n, 10n ** 9n);
-  //   // await checker.checkBorrowValue(631501454956n, 10n ** 7n);
-  //   // await checker.checkUsdcBorrwed(482912877319n, 10n ** 7n);
-  // });
+    await checker.checkTotalAssets(80973555536369900000n, 10n ** 15n, true);
+    await checker.checkTotalSupply(99877132097480900000n, 10n ** 10n, true);
+    await checker.checkVaultMktValue(81251742n, 100n);
+    await checker.checkBorrowValue(72285222n, 100n);
 
-  // it('Rebalance Partial (Excel)', async () => {
-  //   let tx;
+    console.log('-------------------- Rebalance 1 --------------------');
+    tx = await dnGmxJuniorVault.rebalance();
+    await logger.logGlpRewards(tx);
+    await logger.logAavePosition();
+    await logger.logBorrowParams();
+    await logger.logProtocolParamsAndHoldings();
 
-  //   const opts = await dnGmxJuniorVaultFixture();
-  //   const logger = new Logger(opts);
-  //   const changer = new Changer(opts);
-  //   const checker = new Checker(opts);
+    await checker.checkTotalAssets(83682891556587600000n, 10n ** 16n, true);
+    await checker.checkTotalSupply(99877132097480900000n, 10n ** 10n, true);
 
-  //   const { dnGmxJuniorVault, dnGmxSeniorVault, glpBatchingManager, users, mocks, aUSDC, gmxVault, lendingPool } = opts;
-  //   // await dnGmxJuniorVault.setMocks(mocks.swapRouterMock.address);
-  //   // await dnGmxJuniorVault.grantAllowances();
+    await checker.checkCurrentBorrowed([83815n, 17125229998626200n], [0, 10n ** 11n]);
+    await checker.checkVaultMktValue(83800979n, 500n);
+    await checker.checkBorrowValue(62285352n, 500n);
+    await checker.checkUsdcBorrwed(47629975n, 500n);
 
-  //   // becauses price are not changed on uniswap
-  //   await dnGmxJuniorVault.setThresholds(
-  //     100, //slippageThresholdSwapBtcBps
-  //     100, //slippageThresholdSwapEthBps
-  //     100, //slippageThresholdGmxBps
-  //     parseUnits('1', 6), //usdcConversionThreshold
-  //     10n ** 15n, //wethConversionThreshold
-  //     0, //hedgeUsdcAmountThreshold
-  //     parseUnits('5', 6), //partialBtcHedgeUsdcAmountThreshold
-  //     parseUnits('5', 6), //partialEthHedgeUsdcAmountThreshold
-  //   );
+    console.log('-------------------- Rebalance 2 --------------------');
+    tx = await dnGmxJuniorVault.rebalance();
+    await logger.logGlpRewards(tx);
+    await logger.logAavePosition();
+    await logger.logBorrowParams();
+    await logger.logProtocolParamsAndHoldings();
 
-  //   await dnGmxJuniorVault.setRebalanceParams(
-  //     86400, // rebalanceTimeThreshold
-  //     500, // 5% in bps | rebalanceDeltaThresholdBps
-  //     10_000,
-  //   );
+    await checker.checkTotalAssets(84082701168906500000n, 10n ** 16n, true);
+    await checker.checkTotalSupply(99877132097480900000n, 10n ** 10n, true);
 
-  //   await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
+    await checker.checkCurrentBorrowed([83594n, 16282114909598000n], [0, 10n ** 12n]);
+    await checker.checkVaultMktValue(84175738n, 500n);
+    await checker.checkBorrowValue(60425581n, 500n);
+    await checker.checkUsdcBorrwed(46207797n, 500n);
 
-  //   // ETH: $2787.23 BTC: $38694.59
-  //  //  await changer.changePriceToken('WBTC', 38694.59);
-  //  //  await changer.changePriceToken('WETH', 2787.23);
-  //   await logger.logGlpPrice();
-  //   await logger.logTargetWeights();
-  //   await logger.logAavePosition();
-  //   await logger.logBorrowParams();
-
-  //   // await changer.changeTargetWeight('WBTC', 20_000, gmxVault);
-  //   // await changer.changeTargetWeight('WETH', 20_000, gmxVault);
-
-  //   // Deposit
-  //   console.log('--------------------Initial Deposit--------------------');
-  //   const amount = parseEther('100');
-  //   tx = await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
-
-  //   await logger.logAavePosition(tx);
-  //   await logger.logBorrowParams(tx);
-  //   await logger.logProtocolParamsAndHoldings();
-
-  //   await checker.checkTotalAssets(99875913146589300000n, 10n ** 10n, true);
-  //   await checker.checkTotalSupply(99877139590209400000n, 10n ** 6n, true);
-  //   await checker.checkCurrentBorrowed([99971n, 19471978242701800n], [0n, 100n]);
-  //   await checker.checkVaultMktValue(93309132n, 0n);
-  //   await checker.checkBorrowValue(53541100n, 10n);
-  //   await checker.checkUsdcBorrwed(40943193n, 10n);
-
-  //   console.log('--------------------Time Increased--------------------');
-  //   await increaseBlockTimestamp(4 * 24 * 60 * 60);
-
-  //  //  await changer.changePriceToken('WBTC', 52000.0);
-  //  //  await changer.changePriceToken('WETH', 3750.0);
-
-  //   await logger.logGlpPrice();
-  //   await logger.logTargetWeights();
-
-  //   await logger.logAavePosition();
-  //   await logger.logBorrowParams();
-  //   await logger.logProtocolParamsAndHoldings();
-
-  //   // await checker.checkTotalAssets(79977047008634600000n, 10n ** 6n, true);
-  //   // await checker.checkTotalSupply(100000000000000000000n, 0, true);
-  //   // await checker.checkVaultMktValue(128179441n, 100n);
-  //   // await checker.checkBorrowValue(91869250n, 100n);
-
-  //   console.log('-------------------- Rebalance 1 --------------------');
-  //   tx = await dnGmxJuniorVault.rebalance();
-  //   await logger.logGlpRewards(tx);
-  //   await logger.logAavePosition();
-  //   await logger.logBorrowParams();
-  //   await logger.logProtocolParamsAndHoldings();
-
-  //   // await checker.checkTotalAssets(79200296548117900000n, 10n ** 16n, true);
-  //   // await checker.checkTotalSupply(100000000000000000000n, 0, true);
-
-  //   // await checker.checkCurrentBorrowed([73673n - 1n, 11614913837155700n], [0, 10n ** 11n]);
-  //   // await checker.checkVaultMktValue(128011123n, 2000n);
-  //   // await checker.checkBorrowValue(81869062n, 400n);
-  //   // await checker.checkUsdcBorrwed(62605753n, 200n);
-
-  //   console.log('-------------------- Rebalance 2 --------------------');
-  //   tx = await dnGmxJuniorVault.rebalance();
-  //   await logger.logGlpRewards(tx);
-  //   await logger.logAavePosition();
-  //   await logger.logBorrowParams();
-  //   await logger.logProtocolParamsAndHoldings();
-
-  //   // await checker.checkTotalAssets(79724841888995800000n, 10n ** 16n, true);
-  //   // await checker.checkTotalSupply(100000000000000000000n, 0, true);
-
-  //   // await checker.checkCurrentBorrowed([64058n - 1n, 10281580503822300n], [0, 10n ** 12n]);
-  //   // await checker.checkVaultMktValue(127911124n, 2000n);
-  //   // await checker.checkBorrowValue(71868874n, 200n);
-  //   // await checker.checkUsdcBorrwed(54958550n, 100n);
-
-  //   console.log('-------------------- Rebalance 3 --------------------');
-  //   tx = await dnGmxJuniorVault.rebalance();
-  //   await logger.logGlpRewards(tx);
-  //   await logger.logAavePosition();
-  //   await logger.logBorrowParams();
-  //   await logger.logProtocolParamsAndHoldings();
-
-  //   // await checker.checkTotalAssets(80115731687167800000n, 10n ** 16n, true);
-  //   // await checker.checkTotalSupply(100000000000000000000n, 0, true);
-
-  //   // await checker.checkCurrentBorrowed([58425n + 1n, 9073720420923560n], [0, 10n ** 11n]);
-  //   // await checker.checkVaultMktValue(127836025n, 2000n);
-  //   // await checker.checkBorrowValue(64409710n, 2000n);
-  //   // await checker.checkUsdcBorrwed(49254484n, 500n);
-
-  //   console.log('-------------------- Rebalance 4 --------------------');
-  //   await expect(dnGmxJuniorVault.rebalance()).to.be.revertedWithCustomError(dnGmxJuniorVault, 'InvalidRebalance');
-  // });
+    console.log('-------------------- Rebalance 3 --------------------');
+    await expect(dnGmxJuniorVault.rebalance()).to.be.revertedWithCustomError(dnGmxJuniorVault, 'InvalidRebalance');
+  });
 
   it('Multiple Users Deposit/Withdraw (Excel)', async () => {
     let tx;
