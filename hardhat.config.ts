@@ -95,6 +95,11 @@ export default {
       accounts: [pk],
       chainId: 42161,
     },
+    mainnetfork: {
+      url: `https://internal-rpc.rage.trade`,
+      accounts: [pk],
+      chainId: 31337,
+    },
     arbtest: {
       url: `https://rinkeby.arbitrum.io/rpc`,
       accounts: [pk],
