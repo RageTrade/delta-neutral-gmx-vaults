@@ -14,13 +14,14 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   if (PROXY_ADMIN_ADDRESS) {
     console.log('skipping deployment for proxy admin, using:', PROXY_ADMIN_ADDRESS);
-    await save('ProxyAdmin', { abi: ProxyAdmin__factory.abi, address: PROXY_ADMIN_ADDRESS });
+    await save('ProxyAdmin', { abi: ProxyAdmin__factory.abi as any, address: PROXY_ADMIN_ADDRESS });
   } else {
     await deploy('ProxyAdmin', {
       contract: 'ProxyAdmin',
       from: deployer,
       log: true,
       waitConfirmations,
+      skipIfAlreadyDeployed: true,
     });
   }
 };

@@ -15,6 +15,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     from: deployer,
     log: true,
     waitConfirmations,
+    skipIfAlreadyDeployed: true,
   });
 };
 

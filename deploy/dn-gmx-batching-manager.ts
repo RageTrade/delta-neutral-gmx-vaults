@@ -34,6 +34,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       ]),
     ],
     waitConfirmations,
+    skipIfAlreadyDeployed: true,
   });
   await save('DnGmxBatchingManager', { ...proxyDeployment, abi: DnGmxBatchingManagerLogicDeployment.abi });
 };
