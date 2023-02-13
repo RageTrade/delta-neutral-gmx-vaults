@@ -20,7 +20,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     GMX_SGLP_ADDRESS,
     GMX_REWARD_ROUTER,
-    GMX_MINT_BURN_REWARD_ROUTER
+    GMX_MINT_BURN_REWARD_ROUTER,
   } = await getNetworkInfo();
 
   const ProxyAdminDeployment = await get('ProxyAdmin');
@@ -49,6 +49,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       ]),
     ],
     waitConfirmations,
+    skipIfAlreadyDeployed: true,
   });
   await save('DnGmxJuniorVault', { ...proxyDeployment, abi: DnGmxJuniorVaultLogicDeployment.abi });
 };
