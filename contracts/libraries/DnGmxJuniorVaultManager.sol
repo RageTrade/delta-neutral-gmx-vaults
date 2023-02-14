@@ -561,7 +561,59 @@ library DnGmxJuniorVaultManager {
         // optimal btc and eth borrows
         // calculated basis the underlying token weights in glp
         (optimalBtcBorrow, optimalEthBorrow) = _getOptimalBorrows(state, glpDeposited);
+        return
+            _updateOptimalBorrowsFinalAvailableBorrow(
+                state,
+                optimalBtcBorrow,
+                optimalEthBorrow,
+                currentBtcBorrow,
+                currentEthBorrow,
+                isPartialAllowed
+            );
+    }
 
+    function _getOptimalBorrowsFinalUpdatedPoolAmount(
+        State storage state,
+        uint256 currentBtcBorrow,
+        uint256 currentEthBorrow,
+        uint256 glpDeposited,
+        bool isPartialAllowed
+    )
+        internal
+        view
+        returns (
+            uint256 optimalBtcBorrow,
+            uint256 optimalEthBorrow,
+            uint256 targetDnGmxSeniorVaultAmount,
+            uint256 optimalUncappedEthBorrow,
+            bool isPartialHedge
+        )
+    {
+        // optimal btc and eth borrows
+        // calculated basis the underlying token weights in glp
+        (optimalBtcBorrow, optimalEthBorrow) = _getOptimalBorrowsUpdatedPoolAmount(state, glpDeposited);
+        return
+            _updateOptimalBorrowsFinalAvailableBorrow(
+                state,
+                optimalBtcBorrow,
+                optimalEthBorrow,
+                currentBtcBorrow,
+                currentEthBorrow,
+                isPartialAllowed
+            );
+    }
+
+    function _updateOptimalBorrowsFinalAvailableBorrow(
+        State storage state,
+        uint256 optimalBtcBorrow,
+        uint256 optimalEthBorrow,
+        uint256 currentBtcBorrow,
+        uint256 currentEthBorrow,
+        bool isPartialAllowed
+    ) internal view returns (uint256, uint256, uint256, uint256, bool) {
+        uint256 targetDnGmxSeniorVaultAmount;
+        uint256 optimalUncappedEthBorrow;
+        bool isPartialHedge;
         if (isPartialAllowed) {
             // if partial hedges are allowed (i.e. rebalance call and not deposit/withdraw)
             // check if swap amounts>threshold then basis that do a partial hedge
@@ -629,6 +681,14 @@ library DnGmxJuniorVaultManager {
                 }
             }
         }
+
+        return (
+            optimalBtcBorrow,
+            optimalEthBorrow,
+            targetDnGmxSeniorVaultAmount,
+            optimalUncappedEthBorrow,
+            isPartialHedge
+        );
     }
 
     ///@notice rebalances btc and eth hedges according to underlying glp token weights
@@ -1174,9 +1234,12 @@ library DnGmxJuniorVaultManager {
     function isValidRebalanceDeviation(State storage state) external view returns (bool) {
         (uint256 currentBtcBorrow, uint256 currentEthBorrow) = _getCurrentBorrows(state);
 
-        (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrowsUpdatedPoolAmount(
+        (uint256 optimalBtcBorrow, uint256 optimalEthBorrow, , , ) = _getOptimalBorrowsFinalUpdatedPoolAmount(
             state,
-            _totalAssets(state, false)
+            currentBtcBorrow,
+            currentEthBorrow,
+            _totalAssets(state, false),
+            false
         );
 
         return
