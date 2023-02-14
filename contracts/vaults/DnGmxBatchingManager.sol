@@ -167,6 +167,12 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         emit KeeperUpdated(_keeper);
     }
 
+    function setParamsV1(address _weth, address _rewardsHarvestingRouter) external onlyOwner {
+        weth = IERC20(_weth);
+        rewardsHarvestingRouter = IRewardRouterV2(_rewardsHarvestingRouter);
+        emit ParamsV1Updated(_rewardsHarvestingRouter, _weth);
+    }
+
     /// @notice sets the slippage (in bps) to use while staking on gmx
     /// @param _slippageThresholdGmxBps slippage (in bps)
     function setThresholds(uint256 _slippageThresholdGmxBps, uint256 _minUsdcConversionAmount) external onlyOwner {
