@@ -23,6 +23,7 @@ interface IDnGmxBatchingManager {
         uint256 glpStaked
     );
 
+    event ParamsV1Updated(address indexed rewardsHarvestingRouter, address weth);
     event KeeperUpdated(address newKeeper);
     event ThresholdsUpdated(uint256 newSlippageThresholdGmx, uint256 minUsdcConversionAmount);
 
