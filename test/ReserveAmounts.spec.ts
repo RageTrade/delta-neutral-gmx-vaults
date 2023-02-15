@@ -7,14 +7,14 @@ describe('Reserves & Optimal Amounts', () => {
   it('getTokenReservesInGlp', async () => {
     const { dnGmxJuniorVault, wbtc, weth } = await dnGmxJuniorVaultFixture();
 
-    expect(await dnGmxJuniorVault.getTokenReservesInGlp(wbtc.address, parseEther('0'))).to.eq(0);
-    expect(await dnGmxJuniorVault.getTokenReservesInGlp(weth.address, parseEther('0'))).to.eq(0);
+    expect(await dnGmxJuniorVault.getTokenReservesInGlp(wbtc.address, parseEther('0'), false)).to.eq(0);
+    expect(await dnGmxJuniorVault.getTokenReservesInGlp(weth.address, parseEther('0'), false)).to.eq(0);
 
-    const wbtcReserves1 = await dnGmxJuniorVault.getTokenReservesInGlp(wbtc.address, parseEther('101'));
-    const wethReserves1 = await dnGmxJuniorVault.getTokenReservesInGlp(weth.address, parseEther('101'));
+    const wbtcReserves1 = await dnGmxJuniorVault.getTokenReservesInGlp(wbtc.address, parseEther('101'), false);
+    const wethReserves1 = await dnGmxJuniorVault.getTokenReservesInGlp(weth.address, parseEther('101'), false);
 
-    const wbtcReserves2 = await dnGmxJuniorVault.getTokenReservesInGlp(wbtc.address, parseEther('202'));
-    const wethReserves2 = await dnGmxJuniorVault.getTokenReservesInGlp(weth.address, parseEther('202'));
+    const wbtcReserves2 = await dnGmxJuniorVault.getTokenReservesInGlp(wbtc.address, parseEther('202'), false);
+    const wethReserves2 = await dnGmxJuniorVault.getTokenReservesInGlp(weth.address, parseEther('202'), false);
 
     expect(wbtcReserves1.mul(2)).to.eq(wbtcReserves2);
     expect(wethReserves1.mul(2)).to.closeTo(wethReserves2, 1);
@@ -23,7 +23,7 @@ describe('Reserves & Optimal Amounts', () => {
   it('Flashloan Amounts', async () => {
     const { dnGmxJuniorVault, wbtc, weth } = await dnGmxJuniorVaultFixture();
 
-    expect(await dnGmxJuniorVault.getOptimalBorrows(parseEther('0'))).to.deep.eq([
+    expect(await dnGmxJuniorVault.getOptimalBorrows(parseEther('0'), false)).to.deep.eq([
       BigNumber.from(0),
       BigNumber.from(0),
     ]);
@@ -31,7 +31,7 @@ describe('Reserves & Optimal Amounts', () => {
     // rebalance to make pool-amounts non-zero
     await dnGmxJuniorVault.rebalance();
 
-    const [optimalBtc, optimalEth] = await dnGmxJuniorVault.getOptimalBorrows(parseEther('100'));
+    const [optimalBtc, optimalEth] = await dnGmxJuniorVault.getOptimalBorrows(parseEther('100'), false);
 
     const btcExcess = await dnGmxJuniorVault.flashloanAmounts(wbtc.address, optimalBtc, optimalBtc.mul(2));
     const ethExcess = await dnGmxJuniorVault.flashloanAmounts(wbtc.address, optimalEth, optimalEth.mul(2));
