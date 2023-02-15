@@ -673,9 +673,10 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @return optimalBtcBorrow optimal amount of btc borrowed from AAVE
     /// @return optimalEthBorrow optimal amount of eth borrowed from AAVE
     function getOptimalBorrows(
-        uint256 glpDeposited
+        uint256 glpDeposited,
+        bool withUpdatedPoolAmounts
     ) external view returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) {
-        return state.getOptimalBorrows(glpDeposited);
+        return state.getOptimalBorrows(glpDeposited, withUpdatedPoolAmounts);
     }
 
     /// @notice returns junior vault share of usdc deposited to AAVE

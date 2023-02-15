@@ -201,8 +201,12 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         return state.getOptimalCappedBorrows(availableBorrowAmount, usdcLiquidationThreshold);
     }
 
-    function getTokenReservesInGlp(address token, uint256 glpDeposited) external view returns (uint256) {
-        return state.getTokenReservesInGlp(token, glpDeposited);
+    function getTokenReservesInGlp(
+        address token,
+        uint256 glpDeposited,
+        bool withUpdatedPoolAmounts
+    ) external view returns (uint256) {
+        return state.getTokenReservesInGlp(token, glpDeposited, withUpdatedPoolAmounts);
     }
 
     function isWithinAllowedDelta(uint256 optimalBorrow, uint256 currentBorrow) external view returns (bool) {
