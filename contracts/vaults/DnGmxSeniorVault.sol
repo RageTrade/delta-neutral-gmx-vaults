@@ -20,6 +20,8 @@ import { IERC4626 } from '../interfaces/IERC4626.sol';
 import { ERC4626Upgradeable } from '../ERC4626/ERC4626Upgradeable.sol';
 import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
 
+import 'hardhat/console.sol';
+
 /**
  * @title Delta Neutral GMX Senior Tranche contract
  * @notice Implements the handling of senior tranche which acts as a lender of aUSDC for junior tranche to
@@ -366,11 +368,16 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     function availableBorrow(address borrower) public view returns (uint256 availableAUsdc) {
         uint256 borrowCap = borrowCaps[borrower];
         uint256 borrowed = IBorrower(borrower).getUsdcBorrowed();
+        console.log('senior vault availableBorrow');
+        console.log('borrowCap', borrowCap);
+        console.log('getUsdcBorrowed', borrowed);
 
         if (borrowed > borrowCap) return 0;
 
         uint256 availableBasisCap = borrowCap - borrowed;
         uint256 availableBasisBalance = aUsdc.balanceOf(address(this));
+        console.log('availableBasisCap', availableBasisCap);
+        console.log('availableBasisBalance', availableBasisBalance);
 
         availableAUsdc = availableBasisCap < availableBasisBalance ? availableBasisCap : availableBasisBalance;
     }

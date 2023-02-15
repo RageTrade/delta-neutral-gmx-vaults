@@ -1,4 +1,5 @@
 import { setBalance } from '@nomicfoundation/hardhat-network-helpers';
+import { deltaNeutralGmxVaults } from '@ragetrade/sdk';
 import { BigNumber } from 'ethers';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
 import { deployments, ethers } from 'hardhat';
@@ -20,6 +21,9 @@ import { batchingManagerFixture } from './glp-batching-staking-manager';
 
 export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   const [admin, feeRecipient, ...users] = await hre.ethers.getSigners();
+
+  const { dnGmxSeniorVault: dnGmxSeniorVaultLiveMainnet, dnGmxJuniorVault: dnGmxJuniorVaultLiveMainnet } =
+    deltaNeutralGmxVaults.getContractsSync('arbmain', hre.ethers.provider);
 
   const newGlpManagerAddr = '0x3963FfC9dff443c2A94f21b129D429891E32ec18';
 
@@ -280,5 +284,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     glpBatchingManager,
     usdcBatchingManager,
     dnGmxTraderHedgeStrategy,
+    dnGmxSeniorVaultLiveMainnet,
+    dnGmxJuniorVaultLiveMainnet,
   };
 });

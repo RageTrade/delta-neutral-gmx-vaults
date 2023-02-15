@@ -5,6 +5,7 @@ import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-update-impl';
 import {
   deltaNeutralGmxVaults,
   DnGmxBatchingManager__factory,
+  formatUsdc,
   fromQ128,
   parseUsdc,
   tokens,
@@ -12,9 +13,10 @@ import {
 } from '@ragetrade/sdk';
 import { DepositEvent } from '../typechain-types/contracts/interfaces/IERC4626';
 import { BigNumber } from 'ethers';
-import { impersonateAccount } from '@nomicfoundation/hardhat-network-helpers';
+import { impersonateAccount, setBalance } from '@nomicfoundation/hardhat-network-helpers';
 import { arb } from './utils/arb';
 import { TransparentUpgradeableProxy__factory } from '../typechain-types';
+import { generateErc20Balance } from './utils/generator';
 
 const proxyAdminAddr = '0x90066f5EeABd197433411E8dEc935a2d28BC28De';
 
@@ -25,7 +27,7 @@ const oldDnGmxJuniorVault = '0x8478AB5064EbAC770DdCE77E7D31D969205F041E';
 const juniorVaultDepositor = '0x04808a3aa9507f2354d3f411f86208ba9fa38093';
 const existingBMUser = '0x9f7D3CECf8F857C10fa0B1BEED96DCFE52625454';
 
-describe.skip('Update Implementation', () => {
+describe('Update Implementation', () => {
   it('dn gmx junior vault', async () => {
     const opts = await dnGmxJuniorVaultFixture();
 
@@ -35,8 +37,11 @@ describe.skip('Update Implementation', () => {
     ];
 
     const bm = new ethers.Contract(usdcBatchingManager, IExecuteBatch, hre.ethers.provider);
-    const vaultWithImplAbi = await ethers.getContractAt('DnGmxJuniorVault', oldDnGmxJuniorVault);
-    const vaultWithProxyAbi = await ethers.getContractAt('TransparentUpgradeableProxy', oldDnGmxJuniorVault);
+    const vaultWithImplAbi = await ethers.getContractAt('DnGmxJuniorVault', opts.dnGmxJuniorVaultLiveMainnet.address);
+    const vaultWithProxyAbi = await ethers.getContractAt(
+      'TransparentUpgradeableProxy',
+      opts.dnGmxJuniorVaultLiveMainnet.address,
+    );
     const bmWithProxyAbi = await ethers.getContractAt('TransparentUpgradeableProxy', usdcBatchingManager);
 
     const proxyAdmin = await hre.ethers.getContractAt('ProxyAdmin', proxyAdminAddr);
@@ -71,12 +76,20 @@ describe.skip('Update Implementation', () => {
     // upgrade implementation
     await proxyAdmin.connect(ownerSigner).upgrade(vaultWithProxyAbi.address, opts.dnGmxJuniorVault.address);
     await proxyAdmin.connect(ownerSigner).upgrade(bmWithProxyAbi.address, opts.glpBatchingManager.address);
+    await proxyAdmin
+      .connect(ownerSigner)
+      .upgrade(opts.dnGmxSeniorVaultLiveMainnet.address, opts.dnGmxSeniorVault.address);
+
+    /**
+     * Post upgrade
+     */
+
+    // post upgrade query
     const totalAssetsAfterUpgradeBeforeRebalance = await vaultWithImplAbi.totalAssets();
     console.log('totalAssetsAfterUpgradeBeforeRebalance', formatEther(totalAssetsAfterUpgradeBeforeRebalance));
     // console.log(await vaultWithImplAbi.getCurrentBorrows());
     // console.log(await vaultWithImplAbi['getOptimalBorrows()']());
 
-    // post upgrade
     await vaultWithImplAbi.connect(timelockSigner).setParamsV1(0n, opts.dnGmxTraderHedgeStrategy.address);
     await vaultWithImplAbi.connect(timelockSigner).grantAllowances();
 
@@ -91,13 +104,103 @@ describe.skip('Update Implementation', () => {
         adminParams.feeTierWethWbtcPool,
       );
 
-    // rebalance; TODO add arbitrager
-    await vaultWithImplAbi.connect(juniorVaultKeeperSigner).rebalance();
+    // await generateErc20Balance(opts.usdc, parseUsdc('1000000'), opts.users[0].address);
+    // await opts.usdc.connect(opts.users[0]).approve(opts.dnGmxSeniorVault.address, parseUsdc('1000000'));
+    // await opts.dnGmxSeniorVault.connect(opts.users[0]).deposit(parseUsdc('1000000'), opts.users[0].address);
 
-    for (let i = 0; i < 15; i++) {
+    const seniorVaultOwner = await impersonate(await opts.dnGmxSeniorVaultLiveMainnet.owner());
+    const depositCap = await opts.dnGmxSeniorVaultLiveMainnet.depositCap();
+    await opts.dnGmxSeniorVaultLiveMainnet
+      .connect(seniorVaultOwner)
+      .setDepositCap(depositCap.add(parseUsdc('8000000')));
+
+    const depositAmount = parseUsdc('5000000');
+    await generateErc20Balance(opts.usdc, depositAmount, opts.users[0].address);
+    await opts.usdc.connect(opts.users[0]).approve(opts.dnGmxSeniorVaultLiveMainnet.address, depositAmount);
+    await opts.dnGmxSeniorVaultLiveMainnet.connect(opts.users[0]).deposit(depositAmount, opts.users[0].address);
+
+    const borrowCap = await opts.dnGmxSeniorVaultLiveMainnet.borrowCaps(vaultWithImplAbi.address);
+    await opts.dnGmxSeniorVaultLiveMainnet
+      .connect(seniorVaultOwner)
+      .updateBorrowCap(vaultWithImplAbi.address, borrowCap.add(parseUsdc('5000000')));
+    const borrowCapAfter = await opts.dnGmxSeniorVaultLiveMainnet.borrowCaps(vaultWithImplAbi.address);
+    console.log(
+      'updateBorrowCap',
+      opts.dnGmxSeniorVaultLiveMainnet.address,
+      vaultWithImplAbi.address,
+      borrowCap.add(parseUsdc('5000000')),
+    );
+    console.log('borrowCapBefore', formatUsdc(borrowCap));
+    console.log('borrowCapAfter', formatUsdc(borrowCapAfter));
+
+    /**
+     * pre rebalance actions
+     */
+
+    const govSigner = await impersonate('0x7b1FFdDEEc3C4797079C7ed91057e399e9D43a8B');
+    const IVaultPriceFeed = ['function setMaxStrictPriceDeviation(uint256 _maxStrictPriceDeviation) external'];
+    const priceFeed = new ethers.Contract(await opts.gmxVault.priceFeed(), IVaultPriceFeed, govSigner);
+
+    // @dev changing price of USDC on gmx to be 1$
+    // because we are minting lot of glp with eth to give to users[1,2, 3] and redeeming it for usdc in scenarios
+    await priceFeed.setMaxStrictPriceDeviation(ethers.constants.MaxUint256);
+
+    const keeperBMSigner = await impersonate(opts.usdcBatchingManager.keeper());
+    const batchingManagerOwner = await impersonate(opts.usdcBatchingManager.owner());
+
+    const dnGmxBatchingManager_ = new ethers.Contract(
+      opts.usdcBatchingManager.address,
+      ['function setParamsV1(address _weth, address _rewardsHarvestingRouter) external '],
+      opts.usdcBatchingManager.signer,
+    );
+
+    await dnGmxBatchingManager_
+      .connect(batchingManagerOwner)
+      .setParamsV1(opts.weth.address, '0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1');
+
+    // await opts.usdcBatchingManager.connect(batchingManagerOwner).rescueFees();
+
+    /**
+     * Rebalance
+     */
+
+    async function rebalance() {
+      let error: any;
+      console.log('senior vault address', opts.dnGmxSeniorVaultLiveMainnet.address);
+      console.log('borrower param in available borow', vaultWithImplAbi.address);
+
+      const res = await opts.dnGmxSeniorVaultLiveMainnet.availableBorrow(vaultWithImplAbi.address);
+      console.log('availableBorrow', formatUsdc(res));
+      const result = await hre.ethers.provider.getStorageAt(vaultWithImplAbi.address, 255);
+      console.log('unhedged glp', formatEther(result));
+      await vaultWithImplAbi.isValidRebalance();
+      console.log('===executing rebalance function===');
       try {
         await vaultWithImplAbi.connect(juniorVaultKeeperSigner).rebalance();
-        console.log('\nRebalanced', i);
+        console.log('===rebalance execution completed===');
+      } catch (e) {
+        error = e;
+        console.log('===rebalance execution failed !!!! ===');
+      }
+      const cb = await vaultWithImplAbi.getCurrentBorrows();
+      console.log({
+        currentBtcBorrow: formatUnits(cb.currentBtcBorrow, 8),
+        currentEthBorrow: formatUnits(cb.currentEthBorrow, 18),
+      });
+      const ob = await vaultWithImplAbi.getOptimalBorrows(vaultWithImplAbi.totalAssets());
+      console.log({
+        optimalBtcBorrow: formatUnits(ob.optimalBtcBorrow, 8),
+        optimalEthBorrow: formatUnits(ob.optimalEthBorrow, 18),
+      });
+      if (error) {
+        throw error;
+      }
+    }
+
+    for (let i = 0; i < 20; i++) {
+      try {
+        console.log('\nRebalance started', i);
+        await rebalance();
         await arb(opts.users[0], opts.weth.address, opts.usdc.address, 500, true);
         await arb(opts.users[0], opts.wbtc.address, opts.weth.address, 500, true);
       } catch (e) {
@@ -107,10 +210,14 @@ describe.skip('Update Implementation', () => {
       }
     }
 
+    await generateErc20Balance(opts.usdc, parseUsdc('1000000'), opts.users[0].address);
+    await opts.usdc.connect(opts.users[0]).approve(opts.dnGmxSeniorVaultLiveMainnet.address, parseUsdc('1000000'));
+    await opts.dnGmxSeniorVaultLiveMainnet.connect(opts.users[0]).deposit(parseUsdc('1000000'), opts.users[0].address);
+
     // await arb(opts.users[0], opts.wbtc.address, opts.weth.address, 500, true);
     // await arb(opts.users[0], opts.weth.address, opts.usdc.address, 500);
 
-    await vaultWithImplAbi.connect(juniorVaultKeeperSigner).rebalance();
+    // await vaultWithImplAbi.connect(juniorVaultKeeperSigner).rebalance();
 
     const totalAssetsAfterRebalance = await vaultWithImplAbi.totalAssets();
     console.log('totalAssetsAfterRebalance', formatEther(totalAssetsAfterRebalance));
@@ -127,11 +234,12 @@ describe.skip('Update Implementation', () => {
     // 100K -> 0.008544901781 %
     // 1.035829002571729652
     // 1.035740499563332996
+
     /**
      * Deposit
      */
 
-    const depositAssets = parseEther('100000'); // there is an error with 2000
+    const depositAssets = parseEther('100'); // there is an error with 2000
 
     // before deposit
     const maxWithdrawBefore = await vaultWithImplAbi.maxWithdraw(juniorVaultDepositor);
@@ -305,4 +413,15 @@ function expectEqualWithRelativeError(a: BigNumber, b: BigNumber, error: number)
       throw e;
     }
   }
+}
+
+export async function impersonate(address: string | Promise<string>) {
+  address = await address;
+  await impersonateAccount(address);
+  await giveBalance(address);
+  return hre.ethers.getSigner(address);
+}
+
+export async function giveBalance(address: string) {
+  await setBalance(address, parseEther('120000').toHexString());
 }

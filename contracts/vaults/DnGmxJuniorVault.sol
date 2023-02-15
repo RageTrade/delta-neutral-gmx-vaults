@@ -36,6 +36,7 @@ import { DnGmxJuniorVaultManager } from '../libraries/DnGmxJuniorVaultManager.so
 import { SafeCast } from '../libraries/SafeCast.sol';
 
 import { ERC4626Upgradeable } from '../ERC4626/ERC4626Upgradeable.sol';
+import 'hardhat/console.sol';
 
 /**
  * @title Delta Neutral GMX Junior Tranche contract
@@ -393,6 +394,10 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     function rebalance() external onlyKeeper {
         if (!isValidRebalance()) revert InvalidRebalance();
 
+        console.log('in rebalance');
+        console.log('state.btcPoolAmount', state.btcPoolAmount);
+        console.log('state.ethPoolAmount', state.ethPoolAmount);
+
         emit Rebalanced();
         state.btcPoolAmount = (state.gmxVault.poolAmounts(address(state.wbtc))).toUint128();
         state.ethPoolAmount = (state.gmxVault.poolAmounts(address(state.weth))).toUint128();
@@ -413,7 +418,10 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         // transfer collateral from LB vault to DN vault
         bool isPartialHedge = state.rebalanceHedge(currentBtc, currentEth, totalAssets(), true);
 
-        if (!isPartialHedge) state.lastRebalanceTS = uint48(block.timestamp);
+        if (!isPartialHedge) {
+            state.lastRebalanceTS = uint48(block.timestamp);
+            console.log('lastRebalanceTS updated', state.lastRebalanceTS);
+        }
 
         (currentBtc, currentEth) = state.getCurrentBorrows();
 
@@ -765,6 +773,9 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @notice harvests fees and rebalances profits before deposits and withdrawals
     /// @dev called first on any deposit/withdrawals
     function _rebalanceBeforeShareAllocation() internal {
+        console.log('in _rebalanceBeforeShareAllocation');
+        console.log('state.btcPoolAmount', state.btcPoolAmount);
+        console.log('state.ethPoolAmount', state.ethPoolAmount);
         if (state.btcPoolAmount == 0)
             state.btcPoolAmount = (state.gmxVault.poolAmounts(address(state.wbtc))).toUint128();
         if (state.ethPoolAmount == 0)

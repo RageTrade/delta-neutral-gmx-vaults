@@ -36,6 +36,7 @@ import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMat
 
 import { Simulate } from '@uniswap/v3-core/contracts/libraries/Simulate.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
+import 'hardhat/console.sol';
 
 /**
  * @title Helper library for junior vault
@@ -424,6 +425,12 @@ library DnGmxJuniorVaultManager {
             ethUsdcAmount = 0;
         }
 
+        console.log('inside _rebalanceBorrow');
+        console.log('btcTokenAmount', btcTokenAmount);
+        console.log('btcUsdcAmount', btcUsdcAmount);
+        console.log('ethTokenAmount', ethTokenAmount);
+        console.log('ethUsdcAmount', ethUsdcAmount);
+
         // get asset amount basis increase/decrease of token amounts
         uint256 btcAssetAmount = repayDebtBtc ? btcUsdcAmount : btcTokenAmount;
         uint256 ethAssetAmount = repayDebtEth ? ethUsdcAmount : ethTokenAmount;
@@ -512,6 +519,11 @@ library DnGmxJuniorVaultManager {
         uint256 optimalTokenBorrow,
         uint256 currentTokenBorrow
     ) internal view returns (uint256 optimalPartialTokenBorrow, bool isPartialTokenHedge) {
+        console.log('_getOptimalPartialBorrows');
+        console.log('token', address(token));
+        console.log('optimalTokenBorrow', optimalTokenBorrow);
+        console.log('currentTokenBorrow', currentTokenBorrow);
+
         // checks if token hedge needs to be increased or decreased
         bool isOptimalHigher = optimalTokenBorrow > currentTokenBorrow;
         // difference = amount of swap to be done for complete hedge
@@ -539,6 +551,8 @@ library DnGmxJuniorVaultManager {
             // swap the full amount in this rebalance (complete hedge)
             optimalPartialTokenBorrow = optimalTokenBorrow;
         }
+        console.log('optimalPartialTokenBorrow', optimalPartialTokenBorrow);
+        console.log('isPartialTokenHedge', isPartialTokenHedge);
     }
 
     function _getOptimalBorrowsFinal(
@@ -650,6 +664,8 @@ library DnGmxJuniorVaultManager {
         uint256 glpDeposited,
         bool isPartialAllowed
     ) external returns (bool isPartialHedge) {
+        console.log('rebalanceHedge');
+        console.log('glpDeposited', glpDeposited);
         {
             uint256 optimalBtcBorrow;
             uint256 optimalEthBorrow;
@@ -671,7 +687,8 @@ library DnGmxJuniorVaultManager {
                 {
                     uint256 amountToBorrow = targetDnGmxSeniorVaultAmount - currentDnGmxSeniorVaultAmount;
                     uint256 availableBorrow = state.dnGmxSeniorVault.availableBorrow(address(this));
-
+                    console.log('amountToBorrow', amountToBorrow);
+                    console.log('availableBorrow', availableBorrow);
                     if (amountToBorrow > availableBorrow) {
                         // if amount to borrow > available borrow amount
                         // we won't be able to hedge glp completely
@@ -1373,6 +1390,11 @@ library DnGmxJuniorVaultManager {
             totalAssetsAfter,
             false
         );
+        console.log('in _getNetPositionChange');
+        console.log('currentBtcBorrow', currentBtcBorrow);
+        console.log('currentEthBorrow', currentEthBorrow);
+        console.log('optimalBtcBorrow', optimalBtcBorrow);
+        console.log('optimalEthBorrow', optimalEthBorrow);
 
         // calculate the diff, i.e token amounts to be swapped on uniswap
         // if optimal > current, swapping token to usdc
