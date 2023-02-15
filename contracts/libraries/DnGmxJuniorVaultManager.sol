@@ -549,7 +549,7 @@ library DnGmxJuniorVaultManager {
         uint256 currentBtcBorrow,
         uint256 currentEthBorrow,
         uint256 glpDeposited,
-        bool isPartialAllowed
+        bool[2] memory conditions // (isPartialAllowed, useUpdatedPoolAmounts)
     )
         internal
         view
@@ -561,9 +561,13 @@ library DnGmxJuniorVaultManager {
             bool isPartialHedge
         )
     {
+        bool isPartialAllowed = conditions[0];
+        bool useUpdatedPoolAmounts = conditions[1];
+
         // optimal btc and eth borrows
         // calculated basis the underlying token weights in glp
-        (optimalBtcBorrow, optimalEthBorrow) = _getOptimalBorrows(state, glpDeposited);
+
+        (optimalBtcBorrow, optimalEthBorrow) = _getOptimalBorrows(state, glpDeposited, useUpdatedPoolAmounts);
 
         if (isPartialAllowed) {
             // if partial hedges are allowed (i.e. rebalance call and not deposit/withdraw)
@@ -632,6 +636,14 @@ library DnGmxJuniorVaultManager {
                 }
             }
         }
+
+        return (
+            optimalBtcBorrow,
+            optimalEthBorrow,
+            targetDnGmxSeniorVaultAmount,
+            optimalUncappedEthBorrow,
+            isPartialHedge
+        );
     }
 
     ///@notice rebalances btc and eth hedges according to underlying glp token weights
@@ -665,7 +677,13 @@ library DnGmxJuniorVaultManager {
                 targetDnGmxSeniorVaultAmount,
                 optimalUncappedEthBorrow,
                 isPartialHedge
-            ) = _getOptimalBorrowsFinal(state, currentBtcBorrow, currentEthBorrow, glpDeposited, isPartialAllowed);
+            ) = _getOptimalBorrowsFinal(
+                state,
+                currentBtcBorrow,
+                currentEthBorrow,
+                glpDeposited,
+                [isPartialAllowed, false]
+            );
             // current usdc borrowed from senior tranche
             currentDnGmxSeniorVaultAmount = _getUsdcBorrowed(state);
             if (targetDnGmxSeniorVaultAmount > currentDnGmxSeniorVaultAmount) {
@@ -1203,9 +1221,12 @@ library DnGmxJuniorVaultManager {
     function isValidRebalanceDeviation(State storage state) external view returns (bool) {
         (uint256 currentBtcBorrow, uint256 currentEthBorrow) = _getCurrentBorrows(state);
 
-        (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) = _getOptimalBorrowsUpdatedPoolAmount(
+        (uint256 optimalBtcBorrow, uint256 optimalEthBorrow, , , ) = _getOptimalBorrowsFinal(
             state,
-            _totalAssets(state, false)
+            currentBtcBorrow,
+            currentEthBorrow,
+            _totalAssets(state, false),
+            [false, true]
         );
 
         return
@@ -1400,7 +1421,7 @@ library DnGmxJuniorVaultManager {
             currentBtcBorrow,
             currentEthBorrow,
             totalAssetsAfter,
-            false
+            [false, false]
         );
 
         // calculate the diff, i.e token amounts to be swapped on uniswap
@@ -1562,9 +1583,10 @@ library DnGmxJuniorVaultManager {
     ///@return optimalEthBorrow optimal amount of eth borrowed from AAVE
     function getOptimalBorrows(
         State storage state,
-        uint256 glpDeposited
+        uint256 glpDeposited,
+        bool withUpdatedPoolAmounts
     ) external view returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) {
-        return _getOptimalBorrows(state, glpDeposited);
+        return _getOptimalBorrows(state, glpDeposited, withUpdatedPoolAmounts);
     }
 
     ///@notice returns optimal borrows for BTC and ETH respectively basis glpDeposited amount and stored pool amount
@@ -1574,23 +1596,11 @@ library DnGmxJuniorVaultManager {
     ///@return optimalEthBorrow optimal amount of eth borrowed from AAVE
     function _getOptimalBorrows(
         State storage state,
-        uint256 glpDeposited
+        uint256 glpDeposited,
+        bool withUpdatedPoolAmounts
     ) private view returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) {
-        optimalBtcBorrow = _getTokenReservesInGlp(state, address(state.wbtc), glpDeposited);
-        optimalEthBorrow = _getTokenReservesInGlp(state, address(state.weth), glpDeposited);
-    }
-
-    ///@notice returns optimal borrows for BTC and ETH respectively basis glpDeposited amount and current pool amounts
-    ///@param state set of all state variables of vault
-    ///@param glpDeposited amount of glp for which optimal borrow needs to be calculated
-    ///@return optimalBtcBorrow optimal amount of btc borrowed from AAVE
-    ///@return optimalEthBorrow optimal amount of eth borrowed from AAVE
-    function _getOptimalBorrowsUpdatedPoolAmount(
-        State storage state,
-        uint256 glpDeposited
-    ) private view returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) {
-        optimalBtcBorrow = _getTokenReservesInGlpUpdatedPoolAmount(state, address(state.wbtc), glpDeposited);
-        optimalEthBorrow = _getTokenReservesInGlpUpdatedPoolAmount(state, address(state.weth), glpDeposited);
+        optimalBtcBorrow = _getTokenReservesInGlp(state, address(state.wbtc), glpDeposited, withUpdatedPoolAmounts);
+        optimalEthBorrow = _getTokenReservesInGlp(state, address(state.weth), glpDeposited, withUpdatedPoolAmounts);
     }
 
     ///@notice returns optimal borrows for BTC and ETH respectively basis available borrow amount
@@ -1678,9 +1688,10 @@ library DnGmxJuniorVaultManager {
     function getTokenReservesInGlp(
         State storage state,
         address token,
-        uint256 glpDeposited
+        uint256 glpDeposited,
+        bool withUpdatedPoolAmounts
     ) external view returns (uint256) {
-        return _getTokenReservesInGlp(state, token, glpDeposited);
+        return _getTokenReservesInGlp(state, token, glpDeposited, withUpdatedPoolAmounts);
     }
 
     ///@notice returns token amount underlying glp amount deposited and stored pool amount
@@ -1691,34 +1702,13 @@ library DnGmxJuniorVaultManager {
     function _getTokenReservesInGlp(
         State storage state,
         address token,
-        uint256 glpDeposited
-    ) private view returns (uint256) {
-        uint256 poolAmount = token == address(state.wbtc) ? state.btcPoolAmount : state.ethPoolAmount;
-
-        return _getTokenReservesFromPoolAmount(state, token, glpDeposited, poolAmount);
-    }
-
-    ///@notice returns token amount underlying glp amount deposited and current pool amount
-    ///@param state set of all state variables of vault
-    ///@param token address of token
-    ///@param glpDeposited amount of glp for which underlying token amount is being calculated
-    ///@return amount of tokens of the supplied address underlying the given amount of glp
-    function _getTokenReservesInGlpUpdatedPoolAmount(
-        State storage state,
-        address token,
-        uint256 glpDeposited
-    ) private view returns (uint256) {
-        uint256 poolAmount = state.gmxVault.poolAmounts(token);
-
-        return _getTokenReservesFromPoolAmount(state, token, glpDeposited, poolAmount);
-    }
-
-    function _getTokenReservesFromPoolAmount(
-        State storage state,
-        address token,
         uint256 glpDeposited,
-        uint256 poolAmount
-    ) internal view returns (uint256) {
+        bool withUpdatedPoolAmounts
+    ) private view returns (uint256) {
+        uint256 poolAmount = withUpdatedPoolAmounts
+            ? state.gmxVault.poolAmounts(token)
+            : (token == address(state.wbtc) ? state.btcPoolAmount : state.ethPoolAmount);
+
         uint256 totalSupply = state.glp.totalSupply();
 
         int128 tokenTraderOIHedge = token == address(state.wbtc)

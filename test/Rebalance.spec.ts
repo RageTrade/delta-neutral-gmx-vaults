@@ -75,7 +75,7 @@ describe('Rebalance & its utils', () => {
     const borrowAmount = parseUnits('50', 6);
 
     const [currentBtc, currentEth] = [BigNumber.from(0), BigNumber.from(0)];
-    const [optimalBtc, optimalEth] = await dnGmxJuniorVault.getOptimalBorrows(amount);
+    const [optimalBtc, optimalEth] = await dnGmxJuniorVault.getOptimalBorrows(amount, false);
 
     expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.eq(0);
     await dnGmxJuniorVault.executeBorrowFromDnGmxSeniorVault(borrowAmount);
@@ -107,7 +107,7 @@ describe('Rebalance & its utils', () => {
     const borrowAmount = parseUnits('50', 6);
 
     const [currentBtc, currentEth] = [BigNumber.from(0), BigNumber.from(0)];
-    const [optimalBtc, optimalEth] = await dnGmxJuniorVault.getOptimalBorrows(amount);
+    const [optimalBtc, optimalEth] = await dnGmxJuniorVault.getOptimalBorrows(amount, false);
 
     expect(currentBtc).to.eq(0);
     expect(currentEth).to.eq(0);
@@ -132,7 +132,7 @@ describe('Rebalance & its utils', () => {
     let [currentBtc_, currentEth_] = await dnGmxJuniorVault.getCurrentBorrows();
 
     const ta = await dnGmxJuniorVault.totalAssets();
-    let [optimalBtc_, optimalEth_] = await dnGmxJuniorVault.getOptimalBorrows(ta);
+    let [optimalBtc_, optimalEth_] = await dnGmxJuniorVault.getOptimalBorrows(ta, false);
 
     // current > optimal because loss on aave and to maintain HF, we repayDebt
     expect(currentBtc_).gt(optimalBtc_);
@@ -193,7 +193,7 @@ describe('Rebalance & its utils', () => {
     expect(await dnGmxJuniorVault.getCurrentBorrows()).to.deep.eq([BigNumber.from(0), BigNumber.from(0)]);
 
     const totalAssetsAfter = await dnGmxJuniorVault.totalAssets();
-    const optimalBorrows = await dnGmxJuniorVault.getOptimalBorrows(totalAssetsAfter);
+    const optimalBorrows = await dnGmxJuniorVault.getOptimalBorrows(totalAssetsAfter, false);
     const borrowValue = await dnGmxJuniorVault.getBorrowValue(optimalBorrows[0], optimalBorrows[1]);
 
     const targetDnGmxSeniorVaultAmount = BigNumber.from(targetHealthFactor - usdcLiquidationThreshold)
@@ -388,7 +388,7 @@ describe('Rebalance & its utils', () => {
 
     const totalAssetsAfter = await dnGmxJuniorVault.totalAssets();
     const dnUsdcDepositedBefore = await dnGmxJuniorVault.dnUsdcDepositedExternal();
-    const optimalBorrows = await dnGmxJuniorVault.getOptimalBorrows(totalAssetsAfter);
+    const optimalBorrows = await dnGmxJuniorVault.getOptimalBorrows(totalAssetsAfter, false);
     const borrowValue = await dnGmxJuniorVault.getBorrowValue(optimalBorrows[0], optimalBorrows[1]);
 
     console.log({ totalAssetsAfter });
@@ -537,7 +537,7 @@ describe('Rebalance & its utils', () => {
     // values based on state after withdraw
 
     let totalAssetsAfter = parseEther('50');
-    let optimalBorrows = await dnGmxJuniorVault.getOptimalBorrows(totalAssetsAfter);
+    let optimalBorrows = await dnGmxJuniorVault.getOptimalBorrows(totalAssetsAfter, false);
     let borrowValue = await dnGmxJuniorVault.getBorrowValue(optimalBorrows[0], optimalBorrows[1]);
 
     let targetDnGmxSeniorVaultAmount = BigNumber.from(targetHealthFactor - usdcLiquidationThreshold)
@@ -681,7 +681,7 @@ describe('Rebalance & its utils', () => {
     await dnGmxJuniorVault.connect(users[0]).deposit(amount1, users[0].address);
 
     currentBorrows = await dnGmxJuniorVault.getCurrentBorrows();
-    optimalBorrows = await dnGmxJuniorVault.getOptimalBorrows(amount1.mul(2));
+    optimalBorrows = await dnGmxJuniorVault.getOptimalBorrows(amount1.mul(2), false);
 
     borrowValue = await dnGmxJuniorVault.getBorrowValue(currentBorrows[0], currentBorrows[1]);
     const uncappedBorrowValue = await dnGmxJuniorVault.getBorrowValue(optimalBorrows[0], optimalBorrows[1]);
@@ -720,7 +720,7 @@ describe('Rebalance & its utils', () => {
     await dnGmxJuniorVault.connect(users[0]).deposit(amount1, users[0].address);
 
     currentBorrows = await dnGmxJuniorVault.getCurrentBorrows();
-    optimalBorrows = await dnGmxJuniorVault.getOptimalBorrows(dnGmxJuniorVault.totalAssets());
+    optimalBorrows = await dnGmxJuniorVault.getOptimalBorrows(dnGmxJuniorVault.totalAssets(), false);
 
     borrowValue = await dnGmxJuniorVault.getBorrowValue(currentBorrows[0], currentBorrows[1]);
 

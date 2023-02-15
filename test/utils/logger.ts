@@ -33,7 +33,7 @@ export class Logger {
 
     const [usdcBorrowed, optimalBorrows, borrowValue] = await Promise.all([
       dnGmxJuniorVault.getUsdcBorrowed({ blockTag: tx?.blockNumber }),
-      dnGmxJuniorVault.getOptimalBorrows(dnGmxJuniorVault.totalAssets({ blockTag: tx?.blockNumber }), {
+      dnGmxJuniorVault.getOptimalBorrows(dnGmxJuniorVault.totalAssets({ blockTag: tx?.blockNumber }), false, {
         blockTag: tx?.blockNumber,
       }),
       dnGmxJuniorVault.getBorrowValue(currentBorrowed[0], currentBorrowed[1], { blockTag: tx?.blockNumber }),

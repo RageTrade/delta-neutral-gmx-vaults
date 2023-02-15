@@ -425,7 +425,9 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         // transfer collateral from LB vault to DN vault
         bool isPartialHedge = state.rebalanceHedge(currentBtc, currentEth, totalAssets(), true);
 
-        if (!isPartialHedge) state.lastRebalanceTS = uint48(block.timestamp);
+        isPartialHedge
+            ? state.lastRebalanceTS = 0 // if partial hedge is happening due to delta threshold breach, next rebalance should still go through
+            : state.lastRebalanceTS = uint48(block.timestamp); // once partial hedge is completed the lastRebalanceTS gets updated
 
         (currentBtc, currentEth) = state.getCurrentBorrows();
 
@@ -685,9 +687,10 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @return optimalBtcBorrow optimal amount of btc borrowed from AAVE
     /// @return optimalEthBorrow optimal amount of eth borrowed from AAVE
     function getOptimalBorrows(
-        uint256 glpDeposited
+        uint256 glpDeposited,
+        bool withUpdatedPoolAmounts
     ) external view returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) {
-        return state.getOptimalBorrows(glpDeposited);
+        return state.getOptimalBorrows(glpDeposited, withUpdatedPoolAmounts);
     }
 
     /// @notice returns junior vault share of usdc deposited to AAVE
