@@ -36,6 +36,10 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     skipIfAlreadyDeployed: true,
   });
   await save('DnGmxBatchingManagerGlp', { ...proxyDeployment, abi: DnGmxBatchingManagerGlpLogicDeployment.abi });
+
+  // TODO setKeeper
+
+  // TODO need to transfer ownership of this to multisig
 };
 
 export default func;
