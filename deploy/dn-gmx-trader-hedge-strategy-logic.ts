@@ -16,8 +16,6 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     log: true,
     waitConfirmations,
   });
-
-  // TODO proxy and initialize
 };
 
 export default func;
