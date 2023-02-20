@@ -20,12 +20,7 @@ interface IRewardTracker {
 
     function unstake(address _depositToken, uint256 _amount) external;
 
-    function unstakeForAccount(
-        address _account,
-        address _depositToken,
-        uint256 _amount,
-        address _receiver
-    ) external;
+    function unstakeForAccount(address _account, address _depositToken, uint256 _amount, address _receiver) external;
 
     function tokensPerInterval() external view returns (uint256);
 

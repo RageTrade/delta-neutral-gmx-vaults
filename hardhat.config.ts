@@ -1,4 +1,5 @@
-import '@nomiclabs/hardhat-waffle';
+import '@nomicfoundation/hardhat-chai-matchers';
+import '@nomiclabs/hardhat-ethers';
 import 'hardhat-tracer';
 import '@typechain/hardhat';
 import 'hardhat-gas-reporter';
@@ -74,7 +75,7 @@ export default {
     hardhat: {
       forking: {
         url: `https://arb-mainnet.alchemyapi.io/v2/${ALCHEMY_KEY}`,
-        blockNumber: 22049346,
+        blockNumber: 56878000,
       },
       blockGasLimit: 0x1fffffffffff,
       gasPrice: 0,
@@ -107,8 +108,9 @@ export default {
   },
   solidity: {
     compilers: [
+      { version: '0.8.15' },
       {
-        version: '0.8.17',
+        version: '0.8.18',
         settings: {
           // use IR for in production and development
           // do not use IR for generating coverage report (to prevent compilation error)
@@ -152,15 +154,18 @@ export default {
       },
     ],
   },
+  dependencyCompiler: {
+    paths: [
+      '@uniswap/v3-periphery/contracts/lens/Quoter.sol',
+      '@uniswap/v3-periphery/contracts/SwapRouter.sol',
+      '@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol',
+      '@uniswap/v3-periphery/contracts/NonfungiblePositionManager.sol',
+      '@ragetrade/core/contracts/utils/TimelockControllerWithMinDelayOverride.sol',
+    ],
+  },
   typechain: {
     target: 'ethers-v5',
     alwaysGenerateOverloads: false,
-  },
-  dependencyCompiler: {
-    paths: [
-      '@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol',
-      '@ragetrade/core/contracts/utils/TimelockControllerWithMinDelayOverride.sol',
-    ],
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_KEY,
@@ -178,7 +183,13 @@ export default {
     strict: true,
   },
   storageLayoutChanges: {
-    contracts: ['DnGmxJuniorVault', 'DnGmxSeniorVault', 'DnGmxBatchingManager'],
+    contracts: [
+      'DnGmxJuniorVault',
+      'DnGmxSeniorVault',
+      'DnGmxBatchingManager',
+      'DnGmxBatchingManagerGlp',
+      'DnGmxTraderHedgeStrategy',
+    ],
     fullPath: false,
   },
   namedAccounts: {

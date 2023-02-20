@@ -1,6 +1,12 @@
 import hre, { ethers } from 'hardhat';
-import { dnGmxJuniorVaultFixture } from '../fixtures/dn-gmx-junior-vault';
+import addresses from '../fixtures/addresses';
 import { increaseBlockTimestamp } from './shared';
+import { AggregatorV3Interface__factory, NonfungiblePositionManager__factory } from '../../typechain-types';
+import { formatUnits, parseUnits } from 'ethers/lib/utils';
+import { dnGmxJuniorVaultFixture } from '../fixtures/dn-gmx-junior-vault';
+import { tickToNearestInitializableTick, priceToTick } from '@ragetrade/sdk';
+import { generateErc20Balance } from './generator';
+import { BigNumber } from 'ethers';
 
 type Asset = 'WETH' | 'WBTC';
 
@@ -11,14 +17,112 @@ export class Changer {
     opts = opts;
   }
 
+  addLiquidity = async () => {
+    const nfpm = NonfungiblePositionManager__factory.connect(
+      '0xC36442b4a4522E871399CD717aBDD847Ab11FE88',
+      this.opts.users[0],
+    );
+
+    let decimals1 = 6;
+    let decimals0 = 18;
+
+    let amount1 = 100_000_000;
+    let amount0 = 100_000_000 / 1_600;
+
+    await generateErc20Balance(
+      this.opts.weth,
+      parseUnits(amount0.toFixed(decimals0), decimals0),
+      this.opts.users[0].address,
+    );
+    await generateErc20Balance(
+      this.opts.usdc,
+      parseUnits(amount1.toFixed(decimals1), decimals1),
+      this.opts.users[0].address,
+    );
+
+    await this.opts.usdc.connect(this.opts.users[0]).approve(nfpm.address, ethers.constants.MaxUint256);
+    await this.opts.weth.connect(this.opts.users[0]).approve(nfpm.address, ethers.constants.MaxUint256);
+
+    let tickLower = tickToNearestInitializableTick(
+      await priceToTick((amount1 / amount0) * 100, decimals1, decimals0, true),
+      10,
+    );
+
+    let tickUpper = tickToNearestInitializableTick(
+      await priceToTick((amount1 / amount0) * 0.01, decimals1, decimals0, true),
+      10,
+    );
+
+    await nfpm.connect(this.opts.users[0]).mint({
+      token0: this.opts.weth.address,
+      token1: this.opts.usdc.address,
+      fee: 500,
+      tickLower: Math.min(tickLower, tickUpper),
+      tickUpper: Math.max(tickLower, tickUpper),
+      amount0Desired: parseUnits(amount0.toFixed(decimals0), decimals0),
+      amount1Desired: parseUnits(amount1.toFixed(decimals1), decimals1),
+      amount0Min: 0,
+      amount1Min: 0,
+      recipient: this.opts.users[0].address,
+      deadline: (await ethers.provider.getBlock('latest')).timestamp + 1000,
+    });
+
+    decimals0 = 8;
+    decimals1 = 18;
+
+    amount1 = 100_000_000 / 21_000;
+    amount0 = 100_000_000 / 1_600;
+
+    await generateErc20Balance(
+      this.opts.wbtc,
+      parseUnits(amount0.toFixed(decimals0), decimals0),
+      this.opts.users[0].address,
+    );
+    await generateErc20Balance(
+      this.opts.weth,
+      parseUnits(amount1.toFixed(decimals1), decimals1),
+      this.opts.users[0].address,
+    );
+
+    await this.opts.usdc.connect(this.opts.users[0]).approve(nfpm.address, ethers.constants.MaxUint256);
+    await this.opts.weth.connect(this.opts.users[0]).approve(nfpm.address, ethers.constants.MaxUint256);
+
+    tickLower = tickToNearestInitializableTick(
+      await priceToTick((amount1 / amount0) * 100, decimals1, decimals0, true),
+      10,
+    );
+
+    tickUpper = tickToNearestInitializableTick(
+      await priceToTick((amount1 / amount0) * 0.01, decimals1, decimals0, true),
+      10,
+    );
+
+    await nfpm.connect(this.opts.users[0]).mint({
+      token0: this.opts.wbtc.address,
+      token1: this.opts.weth.address,
+      fee: 500,
+      tickLower: Math.min(tickLower, tickUpper),
+      tickUpper: Math.max(tickLower, tickUpper),
+      amount0Desired: parseUnits(amount0.toFixed(decimals0), decimals0),
+      amount1Desired: parseUnits(amount1.toFixed(decimals1), decimals1),
+      amount0Min: 0,
+      amount1Min: 0,
+      recipient: this.opts.users[0].address,
+      deadline: (await ethers.provider.getBlock('latest')).timestamp + 1000,
+    });
+
+    console.log('liquidity added successfully');
+    console.log(Changer.seperator);
+  };
+
   changePriceToken = async (asset: Asset, price: number) => {
     const contractAddr =
       asset == 'WBTC' ? '0x942d00008D658dbB40745BBEc89A93c253f9B882' : '0x3607e46698d218B3a5Cae44bF381475C0a5e2ca7';
 
     const slot =
       asset == 'WBTC'
-        ? '0xefc52eb5bcce9ceaaebf0054002d7e364b5b15977eb33576623ae2e3d120addb'
-        : '0x12f79f2c07f3244fa8d6a85e976563a6abab49e9ff994b701b665f333f8a0e6b';
+        ? '0xa5c78c6509e472525490c2b0ff2459c307d7b604b01075c4f9ac7885888b2ea4'
+        : '0xf06beb13170e449f12e8666db7687134d704bb840ae1096a61582a93ea5b8795';
 
     await hre.network.provider.send('hardhat_setStorageAt', [
       contractAddr, // address
@@ -32,20 +136,7 @@ export class Changer {
     console.log(Changer.seperator);
   };
 
-  changePriceGlp = async (price: number) => {
-    await hre.network.provider.send('hardhat_setStorageAt', [
-      '0x3607e46698d218B3a5Cae44bF381475C0a5e2ca7', // address
-      '0x265b84761fa8813caeca7f721d05ef6bdf526034306315bc1279417cc7c803ba', // slot
-      ethers.utils.hexZeroPad(ethers.utils.parseUnits(price.toString(), 8).toHexString(), 32), // new value
-    ]);
-
-    await increaseBlockTimestamp(310);
-
-    console.log(`GLP price changed to ${price}`);
-    console.log(Changer.seperator);
-  };
-
-  changeWeight = async (asset: Asset, weight: number) => {
+  changeTargetWeight = async (asset: Asset, weight: number) => {
     const [tokenAddr, tokenDecimals] = asset === 'WBTC' ? [this.opts.wbtc.address, 8] : [this.opts.weth.address, 18];
 
     const [minProfitBasisPoints, maxUsdgAmounts] = await Promise.resolve([
@@ -63,16 +154,63 @@ export class Changer {
     console.log(Changer.seperator);
   };
 
-  changeUsdcPrice = async (price: number) => {
+  changeCurrentWeights = async (asset: Asset, newAmount: number) => {
+    const [tokenAddr, tokenDecimals] = asset === 'WBTC' ? [this.opts.wbtc.address, 8] : [this.opts.weth.address, 18];
+
+    const oracle =
+      asset == 'WBTC'
+        ? AggregatorV3Interface__factory.connect(addresses.WBTC_ORACLE, ethers.provider)
+        : AggregatorV3Interface__factory.connect(addresses.WETH_ORACLE, ethers.provider);
+
+    const price = Number(formatUnits((await oracle.latestRoundData()).answer, 8));
+
+    const oldAmount = Number(formatUnits(await this.opts.gmxVault.usdgAmounts(tokenAddr)));
+    const diff = newAmount - oldAmount;
+
+    const poolAmount = await this.opts.gmxVault.poolAmounts(tokenAddr);
+
+    const usdgAmountSlot =
+      asset == 'WBTC'
+        ? '0xb025994595b47a13944cacd3720394d16e12d8ae8bb4b04bcb0e8d2bf2d222d8'
+        : '0x9de8a6d40d7108278fd05d4d403f26abef3a4efb68d3b57239e2e07ff45b0ab';
+
+    const poolAmountSlot =
+      asset == 'WBTC'
+        ? '0x59910028135492f60329149ab5f217583540ae9e12791dfb7be530e5c9736a3e'
+        : '0x3e83a15c1bc6dd7a60c94002578f2794c5e38637de18c8ed57da7ec968d7c81b';
+
+    const additionalPoolAmount = parseUnits((diff / price).toFixed(tokenDecimals), tokenDecimals);
+
     await hre.network.provider.send('hardhat_setStorageAt', [
-      '0x2946220288dbbf77df0030fcecc2a8348cbbe32c', // address
-      '0x770facd49fd568a52044bd338eae1804cdf861291a3184eb31c009f1ba6181cb', // slot
-      ethers.utils.hexZeroPad(ethers.utils.parseUnits(price.toString(), 8).toHexString(), 32), // new value
+      this.opts.gmxVault.address, // address
+      usdgAmountSlot, // slot
+      ethers.utils.hexZeroPad(ethers.utils.parseUnits(newAmount.toString(), 18).toHexString(), 32), // new value
     ]);
 
-    await increaseBlockTimestamp(310);
+    await hre.network.provider.send('hardhat_setStorageAt', [
+      this.opts.gmxVault.address, // address
+      poolAmountSlot, // slot
+      ethers.utils.hexZeroPad(poolAmount.add(additionalPoolAmount).toHexString(), 32), // new value
+    ]);
 
-    console.log(`USDC price changed to ${price}`);
+    console.log(`${asset} usdg amount changed to ${newAmount}`);
+    console.log(`${asset} pool amount changed to ${poolAmount.add(additionalPoolAmount)}`);
+
     console.log(Changer.seperator);
+
+    return poolAmount.add(additionalPoolAmount);
+  };
+
+  changeReservedAmounts = async (asset: Asset, newAmount: BigNumber) => {
+    const reservedAmountSlot =
+      asset === 'WBTC'
+        ? '0x6cd2cfa3e5e0cba4a2e82a4fb796acc372e62dc768536373187130c9dd6774af'
+        : '0x36fcd9c0594c4c3f20b6dcfb075a8ad5cae40c2b7a894c8b4a4b815390f371e8';
+
+    await hre.network.provider.send('hardhat_setStorageAt', [
+      this.opts.gmxVault.address, // address
+      reservedAmountSlot, // slot
+      ethers.utils.hexZeroPad(newAmount.toHexString(), 32), // new value
+    ]);
   };
 }

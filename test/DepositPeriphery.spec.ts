@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { BigNumber, constants } from 'ethers';
+import { BigNumber } from 'ethers';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
 import hre, { ethers } from 'hardhat';
 import { GMX_ECOSYSTEM_ADDRESSES } from './fixtures/addresses';
@@ -23,21 +23,18 @@ describe('Deposit Periphery', () => {
       .withArgs(dnGmxJuniorVault.address, rewardRouter.address);
 
     await expect(depositPeriphery.connect(users[5]).setSlippageThreshold(100)).to.be.revertedWith(
-      `VM Exception while processing transaction: reverted with reason string 'Ownable: caller is not the owner'`,
+      'Ownable: caller is not the owner',
     );
 
     await expect(
       depositPeriphery
         .connect(users[5])
         .setAddresses(dnGmxJuniorVault.address, rewardRouter.address, GMX_ECOSYSTEM_ADDRESSES.GlpManager),
-    ).to.be.revertedWith(
-      `VM Exception while processing transaction: reverted with reason string 'Ownable: caller is not the owner'`,
-    );
+    ).to.be.revertedWith('Ownable: caller is not the owner');
   });
 
   it('depositToken - revert due to allowance', async () => {
-    const { usdc, users, depositPeriphery, dnGmxJuniorVault, glpManager, dnGmxSeniorVault } =
-      await dnGmxJuniorVaultFixture();
+    const { usdc, users, depositPeriphery, glpManager, dnGmxSeniorVault } = await dnGmxJuniorVaultFixture();
 
     const govAddr = await glpManager.gov();
 
@@ -56,14 +53,11 @@ describe('Deposit Periphery', () => {
 
     await expect(
       depositPeriphery.connect(users[0]).depositToken(usdc.address, users[0].address, amount),
-    ).to.be.revertedWith(
-      `VM Exception while processing transaction: reverted with reason string 'ERC20: transfer amount exceeds allowance'`,
-    );
+    ).to.be.revertedWith('ERC20: transfer amount exceeds allowance');
   });
 
   it('depositToken - non registered token', async () => {
-    const { aUSDC, users, depositPeriphery, dnGmxJuniorVault, glpManager, dnGmxSeniorVault } =
-      await dnGmxJuniorVaultFixture();
+    const { users, depositPeriphery, glpManager, dnGmxSeniorVault } = await dnGmxJuniorVaultFixture();
 
     const govAddr = await glpManager.gov();
 
@@ -83,9 +77,7 @@ describe('Deposit Periphery', () => {
 
     await expect(
       depositPeriphery.connect(users[1]).depositToken(dnGmxSeniorVault.address, users[0].address, amount),
-    ).to.be.revertedWith(
-      `VM Exception while processing transaction: reverted with reason string 'VaultPriceFeed: invalid price feed'`,
-    );
+    ).to.be.revertedWith('VaultPriceFeed: invalid price feed');
   });
 
   it('depositToken - usdc', async () => {
@@ -161,8 +153,7 @@ describe('Deposit Periphery', () => {
   });
 
   it('depositToken -  usdc - fail slippage', async () => {
-    const { usdc, users, depositPeriphery, dnGmxJuniorVault, glpManager, dnGmxSeniorVault } =
-      await dnGmxJuniorVaultFixture();
+    const { usdc, users, depositPeriphery, glpManager, dnGmxSeniorVault } = await dnGmxJuniorVaultFixture();
 
     const govAddr = await glpManager.gov();
 
@@ -184,9 +175,7 @@ describe('Deposit Periphery', () => {
 
     await expect(
       depositPeriphery.connect(users[0]).depositToken(usdc.address, users[0].address, amount),
-    ).to.be.revertedWith(
-      `VM Exception while processing transaction: reverted with reason string 'GlpManager: insufficient USDG output'`,
-    );
+    ).to.be.revertedWith('GlpManager: insufficient USDG output');
   });
 
   it('depositToken - weth - fail slippage', async () => {
@@ -213,9 +202,7 @@ describe('Deposit Periphery', () => {
 
     await expect(
       depositPeriphery.connect(users[0]).depositToken(weth.address, users[0].address, amount),
-    ).to.be.revertedWith(
-      `VM Exception while processing transaction: reverted with reason string 'GlpManager: insufficient USDG output'`,
-    );
+    ).to.be.revertedWith('GlpManager: insufficient USDG output');
   });
 
   it('depositToken - different receiver than msg.sender', async () => {

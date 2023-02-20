@@ -8,8 +8,23 @@ import { IERC20Metadata } from '@openzeppelin/contracts/token/ERC20/extensions/I
 import { DnGmxJuniorVaultManager } from '../libraries/DnGmxJuniorVaultManager.sol';
 import { DnGmxJuniorVault } from '../vaults/DnGmxJuniorVault.sol';
 
+import { FullMath } from '@uniswap/v3-core/contracts/libraries/FullMath.sol';
+import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
+import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMathLib.sol';
+
+import { IERC4626 } from '../interfaces/IERC4626.sol';
+import { ERC4626Upgradeable } from '../ERC4626/ERC4626Upgradeable.sol';
+import { SafeCast } from '../libraries/SafeCast.sol';
+
 contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
     uint256 internal constant VARIABLE_INTEREST_MODE = 2;
+    IDnGmxBatchingManager batchingManager;
+
+    using SafeCast for uint256;
+    using FullMath for uint256;
+    using FixedPointMathLib for uint256;
+
+    bool useMocks = false;
 
     using DnGmxJuniorVaultManager for DnGmxJuniorVaultManager.State;
 
@@ -142,15 +157,7 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         address token,
         uint256 optimalBorrow,
         uint256 currentBorrow
-    )
-        external
-        view
-        returns (
-            uint256 tokenAmount,
-            uint256 usdcAmount,
-            bool repayDebt
-        )
-    {
+    ) external view returns (uint256 tokenAmount, uint256 usdcAmount, bool repayDebt) {
         return state.flashloanAmounts(token, optimalBorrow, currentBorrow);
     }
 
@@ -187,24 +194,75 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
         return state.getTokenPriceInUsdc(token);
     }
 
-    function getOptimalCappedBorrows(uint256 availableBorrowAmount, uint256 usdcLiquidationThreshold)
-        external
-        view
-        returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow)
-    {
+    function getOptimalCappedBorrows(
+        uint256 availableBorrowAmount,
+        uint256 usdcLiquidationThreshold
+    ) external view returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) {
         return state.getOptimalCappedBorrows(availableBorrowAmount, usdcLiquidationThreshold);
     }
 
-    function getTokenReservesInGlp(address token, uint256 glpDeposited) external view returns (uint256) {
-        return state.getTokenReservesInGlp(token, glpDeposited);
+    function getTokenReservesInGlp(
+        address token,
+        uint256 glpDeposited,
+        bool withUpdatedPoolAmounts
+    ) external view returns (uint256) {
+        return state.getTokenReservesInGlp(token, glpDeposited, withUpdatedPoolAmounts);
     }
 
     function isWithinAllowedDelta(uint256 optimalBorrow, uint256 currentBorrow) external view returns (bool) {
         return state.isWithinAllowedDelta(optimalBorrow, currentBorrow);
     }
 
+    function setPoolAmounts() external {
+        state.btcPoolAmount = (state.gmxVault.poolAmounts(address(state.wbtc))).toUint128();
+        state.ethPoolAmount = (state.gmxVault.poolAmounts(address(state.weth))).toUint128();
+    }
+
     function rebalanceHedge(uint256 currentBtcBorrow, uint256 currentEthBorrow) external returns (bool) {
         return state.rebalanceHedge(currentBtcBorrow, currentEthBorrow, totalAssets(), false);
+    }
+
+    function totalAssetsMax() external view returns (uint256) {
+        return state.totalAssets(true);
+    }
+
+    function totalAssetsComponents(
+        bool maximize
+    ) external view returns (uint256 fsGlpBal, uint256 aaveProfitGlp, uint256 aaveLossGlp, uint256 unhedgedGlp) {
+        fsGlpBal = state.fsGlp.balanceOf(address(this));
+
+        int256 dnUsdcDeposited = state.dnUsdcDeposited;
+
+        // calculate current borrow amounts
+        (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
+
+        // total borrow value is the value of ETH and BTC required to be paid off
+        uint256 totalCurrentBorrowValue = state.getBorrowValue(currentBtc, currentEth);
+
+        uint256 glpPrice = state.getGlpPriceInUsdc(maximize);
+
+        {
+            // convert it into two uints basis the sign
+            uint256 aaveProfit = dnUsdcDeposited > int256(0) ? uint256(dnUsdcDeposited) : 0;
+            uint256 aaveLoss = dnUsdcDeposited < int256(0)
+                ? uint256(-dnUsdcDeposited) + totalCurrentBorrowValue
+                : totalCurrentBorrowValue;
+
+            if (aaveProfit > aaveLoss) {
+                aaveProfitGlp = (aaveProfit - aaveLoss).mulDivDown(PRICE_PRECISION, glpPrice);
+                if (!maximize)
+                    aaveProfitGlp = aaveProfitGlp.mulDivDown(MAX_BPS - state.slippageThresholdGmxBps, MAX_BPS);
+                aaveLossGlp = 0;
+            } else {
+                aaveLossGlp = (aaveLoss - aaveProfit).mulDivDown(PRICE_PRECISION, glpPrice);
+                if (!maximize) aaveLossGlp = aaveLossGlp.mulDivDown(MAX_BPS + state.slippageThresholdGmxBps, MAX_BPS);
+                aaveProfitGlp = 0;
+            }
+        }
+
+        unhedgedGlp = (state.unhedgedGlpInUsdc).mulDivDown(PRICE_PRECISION, state.getGlpPriceInUsdc(!maximize));
+
+        if (!maximize) unhedgedGlp = unhedgedGlp.mulDivDown(MAX_BPS - state.slippageThresholdGmxBps, MAX_BPS);
     }
 
     function convertAssetToAUsdc(uint256 usdcAmountDesired) external returns (uint256 usdcAmount) {
@@ -217,13 +275,97 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
 
     function setMocks(ISwapRouter _swapRouter) external {
         state.swapRouter = _swapRouter;
+        useMocks = true;
     }
 
-    function depositToken(
-        address token,
-        uint256 amount,
-        uint256 minUsdg
-    ) external {
-        state.batchingManager.depositToken(token, amount, minUsdg);
+    function _quoteSwapSlippageLoss(int256 btcAmount, int256 ethAmount) internal view returns (uint256) {
+        uint256 btcPrice = state.getTokenPriceInUsdc(state.wbtc);
+        uint256 ethPrice = state.getTokenPriceInUsdc(state.weth);
+
+        uint256 ethAmt = ethAmount >= 0 ? uint256(ethAmount) : uint256(-ethAmount);
+        uint256 btcAmt = btcAmount >= 0 ? uint256(btcAmount) : uint256(-btcAmount);
+
+        uint256 netUsdc = uint256(btcAmt).mulDiv(btcPrice, PRICE_PRECISION).mulDiv(
+            MAX_BPS - state.slippageThresholdSwapBtcBps,
+            MAX_BPS * 100
+        );
+        netUsdc += uint256(ethAmt).mulDiv(ethPrice, PRICE_PRECISION).mulDiv(
+            MAX_BPS - state.slippageThresholdSwapEthBps,
+            MAX_BPS * 100
+        );
+
+        return netUsdc;
+    }
+
+    function getSlippageAdjustedAssets(uint256 assets, bool isDeposit) public view returns (uint256) {
+        // get change in borrow positions to calculate amount to swap on uniswap
+        (int256 netBtcBorrowChange, int256 netEthBorrowChange) = state.getNetPositionChange(assets, isDeposit);
+
+        uint256 dollarsLostDueToSlippage = useMocks
+            ? _quoteSwapSlippageLoss(netBtcBorrowChange, netEthBorrowChange)
+            : state.quoteSwapSlippageLoss(netBtcBorrowChange, netEthBorrowChange);
+
+        // netSlippage returned is in glp (asset) terms
+        uint256 glpPrice = state.getGlpPriceInUsdc(false);
+        uint256 netSlippage = dollarsLostDueToSlippage.mulDivUp(PRICE_PRECISION, glpPrice);
+
+        // subtract slippage from assets, and calculate shares basis that slippage adjusted asset amount
+        assets -= uint256(netSlippage);
+
+        return assets;
+    }
+
+    function setBatchingManager(IDnGmxBatchingManager _batchingManager) external {
+        batchingManager = _batchingManager;
+        state.weth.approve(address(_batchingManager), type(uint256).max);
+        state.usdc.approve(address(_batchingManager), type(uint256).max);
+    }
+
+    function previewDeposit(uint256 assets) public view override(DnGmxJuniorVault) returns (uint256) {
+        uint256 netAssets = getSlippageAdjustedAssets({ assets: assets, isDeposit: true });
+        return convertToShares(netAssets);
+    }
+
+    /// @notice preview function for minting of shares
+    /// @param shares number of shares to mint
+    /// @return assets that would be taken from the user
+    function previewMint(uint256 shares) public view virtual override(DnGmxJuniorVault) returns (uint256) {
+        uint256 supply = totalSupply();
+
+        if (supply == 0) return shares;
+
+        uint256 assets = convertToAssets(shares);
+        uint256 netAssets = getSlippageAdjustedAssets({ assets: assets, isDeposit: true });
+
+        uint256 slippageInAssetTerms = assets - netAssets;
+
+        return assets + slippageInAssetTerms;
+    }
+
+    /// @notice preview function for withdrawal of assets
+    /// @param assets that would be given to the user
+    /// @return shares that would be burnt
+    function previewWithdraw(uint256 assets) public view virtual override(DnGmxJuniorVault) returns (uint256) {
+        uint256 supply = totalSupply();
+
+        if (supply == 0) return assets;
+
+        uint256 netAssets = getSlippageAdjustedAssets({ assets: assets, isDeposit: false });
+
+        return netAssets.mulDivUp(supply * MAX_BPS, state.totalAssets(false) * (MAX_BPS - state.withdrawFeeBps));
+    }
+
+    /// @notice preview function for redeeming shares
+    /// @param shares that would be taken from the user
+    /// @return assets that user would get
+    function previewRedeem(uint256 shares) public view virtual override(DnGmxJuniorVault) returns (uint256) {
+        uint256 supply = totalSupply();
+
+        if (supply == 0) return shares;
+
+        uint256 assets = convertToAssets(shares);
+        uint256 netAssets = getSlippageAdjustedAssets({ assets: assets, isDeposit: false });
+
+        return netAssets.mulDivDown(MAX_BPS - state.withdrawFeeBps, MAX_BPS);
     }
 }

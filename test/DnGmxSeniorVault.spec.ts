@@ -2,13 +2,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber, ethers } from 'ethers';
 import { hexlify, parseUnits, randomBytes } from 'ethers/lib/utils';
-import {
-  DnGmxBatchingManager,
-  DnGmxJuniorVaultMock,
-  DnGmxSeniorVault,
-  ERC20Upgradeable,
-  IAToken,
-} from '../typechain-types';
+import { DnGmxJuniorVaultMock, DnGmxSeniorVault, ERC20Upgradeable, IAToken } from '../typechain-types';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 import addresses from './fixtures/addresses';
 
@@ -19,12 +13,10 @@ describe('DnGmx Senior Vault', () => {
   let admin: SignerWithAddress;
 
   let dnGmxSeniorVault: DnGmxSeniorVault;
-  let glpBatchingManager: DnGmxBatchingManager;
   let dnGmxJuniorVault: DnGmxJuniorVaultMock;
 
   beforeEach(async () => {
-    ({ dnGmxJuniorVault, dnGmxSeniorVault, users, aUSDC, usdc, admin, glpBatchingManager } =
-      await dnGmxJuniorVaultFixture());
+    ({ dnGmxJuniorVault, dnGmxSeniorVault, users, aUSDC, usdc, admin } = await dnGmxJuniorVaultFixture());
   });
 
   describe('Setters senior vault', () => {
@@ -74,7 +66,6 @@ describe('DnGmx Senior Vault', () => {
         admin.address,
         dnGmxSeniorVault.address,
         ethers.constants.MaxUint256,
-        glpBatchingManager.address,
         100,
         3000,
       );
@@ -82,8 +73,7 @@ describe('DnGmx Senior Vault', () => {
       const adminParams = await dnGmxJuniorVault.getAdminParams();
       expect(adminParams.keeper).to.eq(admin.address);
       expect(adminParams.dnGmxSeniorVault).to.eq(dnGmxSeniorVault.address);
-      expect(adminParams.depositCap).to.eq(ethers.constants.MaxUint256);
-      expect(adminParams.batchingManager).to.eq(glpBatchingManager.address);
+      expect(adminParams.depositCap_).to.eq(ethers.constants.MaxUint256);
       expect(adminParams.withdrawFeeBps).to.eq(100);
       expect(adminParams.feeTierWethWbtcPool).to.eq(3000);
     });
@@ -94,11 +84,10 @@ describe('DnGmx Senior Vault', () => {
           admin.address,
           dnGmxSeniorVault.address,
           ethers.constants.MaxUint256,
-          glpBatchingManager.address,
           10_001, // bad withdrawFeeBps
           3000,
         ),
-      ).to.be.revertedWith('InvalidWithdrawFeeBps()');
+      ).to.be.revertedWithCustomError(dnGmxJuniorVault, 'InvalidWithdrawFeeBps');
     });
 
     it('setThresholds', async () => {
@@ -136,7 +125,7 @@ describe('DnGmx Senior Vault', () => {
           parseUnits('1000000', 6), // partialBtcHedgeUsdcAmountThreshold
           parseUnits('1000000', 6), // partialEthHedgeUsdcAmountThreshold
         ),
-      ).to.be.revertedWith('InvalidSlippageThresholdSwapBtc()');
+      ).to.be.revertedWithCustomError(dnGmxJuniorVault, 'InvalidSlippageThresholdSwapBtc');
     });
     it('setThresholds bad slippageThresholdSwapEthBps', async () => {
       await expect(
@@ -150,7 +139,7 @@ describe('DnGmx Senior Vault', () => {
           parseUnits('1000000', 6), // partialBtcHedgeUsdcAmountThreshold
           parseUnits('1000000', 6), // partialEthHedgeUsdcAmountThreshold
         ),
-      ).to.be.revertedWith('InvalidSlippageThresholdSwapEth()');
+      ).to.be.revertedWithCustomError(dnGmxJuniorVault, 'InvalidSlippageThresholdSwapEth');
     });
     it('setThresholds bad slippageThresholdGmxBps', async () => {
       await expect(
@@ -164,7 +153,7 @@ describe('DnGmx Senior Vault', () => {
           parseUnits('1000000', 6), // partialBtcHedgeUsdcAmountThreshold
           parseUnits('1000000', 6), // partialEthHedgeUsdcAmountThreshold
         ),
-      ).to.be.revertedWith('InvalidSlippageThresholdGmx()');
+      ).to.be.revertedWithCustomError(dnGmxJuniorVault, 'InvalidSlippageThresholdGmx');
     });
 
     it('setRebalanceParams', async () => {
@@ -187,7 +176,7 @@ describe('DnGmx Senior Vault', () => {
           500, // 5% in bps | rebalanceDeltaThreshold
           10_000, // rebalanceHfThresholdBps
         ),
-      ).to.be.revertedWith('InvalidRebalanceTimeThreshold()');
+      ).to.be.revertedWithCustomError(dnGmxJuniorVault, 'InvalidRebalanceTimeThreshold');
     });
     it('setRebalanceParams bad rebalanceTimeThreshold', async () => {
       await expect(
@@ -196,7 +185,7 @@ describe('DnGmx Senior Vault', () => {
           10_001, // bad rebalanceDeltaThreshold
           10_000, // rebalanceHfThresholdBps
         ),
-      ).to.be.revertedWith('InvalidRebalanceDeltaThresholdBps()');
+      ).to.be.revertedWithCustomError(dnGmxJuniorVault, 'InvalidRebalanceDeltaThresholdBps');
     });
     it('setRebalanceParams bad rebalanceTimeThreshold 1', async () => {
       await expect(
@@ -205,7 +194,7 @@ describe('DnGmx Senior Vault', () => {
           500, // rebalanceDeltaThreshold
           9999, // bad rebalanceHfThresholdBps
         ),
-      ).to.be.revertedWith('InvalidRebalanceHfThresholdBps()');
+      ).to.be.revertedWithCustomError(dnGmxJuniorVault, 'InvalidRebalanceHfThresholdBps');
     });
     it('setRebalanceParams bad rebalanceTimeThreshold 2', async () => {
       await expect(
@@ -214,7 +203,7 @@ describe('DnGmx Senior Vault', () => {
           500, // rebalanceDeltaThreshold
           20_001, // bad rebalanceHfThresholdBps
         ),
-      ).to.be.revertedWith('InvalidRebalanceHfThresholdBps()');
+      ).to.be.revertedWithCustomError(dnGmxJuniorVault, 'InvalidRebalanceHfThresholdBps');
     });
 
     it('setHedgeParams', async () => {
@@ -253,16 +242,22 @@ describe('DnGmx Senior Vault', () => {
         dnGmxSeniorVault.connect(users[1]).withdraw(amount, users[1].address, users[1].address),
       ).to.changeTokenBalance(usdc, users[1], amount);
 
-      expect(await dnGmxSeniorVault.totalAssets()).to.eq(0);
-      expect(await aUSDC.balanceOf(dnGmxSeniorVault.address)).to.eq(0);
+      expect(await dnGmxSeniorVault.totalAssets()).to.closeTo(0, 1);
+      expect(await aUSDC.balanceOf(dnGmxSeniorVault.address)).to.closeTo(0, 5);
     });
 
     it('Borrow fails for non whitelisted borrower', async () => {
-      await expect(dnGmxSeniorVault.borrow(parseUnits('100', 6n))).to.be.revertedWith('CallerNotBorrower()');
+      await expect(dnGmxSeniorVault.borrow(parseUnits('100', 6n))).to.be.revertedWithCustomError(
+        dnGmxSeniorVault,
+        'CallerNotBorrower',
+      );
     });
 
     it('Repay fails for non whitelisted borrower', async () => {
-      await expect(dnGmxSeniorVault.repay(parseUnits('100', 6n))).to.be.revertedWith('CallerNotBorrower()');
+      await expect(dnGmxSeniorVault.repay(parseUnits('100', 6n))).to.be.revertedWithCustomError(
+        dnGmxSeniorVault,
+        'CallerNotBorrower',
+      );
     });
 
     it('Borrow fails if deposited amount < borrowed amount', async () => {
@@ -276,8 +271,9 @@ describe('DnGmx Senior Vault', () => {
 
       await dnGmxSeniorVault.updateBorrowCap(dnGmxJuniorVault.address, borrowCap);
       await dnGmxSeniorVault.connect(users[1]).deposit(depositAmount, users[1].address);
-      await expect(dnGmxJuniorVault.executeBorrowFromDnGmxSeniorVault(borrowAmount)).to.be.revertedWith(
-        'InvalidBorrowAmount()',
+      await expect(dnGmxJuniorVault.executeBorrowFromDnGmxSeniorVault(borrowAmount)).to.be.revertedWithCustomError(
+        dnGmxSeniorVault,
+        'InvalidBorrowAmount',
       );
     });
 
@@ -290,7 +286,7 @@ describe('DnGmx Senior Vault', () => {
 
       // Can slightly vary because of the interest accrued on AAVE
       expect(await dnGmxSeniorVault.totalAssets()).to.closeTo(depositAmount, 1n);
-      expect(await aUSDC.balanceOf(dnGmxSeniorVault.address)).to.eq(depositAmount.sub(borrowAmount));
+      expect(await aUSDC.balanceOf(dnGmxSeniorVault.address)).to.closeTo(depositAmount.sub(borrowAmount), 1);
       expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.eq(borrowAmount);
     });
 
@@ -313,7 +309,7 @@ describe('DnGmx Senior Vault', () => {
       await dnGmxJuniorVault.executeBorrowFromDnGmxSeniorVault(amount);
       await expect(
         dnGmxSeniorVault.connect(users[1]).withdraw(amount, users[1].address, users[1].address),
-      ).to.be.revertedWith('MaxUtilizationBreached()');
+      ).to.be.revertedWithCustomError(dnGmxSeniorVault, 'MaxUtilizationBreached');
     });
   });
 

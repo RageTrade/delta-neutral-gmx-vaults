@@ -8,7 +8,7 @@ export const generateErc20Balance = async (contract: ERC20, amount: BigNumberish
 
   await hre.network.provider.send('hardhat_setStorageAt', [
     contract.address,
-    '0x' + slotKey,
+    ethers.utils.hexValue('0x' + slotKey),
     ethers.utils.hexZeroPad(BigNumber.from(amount).toHexString(), 32),
   ]);
 
@@ -20,6 +20,8 @@ export const generateErc20Balance = async (contract: ERC20, amount: BigNumberish
 
 async function getSlotInvolved(ptx: ethers.PopulatedTransaction | Promise<ethers.PopulatedTransaction>) {
   const [signer] = await hre.ethers.getSigners();
+  ptx = await ptx;
+  delete (ptx as any).from;
   const tx = await signer.sendTransaction(await ptx);
   await tx.wait();
 

@@ -13,7 +13,7 @@ import { IERC20Metadata } from '@openzeppelin/contracts/interfaces/IERC20Metadat
 
 import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
 
-import { FullMath } from '@uniswap/v3-core-0.8-support/contracts/libraries/FullMath.sol';
+import { FullMath } from '@uniswap/v3-core/contracts/libraries/FullMath.sol';
 
 /**
  * @title Periphery to convert tokens to junior vault shares
@@ -120,7 +120,7 @@ contract DepositPeriphery is Ownable {
 
         // USDG has 18 decimals
         uint256 minUsdgOut = tokenAmount.mulDiv(
-            price * (MAX_BPS - slippageThreshold) * 10**(18 - decimals),
+            price * (MAX_BPS - slippageThreshold) * 10 ** (18 - decimals),
             PRICE_PRECISION * MAX_BPS
         );
 
