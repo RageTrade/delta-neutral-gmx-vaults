@@ -384,7 +384,11 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     ################################################################## */
     /// @notice checks if the rebalance can be run (3 thresholds - time, hedge deviation and AAVE HF )
     function isValidRebalance() public view returns (bool) {
-        return state.isValidRebalanceTime() || state.isValidRebalanceDeviation() || state.isValidRebalanceHF();
+        return
+            state.isValidRebalanceHF() ||
+            state.isValidRebalanceTime() ||
+            state.isValidRebalanceDeviation() ||
+            state.isValidRebalanceDueToChangeInHedges();
     }
 
     /* solhint-disable not-rely-on-time */
@@ -394,8 +398,13 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         if (!isValidRebalance()) revert InvalidRebalance();
 
         emit Rebalanced();
+
         state.btcPoolAmount = (state.gmxVault.poolAmounts(address(state.wbtc))).toUint128();
         state.ethPoolAmount = (state.gmxVault.poolAmounts(address(state.weth))).toUint128();
+
+        (int128 currentBtcTraderOIHedge, int128 currentEthTraderOIHedge) = state.getTraderOIHedgeAmounts();
+        state.btcTraderOIHedge = currentBtcTraderOIHedge;
+        state.ethTraderOIHedge = currentEthTraderOIHedge;
 
         (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
         uint256 totalCurrentBorrowValue = state.getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position

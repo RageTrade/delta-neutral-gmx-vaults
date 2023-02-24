@@ -207,12 +207,15 @@ library DnGmxJuniorVaultManager {
         uint128 btcPoolAmount;
         uint128 ethPoolAmount;
 
+        int128 btcTraderOIHedge;
+        int128 ethTraderOIHedge;
+
         IDnGmxTraderHedgeStrategy dnGmxTraderHedgeStrategy;
 
         uint128 rebalanceProfitUsdcAmountThreshold;
 
         // gaps for extending struct (if required during upgrade)
-        uint256[47] __gaps;
+        uint256[46] __gaps;
     }
 
     /// @notice stakes the rewards from the staked Glp and claims WETH to buy glp
@@ -1220,6 +1223,29 @@ library DnGmxJuniorVaultManager {
                 _isWithinAllowedDelta(state, optimalEthBorrow, currentEthBorrow));
     }
 
+    function isValidRebalanceDueToChangeInHedges(State storage state) external view returns (bool) {
+        return _isValidRebalanceDueToChangeInHedges(state);
+    }
+
+    function _isValidRebalanceDueToChangeInHedges(State storage state) private view returns (bool) {
+        (int128 currentBtcTraderOIHedge, int128 currentEthTraderOIHedge) = _getTraderOIHedgeAmounts(state);
+        return
+            !(currentBtcTraderOIHedge == state.btcTraderOIHedge && currentEthTraderOIHedge == state.ethTraderOIHedge);
+    }
+
+    function getTraderOIHedgeAmounts(
+        State storage state
+    ) external view returns (int128 currentBtcTraderOIHedge, int128 currentEthTraderOIHedge) {
+        return _getTraderOIHedgeAmounts(state);
+    }
+
+    function _getTraderOIHedgeAmounts(
+        State storage state
+    ) private view returns (int128 currentBtcTraderOIHedge, int128 currentEthTraderOIHedge) {
+        currentBtcTraderOIHedge = state.dnGmxTraderHedgeStrategy.btcTraderOIHedge();
+        currentEthTraderOIHedge = state.dnGmxTraderHedgeStrategy.ethTraderOIHedge();
+    }
+
     ///@notice returns the price of given token basis AAVE oracle
     ///@param state set of all state variables of vault
     ///@param token the token for which price is expected
@@ -1636,8 +1662,8 @@ library DnGmxJuniorVaultManager {
         uint256 ethPrice = _getTokenPriceInUsdc(state, state.weth);
 
         {
-            int128 btcTokenTraderOIHedge = state.dnGmxTraderHedgeStrategy.btcTraderOIHedge();
-            int128 ethTokenTraderOIHedge = state.dnGmxTraderHedgeStrategy.ethTraderOIHedge();
+            int128 btcTokenTraderOIHedge = state.btcTraderOIHedge;
+            int128 ethTokenTraderOIHedge = state.ethTraderOIHedge;
 
             uint256 btcPoolAmount = state.btcPoolAmount;
             uint256 ethPoolAmount = state.ethPoolAmount;
@@ -1697,9 +1723,8 @@ library DnGmxJuniorVaultManager {
 
         uint256 totalSupply = state.glp.totalSupply();
 
-        int128 tokenTraderOIHedge = token == address(state.wbtc)
-            ? state.dnGmxTraderHedgeStrategy.btcTraderOIHedge()
-            : state.dnGmxTraderHedgeStrategy.ethTraderOIHedge();
+        int128 tokenTraderOIHedge = token == address(state.wbtc) ? state.btcTraderOIHedge : state.ethTraderOIHedge;
+
         // token reserve is the amount we short
         // tokenTraderOIHedge if >0 then we need to go long because of OI hence less short (i.e. subtract if value +ve)
         // tokenTraderOIHedge if <0 then we need to go short because of OI hence more long (i.e. add if value -ve)
