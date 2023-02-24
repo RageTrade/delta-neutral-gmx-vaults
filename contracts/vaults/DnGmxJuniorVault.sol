@@ -399,8 +399,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
 
         emit Rebalanced();
 
-        state.btcPoolAmount = (state.gmxVault.poolAmounts(address(state.wbtc))).toUint128();
-        state.ethPoolAmount = (state.gmxVault.poolAmounts(address(state.weth))).toUint128();
+        (state.btcPoolAmount, state.ethPoolAmount) = state.getPoolAmounts();
 
         (int128 currentBtcTraderOIHedge, int128 currentEthTraderOIHedge) = state.getTraderOIHedgeAmounts();
         state.btcTraderOIHedge = currentBtcTraderOIHedge;

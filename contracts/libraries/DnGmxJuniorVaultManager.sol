@@ -1208,19 +1208,14 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@return true if the rebalance is valid basis diffeence (current and optimal) threshold
     function isValidRebalanceDeviation(State storage state) external view returns (bool) {
-        (uint256 currentBtcBorrow, uint256 currentEthBorrow) = _getCurrentBorrows(state);
+        (uint128 optimalBtcPoolAmount, uint128 optimalEthPoolAmount) = _getPoolAmounts(state);
 
-        (uint256 optimalBtcBorrow, uint256 optimalEthBorrow, , , ) = _getOptimalBorrowsFinal(
-            state,
-            currentBtcBorrow,
-            currentEthBorrow,
-            _totalGlp(state, false),
-            [false, true]
-        );
+        uint128 currentBtcPoolAmount = state.btcPoolAmount;
+        uint128 currentEthPoolAmount = state.ethPoolAmount;
 
         return
-            !(_isWithinAllowedDelta(state, optimalBtcBorrow, currentBtcBorrow) &&
-                _isWithinAllowedDelta(state, optimalEthBorrow, currentEthBorrow));
+            !(_isWithinAllowedDelta(state, optimalBtcPoolAmount, currentBtcPoolAmount) &&
+                _isWithinAllowedDelta(state, optimalEthPoolAmount, currentEthPoolAmount));
     }
 
     function isValidRebalanceDueToChangeInHedges(State storage state) external view returns (bool) {
@@ -1244,6 +1239,15 @@ library DnGmxJuniorVaultManager {
     ) private view returns (int128 currentBtcTraderOIHedge, int128 currentEthTraderOIHedge) {
         currentBtcTraderOIHedge = state.dnGmxTraderHedgeStrategy.btcTraderOIHedge();
         currentEthTraderOIHedge = state.dnGmxTraderHedgeStrategy.ethTraderOIHedge();
+    }
+
+    function getPoolAmounts(State storage state) external view returns (uint128 btcPoolAmount, uint128 ethPoolAmount) {
+        return _getPoolAmounts(state);
+    }
+
+    function _getPoolAmounts(State storage state) private view returns (uint128 btcPoolAmount, uint128 ethPoolAmount) {
+        btcPoolAmount = uint128(state.gmxVault.poolAmounts(address(state.wbtc)));
+        ethPoolAmount = uint128(state.gmxVault.poolAmounts(address(state.weth)));
     }
 
     ///@notice returns the price of given token basis AAVE oracle
