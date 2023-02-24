@@ -1145,6 +1145,23 @@ library DnGmxJuniorVaultManager {
             }
         }
 
+        // total assets considers 3 parts
+        // part1: glp balance in vault
+        // part2: usdc balance in vault (unhedged glp)
+        // part3: pnl on AAVE (i.e. aaveProfitGlp - aaveLossGlp)
+        return _totalGlp(state,maximize) + aaveProfitGlp - aaveLossGlp;
+    }
+
+    ///@notice returns the total assets deposited to the vault (in glp amount)
+    ///@param state set of all state variables of vault
+    ///@param maximize true for maximizing the total assets value and false to minimize
+    ///@return total asset amount (glp + usdc (in glp terms))
+    function totalGlp(State storage state, bool maximize) external view returns (uint256) {
+        return _totalGlp(state, maximize);
+    }
+
+
+    function _totalGlp(State storage state, bool maximize) private view returns (uint256) {
         // convert usdc amount into glp amount
         // unhedged glp is kept in usdc so there would be conversion slippage on that
         uint256 unhedgedGlp = (state.unhedgedGlpInUsdc).mulDivDown(
@@ -1158,8 +1175,7 @@ library DnGmxJuniorVaultManager {
         // total assets considers 3 parts
         // part1: glp balance in vault
         // part2: usdc balance in vault (unhedged glp)
-        // part3: pnl on AAVE (i.e. aaveProfitGlp - aaveLossGlp)
-        return state.fsGlp.balanceOf(address(this)) + unhedgedGlp + aaveProfitGlp - aaveLossGlp;
+        return state.fsGlp.balanceOf(address(this)) + unhedgedGlp;
     }
 
     ///@notice returns if the rebalance is valid basis last rebalance time and rebalanceTimeThreshold

@@ -411,7 +411,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         // calculate current btc and eth positions in GLP
         // get the position value and calculate the collateral needed to borrow that
         // transfer collateral from LB vault to DN vault
-        bool isPartialHedge = state.rebalanceHedge(currentBtc, currentEth, totalAssets(), true);
+        bool isPartialHedge = state.rebalanceHedge(currentBtc, currentEth, state.totalGlp(false), true);
 
         if (isPartialHedge) {
             state.lastRebalanceTS = 0; // if partial hedge is happening due to delta threshold breach, next rebalance should still go through
@@ -793,7 +793,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
 
         //rebalance of hedge based on assets after withdraw (before withdraw assets - withdrawn assets)
-        state.rebalanceHedge(currentBtc, currentEth, totalAssets() - assets, false);
+        state.rebalanceHedge(currentBtc, currentEth, state.totalGlp(false) - assets, false);
     }
 
     function afterDeposit(uint256, uint256, address) internal override {
@@ -801,6 +801,6 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
 
         //rebalance of hedge based on assets after deposit (after deposit assets)
-        state.rebalanceHedge(currentBtc, currentEth, totalAssets(), false);
+        state.rebalanceHedge(currentBtc, currentEth, state.totalGlp(false), false);
     }
 }
