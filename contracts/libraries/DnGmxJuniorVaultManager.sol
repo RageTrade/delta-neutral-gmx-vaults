@@ -819,7 +819,7 @@ library DnGmxJuniorVaultManager {
         // uncappedTokenHedge is required to hedge totalAssets
         // cappedTokenHedge can be taken basis available borrow
         // so basis what % if hedge cannot be taken, same % of glp is converted to usdc
-        uint256 unhedgedGlp = _totalAssets(state, false).mulDivDown(
+        uint256 unhedgedGlp = _totalGlp(state, false).mulDivDown(
             uncappedTokenHedge - cappedTokenHedge,
             uncappedTokenHedge
         );
@@ -1149,7 +1149,7 @@ library DnGmxJuniorVaultManager {
         // part1: glp balance in vault
         // part2: usdc balance in vault (unhedged glp)
         // part3: pnl on AAVE (i.e. aaveProfitGlp - aaveLossGlp)
-        return _totalGlp(state,maximize) + aaveProfitGlp - aaveLossGlp;
+        return _totalGlp(state, maximize) + aaveProfitGlp - aaveLossGlp;
     }
 
     ///@notice returns the total assets deposited to the vault (in glp amount)
@@ -1159,7 +1159,6 @@ library DnGmxJuniorVaultManager {
     function totalGlp(State storage state, bool maximize) external view returns (uint256) {
         return _totalGlp(state, maximize);
     }
-
 
     function _totalGlp(State storage state, bool maximize) private view returns (uint256) {
         // convert usdc amount into glp amount
@@ -1212,7 +1211,7 @@ library DnGmxJuniorVaultManager {
             state,
             currentBtcBorrow,
             currentEthBorrow,
-            _totalAssets(state, false),
+            _totalGlp(state, false),
             [false, true]
         );
 
@@ -1399,7 +1398,7 @@ library DnGmxJuniorVaultManager {
         (uint256 currentBtcBorrow, uint256 currentEthBorrow) = _getCurrentBorrows(state);
 
         // calculate new total assets basis assetAmount
-        uint256 total = _totalAssets(state, true);
+        uint256 total = _totalGlp(state, true);
         uint256 totalAssetsAfter = isDeposit ? total + assetAmount : total - assetAmount;
 
         // get optimal borrows accounting for incoming glp deposit
