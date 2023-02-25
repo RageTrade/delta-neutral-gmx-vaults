@@ -425,9 +425,13 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         // transfer collateral from LB vault to DN vault
         bool isPartialHedge = state.rebalanceHedge(currentBtc, currentEth, totalAssets(), true);
 
-        isPartialHedge
-            ? state.lastRebalanceTS = 0 // if partial hedge is happening due to delta threshold breach, next rebalance should still go through
-            : state.lastRebalanceTS = uint48(block.timestamp); // once partial hedge is completed the lastRebalanceTS gets updated
+        if (isPartialHedge) {
+            state.lastRebalanceTS = 0; // if partial hedge is happening due to delta threshold breach, next rebalance should still go through
+            if (!paused()) _pause(); // pause the contracts to prevent users from taking the slippage for updating overall hedges instead of incremental hedges
+        } else {
+            state.lastRebalanceTS = uint48(block.timestamp); // once partial hedge is completed the lastRebalanceTS gets updated
+            if (paused()) _unpause(); // since hedges are optimal now, vault can be unpaused to handle deposits and withdraws
+        }
 
         (currentBtc, currentEth) = state.getCurrentBorrows();
 
