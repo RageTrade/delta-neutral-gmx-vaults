@@ -415,10 +415,10 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
 
         if (isPartialHedge) {
             state.lastRebalanceTS = 0; // if partial hedge is happening due to delta threshold breach, next rebalance should still go through
-            _pause(); // pause the contracts to prevent users from taking the slippage for updating overall hedges instead of incremental hedges
+            if (!paused()) _pause(); // pause the contracts to prevent users from taking the slippage for updating overall hedges instead of incremental hedges
         } else {
             state.lastRebalanceTS = uint48(block.timestamp); // once partial hedge is completed the lastRebalanceTS gets updated
-            _unpause(); // since hedges are optimal now, vault can be unpaused to handle deposits and withdraws
+            if (paused()) _unpause(); // since hedges are optimal now, vault can be unpaused to handle deposits and withdraws
         }
 
         (currentBtc, currentEth) = state.getCurrentBorrows();
