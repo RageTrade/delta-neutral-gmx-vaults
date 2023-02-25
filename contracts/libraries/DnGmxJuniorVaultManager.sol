@@ -561,15 +561,16 @@ library DnGmxJuniorVaultManager {
             bool isPartialHedge
         )
     {
-        bool isPartialAllowed = conditions[0];
-        bool useUpdatedPoolAmounts = conditions[1];
-
         // optimal btc and eth borrows
         // calculated basis the underlying token weights in glp
 
-        (optimalBtcBorrow, optimalEthBorrow) = _getOptimalBorrows(state, glpDeposited, useUpdatedPoolAmounts);
+        (optimalBtcBorrow, optimalEthBorrow) = _getOptimalBorrows({
+            state: state,
+            glpDeposited: glpDeposited,
+            withUpdatedPoolAmounts: conditions[1]
+        });
 
-        if (isPartialAllowed) {
+        if (conditions[0] /*isPartialHedge*/) {
             // if partial hedges are allowed (i.e. rebalance call and not deposit/withdraw)
             // check if swap amounts>threshold then basis that do a partial hedge
             bool isPartialBtcHedge;
