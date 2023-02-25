@@ -118,7 +118,7 @@ contract DnGmxTraderHedgeStrategy is OwnableUpgradeable, IDnGmxTraderHedgeStrate
     /// @notice set hedge adjustments basis trader OIs for whole of glp supply (this is scaled to required by vault in juniorVaultManager)
     /// @param _btcTraderOIHedge btc trader OI hedge for whole glp supply
     /// @param _ethTraderOIHedge eth trader OI hedge for whole glp supply
-    function overrideTraderOIHedges(int128 _btcTraderOIHedge, int128 _ethTraderOIHedge) external onlyOwner {
+    function overrideTraderOIHedges(int128 _btcTraderOIHedge, int128 _ethTraderOIHedge) external onlyKeeper {
         if (!_checkHedgeAmounts(_btcTraderOIHedge, _ethTraderOIHedge))
             revert InvalidTraderOIHedges(_btcTraderOIHedge, _ethTraderOIHedge);
         btcTraderOIHedge = _btcTraderOIHedge;
@@ -129,7 +129,7 @@ contract DnGmxTraderHedgeStrategy is OwnableUpgradeable, IDnGmxTraderHedgeStrate
 
     /// @notice set trader OI hedge bps
     /// @param _traderOIHedgeBps trader OI hedge bps
-    function setTraderOIHedgeBps(uint16 _traderOIHedgeBps) external onlyOwner {
+    function setTraderOIHedgeBps(uint16 _traderOIHedgeBps) external onlyKeeper {
         if (_traderOIHedgeBps > MAX_BPS) revert InvalidTraderOIHedgeBps(_traderOIHedgeBps);
         traderOIHedgeBps = _traderOIHedgeBps;
         emit TraderOIHedgeBpsUpdated(_traderOIHedgeBps);
