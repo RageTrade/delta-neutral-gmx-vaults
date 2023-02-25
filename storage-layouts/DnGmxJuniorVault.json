@@ -73,7 +73,7 @@
       "type": "t_array(t_uint256)45_storage"
     },
     {
-      "astId": 15395,
+      "astId": 9892,
       "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
       "label": "asset",
       "offset": 0,
@@ -81,7 +81,7 @@
       "type": "t_address"
     },
     {
-      "astId": 15399,
+      "astId": 9896,
       "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
       "label": "__gaps",
       "offset": 0,
@@ -121,15 +121,15 @@
       "type": "t_array(t_uint256)49_storage"
     },
     {
-      "astId": 29801,
+      "astId": 20621,
       "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
       "label": "state",
       "offset": 0,
       "slot": "252",
-      "type": "t_struct(State)18475_storage"
+      "type": "t_struct(State)12535_storage"
     },
     {
-      "astId": 29805,
+      "astId": 20625,
       "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
       "label": "__gaps",
       "offset": 0,
@@ -149,11 +149,11 @@
       "label": "uint256[45]",
       "numberOfBytes": "1440"
     },
-    "t_array(t_uint256)47_storage": {
+    "t_array(t_uint256)46_storage": {
       "base": "t_uint256",
       "encoding": "inplace",
-      "label": "uint256[47]",
-      "numberOfBytes": "1504"
+      "label": "uint256[46]",
+      "numberOfBytes": "1472"
     },
     "t_array(t_uint256)49_storage": {
       "base": "t_uint256",
@@ -177,42 +177,42 @@
       "label": "contract IAToken",
       "numberOfBytes": "20"
     },
-    "t_contract(IBalancerVault)16863": {
+    "t_contract(IBalancerVault)11132": {
       "encoding": "inplace",
       "label": "contract IBalancerVault",
       "numberOfBytes": "20"
     },
-    "t_contract(IDebtToken)15993": {
+    "t_contract(IDebtToken)10426": {
       "encoding": "inplace",
       "label": "contract IDebtToken",
       "numberOfBytes": "20"
     },
-    "t_contract(IDnGmxBatchingManager)16151": {
+    "t_contract(IDnGmxBatchingManager)10586": {
       "encoding": "inplace",
       "label": "contract IDnGmxBatchingManager",
       "numberOfBytes": "20"
     },
-    "t_contract(IDnGmxSeniorVault)16624": {
+    "t_contract(IDnGmxSeniorVault)10908": {
       "encoding": "inplace",
       "label": "contract IDnGmxSeniorVault",
       "numberOfBytes": "20"
     },
-    "t_contract(IDnGmxTraderHedgeStrategy)16654": {
+    "t_contract(IDnGmxTraderHedgeStrategy)10938": {
       "encoding": "inplace",
       "label": "contract IDnGmxTraderHedgeStrategy",
       "numberOfBytes": "20"
     },
-    "t_contract(IERC20)7507": {
+    "t_contract(IERC20)5344": {
       "encoding": "inplace",
       "label": "contract IERC20",
       "numberOfBytes": "20"
     },
-    "t_contract(IERC20Metadata)7532": {
+    "t_contract(IERC20Metadata)5369": {
       "encoding": "inplace",
       "label": "contract IERC20Metadata",
       "numberOfBytes": "20"
     },
-    "t_contract(IGlpManager)17172": {
+    "t_contract(IGlpManager)11247": {
       "encoding": "inplace",
       "label": "contract IGlpManager",
       "numberOfBytes": "20"
@@ -232,12 +232,12 @@
       "label": "contract IPriceOracle",
       "numberOfBytes": "20"
     },
-    "t_contract(IRewardRouterV2)17379": {
+    "t_contract(IRewardRouterV2)11435": {
       "encoding": "inplace",
       "label": "contract IRewardRouterV2",
       "numberOfBytes": "20"
     },
-    "t_contract(IRewardTracker)17479": {
+    "t_contract(IRewardTracker)11535": {
       "encoding": "inplace",
       "label": "contract IRewardTracker",
       "numberOfBytes": "20"
@@ -247,15 +247,20 @@
       "label": "contract IRewardsController",
       "numberOfBytes": "20"
     },
-    "t_contract(ISwapRouter)14382": {
+    "t_contract(ISwapRouter)9469": {
       "encoding": "inplace",
       "label": "contract ISwapRouter",
       "numberOfBytes": "20"
     },
-    "t_contract(IVault)18045": {
+    "t_contract(IVault)12101": {
       "encoding": "inplace",
       "label": "contract IVault",
       "numberOfBytes": "20"
+    },
+    "t_int128": {
+      "encoding": "inplace",
+      "label": "int128",
+      "numberOfBytes": "16"
     },
     "t_int256": {
       "encoding": "inplace",
@@ -281,12 +286,12 @@
       "label": "string",
       "numberOfBytes": "32"
     },
-    "t_struct(State)18475_storage": {
+    "t_struct(State)12535_storage": {
       "encoding": "inplace",
       "label": "struct DnGmxJuniorVaultManager.State",
       "members": [
         {
-          "astId": 18350,
+          "astId": 12406,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "keeper",
           "offset": 0,
@@ -294,7 +299,7 @@
           "type": "t_address"
         },
         {
-          "astId": 18352,
+          "astId": 12408,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "feeRecipient",
           "offset": 0,
@@ -302,7 +307,7 @@
           "type": "t_address"
         },
         {
-          "astId": 18354,
+          "astId": 12410,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "dnUsdcDeposited",
           "offset": 0,
@@ -310,7 +315,7 @@
           "type": "t_int256"
         },
         {
-          "astId": 18356,
+          "astId": 12412,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "unhedgedGlpInUsdc",
           "offset": 0,
@@ -318,7 +323,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 18358,
+          "astId": 12414,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "targetHealthFactor",
           "offset": 0,
@@ -326,7 +331,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 18360,
+          "astId": 12416,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "protocolFee",
           "offset": 0,
@@ -334,7 +339,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 18362,
+          "astId": 12418,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "protocolEsGmx",
           "offset": 0,
@@ -342,7 +347,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 18364,
+          "astId": 12420,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "seniorVaultWethRewards",
           "offset": 0,
@@ -350,7 +355,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 18366,
+          "astId": 12422,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "hasFlashloaned",
           "offset": 0,
@@ -358,7 +363,7 @@
           "type": "t_bool"
         },
         {
-          "astId": 18368,
+          "astId": 12424,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "lastRebalanceTS",
           "offset": 1,
@@ -366,7 +371,7 @@
           "type": "t_uint48"
         },
         {
-          "astId": 18370,
+          "astId": 12426,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "feeBps",
           "offset": 7,
@@ -374,7 +379,7 @@
           "type": "t_uint16"
         },
         {
-          "astId": 18372,
+          "astId": 12428,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "withdrawFeeBps",
           "offset": 9,
@@ -382,7 +387,7 @@
           "type": "t_uint16"
         },
         {
-          "astId": 18374,
+          "astId": 12430,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "feeTierWethWbtcPool",
           "offset": 11,
@@ -390,7 +395,7 @@
           "type": "t_uint24"
         },
         {
-          "astId": 18376,
+          "astId": 12432,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "depositCap",
           "offset": 0,
@@ -398,7 +403,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 18378,
+          "astId": 12434,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "slippageThresholdGmxBps",
           "offset": 0,
@@ -406,7 +411,7 @@
           "type": "t_uint16"
         },
         {
-          "astId": 18380,
+          "astId": 12436,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "slippageThresholdSwapBtcBps",
           "offset": 2,
@@ -414,7 +419,7 @@
           "type": "t_uint16"
         },
         {
-          "astId": 18382,
+          "astId": 12438,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "slippageThresholdSwapEthBps",
           "offset": 4,
@@ -422,7 +427,7 @@
           "type": "t_uint16"
         },
         {
-          "astId": 18384,
+          "astId": 12440,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "rebalanceHfThresholdBps",
           "offset": 6,
@@ -430,7 +435,7 @@
           "type": "t_uint16"
         },
         {
-          "astId": 18386,
+          "astId": 12442,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "rebalanceTimeThreshold",
           "offset": 8,
@@ -438,7 +443,7 @@
           "type": "t_uint32"
         },
         {
-          "astId": 18388,
+          "astId": 12444,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "rebalanceDeltaThresholdBps",
           "offset": 12,
@@ -446,7 +451,7 @@
           "type": "t_uint16"
         },
         {
-          "astId": 18390,
+          "astId": 12446,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "wethConversionThreshold",
           "offset": 14,
@@ -454,7 +459,7 @@
           "type": "t_uint128"
         },
         {
-          "astId": 18392,
+          "astId": 12448,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "usdcConversionThreshold",
           "offset": 0,
@@ -462,7 +467,7 @@
           "type": "t_uint128"
         },
         {
-          "astId": 18394,
+          "astId": 12450,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "hedgeUsdcAmountThreshold",
           "offset": 16,
@@ -470,7 +475,7 @@
           "type": "t_uint128"
         },
         {
-          "astId": 18396,
+          "astId": 12452,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "partialBtcHedgeUsdcAmountThreshold",
           "offset": 0,
@@ -478,7 +483,7 @@
           "type": "t_uint128"
         },
         {
-          "astId": 18398,
+          "astId": 12454,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "partialEthHedgeUsdcAmountThreshold",
           "offset": 16,
@@ -486,47 +491,47 @@
           "type": "t_uint128"
         },
         {
-          "astId": 18401,
+          "astId": 12457,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "fsGlp",
           "offset": 0,
           "slot": "13",
-          "type": "t_contract(IERC20)7507"
+          "type": "t_contract(IERC20)5344"
         },
         {
-          "astId": 18404,
+          "astId": 12460,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "glp",
           "offset": 0,
           "slot": "14",
-          "type": "t_contract(IERC20Metadata)7532"
+          "type": "t_contract(IERC20Metadata)5369"
         },
         {
-          "astId": 18407,
+          "astId": 12463,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "usdc",
           "offset": 0,
           "slot": "15",
-          "type": "t_contract(IERC20Metadata)7532"
+          "type": "t_contract(IERC20Metadata)5369"
         },
         {
-          "astId": 18410,
+          "astId": 12466,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "weth",
           "offset": 0,
           "slot": "16",
-          "type": "t_contract(IERC20Metadata)7532"
+          "type": "t_contract(IERC20Metadata)5369"
         },
         {
-          "astId": 18413,
+          "astId": 12469,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "wbtc",
           "offset": 0,
           "slot": "17",
-          "type": "t_contract(IERC20Metadata)7532"
+          "type": "t_contract(IERC20Metadata)5369"
         },
         {
-          "astId": 18416,
+          "astId": 12472,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "pool",
           "offset": 0,
@@ -534,7 +539,7 @@
           "type": "t_contract(IPool)967"
         },
         {
-          "astId": 18419,
+          "astId": 12475,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "aUsdc",
           "offset": 0,
@@ -542,23 +547,23 @@
           "type": "t_contract(IAToken)220"
         },
         {
-          "astId": 18422,
+          "astId": 12478,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "vWbtc",
           "offset": 0,
           "slot": "20",
-          "type": "t_contract(IDebtToken)15993"
+          "type": "t_contract(IDebtToken)10426"
         },
         {
-          "astId": 18425,
+          "astId": 12481,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "vWeth",
           "offset": 0,
           "slot": "21",
-          "type": "t_contract(IDebtToken)15993"
+          "type": "t_contract(IDebtToken)10426"
         },
         {
-          "astId": 18428,
+          "astId": 12484,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "oracle",
           "offset": 0,
@@ -566,7 +571,7 @@
           "type": "t_contract(IPriceOracle)1196"
         },
         {
-          "astId": 18431,
+          "astId": 12487,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "aaveRewardsController",
           "offset": 0,
@@ -574,7 +579,7 @@
           "type": "t_contract(IRewardsController)3558"
         },
         {
-          "astId": 18434,
+          "astId": 12490,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "poolAddressProvider",
           "offset": 0,
@@ -582,79 +587,79 @@
           "type": "t_contract(IPoolAddressesProvider)1176"
         },
         {
-          "astId": 18437,
+          "astId": 12493,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "gmxVault",
           "offset": 0,
           "slot": "25",
-          "type": "t_contract(IVault)18045"
+          "type": "t_contract(IVault)12101"
         },
         {
-          "astId": 18440,
+          "astId": 12496,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "sGmx",
           "offset": 0,
           "slot": "26",
-          "type": "t_contract(IRewardTracker)17479"
+          "type": "t_contract(IRewardTracker)11535"
         },
         {
-          "astId": 18443,
+          "astId": 12499,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "glpManager",
           "offset": 0,
           "slot": "27",
-          "type": "t_contract(IGlpManager)17172"
+          "type": "t_contract(IGlpManager)11247"
         },
         {
-          "astId": 18446,
+          "astId": 12502,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "rewardRouter",
           "offset": 0,
           "slot": "28",
-          "type": "t_contract(IRewardRouterV2)17379"
+          "type": "t_contract(IRewardRouterV2)11435"
         },
         {
-          "astId": 18449,
+          "astId": 12505,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "mintBurnRewardRouter",
           "offset": 0,
           "slot": "29",
-          "type": "t_contract(IRewardRouterV2)17379"
+          "type": "t_contract(IRewardRouterV2)11435"
         },
         {
-          "astId": 18452,
+          "astId": 12508,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "swapRouter",
           "offset": 0,
           "slot": "30",
-          "type": "t_contract(ISwapRouter)14382"
+          "type": "t_contract(ISwapRouter)9469"
         },
         {
-          "astId": 18455,
+          "astId": 12511,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "balancerVault",
           "offset": 0,
           "slot": "31",
-          "type": "t_contract(IBalancerVault)16863"
+          "type": "t_contract(IBalancerVault)11132"
         },
         {
-          "astId": 18458,
+          "astId": 12514,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "dnGmxSeniorVault",
           "offset": 0,
           "slot": "32",
-          "type": "t_contract(IDnGmxSeniorVault)16624"
+          "type": "t_contract(IDnGmxSeniorVault)10908"
         },
         {
-          "astId": 18461,
+          "astId": 12517,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "batchingManager",
           "offset": 0,
           "slot": "33",
-          "type": "t_contract(IDnGmxBatchingManager)16151"
+          "type": "t_contract(IDnGmxBatchingManager)10586"
         },
         {
-          "astId": 18463,
+          "astId": 12519,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "btcPoolAmount",
           "offset": 0,
@@ -662,7 +667,7 @@
           "type": "t_uint128"
         },
         {
-          "astId": 18465,
+          "astId": 12521,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "ethPoolAmount",
           "offset": 16,
@@ -670,28 +675,44 @@
           "type": "t_uint128"
         },
         {
-          "astId": 18468,
+          "astId": 12523,
+          "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
+          "label": "btcTraderOIHedge",
+          "offset": 0,
+          "slot": "35",
+          "type": "t_int128"
+        },
+        {
+          "astId": 12525,
+          "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
+          "label": "ethTraderOIHedge",
+          "offset": 16,
+          "slot": "35",
+          "type": "t_int128"
+        },
+        {
+          "astId": 12528,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "dnGmxTraderHedgeStrategy",
           "offset": 0,
-          "slot": "35",
-          "type": "t_contract(IDnGmxTraderHedgeStrategy)16654"
+          "slot": "36",
+          "type": "t_contract(IDnGmxTraderHedgeStrategy)10938"
         },
         {
-          "astId": 18470,
+          "astId": 12530,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "rebalanceProfitUsdcAmountThreshold",
           "offset": 0,
-          "slot": "36",
+          "slot": "37",
           "type": "t_uint128"
         },
         {
-          "astId": 18474,
+          "astId": 12534,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "__gaps",
           "offset": 0,
-          "slot": "37",
-          "type": "t_array(t_uint256)47_storage"
+          "slot": "38",
+          "type": "t_array(t_uint256)46_storage"
         }
       ],
       "numberOfBytes": "2688"
