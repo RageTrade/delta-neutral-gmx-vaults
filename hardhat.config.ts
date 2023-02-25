@@ -21,7 +21,7 @@ import nodePath from 'path';
 
 // this compile task override is needed to copy missing abi fragments to respective artifacts (note its not aval to typechain)
 task(TASK_COMPILE, 'Compiles the entire project, building all artifacts').setAction(async (taskArgs, _, runSuper) => {
-  const compileSolOutput = await runSuper(taskArgs);
+  const compileSolOutput: any = await runSuper(taskArgs);
 
   copyEventErrorAbis(
     ['artifacts/contracts/libraries/DnGmxJuniorVaultManager.sol/DnGmxJuniorVaultManager.json'],
@@ -95,6 +95,11 @@ export default {
       url: `https://arb1.arbitrum.io/rpc`,
       accounts: [pk],
       chainId: 42161,
+    },
+    mainnetfork: {
+      url: `https://internal-rpc.rage.trade`,
+      accounts: [process.env.PRIVATE_KEY_mainnetfork ?? pk],
+      chainId: 31337,
     },
     arbtest: {
       url: `https://rinkeby.arbitrum.io/rpc`,
