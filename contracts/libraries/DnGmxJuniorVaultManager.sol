@@ -210,12 +210,15 @@ library DnGmxJuniorVaultManager {
         uint128 btcPoolAmount;
         uint128 ethPoolAmount;
 
+        int128 btcTraderOIHedge;
+        int128 ethTraderOIHedge;
+
         IDnGmxTraderHedgeStrategy dnGmxTraderHedgeStrategy;
 
         uint128 rebalanceProfitUsdcAmountThreshold;
 
         // gaps for extending struct (if required during upgrade)
-        uint256[47] __gaps;
+        uint256[46] __gaps;
     }
 
     /// @notice stakes the rewards from the staked Glp and claims WETH to buy glp
@@ -561,15 +564,16 @@ library DnGmxJuniorVaultManager {
             bool isPartialHedge
         )
     {
-        bool isPartialAllowed = conditions[0];
-        bool useUpdatedPoolAmounts = conditions[1];
-
         // optimal btc and eth borrows
         // calculated basis the underlying token weights in glp
 
-        (optimalBtcBorrow, optimalEthBorrow) = _getOptimalBorrows(state, glpDeposited, useUpdatedPoolAmounts);
+        (optimalBtcBorrow, optimalEthBorrow) = _getOptimalBorrows({
+            state: state,
+            glpDeposited: glpDeposited,
+            withUpdatedPoolAmounts: conditions[1]
+        });
 
-        if (isPartialAllowed) {
+        if (conditions[0] /*isPartialHedge*/) {
             // if partial hedges are allowed (i.e. rebalance call and not deposit/withdraw)
             // check if swap amounts>threshold then basis that do a partial hedge
             bool isPartialBtcHedge;
@@ -848,7 +852,7 @@ library DnGmxJuniorVaultManager {
         // uncappedTokenHedge is required to hedge totalAssets
         // cappedTokenHedge can be taken basis available borrow
         // so basis what % if hedge cannot be taken, same % of glp is converted to usdc
-        uint256 unhedgedGlp = _totalAssets(state, false).mulDivDown(
+        uint256 unhedgedGlp = _totalGlp(state, false).mulDivDown(
             uncappedTokenHedge - cappedTokenHedge,
             uncappedTokenHedge
         );
@@ -1174,6 +1178,22 @@ library DnGmxJuniorVaultManager {
             }
         }
 
+        // total assets considers 3 parts
+        // part1: glp balance in vault
+        // part2: usdc balance in vault (unhedged glp)
+        // part3: pnl on AAVE (i.e. aaveProfitGlp - aaveLossGlp)
+        return _totalGlp(state, maximize) + aaveProfitGlp - aaveLossGlp;
+    }
+
+    ///@notice returns the total assets deposited to the vault (in glp amount)
+    ///@param state set of all state variables of vault
+    ///@param maximize true for maximizing the total assets value and false to minimize
+    ///@return total asset amount (glp + usdc (in glp terms))
+    function totalGlp(State storage state, bool maximize) external view returns (uint256) {
+        return _totalGlp(state, maximize);
+    }
+
+    function _totalGlp(State storage state, bool maximize) private view returns (uint256) {
         // convert usdc amount into glp amount
         // unhedged glp is kept in usdc so there would be conversion slippage on that
         uint256 unhedgedGlp = (state.unhedgedGlpInUsdc).mulDivDown(
@@ -1187,8 +1207,7 @@ library DnGmxJuniorVaultManager {
         // total assets considers 3 parts
         // part1: glp balance in vault
         // part2: usdc balance in vault (unhedged glp)
-        // part3: pnl on AAVE (i.e. aaveProfitGlp - aaveLossGlp)
-        return state.fsGlp.balanceOf(address(this)) + unhedgedGlp + aaveProfitGlp - aaveLossGlp;
+        return state.fsGlp.balanceOf(address(this)) + unhedgedGlp;
     }
 
     ///@notice returns if the rebalance is valid basis last rebalance time and rebalanceTimeThreshold
@@ -1219,19 +1238,46 @@ library DnGmxJuniorVaultManager {
     ///@param state set of all state variables of vault
     ///@return true if the rebalance is valid basis diffeence (current and optimal) threshold
     function isValidRebalanceDeviation(State storage state) external view returns (bool) {
-        (uint256 currentBtcBorrow, uint256 currentEthBorrow) = _getCurrentBorrows(state);
+        (uint128 optimalBtcPoolAmount, uint128 optimalEthPoolAmount) = _getPoolAmounts(state);
 
-        (uint256 optimalBtcBorrow, uint256 optimalEthBorrow, , , ) = _getOptimalBorrowsFinal(
-            state,
-            currentBtcBorrow,
-            currentEthBorrow,
-            _totalAssets(state, false),
-            [false, true]
-        );
+        uint128 currentBtcPoolAmount = state.btcPoolAmount;
+        uint128 currentEthPoolAmount = state.ethPoolAmount;
 
         return
-            !(_isWithinAllowedDelta(state, optimalBtcBorrow, currentBtcBorrow) &&
-                _isWithinAllowedDelta(state, optimalEthBorrow, currentEthBorrow));
+            !(_isWithinAllowedDelta(state, optimalBtcPoolAmount, currentBtcPoolAmount) &&
+                _isWithinAllowedDelta(state, optimalEthPoolAmount, currentEthPoolAmount));
+    }
+
+    function isValidRebalanceDueToChangeInHedges(State storage state) external view returns (bool) {
+        return _isValidRebalanceDueToChangeInHedges(state);
+    }
+
+    function _isValidRebalanceDueToChangeInHedges(State storage state) private view returns (bool) {
+        (int128 currentBtcTraderOIHedge, int128 currentEthTraderOIHedge) = _getTraderOIHedgeAmounts(state);
+        return
+            !(currentBtcTraderOIHedge == state.btcTraderOIHedge && currentEthTraderOIHedge == state.ethTraderOIHedge);
+    }
+
+    function getTraderOIHedgeAmounts(
+        State storage state
+    ) external view returns (int128 currentBtcTraderOIHedge, int128 currentEthTraderOIHedge) {
+        return _getTraderOIHedgeAmounts(state);
+    }
+
+    function _getTraderOIHedgeAmounts(
+        State storage state
+    ) private view returns (int128 currentBtcTraderOIHedge, int128 currentEthTraderOIHedge) {
+        currentBtcTraderOIHedge = state.dnGmxTraderHedgeStrategy.btcTraderOIHedge();
+        currentEthTraderOIHedge = state.dnGmxTraderHedgeStrategy.ethTraderOIHedge();
+    }
+
+    function getPoolAmounts(State storage state) external view returns (uint128 btcPoolAmount, uint128 ethPoolAmount) {
+        return _getPoolAmounts(state);
+    }
+
+    function _getPoolAmounts(State storage state) private view returns (uint128 btcPoolAmount, uint128 ethPoolAmount) {
+        btcPoolAmount = uint128(state.gmxVault.poolAmounts(address(state.wbtc)));
+        ethPoolAmount = uint128(state.gmxVault.poolAmounts(address(state.weth)));
     }
 
     ///@notice returns the price of given token basis AAVE oracle
@@ -1412,7 +1458,7 @@ library DnGmxJuniorVaultManager {
         (uint256 currentBtcBorrow, uint256 currentEthBorrow) = _getCurrentBorrows(state);
 
         // calculate new total assets basis assetAmount
-        uint256 total = _totalAssets(state, true);
+        uint256 total = _totalGlp(state, true);
         uint256 totalAssetsAfter = isDeposit ? total + assetAmount : total - assetAmount;
 
         // get optimal borrows accounting for incoming glp deposit
@@ -1650,8 +1696,8 @@ library DnGmxJuniorVaultManager {
         uint256 ethPrice = _getTokenPriceInUsdc(state, state.weth);
 
         {
-            int128 btcTokenTraderOIHedge = state.dnGmxTraderHedgeStrategy.btcTraderOIHedge();
-            int128 ethTokenTraderOIHedge = state.dnGmxTraderHedgeStrategy.ethTraderOIHedge();
+            int128 btcTokenTraderOIHedge = state.btcTraderOIHedge;
+            int128 ethTokenTraderOIHedge = state.ethTraderOIHedge;
 
             uint256 btcPoolAmount = state.btcPoolAmount;
             uint256 ethPoolAmount = state.ethPoolAmount;
@@ -1711,9 +1757,8 @@ library DnGmxJuniorVaultManager {
 
         uint256 totalSupply = state.glp.totalSupply();
 
-        int128 tokenTraderOIHedge = token == address(state.wbtc)
-            ? state.dnGmxTraderHedgeStrategy.btcTraderOIHedge()
-            : state.dnGmxTraderHedgeStrategy.ethTraderOIHedge();
+        int128 tokenTraderOIHedge = token == address(state.wbtc) ? state.btcTraderOIHedge : state.ethTraderOIHedge;
+
         // token reserve is the amount we short
         // tokenTraderOIHedge if >0 then we need to go long because of OI hence less short (i.e. subtract if value +ve)
         // tokenTraderOIHedge if <0 then we need to go short because of OI hence more long (i.e. add if value -ve)
