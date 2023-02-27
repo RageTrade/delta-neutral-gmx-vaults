@@ -12,7 +12,7 @@ import {
 } from '@ragetrade/sdk';
 import { DepositEvent } from '../typechain-types/contracts/interfaces/IERC4626';
 import { BigNumber } from 'ethers';
-import { impersonateAccount } from '@nomicfoundation/hardhat-network-helpers';
+import { impersonateAccount, setBalance } from '@nomicfoundation/hardhat-network-helpers';
 import { arb } from './utils/arb';
 import { TransparentUpgradeableProxy__factory } from '../typechain-types';
 
@@ -25,7 +25,7 @@ const oldDnGmxJuniorVault = '0x8478AB5064EbAC770DdCE77E7D31D969205F041E';
 const juniorVaultDepositor = '0x04808a3aa9507f2354d3f411f86208ba9fa38093';
 const existingBMUser = '0x9f7D3CECf8F857C10fa0B1BEED96DCFE52625454';
 
-describe.skip('Update Implementation', () => {
+describe('Update Implementation', () => {
   it('dn gmx junior vault', async () => {
     const opts = await dnGmxJuniorVaultFixture();
 
@@ -141,6 +141,8 @@ describe.skip('Update Implementation', () => {
     // console.log('balance', formatEther(await opts.fsGlp.balanceOf(opts.users[0].address)));
 
     const sharesPreview = await vaultWithImplAbi.connect(opts.users[0]).previewDeposit(depositAssets);
+
+    await vaultWithImplAbi.connect(timelockSigner).unpause();
 
     // deposit
     const tx = await vaultWithImplAbi.connect(opts.users[0]).deposit(depositAssets, opts.users[0].address);
