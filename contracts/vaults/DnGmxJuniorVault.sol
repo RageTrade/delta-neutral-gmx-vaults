@@ -396,7 +396,11 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     ################################################################## */
     /// @notice checks if the rebalance can be run (3 thresholds - time, hedge deviation and AAVE HF )
     function isValidRebalance() public view returns (bool) {
-        return state.isValidRebalanceTime() || state.isValidRebalanceDeviation() || state.isValidRebalanceHF();
+        return
+            state.isValidRebalanceHF() ||
+            state.isValidRebalanceTime() ||
+            state.isValidRebalanceDeviation() ||
+            state.isValidRebalanceDueToChangeInHedges();
     }
 
     /* solhint-disable not-rely-on-time */
@@ -406,8 +410,12 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         if (!isValidRebalance()) revert InvalidRebalance();
 
         emit Rebalanced();
-        state.btcPoolAmount = (state.gmxVault.poolAmounts(address(state.wbtc))).toUint128();
-        state.ethPoolAmount = (state.gmxVault.poolAmounts(address(state.weth))).toUint128();
+
+        (state.btcPoolAmount, state.ethPoolAmount) = state.getPoolAmounts();
+
+        (int128 currentBtcTraderOIHedge, int128 currentEthTraderOIHedge) = state.getTraderOIHedgeAmounts();
+        state.btcTraderOIHedge = currentBtcTraderOIHedge;
+        state.ethTraderOIHedge = currentEthTraderOIHedge;
 
         (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
         uint256 totalCurrentBorrowValue = state.getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
@@ -423,7 +431,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         // calculate current btc and eth positions in GLP
         // get the position value and calculate the collateral needed to borrow that
         // transfer collateral from LB vault to DN vault
-        bool isPartialHedge = state.rebalanceHedge(currentBtc, currentEth, totalAssets(), true);
+        bool isPartialHedge = state.rebalanceHedge(currentBtc, currentEth, state.totalGlp(false), true);
 
         if (isPartialHedge) {
             state.lastRebalanceTS = 0; // if partial hedge is happening due to delta threshold breach, next rebalance should still go through
@@ -805,7 +813,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
 
         //rebalance of hedge based on assets after withdraw (before withdraw assets - withdrawn assets)
-        state.rebalanceHedge(currentBtc, currentEth, totalAssets() - assets, false);
+        state.rebalanceHedge(currentBtc, currentEth, state.totalGlp(false) - assets, false);
     }
 
     function afterDeposit(uint256, uint256, address) internal override {
@@ -813,6 +821,6 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
 
         //rebalance of hedge based on assets after deposit (after deposit assets)
-        state.rebalanceHedge(currentBtc, currentEth, totalAssets(), false);
+        state.rebalanceHedge(currentBtc, currentEth, state.totalGlp(false), false);
     }
 }

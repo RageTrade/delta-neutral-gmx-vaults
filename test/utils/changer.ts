@@ -154,6 +154,23 @@ export class Changer {
     console.log(Changer.seperator);
   };
 
+  changePoolAmounts = async (asset: Asset, newAmount: BigNumber) => {
+    const poolAmountSlot =
+      asset == 'WBTC'
+        ? '0x59910028135492f60329149ab5f217583540ae9e12791dfb7be530e5c9736a3e'
+        : '0x3e83a15c1bc6dd7a60c94002578f2794c5e38637de18c8ed57da7ec968d7c81b';
+
+    await hre.network.provider.send('hardhat_setStorageAt', [
+      this.opts.gmxVault.address, // address
+      poolAmountSlot, // slot
+      ethers.utils.hexZeroPad(newAmount.toHexString(), 32), // new value
+    ]);
+
+    console.log(`${asset} pool amount changed to ${newAmount.toString()}`);
+
+    console.log(Changer.seperator);
+  };
+
   changeCurrentWeights = async (asset: Asset, newAmount: number) => {
     const [tokenAddr, tokenDecimals] = asset === 'WBTC' ? [this.opts.wbtc.address, 8] : [this.opts.weth.address, 18];
 
