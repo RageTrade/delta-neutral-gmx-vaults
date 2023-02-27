@@ -217,6 +217,67 @@ describe('Rebalance & its utils', () => {
     expect(await dnGmxJuniorVault.getUsdcBorrowed()).to.eq(currentDnGmxSeniorVaultAmountAfter);
   });
 
+  it('pauses during partial rebalances and unpauses once hedge is executed fully', async () => {
+    const { dnGmxSeniorVault, dnGmxJuniorVault, dnGmxTraderHedgeStrategy, admin, users } =
+      await dnGmxJuniorVaultFixture();
+
+    // make partial thresholds very low
+    await dnGmxJuniorVault.setThresholds(
+      100, //_slippageThresholdSwapBtcBps
+      100, //_slippageThresholdSwapEthBps
+      100, //_slippageThresholdGmxBps
+      parseUnits('1', 6), //_usdcConversionThreshold
+      10n ** 15n, //_wethConversionThreshold
+      parseUnits('1', 6), //_hedgeUsdcAmountThreshold
+      parseUnits('5', 6), //partialBtcHedgeUsdcAmountThreshold
+      parseUnits('5', 6), //partialEthHedgeUsdcAmountThreshold
+    );
+
+    // make time threshold non-zero
+    await dnGmxJuniorVault.setRebalanceParams(
+      86400, // rebalanceTimeThreshold
+      500, // 5% in bps | rebalanceDeltaThresholdBps
+      12_000,
+    );
+
+    await dnGmxJuniorVault.rebalance();
+
+    const amount = parseEther('500');
+
+    await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('1000', 6), users[1].address);
+    await dnGmxJuniorVault.connect(users[0]).deposit(amount, users[0].address);
+
+    await dnGmxTraderHedgeStrategy.setTraderOIHedgeBps(10_000);
+    await dnGmxTraderHedgeStrategy.setTraderOIHedges();
+
+    await dnGmxJuniorVault.rebalance();
+
+    expect(await dnGmxJuniorVault.isValidRebalanceTime()).to.be.true;
+    expect(await dnGmxJuniorVault.paused()).to.be.true;
+
+    await dnGmxJuniorVault.rebalance();
+
+    expect(await dnGmxJuniorVault.isValidRebalanceTime()).to.be.true;
+    expect(await dnGmxJuniorVault.paused()).to.be.true;
+
+    // restore partial thresholds
+    await dnGmxJuniorVault.setThresholds(
+      100, //_slippageThresholdSwapBtcBps
+      100, //_slippageThresholdSwapEthBps
+      100, //_slippageThresholdGmxBps
+      parseUnits('1', 6), //_usdcConversionThreshold
+      10n ** 15n, //_wethConversionThreshold
+      parseUnits('1', 6), //_hedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialBtcHedgeUsdcAmountThreshold
+      parseUnits('1000000', 6), //partialEthHedgeUsdcAmountThreshold
+    );
+
+    await dnGmxJuniorVault.rebalance();
+
+    expect(await dnGmxJuniorVault.isValidRebalance()).to.be.false;
+    expect(await dnGmxJuniorVault.paused()).to.be.false;
+  });
+
   it('Rebalance Hedge Unit Tests', async () => {
     [];
     // Both increase above threshold
@@ -692,6 +753,22 @@ describe('Rebalance & its utils', () => {
     await increaseBlockTimestamp(86400 + 1);
 
     expect(await dnGmxJuniorVault.isValidRebalanceTime()).to.true;
+  });
+
+  it('valid rebalance - hedges', async () => {
+    const { dnGmxJuniorVault, dnGmxTraderHedgeStrategy } = await dnGmxJuniorVaultFixture();
+
+    // because hedges are uninitialized
+    expect(await dnGmxJuniorVault.isValidRebalanceDueToChangeInHedges()).to.be.false;
+
+    await dnGmxTraderHedgeStrategy.setTraderOIHedgeBps(100);
+    await dnGmxTraderHedgeStrategy.setTraderOIHedges();
+
+    expect(await dnGmxJuniorVault.isValidRebalanceDueToChangeInHedges()).to.be.true;
+
+    await dnGmxJuniorVault.rebalance();
+
+    expect(await dnGmxJuniorVault.isValidRebalanceDueToChangeInHedges()).to.be.false;
   });
 
   it('valid rebalance - delta', async () => {
