@@ -1137,7 +1137,7 @@ library DnGmxJuniorVaultManager {
             if (aaveProfit > aaveLoss) {
                 aaveProfitGlp = (aaveProfit - aaveLoss).mulDivDown(
                     PRICE_PRECISION,
-                    _getGlpPriceInUsdc(state, maximize)
+                    _getGlpPriceInUsdc(state, !maximize)
                 );
                 if (!maximize)
                     aaveProfitGlp = aaveProfitGlp.mulDivDown(MAX_BPS - state.slippageThresholdGmxBps, MAX_BPS);
