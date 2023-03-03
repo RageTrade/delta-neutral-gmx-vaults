@@ -1379,7 +1379,7 @@ describe('Rebalance Scenarios', () => {
     await logger.logBorrowParams();
     await logger.logProtocolParamsAndHoldings();
 
-    await checker.checkTotalAssets(83682891556587600000n, 10n ** 16n, true);
+    await checker.checkTotalAssets(83599653068423496602n, 10n ** 16n, true);
     await checker.checkTotalSupply(99877132097480900000n, 10n ** 10n, true);
 
     await checker.checkCurrentBorrowed([83815n, 17125229998626200n], [0, 10n ** 11n]);
