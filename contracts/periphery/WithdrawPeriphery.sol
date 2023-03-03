@@ -145,8 +145,10 @@ contract WithdrawPeriphery is Ownable {
         uint256 tokenPrice = gmxVault.getMaxPrice(token);
 
         // apply slippage threshold on top of estimated output amount
-        uint256 minTokenOut = outputGlp.mulDiv(glpPrice * (MAX_BPS - slippageThreshold), tokenPrice * MAX_BPS);
-        minTokenOut = minTokenOut * 10 ** (IERC20Metadata(token).decimals() - 6);
+        uint256 minTokenOut = outputGlp.mulDiv(
+            glpPrice * (MAX_BPS - slippageThreshold) * 10 ** (IERC20Metadata(token).decimals() - 6),
+            tokenPrice * MAX_BPS
+        );
 
         // will revert if atleast minTokenOut is not received
         amountOut = rewardRouter.unstakeAndRedeemGlp(address(token), outputGlp, minTokenOut, receiver);
