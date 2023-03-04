@@ -169,6 +169,11 @@ library QuoterLib {
             swapStates
         );
 
+        // ensure btcAmountInBtcSwap and usdcAmountInBtcSwap are of opposite sign when they are both non-zero
+        assert(
+            btcAmountInBtcSwap == 0 || usdcAmountInBtcSwap == 0 || btcAmountInBtcSwap > 0 != usdcAmountInBtcSwap > 0
+        );
+
         // eth swap (also accounting for price change in btc swap)
         Simulate.State[] memory swapStates2 = new Simulate.State[](1);
         if (ethAmountInBtcSwap != 0) {
