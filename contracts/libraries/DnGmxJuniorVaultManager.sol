@@ -823,23 +823,26 @@ library DnGmxJuniorVaultManager {
         // uncappedTokenHedge is required to hedge totalAssets
         // cappedTokenHedge can be taken basis available borrow
         // so basis what % if hedge cannot be taken, same % of glp is converted to usdc
-        uint256 unhedgedGlp = _totalGlp(state, false).mulDivDown(
+        uint256 targetUnhedgedGlp = _totalGlp(state, false).mulDivDown(
             uncappedTokenHedge - cappedTokenHedge,
             uncappedTokenHedge
         );
 
         // usdc value of unhedged glp assets
-        uint256 unhedgedGlpUsdcAmount = unhedgedGlp.mulDivDown(_getGlpPriceInUsdc(state, false), PRICE_PRECISION);
+        uint256 targetUnhedgedGlpUsdcAmount = targetUnhedgedGlp.mulDivDown(
+            _getGlpPriceInUsdc(state, false),
+            PRICE_PRECISION
+        );
 
-        if (unhedgedGlpUsdcAmount > state.unhedgedGlpInUsdc) {
+        if (targetUnhedgedGlpUsdcAmount > state.unhedgedGlpInUsdc) {
             // if target unhedged amount > current unhedged amount
             // convert glp to aUSDC
-            uint256 glpToUsdcAmount = unhedgedGlpUsdcAmount - state.unhedgedGlpInUsdc;
+            uint256 glpToUsdcAmount = targetUnhedgedGlpUsdcAmount - state.unhedgedGlpInUsdc;
             state.unhedgedGlpInUsdc += _convertAssetToAUsdc(state, glpToUsdcAmount);
-        } else if (unhedgedGlpUsdcAmount < state.unhedgedGlpInUsdc) {
+        } else if (targetUnhedgedGlpUsdcAmount < state.unhedgedGlpInUsdc) {
             // if target unhedged amount < current unhedged amount
             // convert aUSDC to glp
-            uint256 usdcToGlpAmount = state.unhedgedGlpInUsdc - unhedgedGlpUsdcAmount;
+            uint256 usdcToGlpAmount = state.unhedgedGlpInUsdc - targetUnhedgedGlpUsdcAmount;
             state.unhedgedGlpInUsdc -= usdcToGlpAmount;
             _convertAUsdcToAsset(state, usdcToGlpAmount);
         }
@@ -1407,7 +1410,7 @@ library DnGmxJuniorVaultManager {
 
         // subtract slippage from assets, and calculate shares basis that slippage adjusted asset amount
         if (netSlippage >= assets) revert IDnGmxJuniorVault.TooMuchSlippage(netSlippage, assets);
-        assets -= uint256(netSlippage);
+        assets -= netSlippage;
 
         return assets;
     }
