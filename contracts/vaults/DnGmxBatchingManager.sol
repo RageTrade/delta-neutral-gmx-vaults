@@ -19,8 +19,8 @@ import { IBatchingManagerBypass } from '../interfaces/IBatchingManagerBypass.sol
 import { SafeCast } from '../libraries/SafeCast.sol';
 
 /**
- * @title Batching Manager to avoid glp transfer cooldowm
- * @notice batches the incoming deposit token depoists after converting them to glp
+ * @title Batching Manager to avoid glp transfer cooldown
+ * @notice batches the incoming deposit token deposits after converting them to glp
  * @notice It is upgradable contract (via TransparentUpgradeableProxy proxy owned by ProxyAdmin)
  * @author RageTrade
  **/
@@ -35,13 +35,13 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         uint256 currentRound;
         // !!! roundGlpDepositPending is deprecated !!!
         uint256 roundGlpDepositPending;
-        // junior vault shares minted in current roudn
+        // junior vault shares minted in current round
         uint256 roundSharesMinted;
         // amount of sGlp received in current round
         uint256 roundGlpStaked;
         // amount of usdc recieved in current round
         uint256 roundUsdcBalance;
-        // stores junior vault shares accumuated for user
+        // stores junior vault shares accumulated for user
         mapping(address user => UserDeposit) userDeposits;
         // stores total glp received in a given round
         mapping(uint256 roundId => RoundDeposit) roundDeposits;
@@ -77,7 +77,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     // gmx's RewardRouterV2 (RewardRouterV2.sol) contract
     IRewardRouterV2 private rewardRouter;
 
-    // batching mangager bypass contract !!! deprecated !!!
+    // batching manager bypass contract !!! deprecated !!!
     IBatchingManagerBypass private bypass;
 
     // batching manager's state
@@ -217,7 +217,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         UserDeposit storage userDeposit = vaultBatchingState.userDeposits[receiver];
         uint128 userUsdcBalance = userDeposit.usdcBalance;
 
-        // Convert previous round glp balance into unredeemed shares
+        // Convert previous round usdc balance into unredeemed shares
         uint256 userDepositRound = userDeposit.round;
         if (userDepositRound < vaultBatchingState.currentRound && userUsdcBalance > 0) {
             // update user's unclaimed shares with previous executed batch
@@ -229,7 +229,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
             userUsdcBalance = 0;
         }
 
-        // Update round and glp balance for current round
+        // Update round and usdc balance for current round
         userDeposit.round = vaultBatchingState.currentRound;
         userDeposit.usdcBalance = userUsdcBalance + amount.toUint128();
         vaultBatchingState.roundUsdcBalance += amount.toUint128();
@@ -321,7 +321,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         return vaultBatchingState.currentRound;
     }
 
-    /// @notice get the glp balance for a given vault and account address
+    /// @notice get the usdc balance for a given vault and account address
     /// @param account address of user
     function usdcBalance(address account) public view returns (uint256 balance) {
         balance = vaultBatchingState.userDeposits[account].usdcBalance;
@@ -339,12 +339,12 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         }
     }
 
-    /// @notice get the glp balance for current active round
+    /// @notice get the usdc balance for current active round
     function roundUsdcBalance() external view returns (uint256) {
         return vaultBatchingState.roundUsdcBalance;
     }
 
-    /// @notice get the glp balance for current active round
+    /// @notice get the usdc balance for current active round
     function roundGlpStaked() external view returns (uint256) {
         return vaultBatchingState.roundGlpStaked;
     }
@@ -432,7 +432,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         uint128 userUnclaimedShares = userDeposit.unclaimedShares;
 
         {
-            // Convert previous round glp balance into unredeemed shares
+            // Convert previous round usdc balance into unredeemed shares
             uint256 userDepositRound = userDeposit.round;
             if (userDepositRound < vaultBatchingState.currentRound && userUsdcBalance > 0) {
                 RoundDeposit storage roundDeposit = vaultBatchingState.roundDeposits[userDepositRound];

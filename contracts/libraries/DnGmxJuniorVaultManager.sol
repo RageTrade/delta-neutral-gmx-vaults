@@ -200,7 +200,7 @@ library DnGmxJuniorVaultManager {
         // core protocol addrs
         // senior tranche address
         IDnGmxSeniorVault dnGmxSeniorVault;
-        // batching manager address
+        // batching manager address !!! Deprecated !!!
         IDnGmxBatchingManager batchingManager;
 
         // !!! STORAGE EXTENSIONS !!! (reduced gaps by no. of slots added here)
@@ -340,18 +340,18 @@ library DnGmxJuniorVaultManager {
                             REBALANCE HELPERS
     ################################################################## */
 
-    ///@notice rebalances pnl on AAVE againts the sGLP assets
+    ///@notice rebalances pnl on AAVE against the sGLP assets
     ///@param state set of all state variables of vault
-    ///@param borrowValue value of the borrowed assests(ETH + BTC) from AAVE in USDC
+    ///@param borrowValue value of the borrowed assets(ETH + BTC) from AAVE in USDC
     function rebalanceProfit(State storage state, uint256 borrowValue) external {
         return _rebalanceProfit(state, borrowValue);
     }
 
-    ///@notice rebalances pnl on AAVE againts the sGLP assets
+    ///@notice rebalances pnl on AAVE against the sGLP assets
     ///@dev converts assets into usdc and deposits to AAVE if profit on GMX and loss on AAVE
     ///@dev withdraws usdc from aave and converts to GLP if loss on GMX and profits on AAVE
     ///@param state set of all state variables of vault
-    ///@param borrowValue value of the borrowed assests(ETH + BTC) from AAVE in USDC
+    ///@param borrowValue value of the borrowed assets(ETH + BTC) from AAVE in USDC
     function _rebalanceProfit(State storage state, uint256 borrowValue) private {
         int256 borrowVal = borrowValue.toInt256();
 
@@ -1191,7 +1191,7 @@ library DnGmxJuniorVaultManager {
     }
 
     ///@notice returns if the rebalance is valid basis health factor on AAVE
-    ///@notice retunrs true if current health factor < threshold
+    ///@notice returns true if current health factor < threshold
     ///@param state set of all state variables of vault
     ///@return true if the rebalance is valid basis AAVE health factor
     function isValidRebalanceHF(State storage state) external view returns (bool) {
@@ -1275,7 +1275,7 @@ library DnGmxJuniorVaultManager {
 
     ///@notice returns the price of glp token
     ///@param state set of all state variables of vault
-    ///@param maximize true to get maximum price and flase to get minimum
+    ///@param maximize true to get maximum price and false to get minimum
     ///@return glp price in usd
     function getGlpPrice(State storage state, bool maximize) external view returns (uint256) {
         return _getGlpPrice(state, maximize);
@@ -1283,7 +1283,7 @@ library DnGmxJuniorVaultManager {
 
     ///@notice returns the price of glp token
     ///@param state set of all state variables of vault
-    ///@param maximize true to get maximum price and flase to get minimum
+    ///@param maximize true to get maximum price and false to get minimum
     ///@return glp price in usd
     function _getGlpPrice(State storage state, bool maximize) private view returns (uint256) {
         uint256 aum = state.glpManager.getAum(maximize);
@@ -1295,16 +1295,16 @@ library DnGmxJuniorVaultManager {
 
     ///@notice returns the price of glp token in usdc
     ///@param state set of all state variables of vault
-    ///@param maximize true to get maximum price and flase to get minimum
-    ///@return glp price in usd
+    ///@param maximize true to get maximum price and false to get minimum
+    ///@return glp price in usdc
     function getGlpPriceInUsdc(State storage state, bool maximize) external view returns (uint256) {
         return _getGlpPriceInUsdc(state, maximize);
     }
 
     ///@notice returns the price of glp token in usdc
     ///@param state set of all state variables of vault
-    ///@param maximize true to get maximum price and flase to get minimum
-    ///@return glp price in usd
+    ///@param maximize true to get maximum price and false to get minimum
+    ///@return glp price in usdc
     function _getGlpPriceInUsdc(State storage state, bool maximize) private view returns (uint256) {
         uint256 aum = state.glpManager.getAum(maximize);
         uint256 totalSupply = state.glp.totalSupply();

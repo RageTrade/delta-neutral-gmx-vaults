@@ -148,7 +148,7 @@ contract DnGmxTraderHedgeStrategy is OwnableUpgradeable, IDnGmxTraderHedgeStrate
         emit TraderOIHedgesUpdated(_btcTraderOIHedge, _ethTraderOIHedge);
     }
 
-    ///@notice returns token amount underlying glp amount deposited
+    ///@notice returns token amount to hedge underlying glp amount deposited
     ///@param token address of token
     ///@param _traderOIHedgeBps % of trader OI to hedge
     ///@return amount of tokens of the supplied address underlying the given amount of glp
