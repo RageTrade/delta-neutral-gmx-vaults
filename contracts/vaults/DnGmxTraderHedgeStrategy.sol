@@ -16,12 +16,14 @@ import { IERC20Metadata } from '@openzeppelin/contracts/interfaces/IERC20Metadat
 import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
 
 import { SignedFixedPointMathLib } from '../libraries/SignedFixedPointMathLib.sol';
+import { SignedMathUpgradeable } from '@openzeppelin/contracts-upgradeable/utils/math/SignedMathUpgradeable.sol';
 
 contract DnGmxTraderHedgeStrategy is OwnableUpgradeable, IDnGmxTraderHedgeStrategy {
     using FixedPointMathLib for uint256;
     using SafeCast for int256;
     using SafeCast for uint256;
     using SignedFixedPointMathLib for int256;
+    using SignedMathUpgradeable for int256;
 
     uint256 internal constant MAX_BPS = 10_000;
     uint256 internal constant PRICE_PRECISION = 1e30;
