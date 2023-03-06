@@ -16,12 +16,14 @@ import { IERC20Metadata } from '@openzeppelin/contracts/interfaces/IERC20Metadat
 import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
 
 import { SignedFixedPointMathLib } from '../libraries/SignedFixedPointMathLib.sol';
+import { SignedMathUpgradeable } from '@openzeppelin/contracts-upgradeable/utils/math/SignedMathUpgradeable.sol';
 
 contract DnGmxTraderHedgeStrategy is OwnableUpgradeable, IDnGmxTraderHedgeStrategy {
     using FixedPointMathLib for uint256;
     using SafeCast for int256;
     using SafeCast for uint256;
     using SignedFixedPointMathLib for int256;
+    using SignedMathUpgradeable for int256;
 
     uint256 internal constant MAX_BPS = 10_000;
     uint256 internal constant PRICE_PRECISION = 1e30;
@@ -146,7 +148,7 @@ contract DnGmxTraderHedgeStrategy is OwnableUpgradeable, IDnGmxTraderHedgeStrate
         emit TraderOIHedgesUpdated(_btcTraderOIHedge, _ethTraderOIHedge);
     }
 
-    ///@notice returns token amount underlying glp amount deposited
+    ///@notice returns token amount to hedge underlying glp amount deposited
     ///@param token address of token
     ///@param _traderOIHedgeBps % of trader OI to hedge
     ///@return amount of tokens of the supplied address underlying the given amount of glp
