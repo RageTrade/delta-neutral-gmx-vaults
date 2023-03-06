@@ -200,7 +200,7 @@ library DnGmxJuniorVaultManager {
         // core protocol addrs
         // senior tranche address
         IDnGmxSeniorVault dnGmxSeniorVault;
-        // batching manager address
+        // batching manager address !!! Deprecated !!!
         IDnGmxBatchingManager batchingManager;
 
         // !!! STORAGE EXTENSIONS !!! (reduced gaps by no. of slots added here)
@@ -340,18 +340,18 @@ library DnGmxJuniorVaultManager {
                             REBALANCE HELPERS
     ################################################################## */
 
-    ///@notice rebalances pnl on AAVE againts the sGLP assets
+    ///@notice rebalances pnl on AAVE against the sGLP assets
     ///@param state set of all state variables of vault
-    ///@param borrowValue value of the borrowed assests(ETH + BTC) from AAVE in USDC
+    ///@param borrowValue value of the borrowed assets(ETH + BTC) from AAVE in USDC
     function rebalanceProfit(State storage state, uint256 borrowValue) external {
         return _rebalanceProfit(state, borrowValue);
     }
 
-    ///@notice rebalances pnl on AAVE againts the sGLP assets
+    ///@notice rebalances pnl on AAVE against the sGLP assets
     ///@dev converts assets into usdc and deposits to AAVE if profit on GMX and loss on AAVE
     ///@dev withdraws usdc from aave and converts to GLP if loss on GMX and profits on AAVE
     ///@param state set of all state variables of vault
-    ///@param borrowValue value of the borrowed assests(ETH + BTC) from AAVE in USDC
+    ///@param borrowValue value of the borrowed assets(ETH + BTC) from AAVE in USDC
     function _rebalanceProfit(State storage state, uint256 borrowValue) private {
         int256 borrowVal = borrowValue.toInt256();
 
@@ -823,23 +823,26 @@ library DnGmxJuniorVaultManager {
         // uncappedTokenHedge is required to hedge totalAssets
         // cappedTokenHedge can be taken basis available borrow
         // so basis what % if hedge cannot be taken, same % of glp is converted to usdc
-        uint256 unhedgedGlp = _totalGlp(state, false).mulDivDown(
+        uint256 targetUnhedgedGlp = _totalGlp(state, false).mulDivDown(
             uncappedTokenHedge - cappedTokenHedge,
             uncappedTokenHedge
         );
 
         // usdc value of unhedged glp assets
-        uint256 unhedgedGlpUsdcAmount = unhedgedGlp.mulDivDown(_getGlpPriceInUsdc(state, false), PRICE_PRECISION);
+        uint256 targetUnhedgedGlpUsdcAmount = targetUnhedgedGlp.mulDivDown(
+            _getGlpPriceInUsdc(state, false),
+            PRICE_PRECISION
+        );
 
-        if (unhedgedGlpUsdcAmount > state.unhedgedGlpInUsdc) {
+        if (targetUnhedgedGlpUsdcAmount > state.unhedgedGlpInUsdc) {
             // if target unhedged amount > current unhedged amount
             // convert glp to aUSDC
-            uint256 glpToUsdcAmount = unhedgedGlpUsdcAmount - state.unhedgedGlpInUsdc;
+            uint256 glpToUsdcAmount = targetUnhedgedGlpUsdcAmount - state.unhedgedGlpInUsdc;
             state.unhedgedGlpInUsdc += _convertAssetToAUsdc(state, glpToUsdcAmount);
-        } else if (unhedgedGlpUsdcAmount < state.unhedgedGlpInUsdc) {
+        } else if (targetUnhedgedGlpUsdcAmount < state.unhedgedGlpInUsdc) {
             // if target unhedged amount < current unhedged amount
             // convert aUSDC to glp
-            uint256 usdcToGlpAmount = state.unhedgedGlpInUsdc - unhedgedGlpUsdcAmount;
+            uint256 usdcToGlpAmount = state.unhedgedGlpInUsdc - targetUnhedgedGlpUsdcAmount;
             state.unhedgedGlpInUsdc -= usdcToGlpAmount;
             _convertAUsdcToAsset(state, usdcToGlpAmount);
         }
@@ -1137,7 +1140,7 @@ library DnGmxJuniorVaultManager {
             if (aaveProfit > aaveLoss) {
                 aaveProfitGlp = (aaveProfit - aaveLoss).mulDivDown(
                     PRICE_PRECISION,
-                    _getGlpPriceInUsdc(state, maximize)
+                    _getGlpPriceInUsdc(state, !maximize)
                 );
                 if (!maximize)
                     aaveProfitGlp = aaveProfitGlp.mulDivDown(MAX_BPS - state.slippageThresholdGmxBps, MAX_BPS);
@@ -1191,7 +1194,7 @@ library DnGmxJuniorVaultManager {
     }
 
     ///@notice returns if the rebalance is valid basis health factor on AAVE
-    ///@notice retunrs true if current health factor < threshold
+    ///@notice returns true if current health factor < threshold
     ///@param state set of all state variables of vault
     ///@return true if the rebalance is valid basis AAVE health factor
     function isValidRebalanceHF(State storage state) external view returns (bool) {
@@ -1275,7 +1278,7 @@ library DnGmxJuniorVaultManager {
 
     ///@notice returns the price of glp token
     ///@param state set of all state variables of vault
-    ///@param maximize true to get maximum price and flase to get minimum
+    ///@param maximize true to get maximum price and false to get minimum
     ///@return glp price in usd
     function getGlpPrice(State storage state, bool maximize) external view returns (uint256) {
         return _getGlpPrice(state, maximize);
@@ -1283,7 +1286,7 @@ library DnGmxJuniorVaultManager {
 
     ///@notice returns the price of glp token
     ///@param state set of all state variables of vault
-    ///@param maximize true to get maximum price and flase to get minimum
+    ///@param maximize true to get maximum price and false to get minimum
     ///@return glp price in usd
     function _getGlpPrice(State storage state, bool maximize) private view returns (uint256) {
         uint256 aum = state.glpManager.getAum(maximize);
@@ -1295,16 +1298,16 @@ library DnGmxJuniorVaultManager {
 
     ///@notice returns the price of glp token in usdc
     ///@param state set of all state variables of vault
-    ///@param maximize true to get maximum price and flase to get minimum
-    ///@return glp price in usd
+    ///@param maximize true to get maximum price and false to get minimum
+    ///@return glp price in usdc
     function getGlpPriceInUsdc(State storage state, bool maximize) external view returns (uint256) {
         return _getGlpPriceInUsdc(state, maximize);
     }
 
     ///@notice returns the price of glp token in usdc
     ///@param state set of all state variables of vault
-    ///@param maximize true to get maximum price and flase to get minimum
-    ///@return glp price in usd
+    ///@param maximize true to get maximum price and false to get minimum
+    ///@return glp price in usdc
     function _getGlpPriceInUsdc(State storage state, bool maximize) private view returns (uint256) {
         uint256 aum = state.glpManager.getAum(maximize);
         uint256 totalSupply = state.glp.totalSupply();
@@ -1407,7 +1410,7 @@ library DnGmxJuniorVaultManager {
 
         // subtract slippage from assets, and calculate shares basis that slippage adjusted asset amount
         if (netSlippage >= assets) revert IDnGmxJuniorVault.TooMuchSlippage(netSlippage, assets);
-        assets -= uint256(netSlippage);
+        assets -= netSlippage;
 
         return assets;
     }
