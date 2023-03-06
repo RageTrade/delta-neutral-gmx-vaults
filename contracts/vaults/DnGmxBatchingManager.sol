@@ -59,7 +59,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     uint256 public slippageThresholdGmxBps;
     // accumulator to keep track of sGlp direclty (as a means of compounding) send by junior vault
     uint256 public dnGmxJuniorVaultGlpBalance;
-    // combined targetCap from both batching managers to be achieved
+    // max allowed usdc to be deposited per round
     uint256 public depositCap;
 
     // !!! previously this variable was glpDepositPendingThreshold
@@ -92,11 +92,13 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
 
     // glp
     IERC20 private glp;
+    // combined targetCap from both batching managers to be achieved
+    uint256 public targetAssetCap;
     // glp batching manager
     IDnGmxBatchingManagerGlp private glpBatchingManager;
 
     // these gaps are added to allow adding new variables without shifting down inheritance chain
-    uint256[46] private __gaps;
+    uint256[45] private __gaps;
 
     /// @dev ensures caller is junior vault
     modifier onlyDnGmxJuniorVault() {
@@ -200,6 +202,11 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         emit DepositCapUpdated(_depositCap);
     }
 
+    function setTargetAssetCap(uint256 _targetAssetCap) external onlyOwner {
+        targetAssetCap = _targetAssetCap;
+        emit TargeAssetCapUpdated(_targetAssetCap);
+    }
+
     /// @notice pauses deposits (to prevent DOS due to GMX 15 min cooldown)
     function pauseDeposit() external onlyKeeper {
         _pause();
@@ -223,13 +230,15 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         // such that it would revert while converting to glp if it was only deposit in batch
         if (amount < minUsdcConversionAmount) revert InvalidInput(0x23);
 
-        // here, depositCap is in usdc terms
-        uint256 maxAvailable = depositCap -
-            vaultBatchingState.roundUsdcBalance -
-            _glpToUsdc(dnGmxJuniorVault.totalAssets()) -
-            _glpToUsdc(glpBatchingManager.roundAssetBalance());
+        // revert if batch capacity is already reached
+        if (vaultBatchingState.roundUsdcBalance + amount > depositCap) revert DepositCapBreached();
 
-        if (amount > maxAvailable) revert DepositCapBreached();
+        // here, depositCap is in usdc terms
+        uint256 totalAssetsDeposited = dnGmxJuniorVault.totalAssets() +
+            glpBatchingManager.roundAssetBalance() +
+            _usdcToGlp(vaultBatchingState.roundUsdcBalance);
+
+        if (totalAssetsDeposited + _usdcToGlp(amount) > targetAssetCap) revert TargetAssetCapBreached();
 
         // user gives approval to batching manager to spend usdc
         usdc.transferFrom(msg.sender, address(this), amount);
@@ -393,14 +402,14 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
                              INTERNAL LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    function _glpToUsdc(uint256 amount) private view returns (uint256) {
+    function _usdcToGlp(uint256 amount) private view returns (uint256) {
         // aum is in 1e30
-        uint256 aum = glpManager.getAum(true);
+        uint256 aum = glpManager.getAum(false);
         // totalSupply is in 1e18
         uint256 totalSupply = glp.totalSupply();
 
-        // 18 + 30 - 18 - 24 = 6 (usdc decimals)
-        return amount.mulDiv(aum, totalSupply * 1e24);
+        // 6 + 18 + 24 - 30 = 18 (glp decimals)
+        return amount.mulDiv(totalSupply * 1e24, aum);
     }
 
     function _stakeGlp(address token, uint256 amount, uint256 minUSDG) internal returns (uint256 glpStaked) {

@@ -51,8 +51,10 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
     // delta neutral junior tranche
     IDnGmxJuniorVault public dnGmxJuniorVault;
 
-    // combined targetCap from both batching managers to be achieved
+    // max allowed usdc to be deposited per round
     uint256 public depositCap;
+    // combined targetCap from both batching managers to be achieved
+    uint256 public targetAssetCap;
 
     uint256 public minGlpDepositThreshold;
 
@@ -159,6 +161,11 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
         emit DepositCapUpdated(_depositCap);
     }
 
+    function setTargetAssetCap(uint256 _targetAssetCap) external onlyOwner {
+        targetAssetCap = _targetAssetCap;
+        emit TargeAssetCapUpdated(_targetAssetCap);
+    }
+
     function setUsdcBatchingManager(IDnGmxBatchingManager _usdcBatchingManager) external onlyOwner {
         usdcBatchingManager = _usdcBatchingManager;
     }
@@ -186,15 +193,14 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
         // such that it would revert while converting to glp if it was only deposit in batch
         if (amount < minGlpDepositThreshold) revert InvalidInput(0x23);
 
-        uint256 filledInUsdc = _usdcToGlp(usdcBatchingManager.roundUsdcBalance());
+        if (vaultBatchingState.roundAssetBalance + amount > depositCap) revert DepositCapBreached();
 
         // here, depositCap is in glp terms
-        uint256 maxAvailable = depositCap -
-            filledInUsdc -
-            dnGmxJuniorVault.totalAssets() -
-            vaultBatchingState.roundAssetBalance;
+        uint256 totalAssetsDeposited = dnGmxJuniorVault.totalAssets() +
+            vaultBatchingState.roundAssetBalance +
+            _usdcToGlp(usdcBatchingManager.roundUsdcBalance());
 
-        if (amount > maxAvailable) revert DepositCapBreached();
+        if (totalAssetsDeposited + amount > targetAssetCap) revert TargetAssetCapBreached();
 
         // user gives approval to batching manager to spend glp
         sGlp.transferFrom(msg.sender, address(this), amount);
