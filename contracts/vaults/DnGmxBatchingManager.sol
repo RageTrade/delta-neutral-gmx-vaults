@@ -10,6 +10,7 @@ import { FullMath } from '@uniswap/v3-core/contracts/libraries/FullMath.sol';
 
 import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
 import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
+import { IDnGmxBatchingManagerGlp } from '../interfaces/IDnGmxBatchingManagerGlp.sol';
 import { IGlpManager } from '../interfaces/gmx/IGlpManager.sol';
 import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
 import { IVault } from '../interfaces/gmx/IVault.sol';
@@ -58,7 +59,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     uint256 public slippageThresholdGmxBps;
     // accumulator to keep track of sGlp direclty (as a means of compounding) send by junior vault
     uint256 public dnGmxJuniorVaultGlpBalance;
-
+    // combined targetCap from both batching managers to be achieved
     uint256 public depositCap;
 
     // !!! previously this variable was glpDepositPendingThreshold
@@ -89,8 +90,13 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     // gmx's reward router used for harvesting rewards
     IRewardRouterV2 private rewardsHarvestingRouter;
 
+    // glp
+    IERC20 private glp;
+    // glp batching manager
+    IDnGmxBatchingManagerGlp private glpBatchingManager;
+
     // these gaps are added to allow adding new variables without shifting down inheritance chain
-    uint256[48] private __gaps;
+    uint256[46] private __gaps;
 
     /// @dev ensures caller is junior vault
     modifier onlyDnGmxJuniorVault() {
@@ -160,6 +166,14 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
                              ADMIN SETTERS
     //////////////////////////////////////////////////////////////*/
 
+    function setGlp(IERC20 _glp) external onlyOwner {
+        glp = _glp;
+    }
+
+    function setGlpBatchingManager(IDnGmxBatchingManagerGlp _glpBatchingManager) external onlyOwner {
+        glpBatchingManager = _glpBatchingManager;
+    }
+
     /// @notice sets the keeper address (to pause & unpause deposits)
     /// @param _keeper address of keeper
     function setKeeper(address _keeper) external onlyOwner {
@@ -209,7 +223,13 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
         // such that it would revert while converting to glp if it was only deposit in batch
         if (amount < minUsdcConversionAmount) revert InvalidInput(0x23);
 
-        if (vaultBatchingState.roundUsdcBalance + amount > depositCap) revert DepositCapBreached();
+        // here, depositCap is in usdc terms
+        uint256 maxAvailable = depositCap -
+            vaultBatchingState.roundUsdcBalance -
+            _glpToUsdc(dnGmxJuniorVault.totalAssets()) -
+            _glpToUsdc(glpBatchingManager.roundAssetBalance());
+
+        if (amount > maxAvailable) revert DepositCapBreached();
 
         // user gives approval to batching manager to spend usdc
         usdc.transferFrom(msg.sender, address(this), amount);
@@ -372,6 +392,16 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
     /*//////////////////////////////////////////////////////////////
                              INTERNAL LOGIC
     //////////////////////////////////////////////////////////////*/
+
+    function _glpToUsdc(uint256 amount) private view returns (uint256) {
+        // aum is in 1e30
+        uint256 aum = glpManager.getAum(true);
+        // totalSupply is in 1e18
+        uint256 totalSupply = glp.totalSupply();
+
+        // 18 + 30 - 18 - 24 = 6 (usdc decimals)
+        return amount.mulDiv(aum, totalSupply * 1e24);
+    }
 
     function _stakeGlp(address token, uint256 amount, uint256 minUSDG) internal returns (uint256 glpStaked) {
         // swap token to obtain sGLP

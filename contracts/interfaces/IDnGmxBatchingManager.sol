@@ -51,6 +51,8 @@ interface IDnGmxBatchingManager {
 
     function claim(address receiver, uint256 amount) external;
 
+    function roundUsdcBalance() external view returns (uint256);
+
     function usdcBalance(address account) external view returns (uint256 balance);
 
     function dnGmxJuniorVaultGlpBalance() external view returns (uint256 balance);
