@@ -19,8 +19,8 @@ import { IBatchingManagerBypass } from '../interfaces/IBatchingManagerBypass.sol
 import { SafeCast } from '../libraries/SafeCast.sol';
 
 /**
- * @title Batching Manager to avoid glp transfer cooldowm
- * @notice batches the incoming deposit token depoists after converting them to glp
+ * @title Batching Manager to avoid glp transfer cooldown
+ * @notice batches the incoming deposit token deposits after converting them to glp
  * @notice It is upgradable contract (via TransparentUpgradeableProxy proxy owned by ProxyAdmin)
  * @author RageTrade
  **/
@@ -33,13 +33,13 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
     struct VaultBatchingState {
         // round indentifier
         uint256 currentRound;
-        // junior vault shares minted in current roudn
+        // junior vault shares minted in current round
         uint256 roundSharesMinted;
         // amount of sGlp converted to shares so far in current round
         uint256 roundGlpDeposited;
         // amount of glp pending to be converted to shares in current round
         uint256 roundAssetBalance;
-        // stores junior vault shares accumuated for user
+        // stores junior vault shares accumulated for user
         mapping(address user => UserDeposit) userDeposits;
         // stores total glp received in a given round
         mapping(uint256 roundId => RoundDeposit) roundDeposits;
