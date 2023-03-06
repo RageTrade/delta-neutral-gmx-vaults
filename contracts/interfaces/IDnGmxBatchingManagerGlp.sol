@@ -49,6 +49,8 @@ interface IDnGmxBatchingManagerGlp {
 
     function claim(address receiver, uint256 amount) external;
 
+    function roundAssetBalance() external view returns (uint256);
+
     function assetBalance(address account) external view returns (uint256 balance);
 
     function unclaimedShares(address account) external view returns (uint256 shares);
