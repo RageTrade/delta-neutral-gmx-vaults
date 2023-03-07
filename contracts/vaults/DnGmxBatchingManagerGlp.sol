@@ -198,9 +198,11 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
         // here, depositCap is in glp terms
         uint256 totalAssetsDeposited = dnGmxJuniorVault.totalAssets() +
             vaultBatchingState.roundAssetBalance +
-            _usdcToGlp(usdcBatchingManager.roundUsdcBalance());
+            _usdcToGlp(usdcBatchingManager.roundUsdcBalance()) -
+            usdcBatchingManager.roundGlpStaked();
 
-        if (totalAssetsDeposited + amount > targetAssetCap) revert TargetAssetCapBreached();
+        if (totalAssetsDeposited + amount > targetAssetCap)
+            revert TargetAssetCapBreached(totalAssetsDeposited, amount, targetAssetCap);
 
         // user gives approval to batching manager to spend glp
         sGlp.transferFrom(msg.sender, address(this), amount);

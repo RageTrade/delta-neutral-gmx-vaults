@@ -14,7 +14,7 @@ interface IDnGmxBatchingManagerGlp {
     error InsufficientShares(uint256 balance);
 
     error DepositCapBreached();
-    error TargetAssetCapBreached();
+    error TargetAssetCapBreached(uint256 totalAssetsDeposited, uint256 depositAmount, uint256 targetAssetCap);
 
     event DepositToken(
         uint256 indexed round,

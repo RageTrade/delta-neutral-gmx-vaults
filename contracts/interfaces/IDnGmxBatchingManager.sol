@@ -14,7 +14,7 @@ interface IDnGmxBatchingManager {
     error InsufficientShares(uint256 balance);
 
     error DepositCapBreached();
-    error TargetAssetCapBreached();
+    error TargetAssetCapBreached(uint256 totalAssetsDeposited, uint256 depositAmount, uint256 targetAssetCap);
 
     event DepositToken(
         uint256 indexed round,
@@ -54,6 +54,8 @@ interface IDnGmxBatchingManager {
     function claim(address receiver, uint256 amount) external;
 
     function roundUsdcBalance() external view returns (uint256);
+
+    function roundGlpStaked() external view returns (uint256);
 
     function usdcBalance(address account) external view returns (uint256 balance);
 
