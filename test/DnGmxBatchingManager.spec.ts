@@ -1,9 +1,10 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
-import { parseEther, parseUnits } from 'ethers/lib/utils';
+import { formatUnits, parseEther, parseUnits } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import {
   DnGmxBatchingManager,
+  DnGmxBatchingManagerGlp,
   DnGmxJuniorVaultMock,
   DnGmxSeniorVault,
   ERC20Upgradeable,
@@ -12,11 +13,14 @@ import {
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 import { generateErc20Balance } from './utils/generator';
 import { BigNumber } from 'ethers';
+import { IGlpManager } from '@ragetrade/sdk';
 
 describe('Dn Gmx Batching Manager', () => {
   let dnGmxJuniorVault: DnGmxJuniorVaultMock;
   let usdcBatchingManager: DnGmxBatchingManager;
+  let glpBatchingManager: DnGmxBatchingManagerGlp;
   let mintBurnRouter: IRewardRouterV2;
+  let glpManager: IGlpManager;
   let users: SignerWithAddress[];
   let sGlp: ERC20Upgradeable;
   let usdc: ERC20Upgradeable;
@@ -26,9 +30,44 @@ describe('Dn Gmx Batching Manager', () => {
 
   let MAX_CONVERSION_BPS = 10_000;
 
+  async function usdcToGlp(amount: BigNumber) {
+    // aum is in 1e30
+    const aum = await glpManager.getAum(false);
+    // totalSupply is in 1e18
+    const totalSupply = await fsGlp.totalSupply();
+
+    // 6 + 18 + 24 - 30 = 18 (glp decimals)
+    return amount
+      .mul(totalSupply)
+      .mul(10n ** 24n)
+      .div(aum);
+  }
+
+  async function glpToUsdc(amount: BigNumber) {
+    // aum is in 1e30
+    const aum = await glpManager.getAum(false);
+    // totalSupply is in 1e18
+    const totalSupply = await fsGlp.totalSupply();
+
+    return amount
+      .mul(aum)
+      .div(totalSupply)
+      .div(10n ** 24n);
+  }
+
   beforeEach(async () => {
-    ({ dnGmxJuniorVault, dnGmxSeniorVault, usdcBatchingManager, users, fsGlp, usdc, sGlp, mintBurnRouter } =
-      await dnGmxJuniorVaultFixture());
+    ({
+      dnGmxJuniorVault,
+      dnGmxSeniorVault,
+      glpManager,
+      usdcBatchingManager,
+      glpBatchingManager,
+      users,
+      fsGlp,
+      usdc,
+      sGlp,
+      mintBurnRouter,
+    } = await dnGmxJuniorVaultFixture());
   });
 
   describe('Deposit', () => {
@@ -47,6 +86,156 @@ describe('Dn Gmx Batching Manager', () => {
       await expect(usdcBatchingManager.connect(users[1]).depositUsdc(depositAmount, ethers.constants.AddressZero))
         .to.be.revertedWithCustomError(usdcBatchingManager, 'InvalidInput')
         .withArgs(34);
+    });
+
+    it('Fails - target asset cap breached due to junior vault assets being high', async () => {
+      const depositAmount = await glpToUsdc(parseUnits('100', 18));
+      await usdc.connect(users[1]).approve(usdcBatchingManager.address, ethers.constants.MaxUint256);
+
+      await usdcBatchingManager.setTargetAssetCap(parseEther('100'));
+
+      await sGlp.connect(users[1]).transfer(dnGmxJuniorVault.address, usdcToGlp(BigNumber.from(1)));
+
+      let cap = await usdcBatchingManager.targetAssetCap();
+      let ta = await dnGmxJuniorVault.totalAssets();
+      let rab = await glpBatchingManager.roundAssetBalance();
+      let rub = await usdcBatchingManager.roundUsdcBalance();
+
+      expect(cap).to.eq(parseEther('100'));
+      expect(ta).to.eq(await usdcToGlp(BigNumber.from(1)));
+      expect(rab).to.eq(0);
+      expect(rub).to.eq(0);
+
+      await expect(
+        usdcBatchingManager.connect(users[1]).depositUsdc(depositAmount, users[1].address),
+      ).to.be.revertedWithCustomError(usdcBatchingManager, 'TargetAssetCapBreached');
+      // should go through even if amount is decreased by 1 unit
+      await expect(usdcBatchingManager.connect(users[1]).depositUsdc(depositAmount.sub(1), users[1].address)).to.be.not
+        .reverted;
+
+      cap = await usdcBatchingManager.targetAssetCap();
+      ta = await dnGmxJuniorVault.totalAssets();
+      rab = await glpBatchingManager.roundAssetBalance();
+      rub = await usdcBatchingManager.roundUsdcBalance();
+
+      expect(cap).to.eq(parseEther('100'));
+      expect(ta).to.eq(await usdcToGlp(BigNumber.from(1)));
+      expect(rab).to.eq(0);
+      expect(rub).to.eq(depositAmount.sub(1));
+    });
+
+    it('Fails - target asset cap breached due to current round usdc balance being high', async () => {
+      const depositAmount1 = await glpToUsdc(parseUnits('50', 18));
+      const depositAmount2 = await glpToUsdc(parseUnits('50', 18));
+
+      await usdc.connect(users[1]).approve(usdcBatchingManager.address, ethers.constants.MaxUint256);
+
+      await usdcBatchingManager.setTargetAssetCap(parseEther('100'));
+
+      await usdcBatchingManager.connect(users[1]).depositUsdc(depositAmount1, users[1].address);
+
+      let cap = await usdcBatchingManager.targetAssetCap();
+      let ta = await dnGmxJuniorVault.totalAssets();
+      let rab = await glpBatchingManager.roundAssetBalance();
+      let rub = await usdcBatchingManager.roundUsdcBalance();
+
+      expect(cap).to.eq(parseEther('100'));
+      expect(ta).to.eq(0);
+      expect(rab).to.eq(0);
+      expect(rub).to.eq(depositAmount1);
+
+      await expect(
+        usdcBatchingManager.connect(users[1]).depositUsdc(depositAmount2.add(2), users[1].address),
+      ).to.be.revertedWithCustomError(usdcBatchingManager, 'TargetAssetCapBreached');
+      await expect(usdcBatchingManager.connect(users[1]).depositUsdc(depositAmount2, users[1].address)).to.be.not
+        .reverted;
+
+      cap = await usdcBatchingManager.targetAssetCap();
+      ta = await dnGmxJuniorVault.totalAssets();
+      rab = await glpBatchingManager.roundAssetBalance();
+      rub = await usdcBatchingManager.roundUsdcBalance();
+
+      expect(cap).to.eq(parseEther('100'));
+      expect(ta).to.eq(0);
+      expect(rab).to.eq(0);
+      expect(rub).to.eq(depositAmount1.add(depositAmount2));
+    });
+    it('Fails - target asset cap breached due to glp batching maanger current round being high', async () => {
+      const depositAmount1 = parseUnits('50', 18);
+      const depositAmount2 = await glpToUsdc(parseUnits('50', 18));
+
+      await usdc.connect(users[1]).approve(usdcBatchingManager.address, ethers.constants.MaxUint256);
+      await sGlp.connect(users[1]).approve(glpBatchingManager.address, ethers.constants.MaxUint256);
+
+      await usdcBatchingManager.setTargetAssetCap(parseEther('100'));
+
+      await glpBatchingManager.connect(users[1]).deposit(depositAmount1, users[1].address);
+
+      let cap = await usdcBatchingManager.targetAssetCap();
+      let ta = await dnGmxJuniorVault.totalAssets();
+      let rab = await glpBatchingManager.roundAssetBalance();
+      let rub = await usdcBatchingManager.roundUsdcBalance();
+
+      expect(cap).to.eq(parseEther('100'));
+      expect(ta).to.eq(0);
+      expect(rab).to.eq(depositAmount1);
+      expect(rub).to.eq(0);
+
+      await expect(
+        usdcBatchingManager.connect(users[1]).depositUsdc(depositAmount2.add(1), users[1].address),
+      ).to.be.revertedWithCustomError(usdcBatchingManager, 'TargetAssetCapBreached');
+      await expect(usdcBatchingManager.connect(users[1]).depositUsdc(depositAmount2, users[1].address)).to.be.not
+        .reverted;
+
+      cap = await usdcBatchingManager.targetAssetCap();
+      ta = await dnGmxJuniorVault.totalAssets();
+      rab = await glpBatchingManager.roundAssetBalance();
+      rub = await usdcBatchingManager.roundUsdcBalance();
+
+      expect(cap).to.eq(parseEther('100'));
+      expect(ta).to.eq(0);
+      expect(rab).to.eq(depositAmount1);
+      expect(rub).to.eq(depositAmount2);
+    });
+    it('Fails - target asset cap breached due to combination of junior vault asset + glp batching manager', async () => {
+      const depositAmount1 = parseUnits('49', 18);
+      const depositAmount2 = await glpToUsdc(parseUnits('49', 18));
+      const depositAmount3 = parseUnits('2', 18);
+
+      await usdc.connect(users[1]).approve(usdcBatchingManager.address, ethers.constants.MaxUint256);
+      await sGlp.connect(users[1]).approve(glpBatchingManager.address, ethers.constants.MaxUint256);
+
+      await sGlp.connect(users[1]).transfer(dnGmxJuniorVault.address, depositAmount3);
+
+      await usdcBatchingManager.setTargetAssetCap(parseEther('100'));
+
+      await glpBatchingManager.connect(users[1]).deposit(depositAmount1, users[1].address);
+
+      let cap = await usdcBatchingManager.targetAssetCap();
+      let ta = await dnGmxJuniorVault.totalAssets();
+      let rab = await glpBatchingManager.roundAssetBalance();
+      let rub = await usdcBatchingManager.roundUsdcBalance();
+
+      expect(cap).to.eq(parseEther('100'));
+      expect(ta).to.eq(depositAmount3);
+      expect(rab).to.eq(depositAmount1);
+      expect(rub).to.eq(0);
+
+      await expect(
+        usdcBatchingManager.connect(users[1]).depositUsdc(depositAmount2.add(1), users[1].address),
+      ).to.be.revertedWithCustomError(usdcBatchingManager, 'TargetAssetCapBreached');
+      await expect(usdcBatchingManager.connect(users[1]).depositUsdc(depositAmount2, users[1].address)).to.be.not
+        .reverted;
+
+      cap = await usdcBatchingManager.targetAssetCap();
+      ta = await dnGmxJuniorVault.totalAssets();
+      rab = await glpBatchingManager.roundAssetBalance();
+      rub = await usdcBatchingManager.roundUsdcBalance();
+
+      expect(cap).to.eq(parseEther('100'));
+      expect(ta).to.eq(depositAmount3);
+      expect(rab).to.eq(depositAmount1);
+      expect(rub).to.eq(depositAmount2);
     });
 
     it('Single User Deposit', async () => {
