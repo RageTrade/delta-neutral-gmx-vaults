@@ -238,7 +238,8 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
             glpBatchingManager.roundAssetBalance() +
             _usdcToGlp(vaultBatchingState.roundUsdcBalance);
 
-        if (totalAssetsDeposited + _usdcToGlp(amount) > targetAssetCap) revert TargetAssetCapBreached();
+        if (totalAssetsDeposited + _usdcToGlp(amount) > targetAssetCap)
+            revert TargetAssetCapBreached(totalAssetsDeposited, _usdcToGlp(amount), targetAssetCap);
 
         // user gives approval to batching manager to spend usdc
         usdc.transferFrom(msg.sender, address(this), amount);
