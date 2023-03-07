@@ -131,6 +131,8 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     admin.address,
   );
 
+  await usdcBatchingManager.setGlp(GMX_ECOSYSTEM_ADDRESSES.GLP);
+
   await usdcBatchingManager.setDepositCap(parseUnits('1000000000', 18));
 
   await usdcBatchingManager.grantAllowances();
@@ -149,8 +151,14 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
   await glpBatchingManager.grantAllowances();
   await glpBatchingManager.setThresholds(parseUnits('10', 18));
 
+  await usdcBatchingManager.setGlpBatchingManager(glpBatchingManager.address);
+  await glpBatchingManager.setUsdcBatchingManager(usdcBatchingManager.address);
+
   await dnGmxJuniorVault.setAdminParams(admin.address, dnGmxSeniorVault.address, ethers.constants.MaxUint256, 0, 500);
   await dnGmxJuniorVault.setBatchingManager(glpBatchingManager.address);
+
+  await usdcBatchingManager.setTargetAssetCap((await dnGmxJuniorVault.getAdminParams()).depositCap_);
+  await glpBatchingManager.setTargetAssetCap((await dnGmxJuniorVault.getAdminParams()).depositCap_);
 
   await dnGmxJuniorVault.setThresholds(
     100, //_slippageThresholdSwapBtcBps
