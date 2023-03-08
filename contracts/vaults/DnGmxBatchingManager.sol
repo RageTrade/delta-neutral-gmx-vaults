@@ -204,7 +204,7 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
 
     function setTargetAssetCap(uint256 _targetAssetCap) external onlyOwner {
         targetAssetCap = _targetAssetCap;
-        emit TargeAssetCapUpdated(_targetAssetCap);
+        emit TargetAssetCapUpdated(_targetAssetCap);
     }
 
     /// @notice pauses deposits (to prevent DOS due to GMX 15 min cooldown)
@@ -238,8 +238,10 @@ contract DnGmxBatchingManager is IDnGmxBatchingManager, OwnableUpgradeable, Paus
             glpBatchingManager.roundAssetBalance() +
             _usdcToGlp(vaultBatchingState.roundUsdcBalance);
 
-        if (totalAssetsDeposited + _usdcToGlp(amount) > targetAssetCap)
-            revert TargetAssetCapBreached(totalAssetsDeposited, _usdcToGlp(amount), targetAssetCap);
+        uint256 glpConvertedAmount = _usdcToGlp(amount);
+
+        if (totalAssetsDeposited + glpConvertedAmount > targetAssetCap)
+            revert TargetAssetCapBreached(totalAssetsDeposited, glpConvertedAmount, targetAssetCap);
 
         // user gives approval to batching manager to spend usdc
         usdc.transferFrom(msg.sender, address(this), amount);

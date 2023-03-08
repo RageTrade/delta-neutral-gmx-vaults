@@ -32,7 +32,7 @@ interface IDnGmxBatchingManagerGlp {
 
     event ClaimedAndRedeemed(address indexed claimer, address indexed receiver, uint256 shares, uint256 assetsReceived);
     event DepositCapUpdated(uint256 newDepositCap);
-    event TargeAssetCapUpdated(uint256 newTargeAssetCap);
+    event TargetAssetCapUpdated(uint256 newTargeAssetCap);
     event PartialBatchDeposit(uint256 indexed round, uint256 partialGlpAmount, uint256 partialShareAmount);
 
     struct UserDeposit {
