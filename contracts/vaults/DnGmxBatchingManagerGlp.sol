@@ -163,7 +163,7 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
 
     function setTargetAssetCap(uint256 _targetAssetCap) external onlyOwner {
         targetAssetCap = _targetAssetCap;
-        emit TargeAssetCapUpdated(_targetAssetCap);
+        emit TargetAssetCapUpdated(_targetAssetCap);
     }
 
     function setUsdcBatchingManager(IDnGmxBatchingManager _usdcBatchingManager) external onlyOwner {
