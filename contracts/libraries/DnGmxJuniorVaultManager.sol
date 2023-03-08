@@ -63,6 +63,10 @@ library DnGmxJuniorVaultManager {
         uint256 indexed eventType,
         uint256 btcBorrows,
         uint256 ethBorrows,
+        uint256 btcPoolAmount,
+        uint256 ethPoolAmount,
+        int256 btcTraderOIHedge,
+        int256 ethTraderOIHedge,
         uint256 glpPrice,
         uint256 glpBalance,
         uint256 totalAssets,
@@ -1895,13 +1899,20 @@ library DnGmxJuniorVaultManager {
     function emitVaultState(State storage state, uint256 eventType) external {
         (uint256 currentBtc, uint256 currentEth) = _getCurrentBorrows(state);
 
+        uint256 ts = state.glp.totalSupply();
+        uint256 bal = state.fsGlp.balanceOf(address(this));
+
         emit VaultState(
             eventType,
             currentBtc,
             currentEth,
+            (state.btcPoolAmount * bal) / ts,
+            (state.ethPoolAmount * bal) / ts,
+            (state.btcTraderOIHedge * bal.toInt256()) / ts.toInt256(),
+            (state.ethTraderOIHedge * bal.toInt256()) / ts.toInt256(),
             _getGlpPriceInUsdc(state, false),
+            bal,
             _totalAssets(state, false),
-            state.fsGlp.balanceOf(address(this)),
             state.dnUsdcDeposited,
             state.unhedgedGlpInUsdc,
             state.aUsdc.balanceOf(address(this)),
