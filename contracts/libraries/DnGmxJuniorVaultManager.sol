@@ -218,6 +218,8 @@ library DnGmxJuniorVaultManager {
 
         uint128 rebalanceProfitUsdcAmountThreshold;
 
+        // switch to select route
+        bool useDirectConversion;
         // gaps for extending struct (if required during upgrade)
         uint256[46] __gaps;
     }
@@ -757,23 +759,53 @@ library DnGmxJuniorVaultManager {
         if (usdcAmountDesired < state.usdcConversionThreshold) return 0;
         address _usdc = address(state.usdc);
 
-        // calculate the minimum required amount basis the set slippage param
-        // uses current usdc max price from GMX and adds slippage on top
-        uint256 minUsdcOut = usdcAmountDesired.mulDivDown((MAX_BPS - state.slippageThresholdGmxBps), MAX_BPS);
+        if (state.useDirectConversion) {
+            uint256 minUsdcOut = usdcAmountDesired.mulDivDown((MAX_BPS - state.slippageThresholdGmxBps), MAX_BPS);
 
-        // calculate the amount of glp to be converted to get the desired usdc amount
-        uint256 glpAmountInput = usdcAmountDesired.mulDivDown(PRICE_PRECISION, _getGlpPriceInUsdc(state, false));
+            // calculate the minimum required amount basis the set slippage param
+            // uses current usdc max price from GMX and adds slippage on top
 
-        usdcAmountOut = state.mintBurnRewardRouter.unstakeAndRedeemGlp(
-            _usdc,
-            glpAmountInput,
-            minUsdcOut,
-            address(this)
-        );
+            // calculate the amount of glp to be converted to get the desired usdc amount
+            uint256 glpAmountInput = usdcAmountDesired.mulDivDown(PRICE_PRECISION, _getGlpPriceInUsdc(state, false));
 
-        emit GlpSwapped(glpAmountInput, usdcAmountOut, true);
+            usdcAmountOut = state.mintBurnRewardRouter.unstakeAndRedeemGlp(
+                _usdc,
+                glpAmountInput,
+                minUsdcOut,
+                address(this)
+            );
 
-        _executeSupply(state, _usdc, usdcAmountOut);
+            emit GlpSwapped(glpAmountInput, usdcAmountOut, true);
+
+            _executeSupply(state, _usdc, usdcAmountOut);
+        } else {
+            // TODO: check decimals
+            uint256 glpPrice = _getGlpPrice(state, false);
+            uint256 ethPrice = _getTokenPrice(state, state.weth);
+
+            uint256 minEthOut = usdcAmountDesired.mulDivDown(PRICE_PRECISION, ethPrice);
+
+            // replace with glpPrice in eth
+            uint256 glpAmountInput = minEthOut.mulDivDown(PRICE_PRECISION, _getGlpPriceInUsdc(state, false));
+
+            uint256 ethAmountOut = state.mintBurnRewardRouter.unstakeAndRedeemGlp(
+                address(state.weth),
+                glpAmountInput,
+                minEthOut,
+                address(this)
+            );
+
+            uint256 minUsdcAmount = _getTokenPriceInUsdc(state, state.weth).mulDivDown(
+                ethAmountOut * (MAX_BPS - state.slippageThresholdSwapEthBps),
+                MAX_BPS * PRICE_PRECISION
+            );
+
+            (usdcAmountOut, ) = _swapToken(state, address(state.weth), ethAmountOut, minUsdcAmount);
+
+            emit GlpSwapped(glpAmountInput, usdcAmountOut, true);
+
+            _executeSupply(state, _usdc, usdcAmountOut);
+        }
     }
 
     ///@notice sells usdc for LP tokens and then stakes LP tokens
