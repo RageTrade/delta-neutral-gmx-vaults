@@ -57,6 +57,8 @@ describe('Improve slippage', () => {
         st.partialEthHedgeUsdcAmountThreshold,
       );
 
+    await dnGmxJuniorVault.connect(owner).setDirectConversion(false);
+
     const keeper = await impersonate(ap.keeper);
 
     const signers = await hre.ethers.getSigners();
