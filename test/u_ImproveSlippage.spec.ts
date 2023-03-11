@@ -41,8 +41,8 @@ describe('Improve slippage', () => {
       .connect(owner)
       .setThresholds(
         st.slippageThresholdSwapBtcBps,
-        50,
-        50,
+        35,
+        45,
         st.usdcConversionThreshold,
         st.wethConversionThreshold,
         st.hedgeUsdcAmountThreshold,
@@ -53,11 +53,11 @@ describe('Improve slippage', () => {
     const keeper = await impersonate(ap.keeper);
 
     const signers = await hre.ethers.getSigners();
-    await arb(signers[0], weth.address, usdc.address, 500, true);
 
-    await dnGmxJuniorVault.connect(keeper).rebalanceProfit();
+    await dnGmxJuniorVault.connect(owner).rebalanceProfit();
 
     console.log('rebalance profit done');
+    await arb(signers[0], weth.address, usdc.address, 500, true);
 
     const tx = await dnGmxJuniorVault.connect(keeper).rebalance();
     const rc = await tx.wait();

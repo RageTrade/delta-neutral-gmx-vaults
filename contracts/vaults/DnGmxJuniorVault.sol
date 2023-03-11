@@ -379,6 +379,14 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         IERC20Metadata(state.rewardRouter.gmx()).safeTransfer(state.feeRecipient, gmxClaimed);
     }
 
+    function rebalanceProfit() external onlyOwner {
+        (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
+        uint256 totalCurrentBorrowValue = state.getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
+
+        // rebalance profit
+        state.rebalanceProfit(totalCurrentBorrowValue);
+    }
+
     function harvestFees() external {
         state.harvestFees();
     }
@@ -436,14 +444,6 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         (currentBtc, currentEth) = state.getCurrentBorrows();
 
         _emitVaultState(1);
-    }
-
-    function rebalanceProfit() external onlyKeeper {
-        (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
-        uint256 totalCurrentBorrowValue = state.getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
-
-        // rebalance profit
-        state.rebalanceProfit(totalCurrentBorrowValue);
     }
 
     /* ##################################################################
