@@ -779,14 +779,12 @@ library DnGmxJuniorVaultManager {
 
             _executeSupply(state, _usdc, usdcAmountOut);
         } else {
-            // TODO: check decimals
-            uint256 glpPrice = _getGlpPrice(state, false);
-            uint256 ethPrice = _getTokenPrice(state, state.weth);
+            uint256 ethPriceInUsdc = _getTokenPriceInUsdc(state, state.weth);
 
-            uint256 minEthOut = usdcAmountDesired.mulDivDown(PRICE_PRECISION, ethPrice);
+            uint256 minEthOut = (usdcAmountDesired.mulDivDown((MAX_BPS - state.slippageThresholdGmxBps), MAX_BPS))
+                .mulDivDown(PRICE_PRECISION, ethPriceInUsdc);
 
-            // replace with glpPrice in eth
-            uint256 glpAmountInput = minEthOut.mulDivDown(PRICE_PRECISION, _getGlpPriceInUsdc(state, false));
+            uint256 glpAmountInput = usdcAmountDesired.mulDivDown(PRICE_PRECISION, _getGlpPriceInUsdc(state, false));
 
             uint256 ethAmountOut = state.mintBurnRewardRouter.unstakeAndRedeemGlp(
                 address(state.weth),
@@ -795,7 +793,7 @@ library DnGmxJuniorVaultManager {
                 address(this)
             );
 
-            uint256 minUsdcAmount = _getTokenPriceInUsdc(state, state.weth).mulDivDown(
+            uint256 minUsdcAmount = ethPriceInUsdc.mulDivDown(
                 ethAmountOut * (MAX_BPS - state.slippageThresholdSwapEthBps),
                 MAX_BPS * PRICE_PRECISION
             );
