@@ -707,7 +707,7 @@ describe('Rebalance & its utils', () => {
     // console.log('aave position', await lendingPool.getUserAccountData(dnGmxJuniorVault.address))
     // console.log('glp balance', await fsGlp.balanceOf(dnGmxJuniorVault.address));
 
-    await dnGmxJuniorVault.rebalanceProfit(borrowValue);
+    await dnGmxJuniorVault['rebalanceProfit(uint256)'](borrowValue);
 
     // console.log('aave position', await lendingPool.getUserAccountData(dnGmxJuniorVault.address))
     // console.log('glp balance', await fsGlp.balanceOf(dnGmxJuniorVault.address));
@@ -785,7 +785,7 @@ describe('Rebalance & its utils', () => {
     // console.log('aave position', await lendingPool.getUserAccountData(dnGmxJuniorVault.address))
     // console.log('glp balance', await fsGlp.balanceOf(dnGmxJuniorVault.address));
 
-    await dnGmxJuniorVault.rebalanceProfit(borrowValue);
+    await dnGmxJuniorVault['rebalanceProfit(uint256)'](borrowValue);
 
     const [currentBtc__, currentEth__] = await dnGmxJuniorVault.getCurrentBorrows();
     const borrowValueAfter = await dnGmxJuniorVault.getBorrowValue(currentBtc__, currentEth__);
