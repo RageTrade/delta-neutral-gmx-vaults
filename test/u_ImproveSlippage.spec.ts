@@ -17,7 +17,14 @@ describe('Improve slippage', () => {
     const { weth, usdc } = tokens.getContractsSync('arbmain', hre.ethers.provider);
 
     // deploy implementation
-    const dnGmxJuniorVaultManager = await hre.ethers.deployContract('DnGmxJuniorVaultManager');
+    const quoterLib = await hre.ethers.deployContract('QuoterLib');
+
+    const dnGmxJuniorVaultManager = await hre.ethers.deployContract('DnGmxJuniorVaultManager', {
+      libraries: {
+        QuoterLib: quoterLib.address,
+      },
+    });
+
     const dnGmxJuniorVaultNewLogic = await hre.ethers.deployContract('DnGmxJuniorVault', {
       libraries: {
         DnGmxJuniorVaultManager: dnGmxJuniorVaultManager.address,

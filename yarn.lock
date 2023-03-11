@@ -811,10 +811,10 @@
     deep-eql "^4.0.1"
     ordinal "^1.0.3"
 
-"@nomicfoundation/hardhat-network-helpers@^1.0.6":
-  version "1.0.7"
-  resolved "https://registry.yarnpkg.com/@nomicfoundation/hardhat-network-helpers/-/hardhat-network-helpers-1.0.7.tgz#9103be2b359899a8b7996f54df12a1b7977367e3"
-  integrity sha512-X+3mNvn8B7BY5hpIaLO+TrfzWq12bpux+ajGGdmdcfC78NXmYmOZkAtiz1QZx1YIZGMS1LaXzPXyBExxKFpCaw==
+"@nomicfoundation/hardhat-network-helpers@^1.0.8":
+  version "1.0.8"
+  resolved "https://registry.yarnpkg.com/@nomicfoundation/hardhat-network-helpers/-/hardhat-network-helpers-1.0.8.tgz#e4fe1be93e8a65508c46d73c41fa26c7e9f84931"
+  integrity sha512-MNqQbzUJZnCMIYvlniC3U+kcavz/PhhQSsY90tbEtUyMj/IQqsLwIRZa4ctjABh3Bz0KCh9OXUZ7Yk/d9hr45Q==
   dependencies:
     ethereumjs-util "^7.1.4"
 
@@ -951,10 +951,10 @@
     "@uniswap/v3-core-0.8-support" "https://github.com/uniswap/v3-core.git#d55e297b938e5b56fd1cf9fe668f5bd385be85b5"
     "@uniswap/v3-periphery" "^1.4.0"
 
-"@ragetrade/sdk@^1.0.0-alpha.16":
-  version "1.0.6"
-  resolved "https://registry.yarnpkg.com/@ragetrade/sdk/-/sdk-1.0.6.tgz#a7ab5eea7ebb53a5cdc9c80a79b9700faf31911a"
-  integrity sha512-cO24op6nEVXH3MXgwMUux+c8s16NXtOVi7cvyhTJS82ylhwO0oZb/Sy01c2Jxn5Q0HNRvEgy5CHQyzuVKAbXOQ==
+"@ragetrade/sdk@^1.0.0-parallel-arbmain.12":
+  version "1.0.0-parallel-arbmain.12"
+  resolved "https://registry.yarnpkg.com/@ragetrade/sdk/-/sdk-1.0.0-parallel-arbmain.12.tgz#b1201ea0e0e46a9c0d6409df75c8ca572da4d456"
+  integrity sha512-/3e16a5chdwnofRRol8gYLbIcAZ55G+TS9zNyHm0ESCiK8bbNeqDSOdZRMAbtoOXyfTsNy0g1Lx0FxYEAYRX3w==
   dependencies:
     "@uniswap/v3-sdk" "^3.8.2"
     ethers-repl "^1.0.3"

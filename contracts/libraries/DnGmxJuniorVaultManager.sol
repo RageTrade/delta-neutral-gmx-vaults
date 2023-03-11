@@ -206,6 +206,8 @@ library DnGmxJuniorVaultManager {
         IDnGmxSeniorVault dnGmxSeniorVault;
         // batching manager address !!! Deprecated !!!
         IDnGmxBatchingManager batchingManager;
+        // switch to select route
+        bool useDirectConversion;
 
         // !!! STORAGE EXTENSIONS !!! (reduced gaps by no. of slots added here)
         uint128 btcPoolAmount;
@@ -218,8 +220,6 @@ library DnGmxJuniorVaultManager {
 
         uint128 rebalanceProfitUsdcAmountThreshold;
 
-        // switch to select route
-        bool useDirectConversion;
         // gaps for extending struct (if required during upgrade)
         uint256[46] __gaps;
     }
