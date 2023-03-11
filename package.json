@@ -4,7 +4,7 @@
   "repository": "https://github.com/RageTrade/delta-neutral-gmx-vaults.git",
   "license": "MIT",
   "scripts": {
-    "clean": "hardhat clean",
+    "clean": "rm -rf artifacts && hardhat clean",
     "compile": "hardhat compile",
     "coverage": "COVERAGE_CHECK=true hardhat coverage",
     "deploy": "TS_NODE_SKIP_IGNORE=true hardhat deploy",
