@@ -49,6 +49,11 @@ describe('Improve slippage', () => {
       );
 
     const keeper = await impersonate(ap.keeper);
+
+    await dnGmxJuniorVault.connect(keeper).rebalanceProfit();
+
+    console.log('rebalance profit done');
+
     const tx = await dnGmxJuniorVault.connect(keeper).rebalance();
     const rc = await tx.wait();
     const parsedLogs = rc.logs

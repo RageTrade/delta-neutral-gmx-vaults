@@ -438,6 +438,14 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         _emitVaultState(1);
     }
 
+    function rebalanceProfit() external onlyKeeper {
+        (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
+        uint256 totalCurrentBorrowValue = state.getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
+
+        // rebalance profit
+        state.rebalanceProfit(totalCurrentBorrowValue);
+    }
+
     /* ##################################################################
                                 USER FUNCTIONS
     ################################################################## */
