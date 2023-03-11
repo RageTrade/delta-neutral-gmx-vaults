@@ -28,7 +28,27 @@ describe('Improve slippage', () => {
 
     // rebalance
     const dnGmxJuniorVault = DnGmxJuniorVault__factory.connect(_dnGmxJuniorVault.address, hre.ethers.provider);
-    const keeper = await impersonate((await dnGmxJuniorVault.getAdminParams()).keeper);
+    await dnGmxJuniorVault.connect(owner).setDirectConversion(false);
+
+    const ap = await dnGmxJuniorVault.getAdminParams();
+    const st = await dnGmxJuniorVault.getThresholds();
+
+    console.log('st', st);
+
+    await dnGmxJuniorVault
+      .connect(owner)
+      .setThresholds(
+        st.slippageThresholdSwapBtcBps,
+        50,
+        50,
+        st.usdcConversionThreshold,
+        st.wethConversionThreshold,
+        st.hedgeUsdcAmountThreshold,
+        st.partialBtcHedgeUsdcAmountThreshold,
+        st.partialEthHedgeUsdcAmountThreshold,
+      );
+
+    const keeper = await impersonate(ap.keeper);
     const tx = await dnGmxJuniorVault.connect(keeper).rebalance();
     const rc = await tx.wait();
     const parsedLogs = rc.logs
