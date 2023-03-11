@@ -121,7 +121,7 @@
       "type": "t_array(t_uint256)49_storage"
     },
     {
-      "astId": 17407,
+      "astId": 17534,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "depositCap",
       "offset": 0,
@@ -129,7 +129,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 17409,
+      "astId": 17536,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "maxUtilizationBps",
       "offset": 0,
@@ -137,7 +137,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 17412,
+      "astId": 17539,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "leveragePool",
       "offset": 0,
@@ -145,7 +145,7 @@
       "type": "t_contract(IBorrower)7174"
     },
     {
-      "astId": 17415,
+      "astId": 17542,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "dnGmxJuniorVault",
       "offset": 0,
@@ -153,15 +153,15 @@
       "type": "t_contract(IBorrower)7174"
     },
     {
-      "astId": 17418,
+      "astId": 17545,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "feeStrategy",
       "offset": 0,
       "slot": "256",
-      "type": "t_struct(Info)12397_storage"
+      "type": "t_struct(Info)12481_storage"
     },
     {
-      "astId": 17421,
+      "astId": 17548,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "pool",
       "offset": 0,
@@ -169,7 +169,7 @@
       "type": "t_contract(IPool)1121"
     },
     {
-      "astId": 17424,
+      "astId": 17551,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "aUsdc",
       "offset": 0,
@@ -177,7 +177,7 @@
       "type": "t_contract(IAToken)218"
     },
     {
-      "astId": 17427,
+      "astId": 17554,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "oracle",
       "offset": 0,
@@ -185,7 +185,7 @@
       "type": "t_contract(IPriceOracle)1350"
     },
     {
-      "astId": 17430,
+      "astId": 17557,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "poolAddressProvider",
       "offset": 0,
@@ -193,7 +193,7 @@
       "type": "t_contract(IPoolAddressesProvider)1330"
     },
     {
-      "astId": 17434,
+      "astId": 17561,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "borrowCaps",
       "offset": 0,
@@ -201,7 +201,7 @@
       "type": "t_mapping(t_address,t_uint256)"
     },
     {
-      "astId": 17438,
+      "astId": 17565,
       "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
       "label": "__gaps",
       "offset": 0,
@@ -282,12 +282,12 @@
       "label": "string",
       "numberOfBytes": "32"
     },
-    "t_struct(Info)12397_storage": {
+    "t_struct(Info)12481_storage": {
       "encoding": "inplace",
       "label": "struct FeeSplitStrategy.Info",
       "members": [
         {
-          "astId": 12390,
+          "astId": 12474,
           "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
           "label": "optimalUtilizationRate",
           "offset": 0,
@@ -295,7 +295,7 @@
           "type": "t_uint128"
         },
         {
-          "astId": 12392,
+          "astId": 12476,
           "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
           "label": "baseVariableBorrowRate",
           "offset": 16,
@@ -303,7 +303,7 @@
           "type": "t_uint128"
         },
         {
-          "astId": 12394,
+          "astId": 12478,
           "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
           "label": "variableRateSlope1",
           "offset": 0,
@@ -311,7 +311,7 @@
           "type": "t_uint128"
         },
         {
-          "astId": 12396,
+          "astId": 12480,
           "contract": "contracts/vaults/DnGmxSeniorVault.sol:DnGmxSeniorVault",
           "label": "variableRateSlope2",
           "offset": 16,

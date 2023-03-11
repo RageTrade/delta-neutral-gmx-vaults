@@ -121,15 +121,15 @@
       "type": "t_array(t_uint256)49_storage"
     },
     {
-      "astId": 15474,
+      "astId": 15559,
       "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
       "label": "state",
       "offset": 0,
       "slot": "252",
-      "type": "t_struct(State)9166_storage"
+      "type": "t_struct(State)9168_storage"
     },
     {
-      "astId": 15478,
+      "astId": 15563,
       "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
       "label": "__gaps",
       "offset": 0,
@@ -270,7 +270,7 @@
       "label": "string",
       "numberOfBytes": "32"
     },
-    "t_struct(State)9166_storage": {
+    "t_struct(State)9168_storage": {
       "encoding": "inplace",
       "label": "struct DnGmxJuniorVaultManager.State",
       "members": [
@@ -643,7 +643,15 @@
           "type": "t_contract(IDnGmxBatchingManager)7365"
         },
         {
-          "astId": 9165,
+          "astId": 9163,
+          "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
+          "label": "useDirectConversion",
+          "offset": 20,
+          "slot": "33",
+          "type": "t_bool"
+        },
+        {
+          "astId": 9167,
           "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
           "label": "__gaps",
           "offset": 0,
