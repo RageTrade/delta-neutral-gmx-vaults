@@ -291,6 +291,10 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         state.glpManager = _glpManager;
     }
 
+    function setDirectConversion(bool _useDirectConversion) external onlyOwner {
+        state.useDirectConversion = _useDirectConversion;
+    }
+
     /// @notice pause deposit, mint, withdraw and redeem
     function pause() external onlyOwner {
         _pause();
@@ -391,7 +395,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         emit Rebalanced();
     }
 
-    /* ################################################################## 
+    /* ##################################################################
                                 USER FUNCTIONS
     ################################################################## */
     /// @notice deposits sGlp token and returns vault shares

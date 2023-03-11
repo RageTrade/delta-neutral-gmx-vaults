@@ -646,14 +646,14 @@ library DnGmxJuniorVaultManager {
         if (usdcAmountDesired < state.usdcConversionThreshold) return 0;
         address _usdc = address(state.usdc);
 
+        // calculate the minimum required amount basis the set slippage param
+        // uses current usdc max price from GMX and adds slippage on top
+
+        // calculate the amount of glp to be converted to get the desired usdc amount
+        uint256 glpAmountInput = usdcAmountDesired.mulDivDown(PRICE_PRECISION, _getGlpPriceInUsdc(state, false));
+
         if (state.useDirectConversion) {
             uint256 minUsdcOut = usdcAmountDesired.mulDivDown((MAX_BPS - state.slippageThresholdGmxBps), MAX_BPS);
-
-            // calculate the minimum required amount basis the set slippage param
-            // uses current usdc max price from GMX and adds slippage on top
-
-            // calculate the amount of glp to be converted to get the desired usdc amount
-            uint256 glpAmountInput = usdcAmountDesired.mulDivDown(PRICE_PRECISION, _getGlpPriceInUsdc(state, false));
 
             usdcAmountOut = state.mintBurnRewardRouter.unstakeAndRedeemGlp(
                 _usdc,
@@ -670,8 +670,6 @@ library DnGmxJuniorVaultManager {
 
             uint256 minEthOut = (usdcAmountDesired.mulDivDown((MAX_BPS - state.slippageThresholdGmxBps), MAX_BPS))
                 .mulDivDown(PRICE_PRECISION, ethPriceInUsdc);
-
-            uint256 glpAmountInput = usdcAmountDesired.mulDivDown(PRICE_PRECISION, _getGlpPriceInUsdc(state, false));
 
             uint256 ethAmountOut = state.mintBurnRewardRouter.unstakeAndRedeemGlp(
                 address(state.weth),
