@@ -64,6 +64,8 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     addresses.AAVE_POOL_ADDRESS_PROVIDER, // _poolAddressesProvider
   );
 
+  dnGmxJuniorVault.setDirectConversion(true);
+
   const bypass = await (await hre.ethers.getContractFactory('BatchingManagerBypass')).deploy();
 
   await bypass.setJuniorVault(dnGmxJuniorVault.address);
