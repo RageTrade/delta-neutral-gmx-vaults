@@ -2,13 +2,17 @@ import { impersonateAccount, reset } from '@nomicfoundation/hardhat-network-help
 import { deltaNeutralGmxVaults } from '@ragetrade/sdk';
 import { Signer } from 'ethers';
 import hre from 'hardhat';
+import { DnGmxJuniorVault__factory } from '../typechain-types';
 
 describe('Improve slippage', () => {
   it('check', async () => {
     await reset(hre.config.networks.hardhat.forking?.url, 68786823);
 
     // real mainnet contract instances
-    const { dnGmxJuniorVault, proxyAdmin } = deltaNeutralGmxVaults.getContractsSync('arbmain', hre.ethers.provider);
+    const { dnGmxJuniorVault: _dnGmxJuniorVault, proxyAdmin } = deltaNeutralGmxVaults.getContractsSync(
+      'arbmain',
+      hre.ethers.provider,
+    );
 
     // deploy implementation
     const dnGmxJuniorVaultManager = await hre.ethers.deployContract('DnGmxJuniorVaultManager');
@@ -20,9 +24,10 @@ describe('Improve slippage', () => {
 
     // upgrade
     const owner = await impersonate(proxyAdmin.owner());
-    await proxyAdmin.connect(owner).upgrade(dnGmxJuniorVault.address, dnGmxJuniorVaultNewLogic.address);
+    await proxyAdmin.connect(owner).upgrade(_dnGmxJuniorVault.address, dnGmxJuniorVaultNewLogic.address);
 
     // rebalance
+    const dnGmxJuniorVault = DnGmxJuniorVault__factory.connect(_dnGmxJuniorVault.address, hre.ethers.provider);
     const keeper = await impersonate((await dnGmxJuniorVault.getAdminParams()).keeper);
     const tx = await dnGmxJuniorVault.connect(keeper).rebalance();
     const rc = await tx.wait();
