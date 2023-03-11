@@ -1,8 +1,9 @@
 import { impersonateAccount, reset } from '@nomicfoundation/hardhat-network-helpers';
-import { deltaNeutralGmxVaults } from '@ragetrade/sdk';
+import { deltaNeutralGmxVaults, tokens } from '@ragetrade/sdk';
 import { Signer } from 'ethers';
 import hre from 'hardhat';
 import { DnGmxJuniorVault__factory } from '../typechain-types';
+import { arb } from './utils/arb';
 
 describe('Improve slippage', () => {
   it('check', async () => {
@@ -13,6 +14,7 @@ describe('Improve slippage', () => {
       'arbmain',
       hre.ethers.provider,
     );
+    const { weth, usdc } = tokens.getContractsSync('arbmain', hre.ethers.provider);
 
     // deploy implementation
     const dnGmxJuniorVaultManager = await hre.ethers.deployContract('DnGmxJuniorVaultManager');
@@ -49,6 +51,9 @@ describe('Improve slippage', () => {
       );
 
     const keeper = await impersonate(ap.keeper);
+
+    const signers = await hre.ethers.getSigners();
+    await arb(signers[0], weth.address, usdc.address, 500, true);
 
     await dnGmxJuniorVault.connect(keeper).rebalanceProfit();
 
