@@ -77,7 +77,6 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
 
   await dnGmxJuniorVault.setDirectConversion(true);
 
-  await dnGmxJuniorVault.setParamsV1(BigNumber.from(2).pow(128).sub(1));
   const dnGmxTraderHedgeStrategy = await dnGmxTraderHedgeStrategyFixture();
 
   await dnGmxTraderHedgeStrategy.initialize(
