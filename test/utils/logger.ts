@@ -263,4 +263,12 @@ export class Logger {
     console.log('WBTC: ', formatUnits(wbtcSize.mul(10n ** 8n).div(wbtcPrice), 8));
     console.log('WETH: ', formatUnits(wethSize.mul(10n ** 18n).div(wethPrice), 18));
   };
+
+  logTokenPrice = async (asset: 'WETH' | 'WBTC') => {
+    const addr = asset == 'WETH' ? this.opts.weth.address : this.opts.wbtc.address;
+
+    const price = await this.opts.dnGmxJuniorVault['getPrice(address,bool)'](addr, true);
+
+    console.log(formatUnits(price, asset == 'WETH' ? 18 : 28));
+  };
 }
