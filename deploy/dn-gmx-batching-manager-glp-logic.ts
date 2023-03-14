@@ -1,6 +1,7 @@
 import { DeployFunction } from 'hardhat-deploy/types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
-import { waitConfirmations } from './network-info';
+import { DnGmxBatchingManager__factory } from '../typechain-types';
+import { getNetworkInfo, waitConfirmations } from './network-info';
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {
@@ -10,15 +11,14 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const { deployer } = await getNamedAccounts();
 
-  await deploy('BatchingManagerBypass', {
-    contract: 'BatchingManagerBypass',
+  await deploy('DnGmxBatchingManagerGlpLogic', {
+    contract: 'DnGmxBatchingManagerGlp',
     from: deployer,
     log: true,
     waitConfirmations,
-    skipIfAlreadyDeployed: true,
   });
 };
 
 export default func;
 
-func.tags = ['BatchingManagerBypass'];
+func.tags = ['DnGmxBatchingManagerGlpLogic'];

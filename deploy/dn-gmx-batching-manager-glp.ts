@@ -1,6 +1,6 @@
 import { DeployFunction } from 'hardhat-deploy/types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
-import { DnGmxBatchingManager__factory } from '../typechain-types';
+import { DnGmxBatchingManagerGlp__factory } from '../typechain-types';
 import { getNetworkInfo, waitConfirmations } from './network-info';
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
@@ -10,23 +10,22 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   } = hre;
 
   const { deployer } = await getNamedAccounts();
-  const { GMX_SGLP_ADDRESS, USDC_ADDRESS, GMX_MINT_BURN_REWARD_ROUTER, GLP_MANAGER, KEEPER_BATCHING_MANAGER } =
+  const { GMX_SGLP_ADDRESS, GMX_MINT_BURN_REWARD_ROUTER, GLP_MANAGER, KEEPER_BATCHING_MANAGER } =
     await getNetworkInfo();
 
-  const DnGmxBatchingManagerLogicDeployment = await get('DnGmxBatchingManagerLogic');
+  const DnGmxBatchingManagerGlpLogicDeployment = await get('DnGmxBatchingManagerGlpLogic');
   const DnGmxJuniorVaultDeployment = await get('DnGmxJuniorVault');
   const ProxyAdminDeployment = await get('ProxyAdmin');
 
-  const proxyDeployment = await deploy('DnGmxBatchingManager', {
+  const proxyDeployment = await deploy('DnGmxBatchingManagerGlp', {
     contract: 'TransparentUpgradeableProxy',
     from: deployer,
     log: true,
     args: [
-      DnGmxBatchingManagerLogicDeployment.address,
+      DnGmxBatchingManagerGlpLogicDeployment.address,
       ProxyAdminDeployment.address,
-      DnGmxBatchingManager__factory.createInterface().encodeFunctionData('initialize', [
+      DnGmxBatchingManagerGlp__factory.createInterface().encodeFunctionData('initialize', [
         GMX_SGLP_ADDRESS,
-        USDC_ADDRESS,
         GMX_MINT_BURN_REWARD_ROUTER,
         GLP_MANAGER,
         DnGmxJuniorVaultDeployment.address,
@@ -36,10 +35,14 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     waitConfirmations,
     skipIfAlreadyDeployed: true,
   });
-  await save('DnGmxBatchingManager', { ...proxyDeployment, abi: DnGmxBatchingManagerLogicDeployment.abi });
+  await save('DnGmxBatchingManagerGlp', { ...proxyDeployment, abi: DnGmxBatchingManagerGlpLogicDeployment.abi });
+
+  // TODO setKeeper
+
+  // TODO need to transfer ownership of this to multisig
 };
 
 export default func;
 
-func.tags = ['DnGmxBatchingManager'];
-func.dependencies = ['ProxyAdmin', 'DnGmxBatchingManagerLogic', 'DnGmxJuniorVault'];
+func.tags = ['DnGmxBatchingManagerGlp'];
+func.dependencies = ['ProxyAdmin', 'DnGmxBatchingManagerGlpLogic', 'DnGmxJuniorVault'];

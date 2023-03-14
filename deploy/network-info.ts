@@ -1,4 +1,4 @@
-import { tokens } from '@ragetrade/sdk';
+import { gmxProtocol, tokens } from '@ragetrade/sdk';
 import { BigNumberish } from 'ethers';
 import hre, { ethers } from 'hardhat';
 import { parseEther, parseUnits } from 'ethers/lib/utils';
@@ -25,6 +25,8 @@ export interface NetworkInfo {
   GMX_MINT_BURN_REWARD_ROUTER: string;
   GMX_SGLP_ADDRESS: string;
   GLP_MANAGER: string;
+  GLP_ADDRESS: string;
+  GMX_VAULT: string;
 
   BALANCER_VAULT?: string;
   UNI_V3_SWAP_ROUTER: string;
@@ -89,6 +91,8 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
       : chainId, // for yarn deploy --network
   );
 
+  const { glpAddress: GLP_ADDRESS, vaultAddress: GMX_VAULT } = await gmxProtocol.getAddresses(chainId);
+
   const arbmainNetworkInfo: NetworkInfo = {
     MULTISIG: '0x622441bc2112B3C1B39fCe04b33f0Effeb357CFa',
     // PROXY_ADMIN_ADDRESS: '0xA335Dd9CeFBa34449c0A89FB4d247f395C5e3782', // TODO uncomment this
@@ -101,6 +105,8 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
     GMX_MINT_BURN_REWARD_ROUTER: '0xB95DB5B167D75e6d04227CfFFA61069348d271F5',
     GMX_SGLP_ADDRESS: '0x2F546AD4eDD93B956C8999Be404cdCAFde3E89AE',
     GLP_MANAGER: '0x3963FfC9dff443c2A94f21b129D429891E32ec18',
+    GLP_ADDRESS,
+    GMX_VAULT,
 
     BALANCER_VAULT: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     UNI_V3_SWAP_ROUTER: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
@@ -171,6 +177,8 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
     GMX_MINT_BURN_REWARD_ROUTER: '0xB627689d94BE29451b3E4Fa734F9cA4Be83b7eE3',
     GMX_SGLP_ADDRESS: '0x28Fa343Dc9af1B976688C6551784FF9AC20D2937',
     GLP_MANAGER: '0x17e14B4C2C519DC119ffE9E01520650D938fcD94',
+    GLP_ADDRESS,
+    GMX_VAULT,
 
     BALANCER_VAULT: '0x4A6fc4ea078e5272Eda56Fd8b3D0C70F91240f25',
     UNI_V3_SWAP_ROUTER: '0xc05237c7c22bd0550fdab72858bc9fb517e3324e',

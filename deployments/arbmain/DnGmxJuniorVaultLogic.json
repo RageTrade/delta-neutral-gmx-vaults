@@ -67,6 +67,22 @@
       "type": "error"
     },
     {
+      "inputs": [
+        {
+          "internalType": "int128",
+          "name": "btcTraderOIHedge",
+          "type": "int128"
+        },
+        {
+          "internalType": "int128",
+          "name": "ethTraderOIHedge",
+          "type": "int128"
+        }
+      ],
+      "name": "InvalidTraderOIHedges",
+      "type": "error"
+    },
+    {
       "inputs": [],
       "name": "InvalidWithdrawFeeBps",
       "type": "error"
@@ -95,6 +111,38 @@
         }
       ],
       "name": "OnlyKeeperAllowed",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "msgSender",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "authorisedKeeperAddress",
+          "type": "address"
+        }
+      ],
+      "name": "OnlyTraderHedgeStrategyAllowed",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "netSlippage",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "assets",
+          "type": "uint256"
+        }
+      ],
+      "name": "TooMuchSlippage",
       "type": "error"
     },
     {
@@ -169,19 +217,6 @@
       "anonymous": false,
       "inputs": [
         {
-          "indexed": false,
-          "internalType": "address",
-          "name": "_batchingManager",
-          "type": "address"
-        }
-      ],
-      "name": "BatchingManagerUpdated",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
           "indexed": true,
           "internalType": "address",
           "name": "caller",
@@ -241,6 +276,32 @@
         {
           "indexed": false,
           "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "EsGmxStaked",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "EsGmxVested",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
           "name": "feeBps",
           "type": "uint256"
         },
@@ -265,6 +326,19 @@
         }
       ],
       "name": "FeesWithdrawn",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "GmxClaimed",
       "type": "event"
     },
     {
@@ -353,6 +427,25 @@
         }
       ],
       "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint128",
+          "name": "rebalanceProfitUsdcAmountThreshold",
+          "type": "uint128"
+        },
+        {
+          "indexed": false,
+          "internalType": "contract IDnGmxTraderHedgeStrategy",
+          "name": "dnGmxTraderHedgeStrategy",
+          "type": "address"
+        }
+      ],
+      "name": "ParamsV1Updated",
       "type": "event"
     },
     {
@@ -452,6 +545,25 @@
         }
       ],
       "name": "ThresholdsUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "int256",
+          "name": "btcTraderOIHedge",
+          "type": "int256"
+        },
+        {
+          "indexed": false,
+          "internalType": "int256",
+          "name": "ethTraderOIHedge",
+          "type": "int256"
+        }
+      ],
+      "name": "TraderOIHedgesUpdated",
       "type": "event"
     },
     {
@@ -770,13 +882,8 @@
         },
         {
           "internalType": "uint256",
-          "name": "depositCap",
+          "name": "depositCap_",
           "type": "uint256"
-        },
-        {
-          "internalType": "contract IDnGmxBatchingManager",
-          "name": "batchingManager",
-          "type": "address"
         },
         {
           "internalType": "uint16",
@@ -863,6 +970,11 @@
           "internalType": "uint256",
           "name": "glpDeposited",
           "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "withUpdatedPoolAmounts",
+          "type": "bool"
         }
       ],
       "name": "getOptimalBorrows",
@@ -1444,11 +1556,6 @@
           "type": "uint256"
         },
         {
-          "internalType": "address",
-          "name": "batchingManager",
-          "type": "address"
-        },
-        {
           "internalType": "uint16",
           "name": "withdrawFeeBps",
           "type": "uint16"
@@ -1532,6 +1639,24 @@
         }
       ],
       "name": "setHedgeParams",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint128",
+          "name": "rebalanceProfitUsdcAmountThreshold",
+          "type": "uint128"
+        },
+        {
+          "internalType": "contract IDnGmxTraderHedgeStrategy",
+          "name": "dnGmxTraderHedgeStrategy",
+          "type": "address"
+        }
+      ],
+      "name": "setParamsV1",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -1800,6 +1925,19 @@
         {
           "indexed": false,
           "internalType": "uint256",
+          "name": "fees",
+          "type": "uint256"
+        }
+      ],
+      "name": "ProtocolFeeAccrued",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
           "name": "wethHarvested",
           "type": "uint256"
         },
@@ -1987,6 +2125,23 @@
   },
   "devdoc": {
     "author": "RageTrade*",
+    "events": {
+      "Approval(address,address,uint256)": {
+        "details": "Emitted when the allowance of a `spender` for an `owner` is set by a call to {approve}. `value` is the new allowance."
+      },
+      "Initialized(uint8)": {
+        "details": "Triggered when the contract has been initialized or reinitialized."
+      },
+      "Paused(address)": {
+        "details": "Emitted when the pause is triggered by `account`."
+      },
+      "Transfer(address,address,uint256)": {
+        "details": "Emitted when `value` tokens are moved from one account (`from`) to another (`to`). Note that `value` may be zero."
+      },
+      "Unpaused(address)": {
+        "details": "Emitted when the pause is lifted by `account`."
+      }
+    },
     "kind": "dev",
     "methods": {
       "allowance(address,address)": {
@@ -2047,7 +2202,7 @@
           "marketValue": "of given amount of glp assets"
         }
       },
-      "getOptimalBorrows(uint256)": {
+      "getOptimalBorrows(uint256,bool)": {
         "params": {
           "glpDeposited": "amount of glp for which optimal borrow needs to be calculated"
         },
@@ -2135,7 +2290,12 @@
         "details": "Returns true if the contract is paused, and false otherwise."
       },
       "previewDeposit(uint256)": {
-        "details": "Allows an on-chain or off-chain user to simulate the effects of their deposit at the current block, given current on-chain conditions. - MUST return as close to and no more than the exact amount of Vault shares that would be minted in a deposit   call in the same transaction. I.e. deposit should return the same or more shares as previewDeposit if called   in the same transaction. - MUST NOT account for deposit limits like those returned from maxDeposit and should always act as though the   deposit would be accepted, regardless if the user has enough tokens approved, etc. - MUST be inclusive of deposit fees. Integrators should be aware of the existence of deposit fees. - MUST NOT revert. NOTE: any unfavorable discrepancy between convertToShares and previewDeposit SHOULD be considered slippage in share price or some other type of condition, meaning the depositor will lose assets by depositing."
+        "params": {
+          "assets": "number of assets to be deposited"
+        },
+        "returns": {
+          "_0": "shares that would be minted to the user"
+        }
       },
       "previewMint(uint256)": {
         "params": {
@@ -2183,9 +2343,8 @@
       "renounceOwnership()": {
         "details": "Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner."
       },
-      "setAdminParams(address,address,uint256,address,uint16,uint24)": {
+      "setAdminParams(address,address,uint256,uint16,uint24)": {
         "params": {
-          "batchingManager": "batching manager (responsible for staking tokens into GMX)",
           "dnGmxSeniorVault": "senior vault address",
           "newDepositCap": "deposit cap",
           "newKeeper": "keeper address",
@@ -2209,6 +2368,12 @@
           "swapRouter": "uniswap swap router for swapping ETH/BTC to USDC and viceversa",
           "targetHealthFactor": "health factor to target on AAVE after every rebalance",
           "vault": "balancer vault for ETH and BTC flashloans"
+        }
+      },
+      "setParamsV1(uint128,address)": {
+        "params": {
+          "dnGmxTraderHedgeStrategy": "(BPS) slippage threshold on btc swaps",
+          "rebalanceProfitUsdcAmountThreshold": "(BPS) slippage threshold on btc swaps"
         }
       },
       "setRebalanceParams(uint32,uint16,uint16)": {
@@ -2293,7 +2458,7 @@
       "getMarketValue(uint256)": {
         "notice": "returns the minimum market value of \"assetAmount\" of asset (sGlp) tokens"
       },
-      "getOptimalBorrows(uint256)": {
+      "getOptimalBorrows(uint256,bool)": {
         "notice": "returns optimal borrows for BTC and ETH respectively basis glpDeposited amount"
       },
       "getPrice(bool)": {
@@ -2329,6 +2494,9 @@
       "pause()": {
         "notice": "pause deposit, mint, withdraw and redeem"
       },
+      "previewDeposit(uint256)": {
+        "notice": "preview function for using assets to mint shares"
+      },
       "previewMint(uint256)": {
         "notice": "preview function for minting of shares"
       },
@@ -2347,7 +2515,7 @@
       "redeem(uint256,address,address)": {
         "notice": "burns \"shares\" amount of vault shares and withdraws relevant amount of sGlp tokensdeducts some assets for the remaining shareholders to cover the cost of opening and closing of hedge"
       },
-      "setAdminParams(address,address,uint256,address,uint16,uint24)": {
+      "setAdminParams(address,address,uint256,uint16,uint24)": {
         "notice": "set admin paramters"
       },
       "setFeeParams(uint16,address)": {
@@ -2358,6 +2526,9 @@
       },
       "setHedgeParams(address,address,uint256,address)": {
         "notice": "set hedge parameters"
+      },
+      "setParamsV1(uint128,address)": {
+        "notice": "set thresholds"
       },
       "setRebalanceParams(uint32,uint16,uint16)": {
         "notice": "set rebalance paramters"
@@ -2390,7 +2561,7 @@
   "storageLayout": {
     "storage": [
       {
-        "astId": 4084,
+        "astId": 3990,
         "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
         "label": "_initialized",
         "offset": 0,
@@ -2398,7 +2569,7 @@
         "type": "t_uint8"
       },
       {
-        "astId": 4087,
+        "astId": 3993,
         "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
         "label": "_initializing",
         "offset": 1,
@@ -2406,7 +2577,7 @@
         "type": "t_bool"
       },
       {
-        "astId": 5353,
+        "astId": 5259,
         "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
         "label": "__gap",
         "offset": 0,
@@ -2414,7 +2585,7 @@
         "type": "t_array(t_uint256)50_storage"
       },
       {
-        "astId": 4374,
+        "astId": 4280,
         "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
         "label": "_balances",
         "offset": 0,
@@ -2422,7 +2593,7 @@
         "type": "t_mapping(t_address,t_uint256)"
       },
       {
-        "astId": 4380,
+        "astId": 4286,
         "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
         "label": "_allowances",
         "offset": 0,
@@ -2430,7 +2601,7 @@
         "type": "t_mapping(t_address,t_mapping(t_address,t_uint256))"
       },
       {
-        "astId": 4382,
+        "astId": 4288,
         "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
         "label": "_totalSupply",
         "offset": 0,
@@ -2438,7 +2609,7 @@
         "type": "t_uint256"
       },
       {
-        "astId": 4384,
+        "astId": 4290,
         "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
         "label": "_name",
         "offset": 0,
@@ -2446,7 +2617,7 @@
         "type": "t_string_storage"
       },
       {
-        "astId": 4386,
+        "astId": 4292,
         "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
         "label": "_symbol",
         "offset": 0,
@@ -2454,7 +2625,7 @@
         "type": "t_string_storage"
       },
       {
-        "astId": 4965,
+        "astId": 4871,
         "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
         "label": "__gap",
         "offset": 0,
@@ -2462,7 +2633,7 @@
         "type": "t_array(t_uint256)45_storage"
       },
       {
-        "astId": 6647,
+        "astId": 15500,
         "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
         "label": "asset",
         "offset": 0,
@@ -2470,7 +2641,7 @@
         "type": "t_address"
       },
       {
-        "astId": 6651,
+        "astId": 15504,
         "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
         "label": "__gaps",
         "offset": 0,
@@ -2478,7 +2649,7 @@
         "type": "t_array(t_uint256)50_storage"
       },
       {
-        "astId": 3956,
+        "astId": 3862,
         "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
         "label": "_owner",
         "offset": 0,
@@ -2486,7 +2657,7 @@
         "type": "t_address"
       },
       {
-        "astId": 4076,
+        "astId": 3982,
         "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
         "label": "__gap",
         "offset": 0,
@@ -2494,7 +2665,7 @@
         "type": "t_array(t_uint256)49_storage"
       },
       {
-        "astId": 4249,
+        "astId": 4155,
         "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
         "label": "_paused",
         "offset": 0,
@@ -2502,7 +2673,7 @@
         "type": "t_bool"
       },
       {
-        "astId": 4354,
+        "astId": 4260,
         "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
         "label": "__gap",
         "offset": 0,
@@ -2538,6 +2709,12 @@
         "label": "uint256[45]",
         "numberOfBytes": "1440"
       },
+      "t_array(t_uint256)46_storage": {
+        "base": "t_uint256",
+        "encoding": "inplace",
+        "label": "uint256[46]",
+        "numberOfBytes": "1472"
+      },
       "t_array(t_uint256)49_storage": {
         "base": "t_uint256",
         "encoding": "inplace",
@@ -2555,85 +2732,95 @@
         "label": "bool",
         "numberOfBytes": "1"
       },
-      "t_contract(IAToken)218": {
+      "t_contract(IAToken)220": {
         "encoding": "inplace",
         "label": "contract IAToken",
         "numberOfBytes": "20"
       },
-      "t_contract(IBalancerVault)7822": {
+      "t_contract(IBalancerVault)16958": {
         "encoding": "inplace",
         "label": "contract IBalancerVault",
         "numberOfBytes": "20"
       },
-      "t_contract(IDebtToken)7193": {
+      "t_contract(IDebtToken)16098": {
         "encoding": "inplace",
         "label": "contract IDebtToken",
         "numberOfBytes": "20"
       },
-      "t_contract(IDnGmxBatchingManager)7365": {
+      "t_contract(IDnGmxBatchingManager)16258": {
         "encoding": "inplace",
         "label": "contract IDnGmxBatchingManager",
         "numberOfBytes": "20"
       },
-      "t_contract(IDnGmxSeniorVault)7628": {
+      "t_contract(IDnGmxSeniorVault)16719": {
         "encoding": "inplace",
         "label": "contract IDnGmxSeniorVault",
         "numberOfBytes": "20"
       },
-      "t_contract(IERC20)5551": {
+      "t_contract(IDnGmxTraderHedgeStrategy)16749": {
+        "encoding": "inplace",
+        "label": "contract IDnGmxTraderHedgeStrategy",
+        "numberOfBytes": "20"
+      },
+      "t_contract(IERC20)7612": {
         "encoding": "inplace",
         "label": "contract IERC20",
         "numberOfBytes": "20"
       },
-      "t_contract(IERC20Metadata)5576": {
+      "t_contract(IERC20Metadata)7637": {
         "encoding": "inplace",
         "label": "contract IERC20Metadata",
         "numberOfBytes": "20"
       },
-      "t_contract(IGlpManager)7930": {
+      "t_contract(IGlpManager)17267": {
         "encoding": "inplace",
         "label": "contract IGlpManager",
         "numberOfBytes": "20"
       },
-      "t_contract(IPool)1121": {
+      "t_contract(IPool)967": {
         "encoding": "inplace",
         "label": "contract IPool",
         "numberOfBytes": "20"
       },
-      "t_contract(IPoolAddressesProvider)1330": {
+      "t_contract(IPoolAddressesProvider)1176": {
         "encoding": "inplace",
         "label": "contract IPoolAddressesProvider",
         "numberOfBytes": "20"
       },
-      "t_contract(IPriceOracle)1350": {
+      "t_contract(IPriceOracle)1196": {
         "encoding": "inplace",
         "label": "contract IPriceOracle",
         "numberOfBytes": "20"
       },
-      "t_contract(IRewardRouterV2)8118": {
+      "t_contract(IRewardRouterV2)17474": {
         "encoding": "inplace",
         "label": "contract IRewardRouterV2",
         "numberOfBytes": "20"
       },
-      "t_contract(IRewardTracker)8218": {
+      "t_contract(IRewardTracker)17574": {
         "encoding": "inplace",
         "label": "contract IRewardTracker",
         "numberOfBytes": "20"
       },
-      "t_contract(IRewardsController)3657": {
+      "t_contract(IRewardsController)3558": {
         "encoding": "inplace",
         "label": "contract IRewardsController",
         "numberOfBytes": "20"
       },
-      "t_contract(ISwapRouter)6620": {
+      "t_contract(ISwapRouter)14487": {
         "encoding": "inplace",
         "label": "contract ISwapRouter",
         "numberOfBytes": "20"
       },
-      "t_contract(IVault)8784": {
+      "t_contract(IVault)18140": {
         "encoding": "inplace",
         "label": "contract IVault",
         "numberOfBytes": "20"
+      },
+      "t_int128": {
+        "encoding": "inplace",
+        "label": "int128",
+        "numberOfBytes": "16"
       },
       "t_int256": {
         "encoding": "inplace",
@@ -2869,7 +3056,7 @@
             "label": "fsGlp",
             "offset": 0,
             "slot": "13",
-            "type": "t_contract(IERC20)5551"
+            "type": "t_contract(IERC20)7612"
           },
           {
             "astId": 18507,
@@ -2877,7 +3064,7 @@
             "label": "glp",
             "offset": 0,
             "slot": "14",
-            "type": "t_contract(IERC20Metadata)5576"
+            "type": "t_contract(IERC20Metadata)7637"
           },
           {
             "astId": 18510,
@@ -2885,7 +3072,7 @@
             "label": "usdc",
             "offset": 0,
             "slot": "15",
-            "type": "t_contract(IERC20Metadata)5576"
+            "type": "t_contract(IERC20Metadata)7637"
           },
           {
             "astId": 18513,
@@ -2893,7 +3080,7 @@
             "label": "weth",
             "offset": 0,
             "slot": "16",
-            "type": "t_contract(IERC20Metadata)5576"
+            "type": "t_contract(IERC20Metadata)7637"
           },
           {
             "astId": 18516,
@@ -2901,7 +3088,7 @@
             "label": "wbtc",
             "offset": 0,
             "slot": "17",
-            "type": "t_contract(IERC20Metadata)5576"
+            "type": "t_contract(IERC20Metadata)7637"
           },
           {
             "astId": 18519,
@@ -2909,7 +3096,7 @@
             "label": "pool",
             "offset": 0,
             "slot": "18",
-            "type": "t_contract(IPool)1121"
+            "type": "t_contract(IPool)967"
           },
           {
             "astId": 18522,
@@ -2917,7 +3104,7 @@
             "label": "aUsdc",
             "offset": 0,
             "slot": "19",
-            "type": "t_contract(IAToken)218"
+            "type": "t_contract(IAToken)220"
           },
           {
             "astId": 18525,
@@ -2925,7 +3112,7 @@
             "label": "vWbtc",
             "offset": 0,
             "slot": "20",
-            "type": "t_contract(IDebtToken)7193"
+            "type": "t_contract(IDebtToken)16098"
           },
           {
             "astId": 18528,
@@ -2933,7 +3120,7 @@
             "label": "vWeth",
             "offset": 0,
             "slot": "21",
-            "type": "t_contract(IDebtToken)7193"
+            "type": "t_contract(IDebtToken)16098"
           },
           {
             "astId": 18531,
@@ -2941,7 +3128,7 @@
             "label": "oracle",
             "offset": 0,
             "slot": "22",
-            "type": "t_contract(IPriceOracle)1350"
+            "type": "t_contract(IPriceOracle)1196"
           },
           {
             "astId": 18534,
@@ -2949,7 +3136,7 @@
             "label": "aaveRewardsController",
             "offset": 0,
             "slot": "23",
-            "type": "t_contract(IRewardsController)3657"
+            "type": "t_contract(IRewardsController)3558"
           },
           {
             "astId": 18537,
@@ -2957,7 +3144,7 @@
             "label": "poolAddressProvider",
             "offset": 0,
             "slot": "24",
-            "type": "t_contract(IPoolAddressesProvider)1330"
+            "type": "t_contract(IPoolAddressesProvider)1176"
           },
           {
             "astId": 18540,
@@ -2965,7 +3152,7 @@
             "label": "gmxVault",
             "offset": 0,
             "slot": "25",
-            "type": "t_contract(IVault)8784"
+            "type": "t_contract(IVault)18140"
           },
           {
             "astId": 18543,
@@ -2973,7 +3160,7 @@
             "label": "sGmx",
             "offset": 0,
             "slot": "26",
-            "type": "t_contract(IRewardTracker)8218"
+            "type": "t_contract(IRewardTracker)17574"
           },
           {
             "astId": 18546,
@@ -2981,7 +3168,7 @@
             "label": "glpManager",
             "offset": 0,
             "slot": "27",
-            "type": "t_contract(IGlpManager)7930"
+            "type": "t_contract(IGlpManager)17267"
           },
           {
             "astId": 18549,
@@ -2989,7 +3176,7 @@
             "label": "rewardRouter",
             "offset": 0,
             "slot": "28",
-            "type": "t_contract(IRewardRouterV2)8118"
+            "type": "t_contract(IRewardRouterV2)17474"
           },
           {
             "astId": 18552,
@@ -2997,7 +3184,7 @@
             "label": "mintBurnRewardRouter",
             "offset": 0,
             "slot": "29",
-            "type": "t_contract(IRewardRouterV2)8118"
+            "type": "t_contract(IRewardRouterV2)17474"
           },
           {
             "astId": 18555,
@@ -3005,7 +3192,7 @@
             "label": "swapRouter",
             "offset": 0,
             "slot": "30",
-            "type": "t_contract(ISwapRouter)6620"
+            "type": "t_contract(ISwapRouter)14487"
           },
           {
             "astId": 18558,
@@ -3013,7 +3200,7 @@
             "label": "balancerVault",
             "offset": 0,
             "slot": "31",
-            "type": "t_contract(IBalancerVault)7822"
+            "type": "t_contract(IBalancerVault)16958"
           },
           {
             "astId": 18561,
@@ -3021,7 +3208,7 @@
             "label": "dnGmxSeniorVault",
             "offset": 0,
             "slot": "32",
-            "type": "t_contract(IDnGmxSeniorVault)7628"
+            "type": "t_contract(IDnGmxSeniorVault)16719"
           },
           {
             "astId": 18564,
@@ -3029,7 +3216,7 @@
             "label": "batchingManager",
             "offset": 0,
             "slot": "33",
-            "type": "t_contract(IDnGmxBatchingManager)7365"
+            "type": "t_contract(IDnGmxBatchingManager)16258"
           },
           {
             "astId": 18566,
@@ -3042,10 +3229,10 @@
           {
             "astId": 18568,
             "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
-            "label": "useDirectConversion",
-            "offset": 20,
-            "slot": "33",
-            "type": "t_bool"
+            "label": "btcPoolAmount",
+            "offset": 0,
+            "slot": "34",
+            "type": "t_uint128"
           },
           {
             "astId": 18570,
@@ -3092,8 +3279,8 @@
             "contract": "contracts/vaults/DnGmxJuniorVault.sol:DnGmxJuniorVault",
             "label": "__gaps",
             "offset": 0,
-            "slot": "34",
-            "type": "t_array(t_uint256)50_storage"
+            "slot": "38",
+            "type": "t_array(t_uint256)46_storage"
           }
         ],
         "numberOfBytes": "2688"

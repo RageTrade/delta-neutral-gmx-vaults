@@ -7,6 +7,22 @@
       "type": "error"
     },
     {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "netSlippage",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "assets",
+          "type": "uint256"
+        }
+      ],
+      "name": "TooMuchSlippage",
+      "type": "error"
+    },
+    {
       "anonymous": false,
       "inputs": [
         {
@@ -29,6 +45,19 @@
         }
       ],
       "name": "GlpSwapped",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "fees",
+          "type": "uint256"
+        }
+      ],
+      "name": "ProtocolFeeAccrued",
       "type": "event"
     },
     {
@@ -261,7 +290,7 @@
       },
       "getGlpPrice(DnGmxJuniorVaultManager.State storage,bool)": {
         "params": {
-          "maximize": "true to get maximum price and flase to get minimum",
+          "maximize": "true to get maximum price and false to get minimum",
           "state": "set of all state variables of vault"
         },
         "returns": {
@@ -270,11 +299,11 @@
       },
       "getGlpPriceInUsdc(DnGmxJuniorVaultManager.State storage,bool)": {
         "params": {
-          "maximize": "true to get maximum price and flase to get minimum",
+          "maximize": "true to get maximum price and false to get minimum",
           "state": "set of all state variables of vault"
         },
         "returns": {
-          "_0": "glp price in usd"
+          "_0": "glp price in usdc"
         }
       },
       "getLiquidationThreshold(DnGmxJuniorVaultManager.State storage,address)": {
@@ -286,7 +315,7 @@
           "_0": "liquidation threshold"
         }
       },
-      "getOptimalBorrows(DnGmxJuniorVaultManager.State storage,uint256)": {
+      "getOptimalBorrows(DnGmxJuniorVaultManager.State storage,uint256,bool)": {
         "params": {
           "glpDeposited": "amount of glp for which optimal borrow needs to be calculated",
           "state": "set of all state variables of vault"
@@ -325,7 +354,7 @@
           "scaledPrice": "token price in usdc"
         }
       },
-      "getTokenReservesInGlp(DnGmxJuniorVaultManager.State storage,address,uint256)": {
+      "getTokenReservesInGlp(DnGmxJuniorVaultManager.State storage,address,uint256,bool)": {
         "params": {
           "glpDeposited": "amount of glp for which underlying token amount is being calculated",
           "state": "set of all state variables of vault",
@@ -393,7 +422,7 @@
       },
       "rebalanceProfit(DnGmxJuniorVaultManager.State storage,uint256)": {
         "params": {
-          "borrowValue": "value of the borrowed assests(ETH + BTC) from AAVE in USDC",
+          "borrowValue": "value of the borrowed assets(ETH + BTC) from AAVE in USDC",
           "state": "set of all state variables of vault"
         }
       },
@@ -415,6 +444,15 @@
         }
       },
       "totalAssets(DnGmxJuniorVaultManager.State storage,bool)": {
+        "params": {
+          "maximize": "true for maximizing the total assets value and false to minimize",
+          "state": "set of all state variables of vault"
+        },
+        "returns": {
+          "_0": "total asset amount (glp + usdc (in glp terms))"
+        }
+      },
+      "totalGlp(DnGmxJuniorVaultManager.State storage,bool)": {
         "params": {
           "maximize": "true for maximizing the total assets value and false to minimize",
           "state": "set of all state variables of vault"
@@ -448,8 +486,8 @@
       "getLiquidationThreshold(DnGmxJuniorVaultManager.State storage,address)": {
         "notice": "returns liquidation threshold of the selected asset's AAVE pool"
       },
-      "getOptimalBorrows(DnGmxJuniorVaultManager.State storage,uint256)": {
-        "notice": "returns optimal borrows for BTC and ETH respectively basis glpDeposited amount"
+      "getOptimalBorrows(DnGmxJuniorVaultManager.State storage,uint256,bool)": {
+        "notice": "returns optimal borrows for BTC and ETH respectively basis glpDeposited amount and stored pool amount"
       },
       "getOptimalCappedBorrows(DnGmxJuniorVaultManager.State storage,uint256,uint256)": {
         "notice": "returns optimal borrows for BTC and ETH respectively basis available borrow amount"
@@ -460,8 +498,8 @@
       "getTokenPriceInUsdc(DnGmxJuniorVaultManager.State storage,IERC20Metadata)": {
         "notice": "returns the price of given token in USDC using AAVE oracle"
       },
-      "getTokenReservesInGlp(DnGmxJuniorVaultManager.State storage,address,uint256)": {
-        "notice": "returns token amount underlying glp amount deposited"
+      "getTokenReservesInGlp(DnGmxJuniorVaultManager.State storage,address,uint256,bool)": {
+        "notice": "returns token amount underlying glp amount deposited and stored pool amount"
       },
       "harvestFees(DnGmxJuniorVaultManager.State storage)": {
         "notice": "stakes the rewards from the staked Glp and claims WETH to buy glpalso update protocolEsGmx fees which can be vested and claimeddivides the fees between senior and junior tranches based on senior tranche utilfor junior tranche weth is deposited to batching manager which handles conversion to sGLPfor senior tranche weth is converted into usdc and deposited on AAVE which increases the borrowed amount"
@@ -470,7 +508,7 @@
         "notice": "returns if the rebalance is valid basis the difference between the current and optimal hedges of tokens(ETH/BTC)"
       },
       "isValidRebalanceHF(DnGmxJuniorVaultManager.State storage)": {
-        "notice": "returns if the rebalance is valid basis health factor on AAVEretunrs true if current health factor < threshold"
+        "notice": "returns if the rebalance is valid basis health factor on AAVEreturns true if current health factor < threshold"
       },
       "isValidRebalanceTime(DnGmxJuniorVaultManager.State storage)": {
         "notice": "returns if the rebalance is valid basis last rebalance time and rebalanceTimeThreshold"
@@ -485,7 +523,7 @@
         "notice": "rebalances btc and eth hedges according to underlying glp token weightsupdates the borrowed amount from senior tranche basis the target health factorif the amount of swap for a token > theshold then a partial hedge is taken and remaining is taken separatelyif the amount of swap for a token < threshold complete hedge is takenin case there is not enough money in senior tranche then relevant amount of glp is converted into usdc"
       },
       "rebalanceProfit(DnGmxJuniorVaultManager.State storage,uint256)": {
-        "notice": "rebalances pnl on AAVE againts the sGLP assets"
+        "notice": "rebalances pnl on AAVE against the sGLP assets"
       },
       "receiveFlashLoan(DnGmxJuniorVaultManager.State storage,IERC20[],uint256[],uint256[],bytes)": {
         "notice": "flashloan receiver for balance vaultreceives flashloaned tokens(WETH or WBTC or USDC) from balancer, swaps on uniswap and borrows/repays on AAVE"
@@ -494,6 +532,9 @@
         "notice": "returns the total assets deposited to the vault (in glp amount)"
       },
       "totalAssets(DnGmxJuniorVaultManager.State storage,bool)": {
+        "notice": "returns the total assets deposited to the vault (in glp amount)"
+      },
+      "totalGlp(DnGmxJuniorVaultManager.State storage,bool)": {
         "notice": "returns the total assets deposited to the vault (in glp amount)"
       }
     },
