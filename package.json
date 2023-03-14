@@ -46,7 +46,7 @@
     "@nomicfoundation/hardhat-network-helpers": "^1.0.6",
     "@nomiclabs/hardhat-ethers": "^2.2.1",
     "@nomiclabs/hardhat-etherscan": "^3.1.0",
-    "@ragetrade/sdk": "^1.1.0-alpha.9",
+    "@ragetrade/sdk": "^1.0.0-parallel-arbmain.12",
     "@typechain/ethers-v5": "^10.1.0",
     "@typechain/hardhat": "^6.1.2",
     "@types/chai": "^4.3.3",

@@ -951,10 +951,10 @@
     "@uniswap/v3-core-0.8-support" "https://github.com/uniswap/v3-core.git#d55e297b938e5b56fd1cf9fe668f5bd385be85b5"
     "@uniswap/v3-periphery" "^1.4.0"
 
-"@ragetrade/sdk@^1.1.0-alpha.9":
-  version "1.1.0-alpha.9"
-  resolved "https://registry.yarnpkg.com/@ragetrade/sdk/-/sdk-1.1.0-alpha.9.tgz#1ecdd83975d2ffe7025cf63dd325ce956297a00e"
-  integrity sha512-vfYJvd0qmVTjsnYN49LOC2EeKoM6g5BPpfwNM7WfgFUh6O4bLdSxb2onVAG7at2fC44MPVoDqw1W0fiYE2V5cQ==
+"@ragetrade/sdk@^1.0.0-parallel-arbmain.12":
+  version "1.0.0-parallel-arbmain.12"
+  resolved "https://registry.yarnpkg.com/@ragetrade/sdk/-/sdk-1.0.0-parallel-arbmain.12.tgz#b1201ea0e0e46a9c0d6409df75c8ca572da4d456"
+  integrity sha512-/3e16a5chdwnofRRol8gYLbIcAZ55G+TS9zNyHm0ESCiK8bbNeqDSOdZRMAbtoOXyfTsNy0g1Lx0FxYEAYRX3w==
   dependencies:
     "@uniswap/v3-sdk" "^3.8.2"
     ethers-repl "^1.0.3"
