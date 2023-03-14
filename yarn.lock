@@ -951,7 +951,7 @@
     "@uniswap/v3-core-0.8-support" "https://github.com/uniswap/v3-core.git#d55e297b938e5b56fd1cf9fe668f5bd385be85b5"
     "@uniswap/v3-periphery" "^1.4.0"
 
-"@ragetrade/sdk@^1.0.0-alpha.16":
+"@ragetrade/sdk@^1.0.6":
   version "1.0.6"
   resolved "https://registry.yarnpkg.com/@ragetrade/sdk/-/sdk-1.0.6.tgz#a7ab5eea7ebb53a5cdc9c80a79b9700faf31911a"
   integrity sha512-cO24op6nEVXH3MXgwMUux+c8s16NXtOVi7cvyhTJS82ylhwO0oZb/Sy01c2Jxn5Q0HNRvEgy5CHQyzuVKAbXOQ==
@@ -3513,10 +3513,10 @@ hardhat-storage-layout-changes@^0.1.2:
   resolved "https://registry.yarnpkg.com/hardhat-storage-layout-changes/-/hardhat-storage-layout-changes-0.1.2.tgz#348ff5cb767d7a1c28f033fcc20312456b5c983e"
   integrity sha512-fWX2jykXoRha6vCDD21NkbrrjKJ8U9juCodf8PTMEDjTjpb+rfUzgZdFOVHpo9DHQTnobMGY5HlrmtEdwgFlTw==
 
-hardhat-tracer@^2.0.0-beta.6:
-  version "2.0.0-beta.6"
-  resolved "https://registry.yarnpkg.com/hardhat-tracer/-/hardhat-tracer-2.0.0-beta.6.tgz#f922dc039685887f60ab5384e6530feab6d28466"
-  integrity sha512-mu0zug+BQ8xX/89V9C8zKr2km+LpTA8GeEB+TWf9t63RAy802vJGthYzxafmHBJ1jCaH8+np/ocBTJEgMSS8lw==
+hardhat-tracer@^2.1.2:
+  version "2.1.2"
+  resolved "https://registry.yarnpkg.com/hardhat-tracer/-/hardhat-tracer-2.1.2.tgz#9a1a3896856a59461594e2ee4a54871eafb2ab63"
+  integrity sha512-Uee7EgMGZPmGA1NFu6at8zk3u184irfPQ+AK50a7s2Ep8jbsAc55mSFs844+UhSH/uNNuk7fqAsx/Qa5gHzPpQ==
   dependencies:
     ethers "^5.6.1"
 
