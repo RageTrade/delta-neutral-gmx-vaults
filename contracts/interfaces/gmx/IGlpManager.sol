@@ -3,6 +3,8 @@
 pragma solidity ^0.8.0;
 
 interface IGlpManager {
+    function glp() external view returns (address);
+
     function gov() external view returns (address);
 
     function cooldownDuration() external returns (uint256);

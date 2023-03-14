@@ -9,6 +9,7 @@ import { PausableUpgradeable } from '@openzeppelin/contracts-upgradeable/securit
 import { FullMath } from '@uniswap/v3-core/contracts/libraries/FullMath.sol';
 
 import { IDnGmxJuniorVault } from '../interfaces/IDnGmxJuniorVault.sol';
+import { IDnGmxBatchingManager } from '../interfaces/IDnGmxBatchingManager.sol';
 import { IDnGmxBatchingManagerGlp } from '../interfaces/IDnGmxBatchingManagerGlp.sol';
 import { IGlpManager } from '../interfaces/gmx/IGlpManager.sol';
 import { IRewardRouterV2 } from '../interfaces/gmx/IRewardRouterV2.sol';
@@ -50,10 +51,15 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
     // delta neutral junior tranche
     IDnGmxJuniorVault public dnGmxJuniorVault;
 
+    // max allowed usdc to be deposited per round
     uint256 public depositCap;
+    // combined targetCap from both batching managers to be achieved
+    uint256 public targetAssetCap;
 
     uint256 public minGlpDepositThreshold;
 
+    // glp
+    IERC20 private glp;
     // staked glp
     IERC20 private sGlp;
 
@@ -63,6 +69,8 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
     IVault private gmxUnderlyingVault;
     // gmx's RewardRouterV2 (RewardRouterV2.sol) contract
     IRewardRouterV2 private rewardRouter;
+    // usdc batching manager
+    IDnGmxBatchingManager private usdcBatchingManager;
 
     // batching manager's state
     VaultBatchingState public vaultBatchingState;
@@ -115,6 +123,7 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
         glpManager = _glpManager;
         rewardRouter = _rewardRouter;
 
+        glp = IERC20(glpManager.glp());
         gmxUnderlyingVault = IVault(glpManager.vault());
         dnGmxJuniorVault = IDnGmxJuniorVault(_dnGmxJuniorVault);
 
@@ -152,6 +161,15 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
         emit DepositCapUpdated(_depositCap);
     }
 
+    function setTargetAssetCap(uint256 _targetAssetCap) external onlyOwner {
+        targetAssetCap = _targetAssetCap;
+        emit TargetAssetCapUpdated(_targetAssetCap);
+    }
+
+    function setUsdcBatchingManager(IDnGmxBatchingManager _usdcBatchingManager) external onlyOwner {
+        usdcBatchingManager = _usdcBatchingManager;
+    }
+
     /// @notice pauses deposits (to prevent DOS due to GMX 15 min cooldown)
     function pauseDeposit() external onlyKeeper {
         _pause();
@@ -176,6 +194,15 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
         if (amount < minGlpDepositThreshold) revert InvalidInput(0x23);
 
         if (vaultBatchingState.roundAssetBalance + amount > depositCap) revert DepositCapBreached();
+
+        // here, depositCap is in glp terms
+        uint256 totalAssetsDeposited = dnGmxJuniorVault.totalAssets() +
+            vaultBatchingState.roundAssetBalance +
+            _usdcToGlp(usdcBatchingManager.roundUsdcBalance()) -
+            usdcBatchingManager.roundGlpStaked();
+
+        if (totalAssetsDeposited + amount > targetAssetCap)
+            revert TargetAssetCapBreached(totalAssetsDeposited, amount, targetAssetCap);
 
         // user gives approval to batching manager to spend glp
         sGlp.transferFrom(msg.sender, address(this), amount);
@@ -325,6 +352,16 @@ contract DnGmxBatchingManagerGlp is IDnGmxBatchingManagerGlp, OwnableUpgradeable
     /*//////////////////////////////////////////////////////////////
                              INTERNAL LOGIC
     //////////////////////////////////////////////////////////////*/
+
+    function _usdcToGlp(uint256 amount) private view returns (uint256) {
+        // aum is in 1e30
+        uint256 aum = glpManager.getAum(false);
+        // totalSupply is in 1e18
+        uint256 totalSupply = glp.totalSupply();
+
+        // 6 + 18 + 24 - 30 = 18 (glp decimals)
+        return amount.mulDiv(totalSupply * 1e24, aum);
+    }
 
     function _executeVaultUserBatchDeposit(uint256 depositAmount) internal returns (uint128 _sharesReceived) {
         _sharesReceived = dnGmxJuniorVault.deposit(depositAmount, address(this)).toUint128();
