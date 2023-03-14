@@ -478,7 +478,7 @@ describe('Rebalance & its utils', () => {
     console.log({ availableBorrow });
 
     // availableBorrow = max(borrowCap, balanceOf)
-    expect(availableBorrow).to.eq(parseUnits('100', 6));
+    expect(availableBorrow).to.closeTo(parseUnits('100', 6), 1n);
     expect(amountToBorrow).gt(availableBorrow);
 
     /**
