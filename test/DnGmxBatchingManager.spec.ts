@@ -14,6 +14,7 @@ import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 import { generateErc20Balance } from './utils/generator';
 import { BigNumber } from 'ethers';
 import { IGlpManager } from '@ragetrade/sdk';
+import { anyValue } from '@nomicfoundation/hardhat-chai-matchers/withArgs';
 
 describe('Dn Gmx Batching Manager', () => {
   let dnGmxJuniorVault: DnGmxJuniorVaultMock;
@@ -106,9 +107,9 @@ describe('Dn Gmx Batching Manager', () => {
       expect(rab).to.eq(0);
       expect(rub).to.eq(0);
 
-      await expect(
-        usdcBatchingManager.connect(users[1]).depositUsdc(depositAmount, users[1].address),
-      ).to.be.revertedWithCustomError(usdcBatchingManager, 'TargetAssetCapBreached');
+      await expect(usdcBatchingManager.connect(users[1]).depositUsdc(depositAmount, users[1].address))
+        .to.be.revertedWithCustomError(usdcBatchingManager, 'TargetAssetCapBreached')
+        .withArgs(await usdcToGlp(BigNumber.from(1)), anyValue, parseEther('100'));
       // should go through even if amount is decreased by 1 unit
       await expect(usdcBatchingManager.connect(users[1]).depositUsdc(depositAmount.sub(1), users[1].address)).to.be.not
         .reverted;
@@ -144,9 +145,9 @@ describe('Dn Gmx Batching Manager', () => {
       expect(rab).to.eq(0);
       expect(rub).to.eq(depositAmount1);
 
-      await expect(
-        usdcBatchingManager.connect(users[1]).depositUsdc(depositAmount2.add(2), users[1].address),
-      ).to.be.revertedWithCustomError(usdcBatchingManager, 'TargetAssetCapBreached');
+      await expect(usdcBatchingManager.connect(users[1]).depositUsdc(depositAmount2.add(2), users[1].address))
+        .to.be.revertedWithCustomError(usdcBatchingManager, 'TargetAssetCapBreached')
+        .withArgs(await usdcToGlp(depositAmount1), anyValue, parseEther('100'));
       await expect(usdcBatchingManager.connect(users[1]).depositUsdc(depositAmount2, users[1].address)).to.be.not
         .reverted;
 
@@ -160,7 +161,7 @@ describe('Dn Gmx Batching Manager', () => {
       expect(rab).to.eq(0);
       expect(rub).to.eq(depositAmount1.add(depositAmount2));
     });
-    it('Fails - target asset cap breached due to glp batching maanger current round being high', async () => {
+    it('Fails - target asset cap breached due to glp batching manager current round being high', async () => {
       const depositAmount1 = parseUnits('50', 18);
       const depositAmount2 = await glpToUsdc(parseUnits('50', 18));
 
@@ -181,9 +182,9 @@ describe('Dn Gmx Batching Manager', () => {
       expect(rab).to.eq(depositAmount1);
       expect(rub).to.eq(0);
 
-      await expect(
-        usdcBatchingManager.connect(users[1]).depositUsdc(depositAmount2.add(1), users[1].address),
-      ).to.be.revertedWithCustomError(usdcBatchingManager, 'TargetAssetCapBreached');
+      await expect(usdcBatchingManager.connect(users[1]).depositUsdc(depositAmount2.add(1), users[1].address))
+        .to.be.revertedWithCustomError(usdcBatchingManager, 'TargetAssetCapBreached')
+        .withArgs(depositAmount1, anyValue, parseEther('100'));
       await expect(usdcBatchingManager.connect(users[1]).depositUsdc(depositAmount2, users[1].address)).to.be.not
         .reverted;
 
@@ -221,9 +222,9 @@ describe('Dn Gmx Batching Manager', () => {
       expect(rab).to.eq(depositAmount1);
       expect(rub).to.eq(0);
 
-      await expect(
-        usdcBatchingManager.connect(users[1]).depositUsdc(depositAmount2.add(1), users[1].address),
-      ).to.be.revertedWithCustomError(usdcBatchingManager, 'TargetAssetCapBreached');
+      await expect(usdcBatchingManager.connect(users[1]).depositUsdc(depositAmount2.add(1), users[1].address))
+        .to.be.revertedWithCustomError(usdcBatchingManager, 'TargetAssetCapBreached')
+        .withArgs(depositAmount1.add(depositAmount3), anyValue, parseEther('100'));
       await expect(usdcBatchingManager.connect(users[1]).depositUsdc(depositAmount2, users[1].address)).to.be.not
         .reverted;
 
