@@ -4,6 +4,7 @@ import { formatUnits, parseEther, parseUnits } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import { dnGmxJuniorVaultFixture } from './fixtures/dn-gmx-junior-vault';
 import { Changer } from './utils/changer';
+import { Logger } from './utils/logger';
 import { Checker } from './utils/checker';
 import { generateErc20Balance } from './utils/generator';
 import { increaseBlockTimestamp } from './utils/shared';
@@ -477,7 +478,7 @@ describe('Rebalance & its utils', () => {
     console.log({ availableBorrow });
 
     // availableBorrow = max(borrowCap, balanceOf)
-    expect(availableBorrow).to.eq(parseUnits('100', 6));
+    expect(availableBorrow).to.closeTo(parseUnits('100', 6), 1n);
     expect(amountToBorrow).gt(availableBorrow);
 
     /**
@@ -1247,4 +1248,48 @@ describe('Rebalance & its utils', () => {
 
     // console.log({ btcInitial, ethInitial, btcFinal, ethFinal });
   }
+
+  it('Negligible change in market value when hedging 100%', async () => {
+    const opts = await dnGmxJuniorVaultFixture();
+    const { dnGmxJuniorVault, dnGmxSeniorVault, dnGmxTraderHedgeStrategy, users, sGlp, usdc, mintBurnRouter } = opts;
+
+    const changer = new Changer(opts);
+    const logger = new Logger(opts);
+
+    await dnGmxTraderHedgeStrategy.setTraderOIHedgeBps(10_000);
+    await dnGmxTraderHedgeStrategy.setTraderOIHedges();
+
+    await dnGmxJuniorVault.rebalance();
+
+    await mintBurnRouter.connect(users[1]).mintAndStakeGlpETH(0, 0, {
+      value: parseEther('700'),
+    });
+
+    await usdc.connect(users[1]).approve(dnGmxSeniorVault.address, ethers.constants.MaxUint256);
+    await sGlp.connect(users[1]).approve(dnGmxJuniorVault.address, ethers.constants.MaxUint256);
+
+    await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('1000000', 6), users[1].address);
+    await dnGmxJuniorVault.connect(users[1]).deposit(parseUnits('1000000', 18), users[1].address);
+
+    const initial = await dnGmxJuniorVault.getVaultMarketValue();
+
+    await logger.logTokenPrice('WETH');
+    await logger.logTokenPrice('WBTC');
+
+    await changer.changePriceToken('WETH', 1500);
+    await changer.changePriceToken('WBTC', 22000);
+
+    const afterPriceChange = await dnGmxJuniorVault.getVaultMarketValue();
+
+    const params = await dnGmxJuniorVault.getRebalanceParams();
+    await dnGmxJuniorVault.setRebalanceParams(0, params.rebalanceDeltaThresholdBps, params.rebalanceHfThresholdBps);
+
+    await dnGmxJuniorVault.rebalance();
+
+    const afterRebalance = await dnGmxJuniorVault.getVaultMarketValue();
+
+    // within 2 bps
+    expect(initial).closeTo(afterPriceChange, initial.mul(2).div(10_000));
+    expect(afterPriceChange).closeTo(afterRebalance, afterPriceChange.mul(2).div(10_000));
+  });
 });

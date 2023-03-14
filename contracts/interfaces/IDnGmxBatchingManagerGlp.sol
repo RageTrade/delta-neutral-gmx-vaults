@@ -14,6 +14,7 @@ interface IDnGmxBatchingManagerGlp {
     error InsufficientShares(uint256 balance);
 
     error DepositCapBreached();
+    error TargetAssetCapBreached(uint256 totalAssetsDeposited, uint256 depositAmount, uint256 targetAssetCap);
 
     event DepositToken(
         uint256 indexed round,
@@ -31,6 +32,7 @@ interface IDnGmxBatchingManagerGlp {
 
     event ClaimedAndRedeemed(address indexed claimer, address indexed receiver, uint256 shares, uint256 assetsReceived);
     event DepositCapUpdated(uint256 newDepositCap);
+    event TargetAssetCapUpdated(uint256 newTargeAssetCap);
     event PartialBatchDeposit(uint256 indexed round, uint256 partialGlpAmount, uint256 partialShareAmount);
 
     struct UserDeposit {
@@ -48,6 +50,8 @@ interface IDnGmxBatchingManagerGlp {
     function currentRound() external view returns (uint256);
 
     function claim(address receiver, uint256 amount) external;
+
+    function roundAssetBalance() external view returns (uint256);
 
     function assetBalance(address account) external view returns (uint256 balance);
 
