@@ -1905,7 +1905,7 @@ library DnGmxJuniorVaultManager {
                 tokenIntermediate: state.weth,
                 feeOut: state.feeTierWethWbtcPool,
                 tokenOut: state.wbtc,
-                isExactIn: false
+                isExactIn: !isExactOut
             });
 
         if (isExactOut) {
@@ -1933,7 +1933,6 @@ library DnGmxJuniorVaultManager {
                 amountOutMinimum: tokenAmount
             });
 
-            // since exact output swap tokensReceived = tokenAmount passed
             tokensReceived = swapRouter.exactInput(params);
             usdcPaid = usdcAmount;
 
