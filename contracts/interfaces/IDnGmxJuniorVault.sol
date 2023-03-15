@@ -94,7 +94,7 @@ interface IDnGmxJuniorVault is IERC4626, IBorrower {
 
     event TraderOIHedgesUpdated(int256 btcTraderOIHedge, int256 ethTraderOIHedge);
 
-    event AssetSlippage(uint slippage);
+    event AssetSlippage(address indexed user, uint slippage);
 
     function harvestFees() external;
 

@@ -459,7 +459,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     ) public virtual override(IERC4626, ERC4626Upgradeable) whenNotPaused returns (uint256 shares) {
         _rebalanceBeforeShareAllocation();
         (, uint slippage) = _previewDeposit(amount);
-        emit AssetSlippage(slippage);
+        emit AssetSlippage(to, slippage);
         shares = super.deposit(amount, to);
         _emitVaultState(1);
     }
@@ -474,7 +474,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     ) public virtual override(IERC4626, ERC4626Upgradeable) whenNotPaused returns (uint256 amount) {
         _rebalanceBeforeShareAllocation();
         (, uint slippage) = _previewMint(shares);
-        emit AssetSlippage(slippage);
+        emit AssetSlippage(to, slippage);
         amount = super.mint(shares, to);
         _emitVaultState(1);
     }
@@ -492,7 +492,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     ) public override(IERC4626, ERC4626Upgradeable) whenNotPaused returns (uint256 shares) {
         _rebalanceBeforeShareAllocation();
         (, uint slippage) = _previewWithdraw(assets);
-        emit AssetSlippage(slippage);
+        emit AssetSlippage(owner, slippage);
         shares = super.withdraw(assets, receiver, owner);
         _emitVaultState(1);
     }
@@ -510,7 +510,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     ) public override(IERC4626, ERC4626Upgradeable) whenNotPaused returns (uint256 assets) {
         _rebalanceBeforeShareAllocation();
         (, uint slippage) = _previewRedeem(shares);
-        emit AssetSlippage(slippage);
+        emit AssetSlippage(owner, slippage);
         assets = super.redeem(shares, receiver, owner);
         _emitVaultState(1);
     }
