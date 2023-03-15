@@ -208,7 +208,8 @@ library DnGmxJuniorVaultManager {
         IDnGmxBatchingManager batchingManager;
 
         // switch to select route
-        bool useDirectConversion;
+        bool useDirectConversionBurn;
+        bool useDirectConversionMint;
 
         // !!! STORAGE EXTENSIONS !!! (reduced gaps by no. of slots added here)
         uint128 btcPoolAmount;
@@ -766,7 +767,7 @@ library DnGmxJuniorVaultManager {
         // calculate the amount of glp to be converted to get the desired usdc amount
         uint256 glpAmountInput = usdcAmountDesired.mulDivDown(PRICE_PRECISION, _getGlpPriceInUsdc(state, false));
 
-        if (state.useDirectConversion) {
+        if (state.useDirectConversionBurn) {
             uint256 minUsdcOut = usdcAmountDesired.mulDivDown((MAX_BPS - state.slippageThresholdGmxBps), MAX_BPS);
 
             usdcAmountOut = state.mintBurnRewardRouter.unstakeAndRedeemGlp(
@@ -811,21 +812,46 @@ library DnGmxJuniorVaultManager {
     function _convertAUsdcToAsset(State storage state, uint256 amount) internal {
         _executeWithdraw(state, address(state.usdc), amount, address(this));
 
-        uint256 price = state.gmxVault.getMinPrice(address(state.usdc));
+        if (state.useDirectConversionMint) {
+            uint256 price = state.gmxVault.getMinPrice(address(state.usdc));
 
-        // USDG has 18 decimals and usdc has 6 decimals => 18-6 = 12
-        uint256 usdgAmount = amount.mulDivDown(
-            price * (MAX_BPS - state.slippageThresholdGmxBps) * 1e12,
-            PRICE_PRECISION * MAX_BPS
-        );
+            // USDG has 18 decimals and usdc has 6 decimals => 18-6 = 12
+            uint256 usdgAmount = amount.mulDivDown(
+                price * (MAX_BPS - state.slippageThresholdGmxBps) * 1e12,
+                PRICE_PRECISION * MAX_BPS
+            );
 
-        // conversion of token into glp using batching manager
-        // batching manager handles the conversion due to the cooldown
-        // glp transferred to the vault on batch execution
+            // conversion of token into glp using batching manager
+            // batching manager handles the conversion due to the cooldown
+            // glp transferred to the vault on batch execution
 
-        uint256 glpReceived = _stakeGlp(state, address(state.usdc), amount, usdgAmount);
+            uint256 glpReceived = _stakeGlp(state, address(state.usdc), amount, usdgAmount);
 
-        emit GlpSwapped(glpReceived, amount, false);
+            emit GlpSwapped(glpReceived, amount, false);
+        } else {
+            uint256 minWethOut = amount.mulDivDown(
+                PRICE_PRECISION * (MAX_BPS - state.slippageThresholdSwapEthBps),
+                _getTokenPriceInUsdc(state, state.weth) * MAX_BPS
+            );
+
+            (, uint256 wethReceived) = state._swapUSDC(false, address(state.weth), minWethOut, amount);
+
+            uint256 price = state.gmxVault.getMinPrice(address(state.weth));
+
+            // USDG has 18 decimals and weth has 18 decimals => 18-18 = 0
+            uint256 usdgAmount = wethReceived.mulDivDown(
+                price * (MAX_BPS - state.slippageThresholdGmxBps),
+                PRICE_PRECISION * MAX_BPS
+            );
+
+            // conversion of token into glp using batching manager
+            // batching manager handles the conversion due to the cooldown
+            // glp transferred to the vault on batch execution
+
+            uint256 glpReceived = _stakeGlp(state, address(state.weth), wethReceived, usdgAmount);
+
+            emit GlpSwapped(glpReceived, amount, false);
+        }
     }
 
     function _stakeGlp(
@@ -1096,7 +1122,7 @@ library DnGmxJuniorVaultManager {
             // so we just need to withdraw usdcPaid to transfer usdcAmount
 
             // swap usdc amount to token
-            (uint256 usdcPaid, uint256 tokensReceived) = state._swapUSDC(token, tokenAmount, usdcAmount);
+            (uint256 usdcPaid, uint256 tokensReceived) = state._swapUSDC(true, token, tokenAmount, usdcAmount);
 
             // amount of usdc that got charged for the token required
             uint256 amountWithPremium = usdcPaid + premium;
@@ -1856,44 +1882,62 @@ library DnGmxJuniorVaultManager {
 
     ///@notice swaps usdc into token
     ///@param state set of all state variables of vault
+    ///@param isExactOut whether swap is exactOut
     ///@param token address of token
     ///@param tokenAmount token amount to be bought
-    ///@param maxUsdcAmount maximum amount of usdc that can be sold
+    ///@param usdcAmount maximum amount of usdc that can be sold
     ///@return usdcPaid amount of usdc paid for swap
     ///@return tokensReceived amount of tokens received on swap
     function _swapUSDC(
         State storage state,
+        bool isExactOut,
         address token,
         uint256 tokenAmount,
-        uint256 maxUsdcAmount
+        uint256 usdcAmount
     ) internal returns (uint256 usdcPaid, uint256 tokensReceived) {
         ISwapRouter swapRouter = state.swapRouter;
 
         bytes memory path = token == address(state.weth)
-            ? SwapPath.generate({ tokenIn: state.usdc, fee: 500, tokenOut: state.weth, isExactIn: false })
+            ? SwapPath.generate({ tokenIn: state.usdc, fee: 500, tokenOut: state.weth, isExactIn: !isExactOut })
             : SwapPath.generate({
                 tokenIn: state.usdc,
                 feeIn: 500,
                 tokenIntermediate: state.weth,
                 feeOut: state.feeTierWethWbtcPool,
                 tokenOut: state.wbtc,
-                isExactIn: false
+                isExactIn: !isExactOut
             });
 
-        // exact output swap to ensure exact amount of tokens are received
-        ISwapRouter.ExactOutputParams memory params = ISwapRouter.ExactOutputParams({
-            path: path,
-            recipient: address(this),
-            deadline: block.timestamp,
-            amountOut: tokenAmount,
-            amountInMaximum: maxUsdcAmount
-        });
+        if (isExactOut) {
+            ISwapRouter.ExactOutputParams memory params = ISwapRouter.ExactOutputParams({
+                path: path,
+                recipient: address(this),
+                deadline: block.timestamp,
+                amountOut: tokenAmount,
+                amountInMaximum: usdcAmount
+            });
 
-        // since exact output swap tokensReceived = tokenAmount passed
-        tokensReceived = tokenAmount;
-        usdcPaid = swapRouter.exactOutput(params);
+            // since exact output swap tokensReceived = tokenAmount passed
+            tokensReceived = tokenAmount;
+            usdcPaid = swapRouter.exactOutput(params);
 
-        emit TokenSwapped(address(state.usdc), token, usdcPaid, tokensReceived);
+            emit TokenSwapped(address(state.usdc), token, usdcPaid, tokensReceived);
+        } else {
+            // executes the swap on uniswap pool
+            // exact input swap to convert exact amount of tokens into usdc
+            ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
+                path: path,
+                recipient: address(this),
+                deadline: block.timestamp,
+                amountIn: usdcAmount,
+                amountOutMinimum: tokenAmount
+            });
+
+            tokensReceived = swapRouter.exactInput(params);
+            usdcPaid = usdcAmount;
+
+            emit TokenSwapped(address(state.usdc), token, usdcPaid, tokensReceived);
+        }
     }
 
     function emitVaultState(State storage state, uint256 eventType) external {
