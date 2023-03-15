@@ -93,11 +93,12 @@ contract DnGmxJuniorVaultMock is DnGmxJuniorVault {
     }
 
     function swapUSDC(
+        bool isExactOut,
         address token,
         uint256 tokenAmount,
         uint256 maxUsdcAmount
     ) external returns (uint256 usdcPaid, uint256 tokensReceived) {
-        return state._swapUSDC(true, token, tokenAmount, maxUsdcAmount);
+        return state._swapUSDC(isExactOut, token, tokenAmount, maxUsdcAmount);
     }
 
     function executeFlashloan(
