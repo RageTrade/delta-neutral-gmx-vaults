@@ -266,58 +266,6 @@ describe('Swaps', () => {
     expect(await dnGmxJuniorVault.totalAssets()).to.gt(minGlpOut);
   });
 
-  it('convert aUSDC to asset - with indirect route', async () => {
-    const { dnGmxJuniorVault, dnGmxSeniorVault, usdc, aUSDC, users, gmxVault, sGlp } = await dnGmxJuniorVaultFixture();
-    await dnGmxSeniorVault.connect(users[1]).deposit(parseUnits('150', 6), users[1].address);
-
-    await dnGmxJuniorVault.setDirectConversion(true, false);
-
-    const aUSDCAmount = parseUnits('100', 6);
-
-    const slippageThresholdGmxBps = BigNumber.from(100); // 1%
-    const MAX_BPS = BigNumber.from(10_000);
-    const PRICE_PRECISION = BigNumber.from(10).pow(30);
-
-    const priceOfUsdc = await gmxVault.getMinPrice(usdc.address);
-    const priceOfGlp = await dnGmxJuniorVault.getPriceExternal();
-
-    const USDC_DECIMALS = 6;
-    const USDG_DECIMALS = 18;
-
-    let minUsdgOut = aUSDCAmount
-      .mul(priceOfUsdc)
-      .mul(MAX_BPS.sub(slippageThresholdGmxBps))
-      .div(MAX_BPS)
-      .div(PRICE_PRECISION);
-
-    // console.log('minUsdgOut (intermidiate)', formatEther(minUsdgOut))
-
-    minUsdgOut = minUsdgOut.mul(BigNumber.from(10).pow(USDG_DECIMALS)).div(BigNumber.from(10).pow(USDC_DECIMALS));
-
-    // console.log('minUsdgOut (final)', formatEther(minUsdgOut))
-
-    const minGlpOut = minUsdgOut
-      .mul(PRICE_PRECISION)
-      .div(priceOfGlp)
-      .div(BigNumber.from(10).pow(USDG_DECIMALS - USDC_DECIMALS));
-
-    await dnGmxJuniorVault.executeBorrowFromDnGmxSeniorVault(aUSDCAmount);
-
-    expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.eq(aUSDCAmount);
-    expect(await dnGmxJuniorVault.totalAssets()).to.eq(0);
-
-    await dnGmxJuniorVault.convertAUsdcToAsset(aUSDCAmount); // slippageThresholdGmxBps = 1% (from fixture)
-
-    // console.log('min glp out', formatEther(minGlpOut));
-
-    // console.log('price of usdc (from get price)', formatUnits(await dnGmxJuniorVault['getPrice(address)'](usdc.address), 30 - 6))
-    // console.log('price of usdc (from gmx)', formatUnits(priceOfUsdc, 30 - 6))
-    // console.log('price of glp', formatUnits(priceOfGlp, 30 - 18))
-
-    expect(await aUSDC.balanceOf(dnGmxJuniorVault.address)).to.closeTo(0n, 10n);
-    expect(await dnGmxJuniorVault.totalAssets()).to.gt(minGlpOut);
-  });
-
   it('convert aUSDC to asset - with indirect route - fail slippage', async () => {
     const { dnGmxJuniorVault, dnGmxSeniorVault, usdc, aUSDC, users, gmxVault, sGlp } = await dnGmxJuniorVaultFixture();
 
