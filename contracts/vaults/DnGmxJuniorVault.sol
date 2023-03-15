@@ -648,7 +648,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @param assets number of assets to be deposited
     /// @return shares that would be minted to the user
     /// @return slippage assets adjustment due to slippage
-    function _previewDeposit(uint256 assets) public view returns (uint256, uint256) {
+    function _previewDeposit(uint256 assets) internal view returns (uint256, uint256) {
         uint256 netAssets = state.getSlippageAdjustedAssets({ assets: assets, isDeposit: true });
         return (convertToShares(netAssets), assets - netAssets);
     }
@@ -665,7 +665,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @param shares number of shares to mint
     /// @return assets that would be taken from the user
     /// @return slippage assets adjustment due to slippage
-    function _previewMint(uint256 shares) public view virtual returns (uint256, uint256) {
+    function _previewMint(uint256 shares) internal view virtual returns (uint256, uint256) {
         uint256 supply = totalSupply();
 
         if (supply == 0) return (shares, 0);
@@ -692,7 +692,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @param assets that would be given to the user
     /// @return shares that would be burnt
     /// @return slippage assets adjustment due to slippage
-    function _previewWithdraw(uint256 assets) public view virtual returns (uint256, uint256) {
+    function _previewWithdraw(uint256 assets) internal view virtual returns (uint256, uint256) {
         uint256 supply = totalSupply();
 
         if (supply == 0) return (assets, 0);
@@ -719,7 +719,7 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @param shares that would be taken from the user
     /// @return assets that user would get
     /// @return slippage assets adjustment due to slippage
-    function _previewRedeem(uint256 shares) public view virtual returns (uint256, uint256) {
+    function _previewRedeem(uint256 shares) internal view virtual returns (uint256, uint256) {
         uint256 supply = totalSupply();
 
         if (supply == 0) return (shares, 0);
