@@ -830,7 +830,7 @@ library DnGmxJuniorVaultManager {
             emit GlpSwapped(glpReceived, amount, false);
         } else {
             uint256 minWethOut = amount.mulDivDown(
-                PRICE_PRECISION * (MAX_BPS - state.slippageThresholdSwapEthBps) * 1e10,
+                PRICE_PRECISION * (MAX_BPS - state.slippageThresholdSwapEthBps),
                 _getTokenPriceInUsdc(state, state.weth) * MAX_BPS
             );
 
