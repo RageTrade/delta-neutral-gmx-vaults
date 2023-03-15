@@ -458,6 +458,8 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         address to
     ) public virtual override(IERC4626, ERC4626Upgradeable) whenNotPaused returns (uint256 shares) {
         _rebalanceBeforeShareAllocation();
+        (, uint slippage) = _previewDeposit(amount);
+        emit AssetSlippage(to, slippage);
         shares = super.deposit(amount, to);
         _emitVaultState(1);
     }
@@ -471,6 +473,8 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         address to
     ) public virtual override(IERC4626, ERC4626Upgradeable) whenNotPaused returns (uint256 amount) {
         _rebalanceBeforeShareAllocation();
+        (, uint slippage) = _previewMint(shares);
+        emit AssetSlippage(to, slippage);
         amount = super.mint(shares, to);
         _emitVaultState(1);
     }
@@ -487,6 +491,8 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         address owner
     ) public override(IERC4626, ERC4626Upgradeable) whenNotPaused returns (uint256 shares) {
         _rebalanceBeforeShareAllocation();
+        (, uint slippage) = _previewWithdraw(assets);
+        emit AssetSlippage(owner, slippage);
         shares = super.withdraw(assets, receiver, owner);
         _emitVaultState(1);
     }
@@ -503,6 +509,8 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         address owner
     ) public override(IERC4626, ERC4626Upgradeable) whenNotPaused returns (uint256 assets) {
         _rebalanceBeforeShareAllocation();
+        (, uint slippage) = _previewRedeem(shares);
+        emit AssetSlippage(owner, slippage);
         assets = super.redeem(shares, receiver, owner);
         _emitVaultState(1);
     }
@@ -631,24 +639,42 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     function previewDeposit(
         uint256 assets
     ) public view virtual override(IERC4626, ERC4626Upgradeable) returns (uint256) {
+        (uint shares, ) = _previewDeposit(assets);
+        return shares;
+    }
+
+    /// @notice preview function for using assets to mint shares
+    /// @param assets number of assets to be deposited
+    /// @return shares that would be minted to the user
+    /// @return slippage assets adjustment due to slippage
+    function _previewDeposit(uint256 assets) public view returns (uint256, uint256) {
         uint256 netAssets = state.getSlippageAdjustedAssets({ assets: assets, isDeposit: true });
-        return convertToShares(netAssets);
+        return (convertToShares(netAssets), assets - netAssets);
     }
 
     /// @notice preview function for minting of shares
     /// @param shares number of shares to mint
     /// @return assets that would be taken from the user
     function previewMint(uint256 shares) public view virtual override(IERC4626, ERC4626Upgradeable) returns (uint256) {
+        (uint assets, ) = _previewMint(shares);
+        return assets;
+    }
+
+    /// @notice preview function for minting of shares
+    /// @param shares number of shares to mint
+    /// @return assets that would be taken from the user
+    /// @return slippage assets adjustment due to slippage
+    function _previewMint(uint256 shares) public view virtual returns (uint256, uint256) {
         uint256 supply = totalSupply();
 
-        if (supply == 0) return shares;
+        if (supply == 0) return (shares, 0);
 
         uint256 assets = convertToAssets(shares);
         uint256 netAssets = state.getSlippageAdjustedAssets({ assets: assets, isDeposit: true });
 
         uint256 slippageInAssetTerms = assets - netAssets;
 
-        return assets + slippageInAssetTerms;
+        return (assets + slippageInAssetTerms, slippageInAssetTerms);
     }
 
     /// @notice preview function for withdrawal of assets
@@ -657,13 +683,25 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     function previewWithdraw(
         uint256 assets
     ) public view virtual override(IERC4626, ERC4626Upgradeable) returns (uint256) {
+        (uint _assets, ) = _previewWithdraw(assets);
+        return _assets;
+    }
+
+    /// @notice preview function for withdrawal of assets
+    /// @param assets that would be given to the user
+    /// @return shares that would be burnt
+    /// @return slippage assets adjustment due to slippage
+    function _previewWithdraw(uint256 assets) public view virtual returns (uint256, uint256) {
         uint256 supply = totalSupply();
 
-        if (supply == 0) return assets;
+        if (supply == 0) return (assets, 0);
 
         uint256 netAssets = state.getSlippageAdjustedAssets({ assets: assets, isDeposit: false });
 
-        return netAssets.mulDivUp(supply * MAX_BPS, state.totalAssets(false) * (MAX_BPS - state.withdrawFeeBps));
+        return (
+            netAssets.mulDivUp(supply * MAX_BPS, state.totalAssets(false) * (MAX_BPS - state.withdrawFeeBps)),
+            assets - netAssets
+        );
     }
 
     /// @notice preview function for redeeming shares
@@ -672,14 +710,23 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     function previewRedeem(
         uint256 shares
     ) public view virtual override(IERC4626, ERC4626Upgradeable) returns (uint256) {
+        (uint assets, ) = _previewRedeem(shares);
+        return assets;
+    }
+
+    /// @notice preview function for redeeming shares
+    /// @param shares that would be taken from the user
+    /// @return assets that user would get
+    /// @return slippage assets adjustment due to slippage
+    function _previewRedeem(uint256 shares) public view virtual returns (uint256, uint256) {
         uint256 supply = totalSupply();
 
-        if (supply == 0) return shares;
+        if (supply == 0) return (shares, 0);
 
         uint256 assets = convertToAssets(shares);
         uint256 netAssets = state.getSlippageAdjustedAssets({ assets: assets, isDeposit: false });
 
-        return netAssets.mulDivDown(MAX_BPS - state.withdrawFeeBps, MAX_BPS);
+        return (netAssets.mulDivDown(MAX_BPS - state.withdrawFeeBps, MAX_BPS), assets - netAssets);
     }
 
     /// @notice returns deposit cap in terms of asset tokens
