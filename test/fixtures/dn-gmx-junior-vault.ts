@@ -75,7 +75,7 @@ export const dnGmxJuniorVaultFixture = deployments.createFixture(async hre => {
     addresses.AAVE_POOL_ADDRESS_PROVIDER, // _poolAddressesProvider
   );
 
-  await dnGmxJuniorVault.setDirectConversion(true);
+  await dnGmxJuniorVault.setDirectConversion(true, true);
 
   const dnGmxTraderHedgeStrategy = await dnGmxTraderHedgeStrategyFixture();
 
