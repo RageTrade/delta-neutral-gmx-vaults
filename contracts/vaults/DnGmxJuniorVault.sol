@@ -301,8 +301,9 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         state.glpManager = _glpManager;
     }
 
-    function setDirectConversion(bool _useDirectConversion) external onlyOwner {
-        state.useDirectConversion = _useDirectConversion;
+    function setDirectConversion(bool _useDirectConversionBurn, bool _useDirectConversionMint) external onlyOwner {
+        state.useDirectConversionBurn = _useDirectConversionBurn;
+        state.useDirectConversionMint = _useDirectConversionMint;
     }
 
     /// @notice pause deposit, mint, withdraw and redeem
