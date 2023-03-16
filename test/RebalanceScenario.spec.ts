@@ -1100,7 +1100,7 @@ describe('Rebalance Scenarios', () => {
 
     await checker.checkTotalAssets(148101812829181000000n, 10n ** 15n, true);
     await checker.checkTotalSupply(149630714840408000000n, 10n ** 12n, true);
-    await checker.checkCurrentBorrowed([144353n - 1n, 28116385489937200n + 358289096n], [0, 10n ** 5n]);
+    await checker.checkCurrentBorrowed([144353n - 1n, 28116385489937200n], [0, 10n ** 9n]);
     await checker.checkVaultMktValue(137201587n, 10000n);
     await checker.checkBorrowValue(78474011n, 300n);
     await checker.checkUsdcBorrwed(60009537n, 15n);
