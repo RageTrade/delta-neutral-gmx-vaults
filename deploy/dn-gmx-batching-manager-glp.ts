@@ -10,7 +10,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   } = hre;
 
   const { deployer } = await getNamedAccounts();
-  const { GMX_SGLP_ADDRESS, GMX_MINT_BURN_REWARD_ROUTER, GLP_MANAGER, KEEPER_BATCHING_MANAGER } =
+  const { GMX_SGLP_ADDRESS, GMX_MINT_BURN_REWARD_ROUTER, GLP_MANAGER, KEEPER_BATCHING_MANAGER_GLP } =
     await getNetworkInfo();
 
   const DnGmxBatchingManagerGlpLogicDeployment = await get('DnGmxBatchingManagerGlpLogic');
@@ -29,7 +29,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         GMX_MINT_BURN_REWARD_ROUTER,
         GLP_MANAGER,
         DnGmxJuniorVaultDeployment.address,
-        KEEPER_BATCHING_MANAGER,
+        KEEPER_BATCHING_MANAGER_GLP,
       ]),
     ],
     waitConfirmations,

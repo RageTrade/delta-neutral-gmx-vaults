@@ -11,7 +11,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   } = hre;
 
   const { deployer } = await getNamedAccounts();
-  const { GLP_MANAGER, GLP_ADDRESS, GMX_VAULT, KEEPER_BATCHING_MANAGER, WETH_ADDRESS, WBTC_ADDRESS } =
+  const { GLP_MANAGER, GLP_ADDRESS, GMX_VAULT, KEEPER_TRADER_HEDGE_STRATEGY, WETH_ADDRESS, WBTC_ADDRESS } =
     await getNetworkInfo();
 
   const DnGmxJuniorVaultDeployment = await get('DnGmxJuniorVault');
@@ -26,7 +26,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       DnGmxTraderHedgeStrategyLogicDeployment.address,
       ProxyAdminDeployment.address,
       DnGmxTraderHedgeStrategy__factory.createInterface().encodeFunctionData('initialize', [
-        KEEPER_BATCHING_MANAGER,
+        KEEPER_TRADER_HEDGE_STRATEGY,
         GMX_VAULT,
         GLP_MANAGER,
         DnGmxJuniorVaultDeployment.address,

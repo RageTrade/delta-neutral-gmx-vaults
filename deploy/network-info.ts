@@ -76,6 +76,12 @@ export interface NetworkInfo {
   SLIPPAGE_THRESHOLD_BATCHING_MANAGER: BigNumberish;
   GLP_DEPOSIT_PENDING_THRESHOLD: BigNumberish;
 
+  // batching manager glp
+  KEEPER_BATCHING_MANAGER_GLP: string;
+
+  // trader hedge strategy
+  KEEPER_TRADER_HEDGE_STRATEGY: string;
+
   // withdraw periphery
   SLIPPAGE_THRESHOLD_WITHDRAW_PERIPHERY: BigNumberish;
 
@@ -161,6 +167,12 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
     SLIPPAGE_THRESHOLD_BATCHING_MANAGER: 55,
     GLP_DEPOSIT_PENDING_THRESHOLD: parseUnits('25', 18),
 
+    // batching manager glp
+    KEEPER_BATCHING_MANAGER_GLP: '0xfAA6146EA09A9636719Fc6c5f21BA0b4C822E022',
+
+    // trader oi hedge strategy
+    KEEPER_TRADER_HEDGE_STRATEGY: '0xEcA5f154BaD10BC60A391079A3698c1b94628ff3',
+
     // withdraw periphery
     SLIPPAGE_THRESHOLD_WITHDRAW_PERIPHERY: 40,
     SLIPPAGE_THRESHOLD_DEPOSIT_PERIPHERY: 40,
@@ -232,6 +244,12 @@ export async function getNetworkInfo(this: any): Promise<NetworkInfo> {
     ROUND_DEPOSIT_CAP: parseUnits('750000', 6),
     SLIPPAGE_THRESHOLD_BATCHING_MANAGER: 100,
     GLP_DEPOSIT_PENDING_THRESHOLD: parseUnits('20', 18),
+
+    // batching manager glp
+    KEEPER_BATCHING_MANAGER_GLP: 'TODO',
+
+    // trader oi hedge strategy
+    KEEPER_TRADER_HEDGE_STRATEGY: 'TODO',
 
     // withdraw periphery
     SLIPPAGE_THRESHOLD_WITHDRAW_PERIPHERY: 100,
