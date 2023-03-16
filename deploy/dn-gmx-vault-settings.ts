@@ -91,7 +91,6 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     KEEPER_JR_VAULT,
     DnGmxSeniorVaultDeployment.address,
     DEPOSIT_CAP_JR_VAULT,
-    DnGmxBatchingManagerDeployment.address,
     WITHDRAW_FEE_BPS,
     FEE_TIER_WETH_WBTC_POOL,
   );
@@ -152,13 +151,6 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   );
 
   await execute('DnGmxBatchingManager', { from: deployer, log: true, waitConfirmations }, 'grantAllowances');
-
-  await execute(
-    'DnGmxBatchingManager',
-    { from: deployer, log: true, waitConfirmations },
-    'setBypass',
-    BatchingManagerBypassDeployment.address,
-  );
 
   await execute(
     'DnGmxBatchingManager',

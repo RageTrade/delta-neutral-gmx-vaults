@@ -1,6 +1,6 @@
 {
   "name": "@ragetrade/delta-neutral-gmx-vaults",
-  "version": "1.0.4",
+  "version": "2.0.0",
   "repository": "https://github.com/RageTrade/delta-neutral-gmx-vaults.git",
   "license": "MIT",
   "scripts": {
@@ -12,7 +12,8 @@
     "deploy:goerli": "hardhat deploy --network goerli && yarn etherscan --network goerli",
     "deploy:localhost": "hardhat --network localhost deploy",
     "deploy:rinkeby": "hardhat deploy --network rinkeby && yarn etherscan --network rinkeby",
-    "etherscan": "hardhat etherscan-verify",
+    "etherscan": "hardhat etherscan-verify --network arbmain",
+    "etherscan2": "TS_NODE_SKIP_IGNORE=true hardhat run scripts/etherscan-verify.ts --network arbmain",
     "format": "prettier --check contracts test",
     "format:fix": "prettier --write contracts test",
     "size": "hardhat size-contracts",
