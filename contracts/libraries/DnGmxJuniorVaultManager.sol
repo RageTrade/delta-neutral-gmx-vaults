@@ -11,6 +11,7 @@ import { IDebtToken } from '../interfaces/IDebtToken.sol';
 import { IPool } from '@aave/core-v3/contracts/interfaces/IPool.sol';
 import { IAToken } from '@aave/core-v3/contracts/interfaces/IAToken.sol';
 import { IPriceOracle } from '@aave/core-v3/contracts/interfaces/IPriceOracle.sol';
+import { IStableDebtToken } from '@aave/core-v3/contracts/interfaces/IStableDebtToken.sol';
 import { DataTypes } from '@aave/core-v3/contracts/protocol/libraries/types/DataTypes.sol';
 import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol';
 import { IRewardsController } from '@aave/periphery-v3/contracts/rewards/interfaces/IRewardsController.sol';
@@ -37,6 +38,8 @@ import { FixedPointMathLib } from '@rari-capital/solmate/src/utils/FixedPointMat
 import { Simulate } from '@uniswap/v3-core/contracts/libraries/Simulate.sol';
 import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 
+import { WadRayMath } from '@aave/core-v3/contracts/protocol/libraries/math/WadRayMath.sol';
+
 /**
  * @title Helper library for junior vault
  * @dev junior vault delegates calls to this library for logic
@@ -44,6 +47,9 @@ import { ISwapRouter } from '@uniswap/v3-periphery/contracts/interfaces/ISwapRou
  */
 
 library DnGmxJuniorVaultManager {
+    uint256 internal constant BORROW_CAP_MASK =                0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000FFFFFFFFFFFFFFFFFFFF; // prettier-ignore
+    uint256 internal constant BORROW_CAP_START_BIT_POSITION = 80;
+
     event RewardsHarvested(
         uint256 wethHarvested,
         uint256 esGmxStaked,
@@ -82,6 +88,8 @@ library DnGmxJuniorVaultManager {
     using FixedPointMathLib for uint256;
     using SafeCast for uint256;
     using SignedFixedPointMathLib for int256;
+
+    using WadRayMath for uint256;
 
     uint256 internal constant MAX_BPS = 10_000;
 
@@ -577,6 +585,22 @@ library DnGmxJuniorVaultManager {
             glpDeposited: glpDeposited,
             withUpdatedPoolAmounts: conditions[1]
         });
+
+        optimalEthBorrow = _getOptimalBorrowsBasisAaveCaps(
+            state,
+            address(state.weth),
+            18,
+            optimalEthBorrow,
+            currentEthBorrow
+        );
+
+        optimalBtcBorrow = _getOptimalBorrowsBasisAaveCaps(
+            state,
+            address(state.wbtc),
+            8,
+            optimalBtcBorrow,
+            currentBtcBorrow
+        );
 
         if (conditions[0] /*isPartialHedge*/) {
             // if partial hedges are allowed (i.e. rebalance call and not deposit/withdraw)
@@ -1757,6 +1781,30 @@ library DnGmxJuniorVaultManager {
         // dividing that with token prices we can calculate the optimal token borrow amounts
         optimalBtcBorrow = maxBorrowValue.mulDivDown(btcWeight * PRICE_PRECISION, (btcWeight + ethWeight) * btcPrice);
         optimalEthBorrow = maxBorrowValue.mulDivDown(ethWeight * PRICE_PRECISION, (btcWeight + ethWeight) * ethPrice);
+    }
+
+    function _getOptimalBorrowsBasisAaveCaps(
+        State storage state,
+        address asset,
+        uint8 decimals,
+        uint256 optimal,
+        uint256 current
+    ) internal view returns (uint256) {
+        DataTypes.ReserveData memory reserve = state.pool.getReserveData(asset);
+
+        uint256 currScaledVariableDebt = IDebtToken(reserve.variableDebtTokenAddress).scaledTotalSupply();
+        uint256 totalSupplyVariableDebt = currScaledVariableDebt.rayMul(reserve.variableBorrowIndex);
+
+        (, uint256 currTotalStableDebt, , ) = IStableDebtToken(reserve.stableDebtTokenAddress).getSupplyData();
+
+        uint256 totalDebt = currTotalStableDebt + totalSupplyVariableDebt;
+        uint256 cap = (reserve.configuration.data & ~BORROW_CAP_MASK) >> BORROW_CAP_START_BIT_POSITION;
+        cap = cap * 10 ** decimals;
+
+        int256 diffAvailable = cap.toInt256() - totalDebt.toInt256();
+        int256 diffReqd = optimal.toInt256() - current.toInt256();
+
+        return diffAvailable > diffReqd ? optimal : current + uint256(diffAvailable);
     }
 
     ///@notice returns token amount underlying glp amount deposited and stored pool amount
