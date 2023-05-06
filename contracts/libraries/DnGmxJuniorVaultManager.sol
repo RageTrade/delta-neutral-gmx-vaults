@@ -589,6 +589,7 @@ library DnGmxJuniorVaultManager {
         optimalEthBorrow = _getOptimalBorrowsBasisAaveCaps(
             state,
             address(state.weth),
+            18,
             optimalEthBorrow,
             currentEthBorrow
         );
@@ -596,6 +597,7 @@ library DnGmxJuniorVaultManager {
         optimalBtcBorrow = _getOptimalBorrowsBasisAaveCaps(
             state,
             address(state.wbtc),
+            8,
             optimalBtcBorrow,
             currentBtcBorrow
         );
@@ -1784,6 +1786,7 @@ library DnGmxJuniorVaultManager {
     function _getOptimalBorrowsBasisAaveCaps(
         State storage state,
         address asset,
+        uint8 decimals,
         uint256 optimal,
         uint256 current
     ) internal view returns (uint256) {
@@ -1796,6 +1799,7 @@ library DnGmxJuniorVaultManager {
 
         uint256 totalDebt = currTotalStableDebt + totalSupplyVariableDebt;
         uint256 cap = (reserve.configuration.data & ~BORROW_CAP_MASK) >> BORROW_CAP_START_BIT_POSITION;
+        cap = cap * 10**decimals;
 
         int256 diffAvailable = cap.toInt256() - totalDebt.toInt256();
         int256 diffReqd = optimal.toInt256() - current.toInt256();
