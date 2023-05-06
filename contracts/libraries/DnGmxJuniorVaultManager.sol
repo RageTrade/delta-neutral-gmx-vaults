@@ -1799,7 +1799,7 @@ library DnGmxJuniorVaultManager {
 
         uint256 totalDebt = currTotalStableDebt + totalSupplyVariableDebt;
         uint256 cap = (reserve.configuration.data & ~BORROW_CAP_MASK) >> BORROW_CAP_START_BIT_POSITION;
-        cap = cap * 10**decimals;
+        cap = cap * 10 ** decimals;
 
         int256 diffAvailable = cap.toInt256() - totalDebt.toInt256();
         int256 diffReqd = optimal.toInt256() - current.toInt256();
