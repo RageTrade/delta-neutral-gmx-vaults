@@ -445,6 +445,10 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         _emitVaultState(1);
     }
 
+    function repay() external onlyOwner {
+        state.dnGmxSeniorVault.repay(getUsdcBorrowed());
+    }
+
     /* ##################################################################
                                 USER FUNCTIONS
     ################################################################## */
