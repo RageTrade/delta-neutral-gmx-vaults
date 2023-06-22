@@ -76,7 +76,7 @@ export default {
     hardhat: {
       forking: {
         url: `https://arb-mainnet.alchemyapi.io/v2/${ALCHEMY_KEY}`,
-        blockNumber: 56878000,
+        blockNumber: 103721100,
       },
       blockGasLimit: 0x1fffffffffff,
       gasPrice: 0,
@@ -197,7 +197,7 @@ export default {
     deployer: LEDGER_ADDRESS
       ? `ledger://${LEDGER_ADDRESS}`
       : {
-          default: 0,
-        },
+        default: 0,
+      },
   },
 };
