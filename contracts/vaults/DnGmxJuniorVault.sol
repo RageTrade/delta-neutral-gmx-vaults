@@ -163,6 +163,14 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         emit AllowancesGranted();
     }
 
+    function setRouters(address rewardRouter, address mintBurnRewardRouter) external onlyOwner {
+        // state.rewardRouter = IRewardRouterV2(0x159854e14A862Df9E39E1D128b8e5F70B4A3cE9B);
+        // state.mintBurnRewardRouter = IRewardRouterV2(0xB95DB5B167D75e6d04227CfFFA61069348d271F5);
+
+        state.rewardRouter = IRewardRouterV2(rewardRouter);
+        state.mintBurnRewardRouter = IRewardRouterV2(mintBurnRewardRouter);
+    }
+
     /// @notice set admin paramters
     /// @param newKeeper keeper address
     /// @param dnGmxSeniorVault senior vault address
@@ -412,8 +420,6 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
 
         emit Rebalanced();
 
-        (state.btcPoolAmount, state.ethPoolAmount) = state.getPoolAmounts();
-
         (int128 currentBtcTraderOIHedge, int128 currentEthTraderOIHedge) = state.getTraderOIHedgeAmounts();
         state.btcTraderOIHedge = currentBtcTraderOIHedge;
         state.ethTraderOIHedge = currentEthTraderOIHedge;
@@ -445,6 +451,10 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         (currentBtc, currentEth) = state.getCurrentBorrows();
 
         _emitVaultState(1);
+    }
+
+    function repay() external onlyOwner {
+        state.dnGmxSeniorVault.repay(getUsdcBorrowed());
     }
 
     /* ##################################################################
@@ -840,11 +850,6 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @notice harvests fees and rebalances profits before deposits and withdrawals
     /// @dev called first on any deposit/withdrawals
     function _rebalanceBeforeShareAllocation() internal {
-        if (state.btcPoolAmount == 0)
-            state.btcPoolAmount = (state.gmxVault.poolAmounts(address(state.wbtc))).toUint128();
-        if (state.ethPoolAmount == 0)
-            state.ethPoolAmount = (state.gmxVault.poolAmounts(address(state.weth))).toUint128();
-
         (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
         uint256 totalCurrentBorrowValue = state.getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
 

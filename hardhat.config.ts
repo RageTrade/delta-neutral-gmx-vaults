@@ -1,6 +1,6 @@
 import '@nomicfoundation/hardhat-chai-matchers';
 import '@nomiclabs/hardhat-ethers';
-import 'hardhat-tracer';
+// import 'hardhat-tracer';
 import '@typechain/hardhat';
 import 'hardhat-gas-reporter';
 import 'hardhat-contract-sizer';
@@ -75,13 +75,20 @@ export default {
   networks: {
     hardhat: {
       forking: {
-        url: `https://arb-mainnet.alchemyapi.io/v2/${ALCHEMY_KEY}`,
-        blockNumber: 56878000,
+        url: `https://arb-mainnet.g.alchemy.com/v2/UdRiMcvlRPFozDayAAtB6lYbBkmU1sVy`,
+        blockNumber: 204966200,
+      },
+      chains: {
+        42161: {
+          hardforkHistory: {
+            london: 23850000,
+          },
+        },
       },
       blockGasLimit: 0x1fffffffffff,
       gasPrice: 0,
       initialBaseFeePerGas: 0,
-      allowUnlimitedContractSize: true,
+      // allowUnlimitedContractSize: true,
     },
     rinkeby: {
       url: `https://eth-rinkeby.alchemyapi.io/v2/${ALCHEMY_KEY}`,
@@ -169,7 +176,9 @@ export default {
     alwaysGenerateOverloads: false,
   },
   etherscan: {
-    apiKey: process.env.ETHERSCAN_KEY,
+    apiKey: {
+      arbitrumOne: process.env.ETHERSCAN_API_KEY,
+    },
   },
   mocha: {
     timeout: 4000000,
