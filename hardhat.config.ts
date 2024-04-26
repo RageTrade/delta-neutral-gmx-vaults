@@ -81,8 +81,8 @@ export default {
       chains: {
         42161: {
           hardforkHistory: {
-            london: 23850000
-          }
+            london: 23850000,
+          },
         },
       },
       blockGasLimit: 0x1fffffffffff,
@@ -176,7 +176,9 @@ export default {
     alwaysGenerateOverloads: false,
   },
   etherscan: {
-    apiKey: process.env.ETHERSCAN_KEY,
+    apiKey: {
+      arbitrumOne: process.env.ETHERSCAN_API_KEY,
+    },
   },
   mocha: {
     timeout: 4000000,
