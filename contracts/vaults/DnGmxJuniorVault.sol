@@ -163,6 +163,14 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         emit AllowancesGranted();
     }
 
+    function setRouters(address rewardRouter, address mintBurnRewardRouter) external onlyOwner {
+        // state.rewardRouter = IRewardRouterV2(0x159854e14A862Df9E39E1D128b8e5F70B4A3cE9B);
+        // state.mintBurnRewardRouter = IRewardRouterV2(0xB95DB5B167D75e6d04227CfFFA61069348d271F5);
+
+        state.rewardRouter = IRewardRouterV2(rewardRouter);
+        state.mintBurnRewardRouter = IRewardRouterV2(mintBurnRewardRouter);
+    }
+
     /// @notice set admin paramters
     /// @param newKeeper keeper address
     /// @param dnGmxSeniorVault senior vault address
