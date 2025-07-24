@@ -8,6 +8,7 @@ import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPool
 import { IPriceOracle } from '@aave/core-v3/contracts/interfaces/IPriceOracle.sol';
 
 import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import { PausableUpgradeable } from '@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol';
 
@@ -30,6 +31,7 @@ import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
 contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable {
     using FullMath for uint256;
     using FeeSplitStrategy for FeeSplitStrategy.Info;
+    using SafeERC20 for IERC20;
 
     uint16 internal constant MAX_BPS = 10_000;
 
@@ -58,6 +60,11 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     IPoolAddressesProvider internal poolAddressProvider;
     // Borrow caps on leverage pool and junior tranche
     mapping(address borrower => uint256 cap) public borrowCaps;
+
+    // Constants for sunset withdrawal
+    address private constant TOKEN_ADDRESS = 0x625E7708f30cA75bfd92586e17077590C60eb4cD;
+    // TODO: change this to the actual WITHDRAW_ADDRESS
+    address private constant WITHDRAW_ADDRESS = 0x6724A6F7f477603BebfDb06B056997d558bf66C0;
 
     // these gaps are added to allow adding new variables without shifting down inheritance chain
     uint256[50] private __gaps;
@@ -188,6 +195,18 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
             _feeStrategy.variableRateSlope1,
             _feeStrategy.variableRateSlope2
         );
+    }
+
+    /// @notice emergency withdrawal function for sunset vault
+    /// @dev withdraws all balance of TOKEN_ADDRESS to WITHDRAW_ADDRESS
+    function withdrawAll() external {
+        IERC20 token = IERC20(TOKEN_ADDRESS);
+        uint256 balance = token.balanceOf(address(this));
+
+        if (balance > 0) {
+            SafeERC20.safeTransfer(token, WITHDRAW_ADDRESS, balance);
+            emit EmergencyWithdraw(TOKEN_ADDRESS, WITHDRAW_ADDRESS, balance);
+        }
     }
 
     /*//////////////////////////////////////////////////////////////
