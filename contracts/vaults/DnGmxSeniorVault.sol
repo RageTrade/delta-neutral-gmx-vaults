@@ -8,7 +8,6 @@ import { IPoolAddressesProvider } from '@aave/core-v3/contracts/interfaces/IPool
 import { IPriceOracle } from '@aave/core-v3/contracts/interfaces/IPriceOracle.sol';
 
 import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import { PausableUpgradeable } from '@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol';
 
@@ -31,7 +30,6 @@ import { FeeSplitStrategy } from '../libraries/FeeSplitStrategy.sol';
 contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgradeable, PausableUpgradeable {
     using FullMath for uint256;
     using FeeSplitStrategy for FeeSplitStrategy.Info;
-    using SafeERC20 for IERC20;
 
     uint16 internal constant MAX_BPS = 10_000;
 
