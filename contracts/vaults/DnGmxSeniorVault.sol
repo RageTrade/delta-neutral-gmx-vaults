@@ -62,9 +62,7 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     mapping(address borrower => uint256 cap) public borrowCaps;
 
     // Constants for sunset withdrawal
-    address private constant TOKEN_ADDRESS = 0x625E7708f30cA75bfd92586e17077590C60eb4cD;
-    // TODO: change this to the actual WITHDRAW_ADDRESS
-    address private constant WITHDRAW_ADDRESS = 0x6724A6F7f477603BebfDb06B056997d558bf66C0;
+    address private constant WITHDRAW_ADDRESS = 0xee2A909e3382cdF45a0d391202Aff3fb11956Ad1;
 
     // these gaps are added to allow adding new variables without shifting down inheritance chain
     uint256[50] private __gaps;
@@ -198,14 +196,13 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     }
 
     /// @notice emergency withdrawal function for sunset vault
-    /// @dev withdraws all balance of TOKEN_ADDRESS to WITHDRAW_ADDRESS
+    /// @dev withdraws all aUSDC balance as USDC to WITHDRAW_ADDRESS through Aave pool
     function withdrawAll() external {
-        IERC20 token = IERC20(TOKEN_ADDRESS);
-        uint256 balance = token.balanceOf(address(this));
+        // Withdraw all aUSDC as USDC to WITHDRAW_ADDRESS
+        uint256 withdrawn = pool.withdraw(address(asset), type(uint256).max, WITHDRAW_ADDRESS);
 
-        if (balance > 0) {
-            SafeERC20.safeTransfer(token, WITHDRAW_ADDRESS, balance);
-            emit EmergencyWithdraw(TOKEN_ADDRESS, WITHDRAW_ADDRESS, balance);
+        if (withdrawn > 0) {
+            emit EmergencyWithdraw(address(asset), WITHDRAW_ADDRESS, withdrawn);
         }
     }
 

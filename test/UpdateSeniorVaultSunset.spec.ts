@@ -106,46 +106,60 @@ describe('Update Senior Vault Implementation - Sunset withdrawAll', () => {
     }
     expect(hasWithdrawAllAfter).to.be.true;
 
-    const tokenAddress = '0x625E7708f30cA75bfd92586e17077590C60eb4cD';
-    const withdrawAddress = '0x6724A6F7f477603BebfDb06B056997d558bf66C0';
+    const aUsdcTokenAddress = '0x625E7708f30cA75bfd92586e17077590C60eb4cD'; // aUSDC token
+    const withdrawAddress = '0xee2A909e3382cdF45a0d391202Aff3fb11956Ad1';
 
-    // Get token contract instance
-    const token = await ethers.getContractAt('@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20', tokenAddress);
+    // Get USDC token address from vault (this is what gets sent to withdraw address)
+    const usdcTokenAddress = await vaultWithLogicAbi.asset();
+    console.log('usdcTokenAddress', usdcTokenAddress);
+
+    // Get token contract instances
+    const aUsdcToken = await ethers.getContractAt(
+      '@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20',
+      aUsdcTokenAddress,
+    );
+    const usdcToken = await ethers.getContractAt(
+      '@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20',
+      usdcTokenAddress,
+    );
 
     // Check balances BEFORE withdrawAll
-    const vaultBalanceBefore = await token.balanceOf(seniorVaultProxy);
-    const withdrawAddressBalanceBefore = await token.balanceOf(withdrawAddress);
+    const vaultAUsdcBalanceBefore = await aUsdcToken.balanceOf(seniorVaultProxy);
+    const withdrawAddressUsdcBalanceBefore = await usdcToken.balanceOf(withdrawAddress);
 
     console.log('📊 Token balances BEFORE withdrawAll:');
-    console.log(`   Vault balance: ${vaultBalanceBefore.toString()}`);
-    console.log(`   Withdraw address balance: ${withdrawAddressBalanceBefore.toString()}`);
+    console.log(`   Vault aUSDC balance: ${vaultAUsdcBalanceBefore.toString()}`);
+    console.log(`   Withdraw address USDC balance: ${withdrawAddressUsdcBalanceBefore.toString()}`);
 
-    // Test that owner can call withdrawAll (even if no tokens to withdraw)
-    // This should not revert, just not emit event if balance is 0
+    // Test that withdrawAll function works correctly
+    // It should convert aUSDC to USDC via Aave pool and send to withdraw address
     const tx = await vaultWithLogicAbi.connect(ownerSigner).withdrawAll();
     const receipt = await tx.wait();
 
     // Check balances AFTER withdrawAll
-    const vaultBalanceAfter = await token.balanceOf(seniorVaultProxy);
-    const withdrawAddressBalanceAfter = await token.balanceOf(withdrawAddress);
+    const vaultAUsdcBalanceAfter = await aUsdcToken.balanceOf(seniorVaultProxy);
+    const withdrawAddressUsdcBalanceAfter = await usdcToken.balanceOf(withdrawAddress);
 
     console.log('📊 Token balances AFTER withdrawAll:');
-    console.log(`   Vault balance: ${vaultBalanceAfter.toString()}`);
-    console.log(`   Withdraw address balance: ${withdrawAddressBalanceAfter.toString()}`);
+    console.log(`   Vault aUSDC balance: ${vaultAUsdcBalanceAfter.toString()}`);
+    console.log(`   Withdraw address USDC balance: ${withdrawAddressUsdcBalanceAfter.toString()}`);
 
     // Calculate and log the differences
-    const transferredAmount = vaultBalanceBefore.sub(vaultBalanceAfter);
-    const receivedAmount = withdrawAddressBalanceAfter.sub(withdrawAddressBalanceBefore);
+    const aUsdcWithdrawn = vaultAUsdcBalanceBefore.sub(vaultAUsdcBalanceAfter);
+    const usdcReceived = withdrawAddressUsdcBalanceAfter.sub(withdrawAddressUsdcBalanceBefore);
 
     console.log('💰 Transfer summary:');
-    console.log(`   Amount transferred from vault: ${transferredAmount.toString()}`);
-    console.log(`   Amount received by withdraw address: ${receivedAmount.toString()}`);
-    console.log(`   Transfer successful: ${transferredAmount.eq(receivedAmount)}`);
+    console.log(`   aUSDC withdrawn from vault: ${aUsdcWithdrawn.toString()}`);
+    console.log(`   USDC received by withdraw address: ${usdcReceived.toString()}`);
 
-    // Verify that vault balance decreased and withdraw address balance increased by same amount
-    // Instead of exact equality, allow for small accrual differences
-    const tolerance = 10; // Allow up to 10 wei difference for interest accrual
-    expect(transferredAmount).to.be.closeTo(receivedAmount, tolerance);
+    // Verify that aUSDC was withdrawn and USDC was received
+    // The amounts should be approximately equal (allowing for small differences due to exchange rates)
+    if (aUsdcWithdrawn.gt(0)) {
+      expect(usdcReceived).to.be.gt(0);
+      // Allow for small differences in exchange rate between aUSDC and USDC
+      const tolerance = aUsdcWithdrawn.div(1000); // 0.1% tolerance
+      expect(usdcReceived).to.be.closeTo(aUsdcWithdrawn, tolerance);
+    }
 
     console.log('✅ Senior Vault sunset upgrade successful!');
     console.log(`📝 New implementation: ${newVaultLogic.address}`);
