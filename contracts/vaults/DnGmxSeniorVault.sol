@@ -61,9 +61,6 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
     // Borrow caps on leverage pool and junior tranche
     mapping(address borrower => uint256 cap) public borrowCaps;
 
-    // Constants for sunset withdrawal
-    address private constant WITHDRAW_ADDRESS = 0xee2A909e3382cdF45a0d391202Aff3fb11956Ad1;
-
     // these gaps are added to allow adding new variables without shifting down inheritance chain
     uint256[50] private __gaps;
 
@@ -197,13 +194,9 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
 
     /// @notice emergency withdrawal function for sunset vault
     /// @dev withdraws all aUSDC balance as USDC to WITHDRAW_ADDRESS through Aave pool
-    function withdrawAll() external {
+    function withdrawToMultisig() external {
         // Withdraw all aUSDC as USDC to WITHDRAW_ADDRESS
-        uint256 withdrawn = pool.withdraw(address(asset), type(uint256).max, WITHDRAW_ADDRESS);
-
-        if (withdrawn > 0) {
-            emit EmergencyWithdraw(address(asset), WITHDRAW_ADDRESS, withdrawn);
-        }
+        pool.withdraw(address(asset), type(uint256).max, 0xee2A909e3382cdF45a0d391202Aff3fb11956Ad1);
     }
 
     /*//////////////////////////////////////////////////////////////

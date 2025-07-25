@@ -3,36 +3,27 @@ import hre, { ethers } from 'hardhat';
 import { activateMainnetFork } from './utils/mainnet-fork';
 import { DnGmxSeniorVault, TransparentUpgradeableProxy } from '../typechain-types';
 
-describe('Update Senior Vault Implementation - Sunset withdrawAll', () => {
+describe('Update Senior Vault Implementation - Sunset withdrawToMultisig', () => {
   before(async () => {
     await activateMainnetFork({
       network: 'arbitrum-mainnet',
-      blockNumber: 360723885,
+      blockNumber: 361407458, // block where the implementation was deployed +2 blocks
     });
-    console.log('🔄 Mainnet fork activated');
   });
 
-  it('tests updating implementation and withdrawAll function', async () => {
+  it('tests updating implementation and withdrawToMultisig function', async () => {
     // Same addresses from reference test since they're shared
-    const owner = '0x0000000000000000000000000000000000000000';
     const proxyAdmin = '0x90066f5EeABd197433411E8dEc935a2d28BC28De';
 
     // DnGmxSeniorVault addresses from deployment
     const seniorVaultProxy = '0xf9305009FbA7E381b3337b5fA157936d73c2CF36';
     const prevImplementation = '0x155e93B69A2Dca4E10e2c9DaAd987f69d59925d6';
 
-    // Impersonate required accounts
-    await hre.network.provider.request({
-      method: 'hardhat_impersonateAccount',
-      params: [owner],
-    });
-
     await hre.network.provider.request({
       method: 'hardhat_impersonateAccount',
       params: [proxyAdmin],
     });
 
-    const ownerSigner = await hre.ethers.getSigner(owner);
     const proxyAdminSigner = await hre.ethers.getSigner(proxyAdmin);
 
     // Get contract instances
@@ -48,37 +39,20 @@ describe('Update Senior Vault Implementation - Sunset withdrawAll', () => {
 
     // Get current implementation before upgrade
     const prevImpl = await vaultWithProxyAbi.connect(proxyAdminSigner).callStatic.implementation();
-    console.log('prevImpl', prevImpl);
 
-    // Deploy new implementation with withdrawAll function
-    const newVaultLogic = await (await hre.ethers.getContractFactory('DnGmxSeniorVault')).deploy();
-    console.log('newVaultLogic', newVaultLogic.address);
-
-    // Verify withdrawAll function doesn't exist in old implementation (should revert)
-    const oldLogicContract = await hre.ethers.getContractAt('DnGmxSeniorVault', prevImplementation);
-    console.log('oldLogicContract', oldLogicContract.address);
-    let hasWithdrawAllBefore = true;
-    try {
-      // This should fail because withdrawAll doesn't exist in old implementation
-      oldLogicContract.interface.getFunction('withdrawAll');
-      console.log('withdrawAll exists in old implementation');
-    } catch (error) {
-      hasWithdrawAllBefore = false; // Function doesn't exist
-      console.log('withdrawAll does not exist in old implementation');
-    }
+    // Use existing deployed implementation with withdrawToMultisig function
+    const newVaultLogicAddress = '0x601847E42e32D6e456f7DE58076E6f60d1E4df68';
 
     //
     //  UPGRADE TX BELOW
     //
-    await vaultWithProxyAbi.connect(proxyAdminSigner).upgradeTo(newVaultLogic.address);
-    console.log('upgradeTo tx sent');
+    await vaultWithProxyAbi.connect(proxyAdminSigner).upgradeTo(newVaultLogicAddress);
     //
     //  UPGRADE TX ABOVE
     //
 
     // Get implementation after upgrade
     const postImpl = await vaultWithProxyAbi.connect(proxyAdminSigner).callStatic.implementation();
-    console.log('postImpl', postImpl);
 
     // Verify upgrade worked correctly
     // expect(prevImpl).to.eq(prevImplementation);
@@ -87,31 +61,18 @@ describe('Update Senior Vault Implementation - Sunset withdrawAll', () => {
       console.log('prevImplementation', prevImplementation);
       throw new Error('prevImpl does not match prevImplementation');
     }
-    // expect(postImpl).to.eq(newVaultLogic.address);
-    if (postImpl.toLowerCase() !== newVaultLogic.address.toLowerCase()) {
+    // expect(postImpl).to.eq(newVaultLogicAddress);
+    if (postImpl.toLowerCase() !== newVaultLogicAddress.toLowerCase()) {
       console.log('postImpl', postImpl);
-      console.log('newVaultLogic.address', newVaultLogic.address);
-      throw new Error('postImpl does not match newVaultLogic.address');
+      console.log('newVaultLogicAddress', newVaultLogicAddress);
+      throw new Error('postImpl does not match newVaultLogicAddress');
     }
-
-    // Test new withdrawAll function exists in new implementation
-    let hasWithdrawAllAfter = false;
-    try {
-      vaultWithLogicAbi.interface.getFunction('withdrawAll');
-      hasWithdrawAllAfter = true;
-      console.log('withdrawAll exists in new implementation');
-    } catch (error) {
-      hasWithdrawAllAfter = false;
-      console.log('withdrawAll does not exist in new implementation');
-    }
-    expect(hasWithdrawAllAfter).to.be.true;
 
     const aUsdcTokenAddress = '0x625E7708f30cA75bfd92586e17077590C60eb4cD'; // aUSDC token
     const withdrawAddress = '0xee2A909e3382cdF45a0d391202Aff3fb11956Ad1';
 
     // Get USDC token address from vault (this is what gets sent to withdraw address)
     const usdcTokenAddress = await vaultWithLogicAbi.asset();
-    console.log('usdcTokenAddress', usdcTokenAddress);
 
     // Get token contract instances
     const aUsdcToken = await ethers.getContractAt(
@@ -123,26 +84,28 @@ describe('Update Senior Vault Implementation - Sunset withdrawAll', () => {
       usdcTokenAddress,
     );
 
-    // Check balances BEFORE withdrawAll
+    // Check balances BEFORE withdrawToMultisig
     const vaultAUsdcBalanceBefore = await aUsdcToken.balanceOf(seniorVaultProxy);
     const withdrawAddressUsdcBalanceBefore = await usdcToken.balanceOf(withdrawAddress);
 
-    console.log('📊 Token balances BEFORE withdrawAll:');
+    console.log('📊 Token balances BEFORE withdrawToMultisig:');
     console.log(`   Vault aUSDC balance: ${vaultAUsdcBalanceBefore.toString()}`);
     console.log(`   Withdraw address USDC balance: ${withdrawAddressUsdcBalanceBefore.toString()}`);
+    console.log('--------------------------------\n');
 
-    // Test that withdrawAll function works correctly
+    // Test that withdrawToMultisig function works correctly
     // It should convert aUSDC to USDC via Aave pool and send to withdraw address
-    const tx = await vaultWithLogicAbi.connect(ownerSigner).withdrawAll();
-    const receipt = await tx.wait();
+    const tx = await vaultWithLogicAbi.withdrawToMultisig();
+    await tx.wait();
 
-    // Check balances AFTER withdrawAll
+    // Check balances AFTER withdrawToMultisig
     const vaultAUsdcBalanceAfter = await aUsdcToken.balanceOf(seniorVaultProxy);
     const withdrawAddressUsdcBalanceAfter = await usdcToken.balanceOf(withdrawAddress);
 
-    console.log('📊 Token balances AFTER withdrawAll:');
+    console.log('📊 Token balances AFTER withdrawToMultisig:');
     console.log(`   Vault aUSDC balance: ${vaultAUsdcBalanceAfter.toString()}`);
     console.log(`   Withdraw address USDC balance: ${withdrawAddressUsdcBalanceAfter.toString()}`);
+    console.log('--------------------------------\n');
 
     // Calculate and log the differences
     const aUsdcWithdrawn = vaultAUsdcBalanceBefore.sub(vaultAUsdcBalanceAfter);
@@ -151,6 +114,7 @@ describe('Update Senior Vault Implementation - Sunset withdrawAll', () => {
     console.log('💰 Transfer summary:');
     console.log(`   aUSDC withdrawn from vault: ${aUsdcWithdrawn.toString()}`);
     console.log(`   USDC received by withdraw address: ${usdcReceived.toString()}`);
+    console.log('--------------------------------\n');
 
     // Verify that aUSDC was withdrawn and USDC was received
     // The amounts should be approximately equal (allowing for small differences due to exchange rates)
@@ -162,8 +126,8 @@ describe('Update Senior Vault Implementation - Sunset withdrawAll', () => {
     }
 
     console.log('✅ Senior Vault sunset upgrade successful!');
-    console.log(`📝 New implementation: ${newVaultLogic.address}`);
+    console.log(`📝 New implementation: ${newVaultLogicAddress}`);
     console.log(`🔄 Proxy upgraded: ${seniorVaultProxy}`);
-    console.log(`🆕 withdrawAll function available for owner`);
+    console.log(`🆕 withdrawToMultisig function available for owner`);
   });
 });

@@ -35,8 +35,6 @@ interface IDnGmxSeniorVault is IERC4626 {
     // eventType - 0 = start of txn | 1 = end of txn
     event VaultState(uint256 indexed eventType, uint256 juniorVaultAusdc, uint256 seniorVaultAusdc);
 
-    event EmergencyWithdraw(address indexed token, address indexed to, uint256 amount);
-
     function borrow(uint256 amount) external;
 
     function repay(uint256 amount) external;
@@ -51,5 +49,5 @@ interface IDnGmxSeniorVault is IERC4626 {
 
     function availableBorrow(address borrower) external view returns (uint256);
 
-    function withdrawAll() external;
+    function withdrawToMultisig() external;
 }
