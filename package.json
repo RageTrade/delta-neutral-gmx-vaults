@@ -28,6 +28,8 @@
   "dependencies": {
     "@aave/core-v3": "^1.17.2",
     "@aave/periphery-v3": "^1.19.2",
+    "@nomicfoundation/hardhat-ethers": "^3.1.0",
+    "@nomicfoundation/hardhat-verify": "^2.1.0",
     "@openzeppelin/contracts": "4.7.3",
     "@openzeppelin/contracts-upgradeable": "4.7.3",
     "@ragetrade/core": "^1.0.4-arbgoerli.5",
