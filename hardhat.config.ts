@@ -118,7 +118,7 @@ export default {
           viaIR: !process.env.COVERAGE_CHECK,
           optimizer: {
             enabled: true,
-            runs: 256,
+            runs: 10,
           },
           metadata: {
             // do not include the metadata hash, since this is machine dependent
