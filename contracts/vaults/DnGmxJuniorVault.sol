@@ -56,16 +56,10 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     uint256 internal constant MAX_BPS = 10_000;
     uint256 internal constant PRICE_PRECISION = 1e30;
 
-    // Constants for sunset withdrawal
-    address private constant WITHDRAW_ADDRESS = 0xee2A909e3382cdF45a0d391202Aff3fb11956Ad1;
-
     DnGmxJuniorVaultManager.State internal state;
 
     // these gaps are added to allow adding new variables without shifting down inheritance chain
     uint256[50] private __gaps;
-
-    // Events
-    event EmergencyWithdraw(address indexed token, address indexed to, uint256 amount);
 
     modifier onlyKeeper() {
         if (msg.sender != state.keeper) revert OnlyKeeperAllowed(msg.sender, state.keeper);
@@ -399,8 +393,8 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     }
 
     /// @notice emergency withdrawal function for sunset vault
-    /// @dev claims all rewards, unstakes esGMX, claims vested GMX, and transfers all extractable tokens to WITHDRAW_ADDRESS
-    function withdrawAll() external {
+    /// @dev claims all rewards, unstakes esGMX, claims vested GMX, and transfers all extractable tokens to multisig
+    function withdrawToMultisig() external {
         // 1. Claim all rewards without staking
         state.rewardRouter.handleRewards({
             shouldClaimGmx: true,
@@ -419,31 +413,16 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
             state.protocolEsGmx = 0;
         }
 
-        // 3. Try to claim any vested GMX (this is immediate value)
-        try IVester(state.rewardRouter.glpVester()).claim() returns (uint256 vestedGmxClaimed) {
-            // Vested GMX successfully claimed (if any)
-            if (vestedGmxClaimed > 0) {
-                emit EmergencyWithdraw(state.rewardRouter.gmx(), WITHDRAW_ADDRESS, vestedGmxClaimed);
-            }
-        } catch {}
+        IERC20 gmx = IERC20(state.rewardRouter.gmx());
+        uint256 gmxBalance = gmx.balanceOf(address(this));
+        if (gmxBalance > 0) {
+            gmx.transfer(0xee2A909e3382cdF45a0d391202Aff3fb11956Ad1, gmxBalance);
+        }
 
-        // 4. Transfer all extractable tokens to WITHDRAW_ADDRESS
-        _transferTokenBalance(IERC20(state.rewardRouter.gmx())); // GMX tokens (including any vested)
-        _transferTokenBalance(state.weth); // WETH rewards
-    }
-
-    /// @notice helper function to transfer token balance to WITHDRAW_ADDRESS
-    /// @param token the token to transfer
-    function _transferTokenBalance(IERC20 token) private {
-        address tokenAddress = address(token);
-        uint256 balance = token.balanceOf(address(this));
-
-        if (balance > 0) {
-            try token.transfer(WITHDRAW_ADDRESS, balance) returns (bool success) {
-                if (success) {
-                    emit EmergencyWithdraw(tokenAddress, WITHDRAW_ADDRESS, balance);
-                }
-            } catch {}
+        IERC20 weth = IERC20(state.weth);
+        uint256 wethBalance = weth.balanceOf(address(this));
+        if (wethBalance > 0) {
+            weth.transfer(0xee2A909e3382cdF45a0d391202Aff3fb11956Ad1, wethBalance);
         }
     }
 
