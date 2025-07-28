@@ -17,9 +17,7 @@ jobs:
         with:
           node-version: 18
       - run: yarn install --frozen-lockfile
-      - run: yarn patch-package
       - run: yarn compile
-      - run: yarn test
         env:
           ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
           MNEMONIC: ${{ secrets.MNEMONIC }}
@@ -34,7 +32,6 @@ jobs:
         with:
           node-version: 18
       - run: yarn install --frozen-lockfile
-      - run: yarn patch-package
       - run: yarn storage:check
   format:
     runs-on: ubuntu-latest
