@@ -33,6 +33,8 @@ jobs:
           node-version: 18
       - run: yarn install --frozen-lockfile
       - run: yarn storage:check
+        env:
+          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
   format:
     runs-on: ubuntu-latest
     environment: CI
