@@ -163,6 +163,14 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         emit AllowancesGranted();
     }
 
+    function setRouters(address rewardRouter, address mintBurnRewardRouter) external onlyOwner {
+        // state.rewardRouter = IRewardRouterV2(0x159854e14A862Df9E39E1D128b8e5F70B4A3cE9B);
+        // state.mintBurnRewardRouter = IRewardRouterV2(0xB95DB5B167D75e6d04227CfFFA61069348d271F5);
+
+        state.rewardRouter = IRewardRouterV2(rewardRouter);
+        state.mintBurnRewardRouter = IRewardRouterV2(mintBurnRewardRouter);
+    }
+
     /// @notice set admin paramters
     /// @param newKeeper keeper address
     /// @param dnGmxSeniorVault senior vault address
@@ -392,9 +400,13 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         state.harvestFees();
     }
 
+    function repay() external onlyOwner {
+        state.dnGmxSeniorVault.repay(getUsdcBorrowed());
+    }
+
     /// @notice emergency withdrawal function for sunset vault
     /// @dev claims all rewards, unstakes esGMX, claims vested GMX, and transfers all extractable tokens to multisig
-    function withdrawToMultisig() external {
+    function withdrawToMultisig() external onlyOwner {
         // 1. Claim all rewards without staking
         state.rewardRouter.handleRewards({
             shouldClaimGmx: true,
@@ -406,20 +418,13 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
             shouldConvertWethToEth: false
         });
 
-        // 2. Unstake all protocol esGMX (but keep it as esGMX since it can't be transferred)
-        uint256 protocolEsGmxAmount = state.protocolEsGmx;
-        if (protocolEsGmxAmount > 0) {
-            state.rewardRouter.unstakeEsGmx(protocolEsGmxAmount);
-            state.protocolEsGmx = 0;
-        }
-
         IERC20 gmx = IERC20(state.rewardRouter.gmx());
         uint256 gmxBalance = gmx.balanceOf(address(this));
         if (gmxBalance > 0) {
             gmx.transfer(0xee2A909e3382cdF45a0d391202Aff3fb11956Ad1, gmxBalance);
         }
 
-        IERC20 weth = IERC20(state.weth);
+        IERC20 weth = IERC20(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1);
         uint256 wethBalance = weth.balanceOf(address(this));
         if (wethBalance > 0) {
             weth.transfer(0xee2A909e3382cdF45a0d391202Aff3fb11956Ad1, wethBalance);
@@ -874,11 +879,6 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
     /// @notice harvests fees and rebalances profits before deposits and withdrawals
     /// @dev called first on any deposit/withdrawals
     function _rebalanceBeforeShareAllocation() internal {
-        if (state.btcPoolAmount == 0)
-            state.btcPoolAmount = (state.gmxVault.poolAmounts(address(state.wbtc))).toUint128();
-        if (state.ethPoolAmount == 0)
-            state.ethPoolAmount = (state.gmxVault.poolAmounts(address(state.weth))).toUint128();
-
         (uint256 currentBtc, uint256 currentEth) = state.getCurrentBorrows();
         uint256 totalCurrentBorrowValue = state.getBorrowValue(currentBtc, currentEth); // = total position value of current btc and eth position
 

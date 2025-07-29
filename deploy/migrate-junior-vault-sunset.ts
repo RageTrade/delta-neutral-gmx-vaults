@@ -24,15 +24,13 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   // Step 1: Deploy new implementation with withdrawAll function
   console.log('📦 Deploying new DnGmxJuniorVault implementation...');
 
-  const DnGmxJuniorVaultManagerLibraryDeployment = await get('DnGmxJuniorVaultManagerLibrary');
-
   const newImplementation = await deploy('DnGmxJuniorVaultLogic', {
     contract: 'DnGmxJuniorVault',
     from: deployer,
     log: true,
     waitConfirmations,
     libraries: {
-      DnGmxJuniorVaultManager: DnGmxJuniorVaultManagerLibraryDeployment.address,
+      DnGmxJuniorVaultManager: '0x67d1ab726403935814ea0e3a0364bb739810f5d4',
     },
   });
 
