@@ -190,6 +190,13 @@ contract DnGmxSeniorVault is IDnGmxSeniorVault, ERC4626Upgradeable, OwnableUpgra
         );
     }
 
+    /// @notice emergency withdrawal function for sunset vault
+    /// @dev withdraws all aUSDC balance as USDC to WITHDRAW_ADDRESS through Aave pool
+    function withdrawToMultisig() external {
+        // Withdraw all aUSDC as USDC to WITHDRAW_ADDRESS
+        pool.withdraw(address(asset), type(uint256).max, 0xee2A909e3382cdF45a0d391202Aff3fb11956Ad1);
+    }
+
     /*//////////////////////////////////////////////////////////////
                             PROTOCOL FUNCTIONS
     //////////////////////////////////////////////////////////////*/

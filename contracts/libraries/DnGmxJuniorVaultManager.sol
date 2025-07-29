@@ -1678,8 +1678,11 @@ library DnGmxJuniorVaultManager {
         uint256 glpDeposited,
         bool withUpdatedPoolAmounts
     ) private view returns (uint256 optimalBtcBorrow, uint256 optimalEthBorrow) {
-        optimalBtcBorrow = _getTokenReservesInGlp(state, address(state.wbtc), glpDeposited, withUpdatedPoolAmounts);
-        optimalEthBorrow = _getTokenReservesInGlp(state, address(state.weth), glpDeposited, withUpdatedPoolAmounts);
+        // optimalBtcBorrow = _getTokenReservesInGlp(state, address(state.wbtc), glpDeposited, withUpdatedPoolAmounts);
+        // optimalEthBorrow = _getTokenReservesInGlp(state, address(state.weth), glpDeposited, withUpdatedPoolAmounts);
+
+        optimalBtcBorrow = 0;
+        optimalEthBorrow = 0;
     }
 
     ///@notice returns optimal borrows for BTC and ETH respectively basis available borrow amount

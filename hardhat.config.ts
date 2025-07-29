@@ -6,7 +6,7 @@ import 'hardhat-gas-reporter';
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'solidity-coverage';
-import '@nomiclabs/hardhat-etherscan';
+import '@nomicfoundation/hardhat-verify';
 import 'hardhat-dependency-compiler';
 import 'hardhat-storage-layout-changes';
 import '@nomicfoundation/hardhat-network-helpers';
@@ -118,7 +118,7 @@ export default {
           viaIR: !process.env.COVERAGE_CHECK,
           optimizer: {
             enabled: true,
-            runs: 256,
+            runs: 10,
           },
           metadata: {
             // do not include the metadata hash, since this is machine dependent
@@ -167,6 +167,12 @@ export default {
   typechain: {
     target: 'ethers-v5',
     alwaysGenerateOverloads: false,
+    outDir: 'typechain-types',
+    dontOverrideCompile: false,
+    discriminateTypes: false,
+    compilationSkip: [
+      'contracts-test/**/*',
+    ],
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_KEY,
