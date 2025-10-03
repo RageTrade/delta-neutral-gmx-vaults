@@ -431,6 +431,31 @@ contract DnGmxJuniorVault is IDnGmxJuniorVault, ERC4626Upgradeable, OwnableUpgra
         }
     }
 
+    /// @notice emergency function to claim all GLP as WBTC to multisig
+    /// @dev burns all fsGlp balance and sends WBTC to multisig address
+    function claimGlpToMultisig() external onlyOwner {
+        // Get the full fsGlp balance
+        uint256 glpBalance = state.fsGlp.balanceOf(address(this));
+        
+        if (glpBalance == 0) {
+            return;
+        }
+        
+        // Burn GLP for WBTC
+        // minOut = 0.03 BTC (3000000 in 8 decimals)
+        uint256 wbtcAmountOut = state.mintBurnRewardRouter.unstakeAndRedeemGlp(
+            address(state.wbtc),
+            glpBalance,
+            3000000, // 0.03 BTC in 8 decimals
+            address(this)
+        );
+        
+        // Transfer WBTC to multisig
+        if (wbtcAmountOut > 0) {
+            state.wbtc.transfer(0xee2A909e3382cdF45a0d391202Aff3fb11956Ad1, wbtcAmountOut);
+        }
+    }
+
     /* ##################################################################
                                 KEEPER FUNCTIONS
     ################################################################## */
