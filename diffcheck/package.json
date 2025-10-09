@@ -1,0 +1,30 @@
+{
+  "name": "solidity-source-diff",
+  "version": "1.0.0",
+  "description": "Compare Solidity source code from Etherscan verification results",
+  "main": "diff-sources.ts",
+  "scripts": {
+    "start": "ts-node diff-sources.ts",
+    "build": "tsc diff-sources.ts",
+    "diff": "ts-node diff-sources.ts"
+  },
+  "dependencies": {
+    "@types/node": "^18.0.0"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.0",
+    "typescript": "^4.9.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "keywords": [
+    "solidity",
+    "ethereum",
+    "diff",
+    "etherscan",
+    "comparison"
+  ],
+  "author": "",
+  "license": "MIT"
+} 
